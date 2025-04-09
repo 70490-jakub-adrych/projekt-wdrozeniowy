@@ -92,3 +92,7 @@ AUTH_USER_MODEL = 'tickets.CustomUser'
 # For email notifications (prints to console during development)
 EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 DEFAULT_FROM_EMAIL = 'no-reply@example.com'
+
+
+LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/'
