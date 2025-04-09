@@ -1,0 +1,29 @@
+{% extends 'crm/base.html' %}
+
+{% block title %}Ponownie otwórz zgłoszenie | System Helpdesk{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header text-white bg-success">
+                <i class="fas fa-lock-open"></i> Ponownie otwórz zgłoszenie
+            </div>
+            <div class="card-body">
+                <h5 class="card-title">Czy na pewno chcesz ponownie otworzyć to zgłoszenie?</h5>
+                <p>
+                    <strong>{{ ticket.title }}</strong><br>
+                    Status: {{ ticket.get_status_display }}<br>
+                    Data zamknięcia: {{ ticket.closed_at|date:"d.m.Y H:i" }}
+                </p>
+                <p class="text-muted">Ponowne otwarcie zgłoszenia oznacza, że wymaga ono dalszego działania.</p>
+                <form method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-success">Ponownie otwórz zgłoszenie</button>
+                    <a href="{% url 'ticket_detail' ticket.pk %}" class="btn btn-outline-secondary">Anuluj</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

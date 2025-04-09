@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}System CRM{% endblock %}</title>
+    <title>{% block title %}System Helpdesk{% endblock %}</title>
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.1/css/all.min.css">
     {% block extra_css %}{% endblock %}
@@ -11,7 +11,7 @@
 <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container">
-            <a class="navbar-brand" href="{% if user.is_authenticated %}{% url 'dashboard' %}{% else %}{% url 'landing_page' %}{% endif %}">System CRM</a>
+            <a class="navbar-brand" href="{% if user.is_authenticated %}{% url 'dashboard' %}{% else %}{% url 'landing_page' %}{% endif %}">System Helpdesk</a>
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav">
                 <span class="navbar-toggler-icon"></span>
             </button>
@@ -22,17 +22,45 @@
                         <a class="nav-link" href="{% url 'dashboard' %}">Panel główny</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'contact_list' %}">Kontakty</a>
+                        <a class="nav-link" href="{% url 'ticket_list' %}">Zgłoszenia</a>
                     </li>
+                    {% if user.profile.role == 'admin' or user.profile.role == 'moderator' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'organization_list' %}">Organizacje</a>
+                    </li>
+                    {% endif %}
+                    {% if user.profile.role == 'admin' %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'activity_logs' %}">Logi</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/admin/" target="_blank">Panel admina</a>
+                    </li>
+                    {% endif %}
                     {% endif %}
                 </ul>
                 <ul class="navbar-nav ml-auto">
                     {% if user.is_authenticated %}
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown">
-                            {{ user.username }}
+                            {{ user.username }} 
+                            {% if user.profile.role == 'admin' %}
+                                <span class="badge badge-danger">Admin</span>
+                            {% elif user.profile.role == 'moderator' %}
+                                <span class="badge badge-info">Moderator</span>
+                            {% else %}
+                                <span class="badge badge-secondary">Klient</span>
+                            {% endif %}
                         </a>
                         <div class="dropdown-menu dropdown-menu-right">
+                            <div class="dropdown-item disabled">
+                                {% if user.profile.organization %}
+                                <small>Organizacja: {{ user.profile.organization.name }}</small>
+                                {% else %}
+                                <small>Brak przypisanej organizacji</small>
+                                {% endif %}
+                            </div>
+                            <div class="dropdown-divider"></div>
                             <a class="dropdown-item" href="{% url 'logout' %}">Wyloguj</a>
                         </div>
                     </li>
@@ -64,7 +92,7 @@
 
     <footer class="bg-light mt-5 py-3">
         <div class="container text-center">
-            <p>System CRM &copy; {% now "Y" %}</p>
+            <p>System Helpdesk &copy; {% now "Y" %}</p>
         </div>
     </footer>
 

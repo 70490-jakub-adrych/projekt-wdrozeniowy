@@ -1,0 +1,50 @@
+{% extends 'crm/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}
+    {% if ticket %}Edytuj zgłoszenie{% else %}Nowe zgłoszenie{% endif %} | System Helpdesk
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-{% if ticket %}edit{% else %}plus{% endif %}"></i> 
+                {% if ticket %}Edytuj zgłoszenie{% else %}Nowe zgłoszenie{% endif %}
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    {{ form|crispy }}
+                    
+                    {% if user.profile.role == 'admin' or user.profile.role == 'moderator' %}
+                    {% if not ticket %}
+                    <div class="form-group">
+                        <label for="organization">Organizacja:</label>
+                        <select name="organization" id="organization" class="form-control" required>
+                            <option value="">-- Wybierz organizację --</option>
+                            {% for org in organizations %}
+                            <option value="{{ org.id }}">{{ org.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endif %}
+                    {% endif %}
+                    
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Zapisz
+                        </button>
+                        {% if ticket %}
+                            <a href="{% url 'ticket_detail' ticket.pk %}" class="btn btn-secondary">Anuluj</a>
+                        {% else %}
+                            <a href="{% url 'ticket_list' %}" class="btn btn-secondary">Anuluj</a>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

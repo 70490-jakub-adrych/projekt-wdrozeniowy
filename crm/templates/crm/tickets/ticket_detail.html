@@ -1,0 +1,271 @@
+{% extends 'crm/base.html' %}
+
+{% block title %}Zgłoszenie #{{ ticket.id }} | System Helpdesk{% endblock %}
+
+{% load crispy_forms_tags %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Zgłoszenie #{{ ticket.id }}: {{ ticket.title }}</h2>
+    <div>
+        <a href="{% url 'ticket_update' ticket.pk %}" class="btn btn-primary">
+            <i class="fas fa-edit"></i> Edytuj
+        </a>
+        {% if ticket.status != 'closed' %}
+        <a href="{% url 'ticket_close' ticket.pk %}" class="btn btn-secondary">
+            <i class="fas fa-lock"></i> Zamknij
+        </a>
+        {% else %}
+        {% if user.profile.role != 'client' %}
+        <a href="{% url 'ticket_reopen' ticket.pk %}" class="btn btn-success">
+            <i class="fas fa-lock-open"></i> Otwórz ponownie
+        </a>
+        {% endif %}
+        {% endif %}
+        <a href="{% url 'ticket_list' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Powrót
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Informacje o zgłoszeniu -->
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-info-circle"></i> Szczegóły zgłoszenia
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-3 font-weight-bold">Status:</div>
+                    <div class="col-md-9">
+                        <span class="badge 
+                            {% if ticket.status == 'new' %}badge-primary
+                            {% elif ticket.status == 'in_progress' %}badge-info
+                            {% elif ticket.status == 'waiting' %}badge-warning
+                            {% elif ticket.status == 'resolved' %}badge-success
+                            {% elif ticket.status == 'closed' %}badge-secondary
+                            {% endif %} p-2">
+                            {{ ticket.get_status_display }}
+                        </span>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-3 font-weight-bold">Priorytet:</div>
+                    <div class="col-md-9">
+                        <span class="badge 
+                            {% if ticket.priority == 'low' %}badge-secondary
+                            {% elif ticket.priority == 'medium' %}badge-info
+                            {% elif ticket.priority == 'high' %}badge-warning
+                            {% elif ticket.priority == 'critical' %}badge-danger
+                            {% endif %} p-2">
+                            {{ ticket.get_priority_display }}
+                        </span>
+                    </div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-3 font-weight-bold">Kategoria:</div>
+                    <div class="col-md-9">{{ ticket.get_category_display }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-3 font-weight-bold">Organizacja:</div>
+                    <div class="col-md-9">{{ ticket.organization.name }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-3 font-weight-bold">Zgłaszający:</div>
+                    <div class="col-md-9">{{ ticket.created_by.username }}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-3 font-weight-bold">Przypisane do:</div>
+                    <div class="col-md-9">{% if ticket.assigned_to %}{{ ticket.assigned_to.username }}{% else %}<span class="text-muted">Nieprzypisane</span>{% endif %}</div>
+                </div>
+                <div class="row mb-3">
+                    <div class="col-md-3 font-weight-bold">Data utworzenia:</div>
+                    <div class="col-md-9">{{ ticket.created_at|date:"d.m.Y H:i" }}</div>
+                </div>
+                {% if ticket.resolved_at %}
+                <div class="row mb-3">
+                    <div class="col-md-3 font-weight-bold">Data rozwiązania:</div>
+                    <div class="col-md-9">{{ ticket.resolved_at|date:"d.m.Y H:i" }}</div>
+                </div>
+                {% endif %}
+                {% if ticket.closed_at %}
+                <div class="row mb-3">
+                    <div class="col-md-3 font-weight-bold">Data zamknięcia:</div>
+                    <div class="col-md-9">{{ ticket.closed_at|date:"d.m.Y H:i" }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Opis zgłoszenia -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-file-alt"></i> Opis problemu
+            </div>
+            <div class="card-body">
+                {{ ticket.description|linebreaks }}
+            </div>
+        </div>
+        
+        <!-- Załączniki -->
+        {% if attachments %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-paperclip"></i> Załączniki ({{ attachments|length }})
+            </div>
+            <div class="card-body">
+                <ul class="list-group">
+                    {% for attachment in attachments %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="fas fa-file"></i> 
+                            <a href="{{ attachment.file.url }}" target="_blank">{{ attachment.filename }}</a>
+                            <small class="text-muted ml-2">(Dodane przez: {{ attachment.uploaded_by.username }}, {{ attachment.uploaded_at|date:"d.m.Y H:i" }})</small>
+                        </div>
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Komentarze -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-comments"></i> Komentarze ({{ comments|length }})
+            </div>
+            <div class="card-body">
+                {% if comments %}
+                {% for comment in comments %}
+                <div class="media mb-3 p-3 {% if comment.author == ticket.created_by %}bg-light{% endif %}" style="border-left: 3px solid {% if comment.author.profile.role == 'admin' %}#dc3545{% elif comment.author.profile.role == 'moderator' %}#17a2b8{% else %}#6c757d{% endif %};">
+                    <div class="media-body">
+                        <h5 class="mt-0">
+                            {{ comment.author.username }}
+                            {% if comment.author.profile.role == 'admin' %}
+                                <span class="badge badge-danger">Admin</span>
+                            {% elif comment.author.profile.role == 'moderator' %}
+                                <span class="badge badge-info">Moderator</span>
+                            {% else %}
+                                <span class="badge badge-secondary">Klient</span>
+                            {% endif %}
+                            <small class="text-muted">{{ comment.created_at|date:"d.m.Y H:i" }}</small>
+                        </h5>
+                        {{ comment.content|linebreaks }}
+                    </div>
+                </div>
+                {% endfor %}
+                {% else %}
+                <p class="text-muted">Brak komentarzy. Dodaj pierwszy komentarz poniżej.</p>
+                {% endif %}
+                
+                <!-- Formularz dodawania komentarza -->
+                <hr>
+                <h5>Dodaj komentarz</h5>
+                <form method="post" action="{% url 'ticket_detail' ticket.pk %}">
+                    {% csrf_token %}
+                    {{ comment_form|crispy }}
+                    <button type="submit" name="submit_comment" class="btn btn-primary mt-3">Dodaj komentarz</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Panel boczny -->
+    <div class="col-md-4">
+        <!-- Dodawanie załączników -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-paperclip"></i> Dodaj załącznik
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data" action="{% url 'ticket_detail' ticket.pk %}">
+                    {% csrf_token %}
+                    {{ attachment_form|crispy }}
+                    <button type="submit" name="submit_attachment" class="btn btn-primary mt-3">Dodaj załącznik</button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Informacje o zgłoszeniu -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-history"></i> Historia zmian
+            </div>
+            <div class="card-body">
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-marker"></div>
+                        <div class="timeline-content">
+                            <h3 class="timeline-title">Utworzono zgłoszenie</h3>
+                            <p>{{ ticket.created_at|date:"d.m.Y H:i" }} - {{ ticket.created_by.username }}</p>
+                        </div>
+                    </div>
+                    {% if ticket.resolved_at %}
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-success"></div>
+                        <div class="timeline-content">
+                            <h3 class="timeline-title">Rozwiązano zgłoszenie</h3>
+                            <p>{{ ticket.resolved_at|date:"d.m.Y H:i" }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if ticket.closed_at %}
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-secondary"></div>
+                        <div class="timeline-content">
+                            <h3 class="timeline-title">Zamknięto zgłoszenie</h3>
+                            <p>{{ ticket.closed_at|date:"d.m.Y H:i" }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Dodatkowy styl dla linii czasu -->
+{% block extra_css %}
+<style>
+    .timeline {
+        position: relative;
+        padding-left: 30px;
+    }
+    
+    .timeline-item {
+        position: relative;
+        margin-bottom: 20px;
+    }
+    
+    .timeline-marker {
+        position: absolute;
+        left: -30px;
+        width: 15px;
+        height: 15px;
+        background-color: #007bff;
+        border-radius: 50%;
+        top: 5px;
+    }
+    
+    .timeline-item:not(:last-child) .timeline-marker::after {
+        content: '';
+        position: absolute;
+        top: 15px;
+        left: 7px;
+        height: 100%;
+        border-left: 1px solid #dee2e6;
+    }
+    
+    .timeline-content {
+        padding-bottom: 10px;
+    }
+    
+    .timeline-title {
+        margin-bottom: 5px;
+        font-size: 16px;
+        font-weight: bold;
+    }
+</style>
+{% endblock %}
+{% endblock %}

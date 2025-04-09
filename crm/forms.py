@@ -1,7 +1,10 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
-from django.contrib.auth.models import User
-from .models import Contact, Organization, Deal
+from django.contrib.auth.models import User, Group
+from .models import (
+    UserProfile, Organization, Ticket,
+    TicketComment, TicketAttachment
+)
 
 
 class UserRegisterForm(UserCreationForm):
@@ -15,11 +18,14 @@ class UserRegisterForm(UserCreationForm):
         }
 
 
-class ContactForm(forms.ModelForm):
+class UserProfileForm(forms.ModelForm):
     class Meta:
-        model = Contact
-        fields = ['first_name', 'last_name', 'email', 'phone', 'company', 
-                  'lead_source', 'status', 'notes']
+        model = UserProfile
+        fields = ['phone', 'organization']
+        labels = {
+            'phone': 'Telefon',
+            'organization': 'Organizacja',
+        }
 
 
 class OrganizationForm(forms.ModelForm):
@@ -28,11 +34,40 @@ class OrganizationForm(forms.ModelForm):
         fields = ['name', 'website', 'address', 'description']
 
 
-class DealForm(forms.ModelForm):
+class TicketForm(forms.ModelForm):
     class Meta:
-        model = Deal
-        fields = ['title', 'contact', 'organization', 'value', 'stage', 
-                  'expected_close_date', 'description']
+        model = Ticket
+        fields = ['title', 'description', 'category', 'priority']
         widgets = {
-            'expected_close_date': forms.DateInput(attrs={'type': 'date'}),
+            'description': forms.Textarea(attrs={'rows': 5}),
+        }
+
+
+class ModeratorTicketForm(forms.ModelForm):
+    class Meta:
+        model = Ticket
+        fields = ['title', 'description', 'category', 'priority', 'status', 'assigned_to']
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 5}),
+        }
+
+
+class TicketCommentForm(forms.ModelForm):
+    class Meta:
+        model = TicketComment
+        fields = ['content']
+        widgets = {
+            'content': forms.Textarea(attrs={'rows': 3}),
+        }
+        labels = {
+            'content': 'Treść komentarza',
+        }
+
+
+class TicketAttachmentForm(forms.ModelForm):
+    class Meta:
+        model = TicketAttachment
+        fields = ['file']
+        labels = {
+            'file': 'Załącznik',
         }

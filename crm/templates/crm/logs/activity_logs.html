@@ -1,0 +1,99 @@
+{% extends 'crm/base.html' %}
+
+{% block title %}Logi aktywności | System Helpdesk{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Logi aktywności</h2>
+    <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left"></i> Powrót
+    </a>
+</div>
+
+<!-- Filtry -->
+<div class="card mb-4">
+    <div class="card-header">
+        <i class="fas fa-filter"></i> Filtry
+    </div>
+    <div class="card-body">
+        <form method="get" class="form-inline">
+            <div class="form-group mr-3">
+                <label for="action" class="mr-2">Akcja:</label>
+                <select name="action" id="action" class="form-control form-control-sm">
+                    <option value="" {% if not action_filter %}selected{% endif %}>Wszystkie</option>
+                    <option value="login" {% if action_filter == 'login' %}selected{% endif %}>Logowanie</option>
+                    <option value="logout" {% if action_filter == 'logout' %}selected{% endif %}>Wylogowanie</option>
+                    <option value="ticket_created" {% if action_filter == 'ticket_created' %}selected{% endif %}>Utworzenie zgłoszenia</option>
+                    <option value="ticket_updated" {% if action_filter == 'ticket_updated' %}selected{% endif %}>Aktualizacja zgłoszenia</option>
+                    <option value="ticket_commented" {% if action_filter == 'ticket_commented' %}selected{% endif %}>Komentarz do zgłoszenia</option>
+                    <option value="ticket_resolved" {% if action_filter == 'ticket_resolved' %}selected{% endif %}>Rozwiązanie zgłoszenia</option>
+                    <option value="ticket_closed" {% if action_filter == 'ticket_closed' %}selected{% endif %}>Zamknięcie zgłoszenia</option>
+                    <option value="ticket_reopened" {% if action_filter == 'ticket_reopened' %}selected{% endif %}>Ponowne otwarcie zgłoszenia</option>
+                </select>
+            </div>
+            <div class="form-group mr-3">
+                <label for="user" class="mr-2">Użytkownik:</label>
+                <input type="text" name="user" id="user" class="form-control form-control-sm" value="{{ user_filter|default:'' }}" placeholder="Nazwa użytkownika">
+            </div>
+            <button type="submit" class="btn btn-sm btn-primary">Zastosuj filtry</button>
+            <a href="{% url 'activity_logs' %}" class="btn btn-sm btn-outline-secondary ml-2">Resetuj</a>
+        </form>
+    </div>
+</div>
+
+<!-- Lista logów -->
+{% if logs %}
+<div class="card">
+    <div class="card-header">
+        <i class="fas fa-history"></i> Lista logów
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Data i czas</th>
+                        <th>Użytkownik</th>
+                        <th>Akcja</th>
+                        <th>Zgłoszenie</th>
+                        <th>Szczegóły</th>
+                        <th>Adres IP</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for log in logs %}
+                    <tr>
+                        <td>{{ log.created_at|date:"d.m.Y H:i:s" }}</td>
+                        <td>
+                            {{ log.user.username }}
+                            {% if log.user.profile.role == 'admin' %}
+                                <span class="badge badge-danger">Admin</span>
+                            {% elif log.user.profile.role == 'moderator' %}
+                                <span class="badge badge-info">Moderator</span>
+                            {% else %}
+                                <span class="badge badge-secondary">Klient</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ log.get_action_type_display }}</td>
+                        <td>
+                            {% if log.ticket %}
+                            <a href="{% url 'ticket_detail' log.ticket.pk %}">#{{ log.ticket.id }}</a>
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        <td>{{ log.description|default:"-" }}</td>
+                        <td>{{ log.ip_address|default:"-" }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-info">
+    <p>Nie znaleziono logów spełniających wybrane kryteria.</p>
+</div>
+{% endif %}
+{% endblock %}

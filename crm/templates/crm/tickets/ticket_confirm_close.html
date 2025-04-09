@@ -1,0 +1,29 @@
+{% extends 'crm/base.html' %}
+
+{% block title %}Zamknij zgłoszenie | System Helpdesk{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header text-white bg-secondary">
+                <i class="fas fa-lock"></i> Zamknij zgłoszenie
+            </div>
+            <div class="card-body">
+                <h5 class="card-title">Czy na pewno chcesz zamknąć to zgłoszenie?</h5>
+                <p>
+                    <strong>{{ ticket.title }}</strong><br>
+                    Status: {{ ticket.get_status_display }}<br>
+                    Priorytet: {{ ticket.get_priority_display }}
+                </p>
+                <p class="text-muted">Zamknięcie zgłoszenia oznacza, że sprawa została rozwiązana i nie wymaga dalszych działań.</p>
+                <form method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-secondary">Zamknij zgłoszenie</button>
+                    <a href="{% url 'ticket_detail' ticket.pk %}" class="btn btn-outline-secondary">Anuluj</a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

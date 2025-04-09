@@ -1,7 +1,7 @@
 {% extends 'crm/base.html' %}
 {% load crispy_forms_tags %}
 
-{% block title %}Rejestracja | System CRM{% endblock %}
+{% block title %}Rejestracja | System Helpdesk{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
@@ -11,8 +11,12 @@
             <div class="card-body">
                 <form method="post">
                     {% csrf_token %}
+                    <h5>Dane konta</h5>
                     {{ form|crispy }}
-                    <button type="submit" class="btn btn-primary btn-block">Zarejestruj</button>
+                    <hr>
+                    <h5>Dane profilu</h5>
+                    {{ profile_form|crispy }}
+                    <button type="submit" class="btn btn-primary btn-block mt-4">Zarejestruj</button>
                 </form>
                 <hr>
                 <div class="text-center">

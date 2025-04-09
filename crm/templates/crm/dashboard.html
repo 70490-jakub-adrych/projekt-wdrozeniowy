@@ -1,9 +1,9 @@
 {% extends 'crm/base.html' %}
 
-{% block title %}Panel Główny | System CRM{% endblock %}
+{% block title %}Panel Główny | System Helpdesk{% endblock %}
 
 {% block content %}
-<div class="row">
+<div class="row mb-3">
     <div class="col-md-12">
         <h2>Panel Główny</h2>
         <hr>
@@ -11,115 +11,311 @@
 </div>
 
 <div class="row">
-    <div class="col-md-4">
-        <div class="card bg-primary text-white mb-4">
+    <div class="col-md-12">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-chart-pie mr-1"></i>
+                Statystyki zgłoszeń
+            </div>
             <div class="card-body">
-                <h5 class="card-title">Kontakty</h5>
-                <p class="card-text display-4">{{ contacts_count }}</p>
-            </div>
-            <div class="card-footer d-flex align-items-center justify-content-between">
-                <a class="text-white stretched-link" href="{% url 'contact_list' %}">Szczegóły</a>
-                <div class="small text-white"><i class="fas fa-angle-right"></i></div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card bg-warning text-white mb-4">
-            <div class="card-body">
-                <h5 class="card-title">Organizacje</h5>
-                <p class="card-text display-4">{{ organizations_count }}</p>
-            </div>
-            <div class="card-footer d-flex align-items-center justify-content-between">
-                <a class="text-white stretched-link" href="#">Szczegóły</a>
-                <div class="small text-white"><i class="fas fa-angle-right"></i></div>
-            </div>
-        </div>
-    </div>
-    <div class="col-md-4">
-        <div class="card bg-success text-white mb-4">
-            <div class="card-body">
-                <h5 class="card-title">Umowy</h5>
-                <p class="card-text display-4">{{ deals_count }}</p>
-            </div>
-            <div class="card-footer d-flex align-items-center justify-content-between">
-                <a class="text-white stretched-link" href="#">Szczegóły</a>
-                <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+                <div class="row">
+                    <div class="col">
+                        <div class="bg-primary text-white p-3 rounded text-center">
+                            <h4>{{ new_tickets }}</h4>
+                            <p class="mb-0">Nowe</p>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="bg-info text-white p-3 rounded text-center">
+                            <h4>{{ in_progress_tickets }}</h4>
+                            <p class="mb-0">W trakcie</p>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="bg-warning text-white p-3 rounded text-center">
+                            <h4>{{ waiting_tickets }}</h4>
+                            <p class="mb-0">Oczekujące</p>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="bg-success text-white p-3 rounded text-center">
+                            <h4>{{ resolved_tickets }}</h4>
+                            <p class="mb-0">Rozwiązane</p>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="bg-secondary text-white p-3 rounded text-center">
+                            <h4>{{ closed_tickets }}</h4>
+                            <p class="mb-0">Zamknięte</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="row mt-4">
+{% if user.profile.role == 'admin' or user.profile.role == 'moderator' %}
+<div class="row">
     <div class="col-md-6">
         <div class="card mb-4">
             <div class="card-header">
-                <i class="fas fa-user mr-1"></i>
-                Ostatnie Kontakty
+                <i class="fas fa-tasks mr-1"></i>
+                Przypisane zgłoszenia
             </div>
             <div class="card-body">
-                {% if recent_contacts %}
+                {% if assigned_tickets %}
                 <div class="table-responsive">
-                    <table class="table table-bordered" width="100%" cellspacing="0">
+                    <table class="table">
                         <thead>
                             <tr>
-                                <th>Imię i Nazwisko</th>
+                                <th>ID</th>
+                                <th>Tytuł</th>
+                                <th>Priorytet</th>
                                 <th>Status</th>
-                                <th>Data utworzenia</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for contact in recent_contacts %}
+                            {% for ticket in assigned_tickets %}
                             <tr>
-                                <td><a href="{% url 'contact_detail' contact.pk %}">{{ contact.first_name }} {{ contact.last_name }}</a></td>
-                                <td>{{ contact.get_status_display }}</td>
-                                <td>{{ contact.created_at|date:"d.m.Y" }}</td>
+                                <td>#{{ ticket.id }}</td>
+                                <td><a href="{% url 'ticket_detail' ticket.pk %}">{{ ticket.title }}</a></td>
+                                <td>
+                                    <span class="badge 
+                                        {% if ticket.priority == 'low' %}badge-secondary
+                                        {% elif ticket.priority == 'medium' %}badge-info
+                                        {% elif ticket.priority == 'high' %}badge-warning
+                                        {% elif ticket.priority == 'critical' %}badge-danger
+                                        {% endif %}">
+                                        {{ ticket.get_priority_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge 
+                                        {% if ticket.status == 'new' %}badge-primary
+                                        {% elif ticket.status == 'in_progress' %}badge-info
+                                        {% elif ticket.status == 'waiting' %}badge-warning
+                                        {% elif ticket.status == 'resolved' %}badge-success
+                                        {% elif ticket.status == 'closed' %}badge-secondary
+                                        {% endif %}">
+                                        {{ ticket.get_status_display }}
+                                    </span>
+                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
                 {% else %}
-                <p>Nie znaleziono kontaktów.</p>
+                <p>Brak przypisanych zgłoszeń.</p>
                 {% endif %}
             </div>
-            <div class="card-footer small text-muted">
-                <a href="{% url 'contact_create' %}" class="btn btn-sm btn-primary">Dodaj nowy kontakt</a>
+            <div class="card-footer">
+                <a href="{% url 'ticket_list' %}" class="btn btn-sm btn-primary">Zobacz wszystkie</a>
             </div>
         </div>
     </div>
     <div class="col-md-6">
         <div class="card mb-4">
             <div class="card-header">
-                <i class="fas fa-handshake mr-1"></i>
-                Ostatnie Umowy
+                <i class="fas fa-bell mr-1"></i>
+                Nieprzypisane zgłoszenia
             </div>
             <div class="card-body">
-                {% if recent_deals %}
+                {% if unassigned_tickets %}
                 <div class="table-responsive">
-                    <table class="table table-bordered" width="100%" cellspacing="0">
+                    <table class="table">
                         <thead>
                             <tr>
+                                <th>ID</th>
                                 <th>Tytuł</th>
-                                <th>Wartość</th>
-                                <th>Etap</th>
+                                <th>Organizacja</th>
+                                <th>Priorytet</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for deal in recent_deals %}
+                            {% for ticket in unassigned_tickets %}
                             <tr>
-                                <td>{{ deal.title }}</td>
-                                <td>{{ deal.value }} zł</td>
-                                <td>{{ deal.get_stage_display }}</td>
+                                <td>#{{ ticket.id }}</td>
+                                <td><a href="{% url 'ticket_detail' ticket.pk %}">{{ ticket.title }}</a></td>
+                                <td>{{ ticket.organization.name }}</td>
+                                <td>
+                                    <span class="badge 
+                                        {% if ticket.priority == 'low' %}badge-secondary
+                                        {% elif ticket.priority == 'medium' %}badge-info
+                                        {% elif ticket.priority == 'high' %}badge-warning
+                                        {% elif ticket.priority == 'critical' %}badge-danger
+                                        {% endif %}">
+                                        {{ ticket.get_priority_display }}
+                                    </span>
+                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
                 {% else %}
-                <p>Nie znaleziono umów.</p>
+                <p>Brak nieprzypisanych zgłoszeń.</p>
                 {% endif %}
+            </div>
+            <div class="card-footer">
+                <a href="{% url 'ticket_list' %}" class="btn btn-sm btn-primary">Zobacz wszystkie</a>
             </div>
         </div>
     </div>
 </div>
+
+<div class="row">
+    <div class="col-md-12">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-history mr-1"></i>
+                Ostatnie aktywności
+            </div>
+            <div class="card-body">
+                {% if recent_activities %}
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Użytkownik</th>
+                                <th>Akcja</th>
+                                <th>Szczegóły</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for activity in recent_activities %}
+                            <tr>
+                                <td>{{ activity.created_at|date:"d.m.Y H:i" }}</td>
+                                <td>{{ activity.user.username }}</td>
+                                <td>{{ activity.get_action_type_display }}</td>
+                                <td>
+                                    {% if activity.ticket %}
+                                    <a href="{% url 'ticket_detail' activity.ticket.pk %}">{{ activity.description|default:activity.ticket.title }}</a>
+                                    {% else %}
+                                    {{ activity.description }}
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p>Brak aktywności.</p>
+                {% endif %}
+            </div>
+            {% if user.profile.role == 'admin' %}
+            <div class="card-footer">
+                <a href="{% url 'activity_logs' %}" class="btn btn-sm btn-primary">Zobacz wszystkie logi</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% else %}
+<!-- Dla klientów -->
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-ticket-alt mr-1"></i>
+                Twoje ostatnie zgłoszenia
+            </div>
+            <div class="card-body">
+                {% if user_tickets %}
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Tytuł</th>
+                                <th>Status</th>
+                                <th>Data</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ticket in user_tickets %}
+                            <tr>
+                                <td>#{{ ticket.id }}</td>
+                                <td><a href="{% url 'ticket_detail' ticket.pk %}">{{ ticket.title }}</a></td>
+                                <td>
+                                    <span class="badge 
+                                        {% if ticket.status == 'new' %}badge-primary
+                                        {% elif ticket.status == 'in_progress' %}badge-info
+                                        {% elif ticket.status == 'waiting' %}badge-warning
+                                        {% elif ticket.status == 'resolved' %}badge-success
+                                        {% elif ticket.status == 'closed' %}badge-secondary
+                                        {% endif %}">
+                                        {{ ticket.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>{{ ticket.created_at|date:"d.m.Y" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p>Nie utworzyłeś jeszcze żadnych zgłoszeń.</p>
+                {% endif %}
+            </div>
+            <div class="card-footer">
+                <a href="{% url 'ticket_create' %}" class="btn btn-sm btn-primary">Utwórz zgłoszenie</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-building mr-1"></i>
+                Zgłoszenia Twojej organizacji
+            </div>
+            <div class="card-body">
+                {% if org_recent_tickets %}
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Tytuł</th>
+                                <th>Status</th>
+                                <th>Utworzone przez</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ticket in org_recent_tickets %}
+                            <tr>
+                                <td>#{{ ticket.id }}</td>
+                                <td><a href="{% url 'ticket_detail' ticket.pk %}">{{ ticket.title }}</a></td>
+                                <td>
+                                    <span class="badge 
+                                        {% if ticket.status == 'new' %}badge-primary
+                                        {% elif ticket.status == 'in_progress' %}badge-info
+                                        {% elif ticket.status == 'waiting' %}badge-warning
+                                        {% elif ticket.status == 'resolved' %}badge-success
+                                        {% elif ticket.status == 'closed' %}badge-secondary
+                                        {% endif %}">
+                                        {{ ticket.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>{{ ticket.created_by.username }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p>Brak zgłoszeń w Twojej organizacji.</p>
+                {% endif %}
+            </div>
+            <div class="card-footer">
+                <a href="{% url 'ticket_list' %}" class="btn btn-sm btn-primary">Zobacz wszystkie</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 {% endblock %}

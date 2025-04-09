@@ -1,0 +1,35 @@
+{% extends 'crm/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}
+    {% if organization %}Edytuj organizację{% else %}Nowa organizacja{% endif %} | System Helpdesk
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-{% if organization %}edit{% else %}plus{% endif %}"></i> 
+                {% if organization %}Edytuj organizację{% else %}Nowa organizacja{% endif %}
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    {{ form|crispy }}
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save"></i> Zapisz
+                        </button>
+                        {% if organization %}
+                            <a href="{% url 'organization_detail' organization.pk %}" class="btn btn-secondary">Anuluj</a>
+                        {% else %}
+                            <a href="{% url 'organization_list' %}" class="btn btn-secondary">Anuluj</a>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

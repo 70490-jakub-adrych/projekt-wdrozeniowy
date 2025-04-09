@@ -1,0 +1,211 @@
+{% extends 'crm/base.html' %}
+
+{% block title %}{{ organization.name }} | System Helpdesk{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>{{ organization.name }}</h2>
+    <div>
+        {% if user.profile.role == 'admin' %}
+        <a href="{% url 'organization_update' organization.pk %}" class="btn btn-primary">
+            <i class="fas fa-edit"></i> Edytuj
+        </a>
+        {% endif %}
+        <a href="{% url 'organization_list' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Powrót
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Informacje o organizacji -->
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-building"></i> Szczegóły organizacji
+            </div>
+            <div class="card-body">
+                {% if organization.website %}
+                <div class="row mb-3">
+                    <div class="col-md-4 font-weight-bold">Strona internetowa:</div>
+                    <div class="col-md-8">
+                        <a href="{{ organization.website }}" target="_blank">{{ organization.website }}</a>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if organization.address %}
+                <div class="row mb-3">
+                    <div class="col-md-4 font-weight-bold">Adres:</div>
+                    <div class="col-md-8">{{ organization.address }}</div>
+                </div>
+                {% endif %}
+                
+                <div class="row mb-3">
+                    <div class="col-md-4 font-weight-bold">Data utworzenia:</div>
+                    <div class="col-md-8">{{ organization.created_at|date:"d.m.Y" }}</div>
+                </div>
+                
+                {% if organization.description %}
+                <div class="row mb-3">
+                    <div class="col-md-4 font-weight-bold">Opis:</div>
+                    <div class="col-md-8">{{ organization.description|linebreaks }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Statystyki zgłoszeń -->
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-chart-pie"></i> Statystyki zgłoszeń
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-4">
+                        <div class="bg-primary text-white rounded p-2 mb-2">
+                            <h5>{{ tickets.filter.status='new'|length }}</h5>
+                        </div>
+                        <p>Nowe</p>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="bg-warning text-white rounded p-2 mb-2">
+                            <h5>{{ tickets.filter.status='in_progress'|length }}</h5>
+                        </div>
+                        <p>W trakcie</p>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="bg-success text-white rounded p-2 mb-2">
+                            <h5>{{ tickets.filter.status='resolved'|length }}</h5>
+                        </div>
+                        <p>Rozwiązane</p>
+                    </div>
+                </div>
+                <hr>
+                <p class="text-center">Całkowita liczba zgłoszeń: <strong>{{ tickets|length }}</strong></p>
+                <div class="text-center">
+                    <a href="{% url 'ticket_create' %}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-plus"></i> Nowe zgłoszenie
+                    </a>
+                    <a href="{% url 'ticket_list' %}" class="btn btn-outline-secondary btn-sm">
+                        <i class="fas fa-list"></i> Lista zgłoszeń
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lista użytkowników -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-users"></i> Użytkownicy organizacji ({{ members|length }})
+            </div>
+            <div class="card-body">
+                {% if members %}
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Nazwa użytkownika</th>
+                                <th>Imię i nazwisko</th>
+                                <th>Email</th>
+                                <th>Telefon</th>
+                                <th>Rola</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for member in members %}
+                            <tr>
+                                <td>{{ member.user.username }}</td>
+                                <td>{{ member.user.first_name }} {{ member.user.last_name }}</td>
+                                <td>{{ member.user.email }}</td>
+                                <td>{{ member.phone|default:"Brak" }}</td>
+                                <td>
+                                    {% if member.role == 'admin' %}
+                                        <span class="badge badge-danger">Administrator</span>
+                                    {% elif member.role == 'moderator' %}
+                                        <span class="badge badge-info">Moderator</span>
+                                    {% else %}
+                                        <span class="badge badge-secondary">Klient</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p>Brak użytkowników przypisanych do tej organizacji.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Ostatnie zgłoszenia -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-ticket-alt"></i> Ostatnie zgłoszenia
+            </div>
+            <div class="card-body">
+                {% if tickets %}
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Tytuł</th>
+                                <th>Status</th>
+                                <th>Priorytet</th>
+                                <th>Utworzone przez</th>
+                                <th>Data</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ticket in tickets|slice:":5" %}
+                            <tr>
+                                <td>#{{ ticket.id }}</td>
+                                <td><a href="{% url 'ticket_detail' ticket.pk %}">{{ ticket.title }}</a></td>
+                                <td>
+                                    <span class="badge 
+                                        {% if ticket.status == 'new' %}badge-primary
+                                        {% elif ticket.status == 'in_progress' %}badge-info
+                                        {% elif ticket.status == 'waiting' %}badge-warning
+                                        {% elif ticket.status == 'resolved' %}badge-success
+                                        {% elif ticket.status == 'closed' %}badge-secondary
+                                        {% endif %}">
+                                        {{ ticket.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge 
+                                        {% if ticket.priority == 'low' %}badge-secondary
+                                        {% elif ticket.priority == 'medium' %}badge-info
+                                        {% elif ticket.priority == 'high' %}badge-warning
+                                        {% elif ticket.priority == 'critical' %}badge-danger
+                                        {% endif %}">
+                                        {{ ticket.get_priority_display }}
+                                    </span>
+                                </td>
+                                <td>{{ ticket.created_by.username }}</td>
+                                <td>{{ ticket.created_at|date:"d.m.Y" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p>Brak zgłoszeń dla tej organizacji.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,150 @@
+{% extends 'crm/base.html' %}
+
+{% block title %}Zgłoszenia | System Helpdesk{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Zgłoszenia</h2>
+    <a href="{% url 'ticket_create' %}" class="btn btn-primary">
+        <i class="fas fa-plus"></i> Nowe zgłoszenie
+    </a>
+</div>
+
+<!-- Filtry -->
+<div class="card mb-4">
+    <div class="card-header">
+        <i class="fas fa-filter"></i> Filtry
+    </div>
+    <div class="card-body">
+        <form method="get" class="form-inline">
+            <div class="form-group mr-3">
+                <label for="status" class="mr-2">Status:</label>
+                <select name="status" id="status" class="form-control form-control-sm">
+                    <option value="" {% if not status_filter %}selected{% endif %}>Wszystkie</option>
+                    <option value="new" {% if status_filter == 'new' %}selected{% endif %}>Nowe</option>
+                    <option value="in_progress" {% if status_filter == 'in_progress' %}selected{% endif %}>W trakcie</option>
+                    <option value="waiting" {% if status_filter == 'waiting' %}selected{% endif %}>Oczekujące</option>
+                    <option value="resolved" {% if status_filter == 'resolved' %}selected{% endif %}>Rozwiązane</option>
+                    <option value="closed" {% if status_filter == 'closed' %}selected{% endif %}>Zamknięte</option>
+                </select>
+            </div>
+            <div class="form-group mr-3">
+                <label for="priority" class="mr-2">Priorytet:</label>
+                <select name="priority" id="priority" class="form-control form-control-sm">
+                    <option value="" {% if not priority_filter %}selected{% endif %}>Wszystkie</option>
+                    <option value="low" {% if priority_filter == 'low' %}selected{% endif %}>Niski</option>
+                    <option value="medium" {% if priority_filter == 'medium' %}selected{% endif %}>Średni</option>
+                    <option value="high" {% if priority_filter == 'high' %}selected{% endif %}>Wysoki</option>
+                    <option value="critical" {% if priority_filter == 'critical' %}selected{% endif %}>Krytyczny</option>
+                </select>
+            </div>
+            <div class="form-group mr-3">
+                <label for="category" class="mr-2">Kategoria:</label>
+                <select name="category" id="category" class="form-control form-control-sm">
+                    <option value="" {% if not category_filter %}selected{% endif %}>Wszystkie</option>
+                    <option value="hardware" {% if category_filter == 'hardware' %}selected{% endif %}>Sprzęt</option>
+                    <option value="software" {% if category_filter == 'software' %}selected{% endif %}>Oprogramowanie</option>
+                    <option value="network" {% if category_filter == 'network' %}selected{% endif %}>Sieć</option>
+                    <option value="account" {% if category_filter == 'account' %}selected{% endif %}>Konto</option>
+                    <option value="other" {% if category_filter == 'other' %}selected{% endif %}>Inne</option>
+                </select>
+            </div>
+            <div class="form-group mr-3">
+                <label for="sort_by" class="mr-2">Sortuj wg:</label>
+                <select name="sort_by" id="sort_by" class="form-control form-control-sm">
+                    <option value="-created_at" {% if sort_by == '-created_at' %}selected{% endif %}>Najnowsze</option>
+                    <option value="created_at" {% if sort_by == 'created_at' %}selected{% endif %}>Najstarsze</option>
+                    <option value="-priority" {% if sort_by == '-priority' %}selected{% endif %}>Priorytet (malejąco)</option>
+                    <option value="priority" {% if sort_by == 'priority' %}selected{% endif %}>Priorytet (rosnąco)</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-sm btn-primary">Zastosuj filtry</button>
+            <a href="{% url 'ticket_list' %}" class="btn btn-sm btn-outline-secondary ml-2">Resetuj</a>
+        </form>
+    </div>
+</div>
+
+<!-- Lista zgłoszeń -->
+{% if tickets %}
+<div class="card">
+    <div class="card-header">
+        <i class="fas fa-ticket-alt"></i> Lista zgłoszeń
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Tytuł</th>
+                        <th>Organizacja</th>
+                        <th>Kategoria</th>
+                        <th>Priorytet</th>
+                        <th>Status</th>
+                        <th>Przypisane do</th>
+                        <th>Data utworzenia</th>
+                        <th>Akcje</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ticket in tickets %}
+                    <tr>
+                        <td>#{{ ticket.id }}</td>
+                        <td><a href="{% url 'ticket_detail' ticket.pk %}">{{ ticket.title }}</a></td>
+                        <td>{{ ticket.organization.name }}</td>
+                        <td>{{ ticket.get_category_display }}</td>
+                        <td>
+                            <span class="badge 
+                                {% if ticket.priority == 'low' %}badge-secondary
+                                {% elif ticket.priority == 'medium' %}badge-info
+                                {% elif ticket.priority == 'high' %}badge-warning
+                                {% elif ticket.priority == 'critical' %}badge-danger
+                                {% endif %}">
+                                {{ ticket.get_priority_display }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge 
+                                {% if ticket.status == 'new' %}badge-primary
+                                {% elif ticket.status == 'in_progress' %}badge-info
+                                {% elif ticket.status == 'waiting' %}badge-warning
+                                {% elif ticket.status == 'resolved' %}badge-success
+                                {% elif ticket.status == 'closed' %}badge-secondary
+                                {% endif %}">
+                                {{ ticket.get_status_display }}
+                            </span>
+                        </td>
+                        <td>{% if ticket.assigned_to %}{{ ticket.assigned_to.username }}{% else %}<span class="text-muted">Nieprzypisane</span>{% endif %}</td>
+                        <td>{{ ticket.created_at|date:"d.m.Y H:i" }}</td>
+                        <td>
+                            <a href="{% url 'ticket_detail' ticket.pk %}" class="btn btn-sm btn-info" title="Szczegóły">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            <a href="{% url 'ticket_update' ticket.pk %}" class="btn btn-sm btn-primary" title="Edytuj">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            {% if ticket.status != 'closed' %}
+                            <a href="{% url 'ticket_close' ticket.pk %}" class="btn btn-sm btn-secondary" title="Zamknij">
+                                <i class="fas fa-lock"></i>
+                            </a>
+                            {% else %}
+                            {% if user.profile.role != 'client' %}
+                            <a href="{% url 'ticket_reopen' ticket.pk %}" class="btn btn-sm btn-success" title="Otwórz ponownie">
+                                <i class="fas fa-lock-open"></i>
+                            </a>
+                            {% endif %}
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-info">
+    <p>Nie znaleziono zgłoszeń spełniających wybrane kryteria.</p>
+</div>
+{% endif %}
+{% endblock %}
