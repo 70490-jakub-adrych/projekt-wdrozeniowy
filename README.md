@@ -6,7 +6,7 @@ Poniżej znajdują się komendy niezbędne do skonfigurowania i uruchomienia sys
 
 ```bash
 # Klonowanie repozytorium z GitHub
-git clone https://github.com/username/projekt-wdrozeniowy-crm.git
+git clone https://github.com/70490-jakub-adrych/projekt-wdrozeniowy/tree/main
 cd projekt-wdrozeniowy-crm/projekt-wdrozeniowy
 ```
 
