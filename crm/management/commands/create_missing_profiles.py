@@ -16,16 +16,26 @@ class Command(BaseCommand):
             except:
                 # Create profile if it doesn't exist
                 self.stdout.write(f"Creating profile for user: {user.username}")
+                
+                # Determine role based on superuser status
+                if user.is_superuser:
+                    role = 'admin'
+                    group_name = 'Admin'
+                else:
+                    role = 'client'
+                    group_name = 'Klient'
+                
+                # Create profile with appropriate role
                 profile = UserProfile.objects.create(
                     user=user,
-                    role='client'  # Default role
+                    role=role
                 )
                 
-                # Ensure client group exists and add user to it
-                client_group, created = Group.objects.get_or_create(name='Klient')
-                user.groups.add(client_group)
+                # Ensure group exists and add user to it
+                user_group, created = Group.objects.get_or_create(name=group_name)
+                user.groups.add(user_group)
                 
-                users_without_profile.append(user.username)
+                users_without_profile.append(f"{user.username} ({role})")
         
         if users_without_profile:
             self.stdout.write(self.style.SUCCESS(f'Created profiles for {len(users_without_profile)} users: {", ".join(users_without_profile)}'))

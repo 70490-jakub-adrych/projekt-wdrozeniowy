@@ -105,15 +105,29 @@ def dashboard(request):
     except:
         # Create a profile if missing
         from crm.models import UserProfile
+        from django.contrib.auth.models import Group
+        
+        # Determine appropriate role based on superuser status
+        if user.is_superuser:
+            role = 'admin'
+            group_name = 'Admin'
+            message = 'Twój profil administratora został utworzony.'
+        else:
+            role = 'client'
+            group_name = 'Klient'
+            message = 'Twój profil został utworzony. Skontaktuj się z administratorem, aby uzyskać odpowiednie uprawnienia.'
+        
+        # Create profile with appropriate role
         user_profile = UserProfile.objects.create(
             user=user,
-            role='client'  # Default role
+            role=role
         )
-        # Also add user to client group
-        from django.contrib.auth.models import Group
-        client_group, created = Group.objects.get_or_create(name='Klient')
-        user.groups.add(client_group)
-        messages.info(request, 'Twój profil został utworzony. Skontaktuj się z administratorem, aby uzyskać odpowiednie uprawnienia.')
+        
+        # Add user to appropriate group
+        user_group, created = Group.objects.get_or_create(name=group_name)
+        user.groups.add(user_group)
+        
+        messages.info(request, message)
     
     # Statystyki dla wszystkich użytkowników
     if user.profile.role == 'admin' or user.profile.role == 'moderator':
