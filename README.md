@@ -2,13 +2,21 @@
 
 Poniżej znajdują się komendy niezbędne do skonfigurowania i uruchomienia systemu Helpdesk.
 
-## 1. Instalacja pakietów
+## 1. Klonowanie repozytorium
+
+```bash
+# Klonowanie repozytorium z GitHub
+git clone https://github.com/username/projekt-wdrozeniowy-crm.git
+cd projekt-wdrozeniowy-crm/projekt-wdrozeniowy
+```
+
+## 2. Instalacja pakietów
 
 ```bash
 pip install -r requirements.txt
 ```
 
-## 2. Tworzenie i aplikacja migracji
+## 3. Tworzenie i aplikacja migracji
 
 ```bash
 # Tworzenie migracji na podstawie modeli
@@ -18,21 +26,21 @@ python manage.py makemigrations
 python manage.py migrate
 ```
 
-## 3. Tworzenie użytkownika administratora
+## 4. Tworzenie użytkownika administratora
 
 ```bash
 # Tworzenie konta superużytkownika
 python manage.py createsuperuser
 ```
 
-## 4. Tworzenie profili dla istniejących użytkowników
+## 5. Tworzenie profili dla istniejących użytkowników
 
 ```bash
 # Automatyczne tworzenie profili dla istniejących użytkowników
 python manage.py create_missing_profiles
 ```
 
-## 5. Uruchomienie aplikacji
+## 6. Uruchomienie aplikacji
 
 ```bash
 # Uruchomienie serwera deweloperskiego
