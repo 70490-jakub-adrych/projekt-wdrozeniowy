@@ -1,0 +1,32 @@
+{% extends 'crm/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}
+    {% if contact %}Edytuj Kontakt{% else %}Nowy Kontakt{% endif %} | System CRM
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header">
+                {% if contact %}Edytuj Kontakt{% else %}Nowy Kontakt{% endif %}
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    {{ form|crispy }}
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary">Zapisz</button>
+                        {% if contact %}
+                            <a href="{% url 'contact_detail' contact.pk %}" class="btn btn-secondary">Anuluj</a>
+                        {% else %}
+                            <a href="{% url 'contact_list' %}" class="btn btn-secondary">Anuluj</a>
+                        {% endif %}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

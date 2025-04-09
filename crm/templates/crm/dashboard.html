@@ -1,0 +1,125 @@
+{% extends 'crm/base.html' %}
+
+{% block title %}Panel Główny | System CRM{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-12">
+        <h2>Panel Główny</h2>
+        <hr>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-4">
+        <div class="card bg-primary text-white mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Kontakty</h5>
+                <p class="card-text display-4">{{ contacts_count }}</p>
+            </div>
+            <div class="card-footer d-flex align-items-center justify-content-between">
+                <a class="text-white stretched-link" href="{% url 'contact_list' %}">Szczegóły</a>
+                <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-warning text-white mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Organizacje</h5>
+                <p class="card-text display-4">{{ organizations_count }}</p>
+            </div>
+            <div class="card-footer d-flex align-items-center justify-content-between">
+                <a class="text-white stretched-link" href="#">Szczegóły</a>
+                <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card bg-success text-white mb-4">
+            <div class="card-body">
+                <h5 class="card-title">Umowy</h5>
+                <p class="card-text display-4">{{ deals_count }}</p>
+            </div>
+            <div class="card-footer d-flex align-items-center justify-content-between">
+                <a class="text-white stretched-link" href="#">Szczegóły</a>
+                <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-user mr-1"></i>
+                Ostatnie Kontakty
+            </div>
+            <div class="card-body">
+                {% if recent_contacts %}
+                <div class="table-responsive">
+                    <table class="table table-bordered" width="100%" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th>Imię i Nazwisko</th>
+                                <th>Status</th>
+                                <th>Data utworzenia</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for contact in recent_contacts %}
+                            <tr>
+                                <td><a href="{% url 'contact_detail' contact.pk %}">{{ contact.first_name }} {{ contact.last_name }}</a></td>
+                                <td>{{ contact.get_status_display }}</td>
+                                <td>{{ contact.created_at|date:"d.m.Y" }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p>Nie znaleziono kontaktów.</p>
+                {% endif %}
+            </div>
+            <div class="card-footer small text-muted">
+                <a href="{% url 'contact_create' %}" class="btn btn-sm btn-primary">Dodaj nowy kontakt</a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-handshake mr-1"></i>
+                Ostatnie Umowy
+            </div>
+            <div class="card-body">
+                {% if recent_deals %}
+                <div class="table-responsive">
+                    <table class="table table-bordered" width="100%" cellspacing="0">
+                        <thead>
+                            <tr>
+                                <th>Tytuł</th>
+                                <th>Wartość</th>
+                                <th>Etap</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for deal in recent_deals %}
+                            <tr>
+                                <td>{{ deal.title }}</td>
+                                <td>{{ deal.value }} zł</td>
+                                <td>{{ deal.get_stage_display }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p>Nie znaleziono umów.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

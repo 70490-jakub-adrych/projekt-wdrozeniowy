@@ -1,0 +1,51 @@
+{% extends 'crm/base.html' %}
+
+{% block title %}Witamy w Systemie CRM{% endblock %}
+
+{% block content %}
+<div class="jumbotron text-center">
+    <h1 class="display-4">Witamy w Systemie CRM</h1>
+    <p class="lead">Skutecznie zarządzaj kontaktami, organizacjami i umowami z naszym systemem CRM</p>
+    <hr class="my-4">
+    <p>Rozpocznij od zalogowania się lub utworzenia nowego konta</p>
+    <p class="lead">
+        <a href="{% url 'login' %}" class="btn btn-primary btn-lg mr-2">Logowanie</a>
+        <a href="{% url 'register' %}" class="btn btn-outline-primary btn-lg">Rejestracja</a>
+    </p>
+</div>
+
+<div class="row mt-5">
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="fas fa-user-circle fa-4x mb-3 text-primary"></i>
+                <h5 class="card-title">Zarządzanie Kontaktami</h5>
+                <p class="card-text">Efektywna organizacja i zarządzanie kontaktami.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="fas fa-building fa-4x mb-3 text-warning"></i>
+                <h5 class="card-title">Śledzenie Organizacji</h5>
+                <p class="card-text">Monitorowanie wszystkich relacji biznesowych.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-body text-center">
+                <i class="fas fa-handshake fa-4x mb-3 text-success"></i>
+                <h5 class="card-title">Pipeline Umów</h5>
+                <p class="card-text">Monitorowanie umów od leada do finalizacji.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="text-center mt-5">
+    <h3>Zacznij zarządzać relacjami z klientami już dziś!</h3>
+    <p>Nasz system CRM pomaga śledzić ważne informacje i zachować organizację.</p>
+</div>
+{% endblock %}
