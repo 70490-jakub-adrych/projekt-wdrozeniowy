@@ -1,0 +1,23 @@
+<h2>{{ ticket.title }}</h2>
+<p><strong>Grupa problemu:</strong> {{ ticket.problem_group }}</p>
+<p><strong>Opis:</strong> {{ ticket.description }}</p>
+<p><strong>Status:</strong> {{ ticket.get_status_display }}</p>
+<p><strong>Data utworzenia:</strong> {{ ticket.created_at }}</p>
+{% if ticket.closed_at %}
+  <p><strong>Data zamknięcia:</strong> {{ ticket.closed_at }}</p>
+{% endif %}
+<p><strong>Załączniki:</strong></p>
+<ul>
+  {% for attachment in ticket.attachments.all %}
+    <li><a href="{{ attachment.file.url }}">{{ attachment.file.name }}</a></li>
+  {% empty %}
+    <li>Brak załączników.</li>
+  {% endfor %}
+</ul>
+{% if user.is_staff %}
+  <p><a href="{% url 'ticket_edit' ticket.id %}">Edytuj zgłoszenie</a></p>
+{% endif %}
+{% if not user.is_staff and ticket.status == 'pending_closure' %}
+  <p><a href="{% url 'ticket_close' ticket.id %}">Potwierdź zamknięcie zgłoszenia</a></p>
+{% endif %}
+<p><a href="{% url 'dashboard' %}">Powrót do dashboardu</a></p>

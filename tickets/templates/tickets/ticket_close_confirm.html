@@ -1,0 +1,7 @@
+<h2>Potwierdzenie zamknięcia zgłoszenia</h2>
+<p>Czy na pewno chcesz zamknąć zgłoszenie: "{{ ticket.title }}"?</p>
+<form method="post">
+  {% csrf_token %}
+  <button type="submit">Potwierdź zamknięcie</button>
+</form>
+<p><a href="{% url 'ticket_detail' ticket.id %}">Powrót do zgłoszenia</a></p>

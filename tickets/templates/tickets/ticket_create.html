@@ -1,0 +1,7 @@
+<h2>Dodaj nowe zgłoszenie</h2>
+<form method="post" enctype="multipart/form-data">
+  {% csrf_token %}
+  {{ form.as_p }}
+  <button type="submit">Wyślij zgłoszenie</button>
+</form>
+<p><a href="{% url 'dashboard' %}">Powrót do dashboardu</a></p>
