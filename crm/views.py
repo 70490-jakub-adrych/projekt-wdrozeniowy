@@ -56,13 +56,19 @@ def register(request):
         if form.is_valid() and profile_form.is_valid():
             user = form.save()
             
-            # Przypisanie do grupy Klient
-            client_group, created = Group.objects.get_or_create(name='Klient')
-            user.groups.add(client_group)
+            # Przypisanie do odpowiedniej grupy na podstawie roli
+            if user.is_superuser:
+                group, _ = Group.objects.get_or_create(name='Admin')
+                role = 'admin'
+            else:
+                group, _ = Group.objects.get_or_create(name='Klient')
+                role = 'client'
+            
+            user.groups.add(group)
             
             # Uzupełnienie profilu
             profile = user.profile
-            profile.role = 'client'
+            profile.role = role
             profile.phone = profile_form.cleaned_data.get('phone')
             profile.organization = profile_form.cleaned_data.get('organization')
             profile.save()
@@ -382,16 +388,18 @@ def ticket_create(request):
             ticket = form.save(commit=False)
             ticket.created_by = user
             
-            # Przypisanie organizacji
-            if user.profile.role == 'client':
-                # Klient może tworzyć zgłoszenia tylko dla swojej organizacji
-                ticket.organization = user.profile.organization
+            # Get the organization for the current user
+            # This assumes the user has a profile with an organization
+            if hasattr(request.user, 'profile') and request.user.profile.organization:
+                ticket.organization = request.user.profile.organization
+            # Alternative approach if user is directly related to organization
+            elif hasattr(request.user, 'organization'):
+                ticket.organization = request.user.organization
             else:
-                # Admin i moderator mogą wybierać organizację
-                org_id = request.POST.get('organization')
-                if org_id:
-                    ticket.organization = Organization.objects.get(id=org_id)
-            
+                # If no organization found and it's required, redirect with error
+                messages.error(request, "Cannot create ticket: No organization associated with your account.")
+                return redirect('dashboard')
+                
             ticket.save()
             log_activity(request, 'ticket_created', ticket, f"Utworzono zgłoszenie: '{ticket.title}'")
             messages.success(request, 'Zgłoszenie zostało utworzone!')
