@@ -25,6 +25,22 @@
                 <i class="fas fa-building"></i> Szczegóły organizacji
             </div>
             <div class="card-body">
+                {% if organization.email %}
+                <div class="row mb-3">
+                    <div class="col-md-4 font-weight-bold">Email:</div>
+                    <div class="col-md-8">
+                        <a href="mailto:{{ organization.email }}">{{ organization.email }}</a>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if organization.phone %}
+                <div class="row mb-3">
+                    <div class="col-md-4 font-weight-bold">Telefon:</div>
+                    <div class="col-md-8">{{ organization.phone }}</div>
+                </div>
+                {% endif %}
+                
                 {% if organization.website %}
                 <div class="row mb-3">
                     <div class="col-md-4 font-weight-bold">Strona internetowa:</div>
