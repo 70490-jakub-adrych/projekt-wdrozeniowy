@@ -86,8 +86,8 @@ def register(request):
 
 def custom_login_view(request):
     """Niestandardowy widok logowania z zapisywaniem logów"""
-    if request.user.is_authenticated:
-        log_activity(request, 'login')
+    # Always log login activity, since this view is only accessed after successful authentication
+    log_activity(request, 'login')
     return redirect('dashboard')
 
 

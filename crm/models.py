@@ -153,7 +153,7 @@ class TicketAttachment(models.Model):
 class ActivityLog(models.Model):
     """Model przechowujący logi aktywności w systemie"""
     ACTION_TYPES = (
-        ('login', 'Logowanie'),
+        ('login', 'Zalogowanie'),
         ('logout', 'Wylogowanie'),
         ('ticket_created', 'Utworzenie zgłoszenia'),
         ('ticket_updated', 'Aktualizacja zgłoszenia'),

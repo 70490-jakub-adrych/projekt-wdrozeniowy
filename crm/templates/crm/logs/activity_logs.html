@@ -21,7 +21,7 @@
                 <label for="action" class="mr-2">Akcja:</label>
                 <select name="action" id="action" class="form-control form-control-sm">
                     <option value="" {% if not action_filter %}selected{% endif %}>Wszystkie</option>
-                    <option value="login" {% if action_filter == 'login' %}selected{% endif %}>Logowanie</option>
+                    <option value="login" {% if action_filter == 'login' %}selected{% endif %}>Zalogowanie</option>
                     <option value="logout" {% if action_filter == 'logout' %}selected{% endif %}>Wylogowanie</option>
                     <option value="ticket_created" {% if action_filter == 'ticket_created' %}selected{% endif %}>Utworzenie zgłoszenia</option>
                     <option value="ticket_updated" {% if action_filter == 'ticket_updated' %}selected{% endif %}>Aktualizacja zgłoszenia</option>
