@@ -30,9 +30,7 @@ class UserProfile(models.Model):
 def create_user_profile(sender, instance, created, **kwargs):
     """Automatyczne tworzenie profilu dla nowego użytkownika"""
     if created:
-        # Create profile with role based on user type
-        role = 'admin' if instance.is_superuser else 'client'
-        UserProfile.objects.create(user=instance, role=role)
+        UserProfile.objects.create(user=instance)
 
 
 @receiver(post_save, sender=User)
@@ -44,8 +42,6 @@ def save_user_profile(sender, instance, **kwargs):
 class Organization(models.Model):
     """Model przechowujący informacje o organizacjach klientów"""
     name = models.CharField(max_length=255, verbose_name="Nazwa")
-    email = models.EmailField(blank=True, verbose_name="Email")
-    phone = models.CharField(max_length=20, blank=True, verbose_name="Telefon")
     website = models.URLField(blank=True, verbose_name="Strona internetowa")
     address = models.TextField(blank=True, verbose_name="Adres")
     description = models.TextField(blank=True, verbose_name="Opis")
@@ -93,7 +89,7 @@ class Ticket(models.Model):
     category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='other', verbose_name="Kategoria")
     created_by = models.ForeignKey(User, related_name='created_tickets', on_delete=models.CASCADE, verbose_name="Utworzony przez")
     assigned_to = models.ForeignKey(User, related_name='assigned_tickets', on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Przypisany do")
-    organization = models.ForeignKey('Organization', on_delete=models.CASCADE, verbose_name="Organizacja")
+    organization = models.ForeignKey(Organization, related_name='tickets', on_delete=models.CASCADE, verbose_name="Organizacja")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Data utworzenia")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Data aktualizacji")
     resolved_at = models.DateTimeField(null=True, blank=True, verbose_name="Data rozwiązania")

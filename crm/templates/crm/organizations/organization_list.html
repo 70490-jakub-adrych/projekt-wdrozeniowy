@@ -20,11 +20,10 @@
                 <thead>
                     <tr>
                         <th>Nazwa</th>
-                        <th>Email</th>
-                        <th>Telefon</th>
                         <th>Strona internetowa</th>
                         <th>Liczba użytkowników</th>
                         <th>Liczba zgłoszeń</th>
+                        <th>Data utworzenia</th>
                         <th>Akcje</th>
                     </tr>
                 </thead>
@@ -37,20 +36,6 @@
                             </a>
                         </td>
                         <td>
-                            {% if organization.email %}
-                            <a href="mailto:{{ organization.email }}">{{ organization.email }}</a>
-                            {% else %}
-                            <span class="text-muted">Brak</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if organization.phone %}
-                            {{ organization.phone }}
-                            {% else %}
-                            <span class="text-muted">Brak</span>
-                            {% endif %}
-                        </td>
-                        <td>
                             {% if organization.website %}
                             <a href="{{ organization.website }}" target="_blank">{{ organization.website }}</a>
                             {% else %}
@@ -59,6 +44,7 @@
                         </td>
                         <td>{{ organization.members.count }}</td>
                         <td>{{ organization.tickets.count }}</td>
+                        <td>{{ organization.created_at|date:"d.m.Y" }}</td>
                         <td>
                             <a href="{% url 'organization_detail' organization.pk %}" class="btn btn-sm btn-info" title="Szczegóły">
                                 <i class="fas fa-eye"></i>

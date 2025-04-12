@@ -31,11 +31,7 @@ class UserProfileForm(forms.ModelForm):
 class OrganizationForm(forms.ModelForm):
     class Meta:
         model = Organization
-        fields = ['name', 'email', 'phone', 'website', 'address', 'description']
-        widgets = {
-            'description': forms.Textarea(attrs={'rows': 4}),
-            'address': forms.Textarea(attrs={'rows': 3}),
-        }
+        fields = ['name', 'website', 'address', 'description']
 
 
 class TicketForm(forms.ModelForm):
