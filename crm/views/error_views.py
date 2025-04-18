@@ -53,7 +53,7 @@ def attachment_not_found(request, attachment_id):
     return render(request, 'crm/errors/404.html', {
         'item_type': 'załącznika',
         'item_id': attachment_id,
-        'message': f"Nie znaleziono załącznika o ID: {attachment_id}"
+        'message': f"Załącznik o ID #{attachment_id} nie istnieje lub został usunięty."
     }, status=404)
 
 def organization_not_found(request, organization_id):
@@ -65,12 +65,45 @@ def organization_not_found(request, organization_id):
         'message': f"Nie znaleziono organizacji o ID: {organization_id}"
     }, status=404)
 
+def logs_access_forbidden(request):
+    """Handle forbidden access to logs"""
+    log_error(request, '403_error', description="Attempted to access logs without proper permissions")
+    return render(request, 'crm/errors/403.html', {
+        'resource_type': 'logów',
+        'message': "Brak dostępu do logów"
+    }, status=403)
+
+def organization_access_forbidden(request, organization_id):
+    """Handle forbidden access to organizations by agents"""
+    log_error(request, '403_error', 
+             description=f"Agent attempted to access organization #{organization_id} without being assigned to it")
+    return render(request, 'crm/errors/403.html', {
+        'resource_type': 'organizacji',
+        'resource_id': organization_id,
+        'message': "Brak dostępu do tej organizacji"
+    }, status=403)
+
 # Add a function to test the 404 page even when DEBUG=True
 def test_404_page(request):
     """Force display of the 404 page for testing"""
-    return render(request, 'crm/errors/404.html', status=404)
+    return render(request, 'crm/errors/404.html', {
+        'message': 'To jest testowy błąd 404'
+    }, status=404)
 
 # Add a function to test the 403 page
 def test_403_page(request):
     """Force display of the 403 page for testing"""
-    return render(request, 'crm/errors/403.html', status=403)
+    return render(request, 'crm/errors/403.html', {
+        'message': 'To jest testowy błąd 403'
+    }, status=403)
+
+def feature_access_forbidden(request, feature_name):
+    """Handle forbidden access to specific features"""
+    log_error(request, '403_error', description=f"Attempted to access restricted feature: {feature_name}")
+    
+    context = {
+        'resource_type': feature_name,
+        'message': f"Brak uprawnień do {feature_name}"
+    }
+    
+    return render(request, 'crm/errors/403.html', context, status=403)

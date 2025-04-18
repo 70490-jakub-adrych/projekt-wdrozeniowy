@@ -1,20 +1,25 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.http import HttpResponseForbidden
+from django.http import Http404
 
 from ..models import UserProfile, Organization, Ticket
 from ..forms import OrganizationForm
+from .error_views import organization_not_found, organization_access_forbidden, forbidden_access
 
 
 @login_required
 def organization_list(request):
     """Widok listy organizacji"""
-    # Tylko admin może widzieć wszystkie organizacje
+    # Clients should not access the organizations list page at all
+    if request.user.profile.role == 'client':
+        return forbidden_access(request, "listy organizacji")
+    
+    # Only admin can see all organizations
     if request.user.profile.role == 'admin':
         organizations = Organization.objects.all()
     else:
-        # Agent i klient widzą tylko swoje organizacje
+        # Agent can only see their organizations
         organizations = request.user.profile.organizations.all()
     
     return render(request, 'crm/organizations/organization_list.html', {'organizations': organizations})
@@ -23,12 +28,22 @@ def organization_list(request):
 @login_required
 def organization_detail(request, pk):
     """Widok szczegółów organizacji"""
-    organization = get_object_or_404(Organization, pk=pk)
+    try:
+        organization = get_object_or_404(Organization, pk=pk)
+    except Http404:
+        return organization_not_found(request, pk)
     
     # Sprawdzenie uprawnień
-    if (request.user.profile.role not in ['admin', 'agent'] and 
-        organization not in request.user.profile.organizations.all()):
-        return HttpResponseForbidden("Brak dostępu")
+    if request.user.profile.role == 'admin':
+        # Admin ma dostęp do wszystkich organizacji
+        pass
+    elif request.user.profile.role == 'agent':
+        # Agent ma dostęp tylko do swoich organizacji
+        if organization not in request.user.profile.organizations.all():
+            return organization_access_forbidden(request, pk)
+    elif organization not in request.user.profile.organizations.all():
+        # Klient ma dostęp tylko do swoich organizacji
+        return organization_access_forbidden(request, pk)
     
     members = UserProfile.objects.filter(organizations=organization)
     tickets = Ticket.objects.filter(organization=organization)
@@ -55,7 +70,7 @@ def organization_create(request):
     """Widok tworzenia organizacji"""
     # Tylko admin może tworzyć organizacje
     if request.user.profile.role != 'admin':
-        return HttpResponseForbidden("Brak uprawnień")
+        return forbidden_access(request, "funkcji tworzenia organizacji")
     
     if request.method == 'POST':
         form = OrganizationForm(request.POST)
@@ -74,9 +89,12 @@ def organization_update(request, pk):
     """Widok aktualizacji organizacji"""
     # Tylko admin może aktualizować organizacje
     if request.user.profile.role != 'admin':
-        return HttpResponseForbidden("Brak uprawnień")
+        return forbidden_access(request, "funkcji edycji organizacji")
     
-    organization = get_object_or_404(Organization, pk=pk)
+    try:
+        organization = get_object_or_404(Organization, pk=pk)
+    except Http404:
+        return organization_not_found(request, pk)
     
     if request.method == 'POST':
         form = OrganizationForm(request.POST, instance=organization)

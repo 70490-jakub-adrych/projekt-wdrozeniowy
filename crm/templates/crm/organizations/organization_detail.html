@@ -11,9 +11,15 @@
             <i class="fas fa-edit"></i> Edytuj
         </a>
         {% endif %}
+        {% if user.profile.role == 'admin' or user.profile.role == 'agent' %}
         <a href="{% url 'organization_list' %}" class="btn btn-outline-secondary">
-            <i class="fas fa-arrow-left"></i> Powrót
+            <i class="fas fa-arrow-left"></i> Powrót do listy organizacji
         </a>
+        {% else %}
+        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Powrót do panelu
+        </a>
+        {% endif %}
     </div>
 </div>
 

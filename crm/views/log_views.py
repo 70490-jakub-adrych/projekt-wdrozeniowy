@@ -4,7 +4,7 @@ from django.http import HttpResponseForbidden
 from django.contrib import messages
 
 from ..models import ActivityLog
-from .error_views import log_not_found
+from .error_views import log_not_found, logs_access_forbidden
 
 
 @login_required
@@ -15,7 +15,7 @@ def activity_logs(request):
     
     # Tylko admin może oglądać wszystkie logi
     if role != 'admin':
-        return HttpResponseForbidden("Brak dostępu do logów")
+        return logs_access_forbidden(request)
     
     logs = ActivityLog.objects.all().order_by('-created_at')
     
@@ -45,7 +45,7 @@ def activity_log_detail(request, log_id):
     
     # Tylko admin może oglądać szczegóły logów
     if role != 'admin':
-        return HttpResponseForbidden("Brak dostępu do logów")
+        return logs_access_forbidden(request)
     
     # Try to get the log, use custom 404 handler if not found
     try:

@@ -57,12 +57,16 @@
                             {% endif %}
                         </a>
                         <div class="dropdown-menu dropdown-menu-right">
-                            <div class="dropdown-item disabled">
+                            <div class="dropdown-item">
                                 {% if user.profile.organizations.exists %}
-                                    <small>Moje organizacje:</small>
+                                    <small class="text-muted font-weight-bold">Moje organizacje:</small>
                                     <ul class="list-unstyled mb-0 mt-1">
                                         {% for org in user.profile.organizations.all %}
-                                            <li>{{ org.name }}</li>
+                                            <li>
+                                                <a href="{% url 'organization_detail' org.id %}" class="text-primary">
+                                                    <i class="fas fa-building fa-sm mr-1"></i>{{ org.name }}
+                                                </a>
+                                            </li>
                                         {% endfor %}
                                     </ul>
                                 {% else %}

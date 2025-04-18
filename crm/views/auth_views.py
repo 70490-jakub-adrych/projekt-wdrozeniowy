@@ -11,6 +11,7 @@ from django.contrib.auth import update_session_auth_hash
 from ..forms import UserRegisterForm, UserProfileForm, CustomAuthenticationForm
 from ..models import UserProfile, User
 from .helpers import log_activity
+from .error_views import forbidden_access
 
 
 def landing_page(request):
@@ -111,7 +112,7 @@ def pending_approvals(request):
     user_role = request.user.profile.role
     
     if user_role not in ['admin', 'agent']:
-        return HttpResponseForbidden("Brak uprawnień do tej strony.")
+        return forbidden_access(request, "strony zatwierdzeń")
     
     # Get pending users based on role
     if user_role == 'admin':
@@ -137,7 +138,7 @@ def pending_approvals(request):
 def approve_user(request, user_id):
     """Zatwierdzanie konta użytkownika"""
     if request.user.profile.role not in ['admin', 'agent']:
-        return HttpResponseForbidden("Brak uprawnień.")
+        return forbidden_access(request, "funkcji zatwierdzania")
     
     profile = get_object_or_404(UserProfile, user_id=user_id, is_approved=False)
     
@@ -146,7 +147,7 @@ def approve_user(request, user_id):
         agent_orgs = set(request.user.profile.organizations.values_list('id', flat=True))
         user_orgs = set(profile.organizations.values_list('id', flat=True))
         if not agent_orgs.intersection(user_orgs):
-            return HttpResponseForbidden("Możesz zatwierdzać tylko użytkowników z Twoich organizacji.")
+            return forbidden_access(request, "zatwierdzania tego użytkownika", user_id)
     
     # Approve the user
     if request.method == 'POST':
@@ -162,7 +163,7 @@ def approve_user(request, user_id):
 def reject_user(request, user_id):
     """Odrzucanie konta użytkownika"""
     if request.user.profile.role not in ['admin', 'agent']:
-        return HttpResponseForbidden("Brak uprawnień.")
+        return forbidden_access(request, "funkcji odrzucania")
     
     user = get_object_or_404(User, id=user_id)
     profile = get_object_or_404(UserProfile, user=user, is_approved=False)
@@ -172,7 +173,7 @@ def reject_user(request, user_id):
         agent_orgs = set(request.user.profile.organizations.values_list('id', flat=True))
         user_orgs = set(profile.organizations.values_list('id', flat=True))
         if not agent_orgs.intersection(user_orgs):
-            return HttpResponseForbidden("Możesz odrzucać tylko użytkowników z Twoich organizacji.")
+            return forbidden_access(request, "odrzucania tego użytkownika", user_id)
     
     # Delete the user account
     if request.method == 'POST':
