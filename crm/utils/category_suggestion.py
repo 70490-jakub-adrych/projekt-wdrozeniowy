@@ -14,7 +14,7 @@ CATEGORY_KEYWORDS = {
         "skaner", "hardware", "fizyczny", "płyta główna", "grafika", "karta graficzna", "gpu",
         "dysk ssd", "nvme", "hdd", "obudowa", "wentylator", "cooler", "radiator",
         "złącze", "port usb", "hdmi", "displayport", "adapter", "hub", "slot", "gniazdo",
-        "sata", "taśma", "układ scalony", "mikroprocesor", "karta sieciowa",
+        "sata", "taśma", "układ scalony", "mikroprocesor", "karta sieciowa", "słuchawek","usb", "port", "myszy", "klawiatury",
         # awarie i uszkodzenia (wszystkie formy)
         "uszkodzony", "uszkodzona", "uszkodzeni", "uszkodzone",
         "popsuty", "popsuta", "popsute", "popsutym", "popsutych",
@@ -109,24 +109,51 @@ EXCEPTION_WORDS = [
     "dziś", "jutro", "wczoraj", "dzisiaj", "teraz", "potem", "kiedy", "gdzie"
 ]
 
+# Polish characters mapping for normalization
+POLISH_CHARS_MAP = {
+    'ą': 'a', 'ć': 'c', 'ę': 'e', 'ł': 'l', 'ń': 'n', 
+    'ó': 'o', 'ś': 's', 'ź': 'z', 'ż': 'z',
+    'Ą': 'A', 'Ć': 'C', 'Ę': 'E', 'Ł': 'L', 'Ń': 'N',
+    'Ó': 'O', 'Ś': 'S', 'Ź': 'Z', 'Ż': 'Z'
+}
+
+def normalize_polish_chars(text):
+    """
+    Replace Polish diacritical marks with their non-diacritical counterparts
+    """
+    for polish_char, latin_char in POLISH_CHARS_MAP.items():
+        text = text.replace(polish_char, latin_char)
+    return text
 
 def similar(a, b, threshold=0.8):
     """
     Check if two strings are similar enough based on a threshold
     """
-    # Calculate similarity ratio
-    similarity = SequenceMatcher(None, a, b).ratio()
+    # Calculate similarity ratio for original strings
+    orig_similarity = SequenceMatcher(None, a, b).ratio()
+    
+    # Calculate similarity with normalized Polish characters
+    a_norm = normalize_polish_chars(a)
+    b_norm = normalize_polish_chars(b)
+    norm_similarity = SequenceMatcher(None, a_norm, b_norm).ratio()
+    
+    # Use the higher similarity score
+    similarity = max(orig_similarity, norm_similarity)
+    
     return similarity >= threshold
 
 def preprocess_text(text):
     """
     Preprocess text by converting to lowercase and tokenizing into words
+    Also creates normalized versions of words without Polish diacritical marks
     """
     # Convert to lowercase and replace punctuation with spaces
     text = text.lower()
     text = re.sub(r'[^\w\s]', ' ', text)
     # Split into words
-    return text.split()
+    words = text.split()
+    
+    return words
 
 def detect_category(title, description):
     """
@@ -140,11 +167,15 @@ def detect_category(title, description):
     combined_text = f"{title} {description}"
     words = preprocess_text(combined_text)
     
+    # Also create normalized versions of words without Polish diacritical marks
+    normalized_words = [normalize_polish_chars(word) for word in words]
+    
     # Count matches for each category
     category_scores = {category: 0 for category in CATEGORY_KEYWORDS}
     match_details = {category: [] for category in CATEGORY_KEYWORDS}
     
-    for word in words:
+    # Check both original words and their normalized versions
+    for word, norm_word in zip(words, normalized_words):
         if len(word) < 3:  # Skip very short words
             continue
             
@@ -153,8 +184,11 @@ def detect_category(title, description):
             continue
             
         for category, keywords in CATEGORY_KEYWORDS.items():
-            # Check for exact matches
-            if word in keywords:
+            # Normalize keywords for comparison
+            norm_keywords = [normalize_polish_chars(kw) for kw in keywords]
+            
+            # Check for exact matches (both original and normalized)
+            if word in keywords or norm_word in norm_keywords:
                 category_scores[category] += 1
                 match_details[category].append((word, 1.0))
             else:
