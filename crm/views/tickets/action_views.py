@@ -1,11 +1,12 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.http import HttpResponseForbidden
+from django.http import HttpResponseForbidden, Http404
 from django.utils import timezone
 
 from ...models import Ticket
 from ..helpers import log_activity
+from ..error_views import ticket_not_found
 
 @login_required
 def ticket_close(request, pk):
@@ -13,7 +14,10 @@ def ticket_close(request, pk):
     user = request.user
     role = user.profile.role
     
-    ticket = get_object_or_404(Ticket, pk=pk)
+    try:
+        ticket = get_object_or_404(Ticket, pk=pk)
+    except Http404:
+        return ticket_not_found(request, pk)
     
     # Sprawdzenie uprawnień
     if role == 'client':
@@ -42,7 +46,10 @@ def ticket_reopen(request, pk):
     user = request.user
     role = user.profile.role
     
-    ticket = get_object_or_404(Ticket, pk=pk)
+    try:
+        ticket = get_object_or_404(Ticket, pk=pk)
+    except Http404:
+        return ticket_not_found(request, pk)
     
     # Tylko admin i przypisany agent mogą ponownie otworzyć zgłoszenie
     if role == 'admin':

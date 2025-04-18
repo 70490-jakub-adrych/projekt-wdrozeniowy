@@ -22,6 +22,7 @@ from .tickets import (
     ticket_close, ticket_reopen, ticket_assign_to_me, debug_tickets
 )
 from .log_views import activity_logs
+from .error_views import ticket_not_found, handle_custom_404
 
 # Define all exported symbols
 __all__ = [
@@ -48,5 +49,7 @@ __all__ = [
     'activity_logs',
     'pending_approvals',
     'approve_user',
-    'reject_user'
+    'reject_user',
+    'ticket_not_found',
+    'handle_custom_404'
 ]

@@ -1,11 +1,12 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.http import HttpResponseForbidden
+from django.http import HttpResponseForbidden, Http404
 
 from ...models import Ticket
 from ...forms import ModeratorTicketForm, ClientTicketForm
 from ..helpers import log_activity
+from ..error_views import ticket_not_found
 
 @login_required
 def ticket_update(request, pk):
@@ -13,7 +14,10 @@ def ticket_update(request, pk):
     user = request.user
     role = user.profile.role
     
-    ticket = get_object_or_404(Ticket, pk=pk)
+    try:
+        ticket = get_object_or_404(Ticket, pk=pk)
+    except Http404:
+        return ticket_not_found(request, pk)
     
     # Prevent editing closed tickets
     if ticket.status == 'closed':

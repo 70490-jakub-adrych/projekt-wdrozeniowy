@@ -7,6 +7,10 @@ from django.core.exceptions import PermissionDenied
 import os
 import mimetypes
 from ..models import TicketAttachment
+import logging
+
+# Configure logger
+logger = logging.getLogger(__name__)
 
 @login_required
 @require_GET
@@ -18,23 +22,39 @@ def serve_attachment(request, attachment_id):
     user = request.user
     ticket = attachment.ticket
     
+    # Log access attempt for security auditing
+    logger.info(f"User {user.username} ({user.profile.role}) attempting to access attachment {attachment_id} from ticket {ticket.id}")
+    
     # Determine if user has appropriate permissions
     can_view = False
     
-    # User can view if they are admin or agent
-    if user.profile.role in ['admin', 'agent']:
+    # Admin can view any attachment
+    if user.profile.role == 'admin':
         can_view = True
+        logger.debug(f"Admin access granted for attachment {attachment_id}")
     
-    # User can view if they created the ticket or belong to the ticket's organization
-    elif user == ticket.created_by:
-        can_view = True
+    # Agent can only view attachments from tickets in their organizations
+    elif user.profile.role == 'agent':
+        if ticket.organization in user.profile.organizations.all():
+            can_view = True
+            logger.debug(f"Agent access granted - belongs to ticket's organization")
+        else:
+            logger.warning(f"Agent {user.username} attempted to access attachment {attachment_id} from organization {ticket.organization.name} they don't belong to")
     
-    # User can view if they belong to the ticket's organization
-    elif ticket.organization in user.profile.organizations.all():
-        can_view = True
+    # Client can ONLY view attachments they uploaded OR from tickets they created
+    elif user.profile.role == 'client':
+        if user == attachment.uploaded_by:
+            can_view = True
+            logger.debug(f"Client access granted - uploaded the attachment")
+        elif user == ticket.created_by:
+            can_view = True
+            logger.debug(f"Client access granted - created the ticket")
+        else:
+            logger.warning(f"Client {user.username} attempted unauthorized access to attachment {attachment_id} from ticket {ticket.id} created by {ticket.created_by.username}")
     
     if not can_view:
-        raise PermissionDenied("You don't have permission to view this file")
+        logger.warning(f"Access denied: User {user.username} ({user.profile.role}) tried to access unauthorized attachment {attachment_id}")
+        raise PermissionDenied("Nie masz uprawnień do wyświetlenia tego pliku")
     
     # Get decrypted file content
     file_content = attachment.get_decrypted_content()

@@ -1,10 +1,11 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.http import HttpResponseForbidden
+from django.http import HttpResponseForbidden, Http404
 
 from ...models import Ticket
 from ..helpers import log_activity
+from ..error_views import ticket_not_found
 
 @login_required
 def ticket_assign_to_me(request, pk):
@@ -14,7 +15,10 @@ def ticket_assign_to_me(request, pk):
     if user.profile.role != 'agent':
         return HttpResponseForbidden("Tylko agenci mogą przypisywać zgłoszenia do siebie")
     
-    ticket = get_object_or_404(Ticket, pk=pk)
+    try:
+        ticket = get_object_or_404(Ticket, pk=pk)
+    except Http404:
+        return ticket_not_found(request, pk)
     
     # Prevent assigning closed tickets
     if ticket.status == 'closed':
