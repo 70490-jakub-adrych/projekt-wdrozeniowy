@@ -1,10 +1,12 @@
 from django import forms
-from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.models import User, Group
 from django.core.exceptions import ValidationError
+from django.contrib.auth import authenticate
+from .views.helpers import get_client_ip
 from .models import (
     UserProfile, Organization, Ticket,
-    TicketComment, TicketAttachment
+    TicketComment, TicketAttachment, ActivityLog
 )
 
 
@@ -109,3 +111,33 @@ class TicketAttachmentForm(forms.ModelForm):
         self.fields['file'].validators.append(validate_file_size)
         # Update help_text to inform users about the size limit
         self.fields['file'].help_text = f"Maksymalny rozmiar pliku: 20MB."
+
+
+class CustomAuthenticationForm(AuthenticationForm):
+    """Custom authentication form that logs failed login attempts"""
+    
+    def clean(self):
+        username = self.cleaned_data.get('username')
+        password = self.cleaned_data.get('password')
+
+        if username and password:
+            self.user_cache = authenticate(self.request, username=username, password=password)
+            if self.user_cache is None:
+                # Log the failed login attempt
+                ip_address = get_client_ip(self.request)
+                ActivityLog.objects.create(
+                    user=None,  # No user since login failed
+                    action_type='login_failed',
+                    description=f"Failed login attempt for username: {username}",
+                    ip_address=ip_address
+                )
+                
+                raise forms.ValidationError(
+                    self.error_messages['invalid_login'],
+                    code='invalid_login',
+                    params={'username': self.username_field.verbose_name},
+                )
+            else:
+                self.confirm_login_allowed(self.user_cache)
+
+        return self.cleaned_data

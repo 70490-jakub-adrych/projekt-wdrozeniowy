@@ -4,8 +4,9 @@ from django.contrib import messages
 from django.contrib.auth.models import Group
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
+from django.contrib.auth.views import LoginView
 
-from ..forms import UserRegisterForm, UserProfileForm
+from ..forms import UserRegisterForm, UserProfileForm, CustomAuthenticationForm
 from ..models import UserProfile, User
 from .helpers import log_activity
 
@@ -72,8 +73,18 @@ def register_pending(request):
     return render(request, 'crm/register_pending.html')
 
 
-def custom_login_view(request):
-    """Niestandardowy widok logowania z zapisywaniem logów"""
+class CustomLoginView(LoginView):
+    """Custom login view that uses our authentication form which logs failed attempts"""
+    form_class = CustomAuthenticationForm
+    template_name = 'crm/login.html'
+    
+    def form_valid(self, form):
+        """When form is valid (login successful), redirect to custom_login_view"""
+        login(self.request, form.get_user())
+        return redirect('custom_login_success')
+
+def custom_login_success(request):
+    """Handle successful login - existing function renamed for clarity"""
     # Check if user is approved before proceeding
     if not hasattr(request.user, 'profile') or not request.user.profile.is_approved:
         messages.error(request, 'Twoje konto oczekuje na zatwierdzenie przez administratora lub agenta.')
@@ -83,7 +94,6 @@ def custom_login_view(request):
     # Otherwise log login activity and proceed
     log_activity(request, 'login')
     return redirect('dashboard')
-
 
 def custom_logout_view(request):
     """Niestandardowy widok wylogowania z zapisywaniem logów"""

@@ -244,6 +244,7 @@ class ActivityLog(models.Model):
     ACTION_TYPES = (
         ('login', 'Zalogowanie'),
         ('logout', 'Wylogowanie'),
+        ('login_failed', 'Nieudane logowanie'),
         ('ticket_created', 'Utworzenie'),
         ('ticket_updated', 'Aktualizacja'),
         ('ticket_commented', 'Komentarz'),
@@ -265,7 +266,8 @@ class ActivityLog(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Data")
     
     def __str__(self):
-        return f"{self.get_action_type_display()} - {self.user.username} - {self.created_at}"
+        username = self.user.username if self.user else "Anonimowy"
+        return f"{self.get_action_type_display()} - {username} - {self.created_at}"
     
     class Meta:
         ordering = ['-created_at']

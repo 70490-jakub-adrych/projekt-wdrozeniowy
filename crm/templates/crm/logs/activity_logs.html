@@ -98,7 +98,10 @@
                                     <span class="badge badge-secondary">Klient</span>
                                 {% endif %}
                             {% else %}
-                                <span class="text-muted">Nieznany</span>
+                                <span class="text-muted">Anonimowy</span>
+                                {% if log.action_type == 'login_failed' %}
+                                    <span class="badge badge-warning">Nieudane logowanie</span>
+                                {% endif %}
                             {% endif %}
                         </td>
                         <td>{{ log.get_action_type_display }}</td>
