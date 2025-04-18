@@ -46,12 +46,13 @@
         <i class="fas fa-filter"></i> Filtry
     </div>
     <div class="card-body">
-        <form method="get" class="form-inline">
+        <form method="get">
             <div class="container-fluid p-0">
-                <div class="row filter-row">
-                    <div class="col-md-3">
-                        <label for="status" class="filter-label">Status:</label>
-                        <select name="status" id="status" class="form-control form-control-sm">
+                <!-- Basic filters row -->
+                <div class="row mb-3">
+                    <div class="col-md-3 col-sm-6 mb-2">
+                        <label for="status" class="d-block">Status:</label>
+                        <select name="status" id="status" class="form-control">
                             <option value="" {% if not status_filter %}selected{% endif %}>Wszystkie</option>
                             <option value="new" {% if status_filter == 'new' %}selected{% endif %}>Nowe</option>
                             <option value="in_progress" {% if status_filter == 'in_progress' %}selected{% endif %}>W trakcie</option>
@@ -60,9 +61,9 @@
                             <option value="closed" {% if status_filter == 'closed' %}selected{% endif %}>Zamknięte</option>
                         </select>
                     </div>
-                    <div class="col-md-3">
-                        <label for="priority" class="filter-label">Priorytet:</label>
-                        <select name="priority" id="priority" class="form-control form-control-sm">
+                    <div class="col-md-3 col-sm-6 mb-2">
+                        <label for="priority" class="d-block">Priorytet:</label>
+                        <select name="priority" id="priority" class="form-control">
                             <option value="" {% if not priority_filter %}selected{% endif %}>Wszystkie</option>
                             <option value="low" {% if priority_filter == 'low' %}selected{% endif %}>Niski</option>
                             <option value="medium" {% if priority_filter == 'medium' %}selected{% endif %}>Średni</option>
@@ -70,9 +71,9 @@
                             <option value="critical" {% if priority_filter == 'critical' %}selected{% endif %}>Krytyczny</option>
                         </select>
                     </div>
-                    <div class="col-md-3">
-                        <label for="category" class="filter-label">Kategoria:</label>
-                        <select name="category" id="category" class="form-control form-control-sm">
+                    <div class="col-md-3 col-sm-6 mb-2">
+                        <label for="category" class="d-block">Kategoria:</label>
+                        <select name="category" id="category" class="form-control">
                             <option value="" {% if not category_filter %}selected{% endif %}>Wszystkie</option>
                             <option value="hardware" {% if category_filter == 'hardware' %}selected{% endif %}>Sprzęt</option>
                             <option value="software" {% if category_filter == 'software' %}selected{% endif %}>Oprogramowanie</option>
@@ -81,9 +82,9 @@
                             <option value="other" {% if category_filter == 'other' %}selected{% endif %}>Inne</option>
                         </select>
                     </div>
-                    <div class="col-md-3">
-                        <label for="assigned" class="filter-label">Przypisane:</label>
-                        <select name="assigned" id="assigned" class="form-control form-control-sm">
+                    <div class="col-md-3 col-sm-6 mb-2">
+                        <label for="assigned" class="d-block">Przypisane:</label>
+                        <select name="assigned" id="assigned" class="form-control">
                             <option value="" {% if not assigned_filter %}selected{% endif %}>Wszystkie</option>
                             <option value="me" {% if assigned_filter == 'me' %}selected{% endif %}>Do mnie</option>
                             <option value="unassigned" {% if assigned_filter == 'unassigned' %}selected{% endif %}>Nieprzypisane</option>
@@ -93,10 +94,10 @@
                 
                 <!-- Organization filter for admin and agent users -->
                 {% if user.profile.role in 'admin,agent' and all_organizations %}
-                <div class="row filter-row">
-                    <div class="col-md-3">
-                        <label for="organization" class="filter-label">Organizacja:</label>
-                        <select name="organization" id="organization" class="form-control form-control-sm">
+                <div class="row mb-3">
+                    <div class="col-md-6 col-sm-12 mb-2">
+                        <label for="organization" class="d-block">Organizacja:</label>
+                        <select name="organization" id="organization" class="form-control">
                             <option value="" {% if not organization_filter %}selected{% endif %}>Wszystkie</option>
                             {% for org in all_organizations %}
                                 <option value="{{ org.id }}" {% if organization_filter == org.id|stringformat:"i" %}selected{% endif %}>
@@ -105,45 +106,40 @@
                             {% endfor %}
                         </select>
                     </div>
-                    <div class="col-md-9">
-                        <!-- Empty space to align with other rows -->
-                    </div>
                 </div>
                 {% endif %}
                 
                 <!-- Additional filters for client-specific views -->
                 {% if user.profile.role == 'client' %}
-                <div class="row filter-row">
-                    <div class="col-md-3">
-                        <label for="created_by" class="filter-label">Utworzone przez:</label>
-                        <select name="created_by" id="created_by" class="form-control form-control-sm">
+                <div class="row mb-3">
+                    <div class="col-md-6 col-sm-12 mb-2">
+                        <label for="created_by" class="d-block">Utworzone przez:</label>
+                        <select name="created_by" id="created_by" class="form-control">
                             <option value="" {% if not created_by_filter %}selected{% endif %}>Wszystkie</option>
                             <option value="me" {% if created_by_filter == 'me' %}selected{% endif %}>Moje zgłoszenia</option>
                             <option value="" data-exclude="me" {% if exclude_created_by == 'me' %}selected{% endif %}>Zgłoszenia innych</option>
                         </select>
                     </div>
-                    <div class="col-md-9">
-                        <!-- Empty space to align with other rows -->
-                    </div>
                 </div>
                 {% endif %}
                 
-                <div class="row filter-row">
-                    <div class="col-md-3">
-                        <label for="ticket_id" class="filter-label">ID zgłoszenia:</label>
-                        <input type="number" name="ticket_id" id="ticket_id" class="form-control form-control-sm" value="{{ ticket_id }}" placeholder="np. 123">
+                <!-- Advanced filters row -->
+                <div class="row mb-3">
+                    <div class="col-lg-3 col-md-4 col-sm-6 mb-2">
+                        <label for="ticket_id" class="d-block">ID zgłoszenia:</label>
+                        <input type="number" name="ticket_id" id="ticket_id" class="form-control" value="{{ ticket_id }}" placeholder="np. 123">
                     </div>
-                    <div class="col-md-3">
-                        <label for="date_from" class="filter-label">Data od:</label>
-                        <input type="date" name="date_from" id="date_from" class="form-control form-control-sm" value="{{ date_from }}">
+                    <div class="col-lg-3 col-md-4 col-sm-6 mb-2">
+                        <label for="date_from" class="d-block">Data od:</label>
+                        <input type="date" name="date_from" id="date_from" class="form-control" value="{{ date_from }}">
                     </div>
-                    <div class="col-md-3">
-                        <label for="date_to" class="filter-label">Data do:</label>
-                        <input type="date" name="date_to" id="date_to" class="form-control form-control-sm" value="{{ date_to }}">
+                    <div class="col-lg-3 col-md-4 col-sm-6 mb-2">
+                        <label for="date_to" class="d-block">Data do:</label>
+                        <input type="date" name="date_to" id="date_to" class="form-control" value="{{ date_to }}">
                     </div>
-                    <div class="col-md-3">
-                        <label for="sort_by" class="filter-label">Sortowanie:</label>
-                        <select name="sort_by" id="sort_by" class="form-control form-control-sm">
+                    <div class="col-lg-3 col-md-4 col-sm-6 mb-2">
+                        <label for="sort_by" class="d-block">Sortowanie:</label>
+                        <select name="sort_by" id="sort_by" class="form-control">
                             {% for sort_value, sort_label in sort_options %}
                                 <option value="{{ sort_value }}" {% if sort_by == sort_value %}selected{% endif %}>{{ sort_label }}</option>
                             {% endfor %}
@@ -156,21 +152,21 @@
                 <input type="hidden" name="exclude_created_by" value="{{ exclude_created_by }}">
                 {% endif %}
                 
-                <div class="row mt-3">
-                    <div class="col-md-6">
+                <!-- Actions row -->
+                <div class="row mt-4">
+                    <div class="col-md-6 mb-2">
                         <div class="form-check">
-                            <!-- Use a checkbox without a name attribute so it's not submitted directly -->
                             <input class="form-check-input" type="checkbox" id="exclude_closed_checkbox" {% if exclude_closed %}checked{% endif %}>
                             <label class="form-check-label" for="exclude_closed_checkbox">
                                 Pokaż tylko niezamknięte zgłoszenia
                             </label>
                         </div>
                     </div>
-                    <div class="col-md-6 text-right">
-                        <button type="submit" class="btn btn-sm btn-primary">
+                    <div class="col-md-6 mb-2 text-md-right">
+                        <button type="submit" class="btn btn-primary">
                             <i class="fas fa-search"></i> Zastosuj filtry
                         </button>
-                        <a href="{% url 'ticket_list' %}" class="btn btn-sm btn-outline-secondary ml-2">
+                        <a href="{% url 'ticket_list' %}" class="btn btn-outline-secondary ml-2">
                             <i class="fas fa-sync"></i> Resetuj
                         </a>
                     </div>
