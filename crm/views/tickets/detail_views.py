@@ -71,10 +71,10 @@ def ticket_detail(request, pk):
     if is_closed:
         can_close = False
     elif role == 'admin':
-        can_close = True
+        can_close = ticket.assigned_to is not None  # Admin can only close if ticket is assigned
     elif role == 'agent':
-        # Agent może zamykać tylko nieprzypisane zgłoszenia lub przypisane do niego
-        can_close = not ticket.assigned_to or ticket.assigned_to == user
+        # Agent can only close tickets that are assigned to them
+        can_close = ticket.assigned_to == user
     else:  # client
         can_close = False  # Clients can no longer close tickets
     

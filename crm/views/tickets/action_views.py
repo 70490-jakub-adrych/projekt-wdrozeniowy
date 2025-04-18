@@ -24,9 +24,13 @@ def ticket_close(request, pk):
         if ticket.created_by != user:
             return HttpResponseForbidden("Nie możesz zamknąć tego zgłoszenia")
     elif role == 'agent':
-        # Agent może zamykać tylko nieprzypisane zgłoszenia lub przypisane do niego
-        if ticket.assigned_to and ticket.assigned_to != user:
-            return HttpResponseForbidden("Nie możesz zamknąć zgłoszenia przypisanego do innego agenta")
+        # Agent może zamykać tylko zgłoszenia przypisane do niego
+        if ticket.assigned_to != user:
+            return HttpResponseForbidden("Możesz zamknąć tylko zgłoszenia przypisane do Ciebie")
+    elif role == 'admin':
+        # Admin może zamykać tylko przypisane zgłoszenia
+        if ticket.assigned_to is None:
+            return HttpResponseForbidden("Nie można zamknąć nieprzypisanego zgłoszenia")
     
     if request.method == 'POST':
         ticket.status = 'closed'
