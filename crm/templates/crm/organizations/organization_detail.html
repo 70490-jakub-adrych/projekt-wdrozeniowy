@@ -82,19 +82,19 @@
                 <div class="row text-center">
                     <div class="col-md-4">
                         <div class="bg-primary text-white rounded p-2 mb-2">
-                            <h5>{{ tickets.filter.status='new'|length }}</h5>
+                            <h5>{{ new_tickets_count }}</h5>
                         </div>
                         <p>Nowe</p>
                     </div>
                     <div class="col-md-4">
                         <div class="bg-warning text-white rounded p-2 mb-2">
-                            <h5>{{ tickets.filter.status='in_progress'|length }}</h5>
+                            <h5>{{ in_progress_tickets_count }}</h5>
                         </div>
                         <p>W trakcie</p>
                     </div>
                     <div class="col-md-4">
                         <div class="bg-success text-white rounded p-2 mb-2">
-                            <h5>{{ tickets.filter.status='resolved'|length }}</h5>
+                            <h5>{{ resolved_tickets_count }}</h5>
                         </div>
                         <p>Rozwiązane</p>
                     </div>

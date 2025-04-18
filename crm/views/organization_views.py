@@ -36,10 +36,18 @@ def organization_detail(request, pk):
     members = UserProfile.objects.filter(organization=organization)
     tickets = Ticket.objects.filter(organization=organization)
     
+    # Liczenie biletów według statusu
+    new_tickets_count = tickets.filter(status='new').count()
+    in_progress_tickets_count = tickets.filter(status='in_progress').count()
+    resolved_tickets_count = tickets.filter(status='resolved').count()
+    
     context = {
         'organization': organization,
         'members': members,
         'tickets': tickets,
+        'new_tickets_count': new_tickets_count,
+        'in_progress_tickets_count': in_progress_tickets_count,
+        'resolved_tickets_count': resolved_tickets_count,
     }
     
     return render(request, 'crm/organizations/organization_detail.html', context)
