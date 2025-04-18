@@ -223,14 +223,17 @@
                                 </a>
                                 {% endif %}
                                 
-                                {% if ticket.status != 'closed' and user.profile.role in 'admin,agent' or ticket.created_by == user %}
-                                <a href="{% url 'ticket_close' ticket.pk %}" class="btn btn-sm btn-secondary action-btn" title="Zamknij">
-                                    <i class="fas fa-lock"></i>
-                                </a>
-                                {% elif ticket.status == 'closed' and user.profile.role in 'admin,agent' %}
-                                <a href="{% url 'ticket_reopen' ticket.pk %}" class="btn btn-sm btn-success action-btn" title="Otwórz ponownie">
-                                    <i class="fas fa-lock-open"></i>
-                                </a>
+                                <!-- Only show close/reopen buttons for admins and agents -->
+                                {% if user.profile.role in 'admin,agent' %}
+                                    {% if ticket.status != 'closed' %}
+                                    <a href="{% url 'ticket_close' ticket.pk %}" class="btn btn-sm btn-secondary action-btn" title="Zamknij">
+                                        <i class="fas fa-lock"></i>
+                                    </a>
+                                    {% elif ticket.status == 'closed' %}
+                                    <a href="{% url 'ticket_reopen' ticket.pk %}" class="btn btn-sm btn-success action-btn" title="Otwórz ponownie">
+                                        <i class="fas fa-lock-open"></i>
+                                    </a>
+                                    {% endif %}
                                 {% endif %}
                             </div>
                         </td>

@@ -236,17 +236,25 @@ def ticket_detail(request, pk):
     comments = ticket.comments.all().order_by('created_at')
     attachments = ticket.attachments.all()
     
-    # Wszyscy mogą komentować
-    can_comment = True
+    # Check if the ticket is closed
+    is_closed = ticket.status == 'closed'
     
-    # Sprawdzanie uprawnień do dodawania załączników
-    if role == 'client':
+    # No actions allowed on closed tickets except viewing and reopening
+    # Wszyscy mogą komentować - if ticket is not closed
+    can_comment = not is_closed
+    
+    # Sprawdzanie uprawnień do dodawania załączników - if ticket is not closed
+    if is_closed:
+        can_attach = False
+    elif role == 'client':
         can_attach = user == ticket.created_by
     else:
         can_attach = True  # Admin i agent mogą dodawać załączniki
     
-    # Sprawdzanie uprawnień do edycji
-    if role == 'admin':
+    # Sprawdzanie uprawnień do edycji - if ticket is not closed
+    if is_closed:
+        can_edit = False
+    elif role == 'admin':
         can_edit = True
     elif role == 'agent':
         # Agent może edytować tylko nieprzypisane zgłoszenia lub przypisane do niego
@@ -254,23 +262,30 @@ def ticket_detail(request, pk):
     else:  # client
         can_edit = user == ticket.created_by
     
-    # Sprawdzanie uprawnień do zamykania
-    if role == 'admin':
+    # Sprawdzanie uprawnień do zamykania - not applicable if already closed
+    if is_closed:
+        can_close = False
+    elif role == 'admin':
         can_close = True
     elif role == 'agent':
         # Agent może zamykać tylko nieprzypisane zgłoszenia lub przypisane do niego
         can_close = not ticket.assigned_to or ticket.assigned_to == user
     else:  # client
-        can_close = user == ticket.created_by
+        can_close = False  # Clients can no longer close tickets
     
     # Tylko admin i przypisany agent mogą ponownie otwierać
-    can_reopen = role == 'admin' or (role == 'agent' and ticket.assigned_to == user)
+    can_reopen = is_closed and (role == 'admin' or (role == 'agent' and ticket.assigned_to == user))
     
-    # Możliwość przypisania do siebie (tylko dla agentów, gdy zgłoszenie nieprzypisane)
-    can_assign_to_self = role == 'agent' and not ticket.assigned_to
+    # Możliwość przypisania do siebie (tylko dla agentów, gdy zgłoszenie nieprzypisane i nie jest zamknięte)
+    can_assign_to_self = not is_closed and role == 'agent' and not ticket.assigned_to
     
     # Formularz komentarza
     if request.method == 'POST':
+        # Reject any POST actions if ticket is closed
+        if is_closed:
+            messages.error(request, "Nie można modyfikować zamkniętego zgłoszenia. Najpierw otwórz je ponownie.")
+            return redirect('ticket_detail', pk=ticket.pk)
+            
         if 'submit_comment' in request.POST and can_comment:
             comment_form = TicketCommentForm(request.POST)
             attachment_form = TicketAttachmentForm()
@@ -317,6 +332,7 @@ def ticket_detail(request, pk):
         'can_close': can_close,
         'can_reopen': can_reopen,
         'can_assign_to_self': can_assign_to_self,
+        'is_closed': is_closed,  # Add this to context
     }
     
     return render(request, 'crm/tickets/ticket_detail.html', context)
@@ -402,6 +418,11 @@ def ticket_update(request, pk):
     role = user.profile.role
     
     ticket = get_object_or_404(Ticket, pk=pk)
+    
+    # Prevent editing closed tickets
+    if ticket.status == 'closed':
+        messages.error(request, "Nie można edytować zamkniętego zgłoszenia. Najpierw otwórz je ponownie.")
+        return redirect('ticket_detail', pk=ticket.pk)
     
     # Sprawdzenie uprawnień do edycji
     if role == 'client':
@@ -535,6 +556,11 @@ def ticket_assign_to_me(request, pk):
         return HttpResponseForbidden("Tylko agenci mogą przypisywać zgłoszenia do siebie")
     
     ticket = get_object_or_404(Ticket, pk=pk)
+    
+    # Prevent assigning closed tickets
+    if ticket.status == 'closed':
+        messages.error(request, "Nie można przypisać zamkniętego zgłoszenia. Najpierw otwórz je ponownie.")
+        return redirect('ticket_detail', pk=ticket.pk)
     
     # Sprawdź czy zgłoszenie jest już przypisane do kogoś innego
     if ticket.assigned_to and ticket.assigned_to != user:
