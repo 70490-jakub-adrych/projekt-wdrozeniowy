@@ -24,9 +24,12 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'ticket_list' %}">Zgłoszenia</a>
                     </li>
-                    {% if user.profile.role == 'admin' or user.profile.role == 'moderator' %}
+                    {% if user.profile.role == 'admin' or user.profile.role == 'agent' %}
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'organization_list' %}">Organizacje</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'pending_approvals' %}">Zatwierdzanie kont</a>
                     </li>
                     {% endif %}
                     {% if user.profile.role == 'admin' %}
@@ -46,8 +49,8 @@
                             {{ user.username }} 
                             {% if user.profile.role == 'admin' %}
                                 <span class="badge badge-danger">Admin</span>
-                            {% elif user.profile.role == 'moderator' %}
-                                <span class="badge badge-info">Moderator</span>
+                            {% elif user.profile.role == 'agent' %}
+                                <span class="badge badge-info">Agent</span>
                             {% else %}
                                 <span class="badge badge-secondary">Klient</span>
                             {% endif %}

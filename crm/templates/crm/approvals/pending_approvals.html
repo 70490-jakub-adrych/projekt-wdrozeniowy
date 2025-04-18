@@ -1,0 +1,57 @@
+{% extends 'crm/base.html' %}
+
+{% block title %}Oczekujące zatwierdzenia | System Helpdesk{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Oczekujące zatwierdzenia</h2>
+    <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left"></i> Powrót do panelu
+    </a>
+</div>
+
+{% if pending_users %}
+<div class="card">
+    <div class="card-header">
+        <i class="fas fa-user-clock"></i> Użytkownicy oczekujący na zatwierdzenie
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Nazwa użytkownika</th>
+                        <th>Email</th>
+                        <th>Organizacja</th>
+                        <th>Data rejestracji</th>
+                        <th>Akcje</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for profile in pending_users %}
+                    <tr>
+                        <td>{{ profile.user.username }}</td>
+                        <td>{{ profile.user.email }}</td>
+                        <td>{% if profile.organization %}{{ profile.organization.name }}{% else %}<span class="text-muted">Brak</span>{% endif %}</td>
+                        <td>{{ profile.user.date_joined|date:"d.m.Y H:i" }}</td>
+                        <td>
+                            <a href="{% url 'approve_user' profile.user.id %}" class="btn btn-sm btn-success">
+                                <i class="fas fa-check"></i> Zatwierdź
+                            </a>
+                            <a href="{% url 'reject_user' profile.user.id %}" class="btn btn-sm btn-danger">
+                                <i class="fas fa-times"></i> Odrzuć
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="alert alert-info">
+    <i class="fas fa-info-circle"></i> Brak użytkowników oczekujących na zatwierdzenie.
+</div>
+{% endif %}
+{% endblock %}

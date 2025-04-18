@@ -1,0 +1,58 @@
+{% extends 'crm/base.html' %}
+
+{% block title %}Odrzuć użytkownika | System Helpdesk{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <i class="fas fa-times-circle mr-2"></i> Odrzuć użytkownika
+            </div>
+            <div class="card-body">
+                <h5 class="card-title">Czy na pewno chcesz odrzucić tego użytkownika?</h5>
+                <p class="text-danger mb-4">Uwaga: Konto użytkownika zostanie całkowicie usunięte.</p>
+                
+                <div class="card bg-light mb-4">
+                    <div class="card-body">
+                        <div class="row mb-2">
+                            <div class="col-md-4 font-weight-bold">Nazwa użytkownika:</div>
+                            <div class="col-md-8">{{ profile.user.username }}</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-md-4 font-weight-bold">Email:</div>
+                            <div class="col-md-8">{{ profile.user.email }}</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-md-4 font-weight-bold">Data rejestracji:</div>
+                            <div class="col-md-8">{{ profile.user.date_joined|date:"d.m.Y H:i" }}</div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-4 font-weight-bold">Organizacja:</div>
+                            <div class="col-md-8">
+                                {% if profile.organization %}
+                                    {{ profile.organization.name }}
+                                {% else %}
+                                    <span class="text-muted">Brak</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="text-center">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="fas fa-times"></i> Odrzuć i usuń użytkownika
+                        </button>
+                        <a href="{% url 'pending_approvals' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Powrót
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -9,7 +9,7 @@ class UserProfile(models.Model):
     """Model rozszerzający standardowego użytkownika o dodatkowe pola"""
     USER_ROLES = (
         ('admin', 'Administrator'),
-        ('moderator', 'Moderator'),
+        ('agent', 'Agent'),
         ('client', 'Klient'),
     )
     
@@ -17,6 +17,7 @@ class UserProfile(models.Model):
     role = models.CharField(max_length=20, choices=USER_ROLES, default='client', verbose_name="Rola")
     organization = models.ForeignKey('Organization', on_delete=models.SET_NULL, null=True, blank=True, related_name='members', verbose_name="Organizacja")
     phone = models.CharField(max_length=20, blank=True, verbose_name="Telefon")
+    is_approved = models.BooleanField(default=False, verbose_name="Zatwierdzony")
     
     def __str__(self):
         return f"{self.user.username} - {self.get_role_display()}"
@@ -32,7 +33,9 @@ def create_user_profile(sender, instance, created, **kwargs):
     if created:
         # Create profile with role based on user type
         role = 'admin' if instance.is_superuser else 'client'
-        UserProfile.objects.create(user=instance, role=role)
+        # Set approved status based on role (admins are auto-approved)
+        is_approved = True if instance.is_superuser else False
+        UserProfile.objects.create(user=instance, role=role, is_approved=is_approved)
 
 
 @receiver(post_save, sender=User)

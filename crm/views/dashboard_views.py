@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.db.models import Q
+from django.db.models import Q, Count
 
 from ..models import UserProfile, Organization, Ticket, ActivityLog
 from django.contrib.auth.models import Group
@@ -26,15 +26,18 @@ def dashboard(request):
             role = 'admin'
             group_name = 'Admin'
             message = 'Twój profil administratora został utworzony.'
+            is_approved = True
         else:
             role = 'client'
             group_name = 'Klient'
             message = 'Twój profil został utworzony. Skontaktuj się z administratorem, aby uzyskać odpowiednie uprawnienia.'
+            is_approved = False
         
         # Create profile with appropriate role
         user_profile = UserProfile.objects.create(
             user=user,
-            role=role
+            role=role,
+            is_approved=is_approved
         )
         
         # Add user to appropriate group
@@ -44,18 +47,34 @@ def dashboard(request):
         messages.info(request, message)
     
     # Statystyki dla wszystkich użytkowników
-    if user.profile.role == 'admin' or user.profile.role == 'moderator':
-        # Statystyki dla administratorów i moderatorów
+    if user.profile.role == 'admin' or user.profile.role == 'agent':
+        # Statystyki dla administratorów i agentów
         new_tickets = Ticket.objects.filter(status='new').count()
         in_progress_tickets = Ticket.objects.filter(status='in_progress').count()
         waiting_tickets = Ticket.objects.filter(status='waiting').count()
         resolved_tickets = Ticket.objects.filter(status='resolved').count()
         closed_tickets = Ticket.objects.filter(status='closed').count()
         
-        # Jeśli moderator, pokaż tylko swoje przypisane zgłoszenia
-        if user.profile.role == 'moderator':
+        # Get pending approvals count
+        if user.profile.role == 'admin':
+            pending_approvals = UserProfile.objects.filter(is_approved=False).count()
+        else:
+            org = user.profile.organization
+            if org:
+                pending_approvals = UserProfile.objects.filter(
+                    is_approved=False, 
+                    organization=org
+                ).count()
+            else:
+                pending_approvals = 0
+        
+        # Jeśli agent, pokaż tylko swoje przypisane zgłoszenia
+        if user.profile.role == 'agent':
             assigned_tickets = Ticket.objects.filter(assigned_to=user)
-            unassigned_tickets = Ticket.objects.filter(assigned_to=None)
+            unassigned_tickets = Ticket.objects.filter(
+                assigned_to=None,
+                organization=user.profile.organization
+            )
         else:
             assigned_tickets = Ticket.objects.filter(assigned_to=user)
             unassigned_tickets = Ticket.objects.filter(assigned_to=None)
@@ -74,6 +93,7 @@ def dashboard(request):
             'assigned_tickets': assigned_tickets[:5],
             'unassigned_tickets': unassigned_tickets[:5],
             'recent_activities': recent_activities,
+            'pending_approvals': pending_approvals,
         })
     else:
         # Statystyki dla klientów

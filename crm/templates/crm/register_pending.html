@@ -1,0 +1,31 @@
+{% extends 'crm/base.html' %}
+
+{% block title %}Oczekiwanie na zatwierdzenie | System Helpdesk{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <i class="fas fa-clock mr-2"></i> Oczekiwanie na zatwierdzenie
+            </div>
+            <div class="card-body text-center">
+                <div class="mb-4">
+                    <i class="fas fa-user-clock fa-5x text-info mb-3"></i>
+                    <h4>Twoje konto oczekuje na zatwierdzenie</h4>
+                </div>
+                
+                <p>Twoje konto zostało utworzone, ale wymaga zatwierdzenia przez administratora lub agenta.</p>
+                <p>Otrzymasz dostęp do systemu po zatwierdzeniu.</p>
+                
+                <hr>
+                
+                <div class="mt-4">
+                    <a href="{% url 'login' %}" class="btn btn-primary">Przejdź do strony logowania</a>
+                    <a href="{% url 'landing_page' %}" class="btn btn-outline-secondary">Strona główna</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -9,12 +9,12 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         # Get or create the three groups
         admin_group, created_admin = Group.objects.get_or_create(name='Admin')
-        moderator_group, created_mod = Group.objects.get_or_create(name='Moderator')
+        agent_group, created_mod = Group.objects.get_or_create(name='Agent')
         client_group, created_client = Group.objects.get_or_create(name='Klient')
         
         # Clear existing permissions for a fresh start
         admin_group.permissions.clear()
-        moderator_group.permissions.clear()
+        agent_group.permissions.clear()
         client_group.permissions.clear()
         
         # Get content types
@@ -30,20 +30,24 @@ class Command(BaseCommand):
         )
         admin_group.permissions.add(*admin_permissions)
         
-        # Moderator permissions
+        # Agent permissions
         # Can view all models, can change and add tickets
-        moderator_permissions = Permission.objects.filter(
+        agent_permissions = Permission.objects.filter(
             content_type=ticket_ct,
             codename__in=[
                 'add_ticket', 'change_ticket', 'view_ticket',
                 'add_ticketcomment', 'change_ticketcomment'
             ]
         )
-        moderator_permissions |= Permission.objects.filter(
+        agent_permissions |= Permission.objects.filter(
             content_type__in=[org_ct, profile_ct],
             codename__startswith='view_'
         )
-        moderator_group.permissions.add(*moderator_permissions)
+        agent_permissions |= Permission.objects.filter(
+            content_type=profile_ct,
+            codename__in=['change_userprofile']
+        )
+        agent_group.permissions.add(*agent_permissions)
         
         # Client permissions
         # Can only view and create tickets, no admin access
@@ -60,9 +64,9 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS('Updated Admin group permissions'))
 
         if created_mod:
-            self.stdout.write(self.style.SUCCESS('Created Moderator group'))
+            self.stdout.write(self.style.SUCCESS('Created Agent group'))
         else:
-            self.stdout.write(self.style.SUCCESS('Updated Moderator group permissions'))
+            self.stdout.write(self.style.SUCCESS('Updated Agent group permissions'))
             
         if created_client:
             self.stdout.write(self.style.SUCCESS('Created Klient group'))

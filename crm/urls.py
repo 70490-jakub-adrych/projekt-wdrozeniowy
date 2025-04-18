@@ -8,10 +8,16 @@ urlpatterns = [
     
     # Autentykacja
     path('register/', views.register, name='register'),
+    path('register/pending/', views.register_pending, name='register_pending'),
     path('login/', auth_views.LoginView.as_view(template_name='crm/login.html', 
                                                success_url='custom_login'), name='login'),
     path('custom_login/', views.custom_login_view, name='custom_login'),
     path('logout/', views.custom_logout_view, name='logout'),
+    
+    # Zatwierdzanie użytkowników
+    path('approvals/', views.pending_approvals, name='pending_approvals'),
+    path('approvals/approve/<int:user_id>/', views.approve_user, name='approve_user'),
+    path('approvals/reject/<int:user_id>/', views.reject_user, name='reject_user'),
     
     # Panel główny
     path('dashboard/', views.dashboard, name='dashboard'),
