@@ -58,7 +58,7 @@
                         <div class="dropdown-menu dropdown-menu-right">
                             <div class="dropdown-item disabled">
                                 {% if user.profile.organizations.exists %}
-                                    <small>Organizacje:</small>
+                                    <small>Moje organizacje:</small>
                                     <ul class="list-unstyled mb-0 mt-1">
                                         {% for org in user.profile.organizations.all %}
                                             <li>{{ org.name }}</li>

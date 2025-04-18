@@ -10,11 +10,11 @@ from ..forms import OrganizationForm
 @login_required
 def organization_list(request):
     """Widok listy organizacji"""
-    # Tylko admin i agent mogą widzieć wszystkie organizacje
-    if request.user.profile.role in ['admin', 'agent']:
+    # Tylko admin może widzieć wszystkie organizacje
+    if request.user.profile.role == 'admin':
         organizations = Organization.objects.all()
     else:
-        # Klient widzi tylko swoje organizacje
+        # Agent i klient widzą tylko swoje organizacje
         organizations = request.user.profile.organizations.all()
     
     return render(request, 'crm/organizations/organization_list.html', {'organizations': organizations})

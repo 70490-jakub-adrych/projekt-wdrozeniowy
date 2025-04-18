@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Organizacje</h2>
+    <h2>Moje organizacje</h2>
     {% if user.profile.role == 'admin' %}
     <a href="{% url 'organization_create' %}" class="btn btn-primary">
         <i class="fas fa-plus"></i> Nowa organizacja
