@@ -328,10 +328,19 @@ def ticket_create(request):
     user = request.user
     
     if request.method == 'POST':
-        form = TicketForm(request.POST)
+        # Use different form based on user role
+        if user.profile.role in ['admin', 'agent']:
+            form = TicketForm(request.POST)
+        else:
+            form = ClientTicketForm(request.POST)
+            
         if form.is_valid():
             ticket = form.save(commit=False)
             ticket.created_by = user
+            
+            # Set default priority for clients
+            if user.profile.role == 'client':
+                ticket.priority = 'medium'  # Default priority for client tickets
             
             # Get the organization for the current user or from form
             if 'organization' in request.POST and request.POST['organization'] and user.profile.role in ['admin', 'agent']:
@@ -363,7 +372,11 @@ def ticket_create(request):
             messages.success(request, 'Zgłoszenie zostało utworzone!')
             return redirect('ticket_detail', pk=ticket.pk)
     else:
-        form = TicketForm()
+        # Also use different form for GET requests based on user role
+        if user.profile.role in ['admin', 'agent']:
+            form = TicketForm()
+        else:
+            form = ClientTicketForm()
     
     # Dodanie pola wyboru organizacji dla admina i agenta
     organizations = []
