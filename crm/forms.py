@@ -8,6 +8,7 @@ from .models import (
     UserProfile, Organization, Ticket,
     TicketComment, TicketAttachment, ActivityLog
 )
+from .validators import phone_regex
 
 
 class UserRegisterForm(UserCreationForm):
@@ -22,6 +23,8 @@ class UserRegisterForm(UserCreationForm):
 
 
 class UserProfileForm(forms.ModelForm):
+    phone = forms.CharField(max_length=17, required=False, validators=[phone_regex],
+                          widget=forms.TextInput(attrs={'placeholder': '+48 123 456 789'}))
     class Meta:
         model = UserProfile
         fields = ['phone', 'organizations']
@@ -32,6 +35,8 @@ class UserProfileForm(forms.ModelForm):
 
 
 class OrganizationForm(forms.ModelForm):
+    phone = forms.CharField(max_length=17, required=False, validators=[phone_regex],
+                          widget=forms.TextInput(attrs={'placeholder': '+48 123 456 789'}))
     class Meta:
         model = Organization
         fields = ['name', 'email', 'phone', 'website', 'address', 'description']

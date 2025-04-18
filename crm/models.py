@@ -9,6 +9,7 @@ import tempfile
 from django.conf import settings
 from cryptography.fernet import Fernet
 import base64
+from .validators import phone_regex
 
 
 class UserProfile(models.Model):
@@ -22,7 +23,7 @@ class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     role = models.CharField(max_length=20, choices=USER_ROLES, default='client', verbose_name="Rola")
     organizations = models.ManyToManyField('Organization', blank=True, related_name='members', verbose_name="Organizacje")
-    phone = models.CharField(max_length=20, blank=True, verbose_name="Telefon")
+    phone = models.CharField(max_length=20, blank=True, verbose_name="Telefon", validators=[phone_regex])
     is_approved = models.BooleanField(default=False, verbose_name="Zatwierdzony")
     
     def __str__(self):
@@ -81,7 +82,7 @@ class Organization(models.Model):
     """Model przechowujący informacje o organizacjach klientów"""
     name = models.CharField(max_length=255, verbose_name="Nazwa")
     email = models.EmailField(blank=True, verbose_name="Email")
-    phone = models.CharField(max_length=20, blank=True, verbose_name="Telefon")
+    phone = models.CharField(max_length=20, blank=True, verbose_name="Telefon", validators=[phone_regex])
     website = models.URLField(blank=True, verbose_name="Strona internetowa")
     address = models.TextField(blank=True, verbose_name="Adres")
     description = models.TextField(blank=True, verbose_name="Opis")
