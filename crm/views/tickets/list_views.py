@@ -26,7 +26,12 @@ def ticket_list(request):
     date_to = request.GET.get('date_to', '')
     ticket_id = request.GET.get('ticket_id', '')
     sort_by = request.GET.get('sort_by', '-created_at')
-    exclude_closed = request.GET.get('exclude_closed', 'true') == 'true'  # New parameter, default to true
+    # Check for explicit 'false' value, default to excluding closed tickets
+    exclude_closed = request.GET.get('exclude_closed', 'true').lower() != 'false'
+    
+    # New filters for client view
+    created_by_filter = request.GET.get('created_by', '')
+    exclude_created_by = request.GET.get('exclude_created_by', '')
     
     # Get user organizations and log their IDs for debugging
     user_orgs = user.profile.organizations.all()
@@ -64,8 +69,8 @@ def ticket_list(request):
         tickets = Ticket.objects.filter(Q(organization__in=user_orgs) | Q(created_by=user))
         logger.debug(f"Client {user.username} - showing tickets from orgs and created by user")
     
-    # Apply exclude_closed filter by default
-    if exclude_closed:
+    # Apply exclude_closed filter by default - but only if status filter isn't explicitly set to 'closed'
+    if exclude_closed and status_filter != 'closed':
         tickets = tickets.exclude(status='closed')
         logger.debug(f"Excluding closed tickets")
     
@@ -87,6 +92,12 @@ def ticket_list(request):
     elif assigned_filter == 'unassigned':
         tickets = tickets.filter(assigned_to__isnull=True)
     # 'all' nie wymaga filtrowania - pokazuje wszystkie zgłoszenia z organizacji agenta
+    
+    # New filtering options for client dashboard
+    if created_by_filter == 'me':
+        tickets = tickets.filter(created_by=user)
+    if exclude_created_by == 'me':
+        tickets = tickets.exclude(created_by=user)
     
     # Filtrowanie po ID zgłoszenia
     if ticket_id:
@@ -153,6 +164,8 @@ def ticket_list(request):
         'sort_options': sort_options,
         'user_organizations': user_orgs,  # Add user's organizations for debugging in template
         'exclude_closed': exclude_closed,  # Add the exclude_closed filter to context
+        'created_by_filter': created_by_filter,  # Add new filters to context
+        'exclude_created_by': exclude_created_by,
     }
     
     return render(request, 'crm/tickets/ticket_list.html', context)

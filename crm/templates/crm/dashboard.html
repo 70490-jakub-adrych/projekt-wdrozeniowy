@@ -90,7 +90,7 @@
         <div class="card mb-4">
             <div class="card-header">
                 <i class="fas fa-tasks mr-1"></i>
-                Przypisane zgłoszenia
+                Zgłoszenia przypisane do mnie
             </div>
             <div class="card-body">
                 {% if assigned_tickets %}
@@ -140,7 +140,7 @@
                 {% endif %}
             </div>
             <div class="card-footer">
-                <a href="{% url 'ticket_list' %}" class="btn btn-sm btn-primary">Zobacz wszystkie</a>
+                <a href="{% url 'ticket_list' %}?assigned=me" class="btn btn-sm btn-primary">Zobacz wszystkie</a>
             </div>
         </div>
     </div>
@@ -188,7 +188,52 @@
                 {% endif %}
             </div>
             <div class="card-footer">
-                <a href="{% url 'ticket_list' %}" class="btn btn-sm btn-primary">Zobacz wszystkie</a>
+                <a href="{% url 'ticket_list' %}?assigned=unassigned" class="btn btn-sm btn-primary">Zobacz wszystkie</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recently Closed Tickets Section -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-check-circle mr-1"></i>
+                Ostatnio zamknięte zgłoszenia
+            </div>
+            <div class="card-body">
+                {% if recently_closed_tickets %}
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Tytuł</th>
+                                <th>Organizacja</th>
+                                <th>Data zamknięcia</th>
+                                <th>Zamknięte przez</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ticket in recently_closed_tickets %}
+                            <tr>
+                                <td>#{{ ticket.id }}</td>
+                                <td><a href="{% url 'ticket_detail' ticket.pk %}">{{ ticket.title }}</a></td>
+                                <td>{{ ticket.organization.name }}</td>
+                                <td>{{ ticket.closed_at|date:"d.m.Y H:i" }}</td>
+                                <td>{% if ticket.assigned_to %}{{ ticket.assigned_to.username }}{% else %}<span class="text-muted">---</span>{% endif %}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p>Brak ostatnio zamkniętych zgłoszeń.</p>
+                {% endif %}
+            </div>
+            <div class="card-footer">
+                <a href="{% url 'ticket_list' %}?status=closed&exclude_closed=false" class="btn btn-sm btn-primary">Zobacz wszystkie</a>
             </div>
         </div>
     </div>
@@ -293,6 +338,7 @@
             </div>
             <div class="card-footer">
                 <a href="{% url 'ticket_create' %}" class="btn btn-sm btn-primary">Utwórz zgłoszenie</a>
+                <a href="{% url 'ticket_list' %}?created_by=me&exclude_closed=true" class="btn btn-sm btn-outline-secondary">Zobacz wszystkie</a>
             </div>
         </div>
     </div>
@@ -341,7 +387,54 @@
                 {% endif %}
             </div>
             <div class="card-footer">
-                <a href="{% url 'ticket_list' %}" class="btn btn-sm btn-primary">Zobacz wszystkie</a>
+                <a href="{% url 'ticket_list' %}?exclude_created_by=me&exclude_closed=true" class="btn btn-sm btn-primary">Zobacz wszystkie</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recently Closed Tickets Section for Clients -->
+<div class="row mt-4">
+    <div class="col-md-12">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-check-circle mr-1"></i>
+                Ostatnio zamknięte twoje zgłoszenia
+            </div>
+            <div class="card-body">
+                {% if recently_closed_tickets %}
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Tytuł</th>
+                                <th>Data zamknięcia</th>
+                                <th>Status</th>
+                                <th>Utworzone przez</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ticket in recently_closed_tickets %}
+                            <tr>
+                                <td>#{{ ticket.id }}</td>
+                                <td><a href="{% url 'ticket_detail' ticket.pk %}">{{ ticket.title }}</a></td>
+                                <td>{{ ticket.closed_at|date:"d.m.Y H:i" }}</td>
+                                <td>
+                                    <span class="badge badge-secondary">Zamknięte</span>
+                                </td>
+                                <td>{{ ticket.created_by.username }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p>Brak ostatnio zamkniętych zgłoszeń.</p>
+                {% endif %}
+            </div>
+            <div class="card-footer">
+                <a href="{% url 'ticket_list' %}?status=closed&exclude_closed=false&created_by=me" class="btn btn-sm btn-primary">Zobacz wszystkie</a>
             </div>
         </div>
     </div>
