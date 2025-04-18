@@ -7,37 +7,101 @@ from difflib import SequenceMatcher
 # Keywords for each category (in Polish)
 CATEGORY_KEYWORDS = {
     'hardware': [
-        "komputer", "laptop", "monitor", "drukarka", "klawiatura", "myszka", "sprzęt", 
-        "urządzenie", "dysk", "pamięć", "ram", "procesor", "cpu", "bateria", "zasilacz", 
-        "ładowarka", "kabel", "słuchawki", "mikrofon", "kamera", "webcam", "scanner", 
-        "skaner", "hardware", "fizyczny", "wymiana", "naprawa", "uszkodzony", "zepsuty",
-        "awaria", "złamany", "złamana", "popsuta", "nie działa sprzęt", "zakup sprzętu"
+        # urządzenia fizyczne i komponenty
+        "komputer", "laptop", "monitor", "drukarka", "klawiatura", "myszka", "sprzęt",
+        "urządzenie", "dysk", "pamięć", "ram", "procesor", "cpu", "bateria", "zasilacz",
+        "ładowarka", "kabel", "słuchawki", "mikrofon", "kamera", "webcam", "scanner",
+        "skaner", "hardware", "fizyczny", "płyta główna", "grafika", "karta graficzna", "gpu",
+        "dysk ssd", "nvme", "hdd", "obudowa", "wentylator", "cooler", "radiator",
+        "złącze", "port usb", "hdmi", "displayport", "adapter", "hub", "slot", "gniazdo",
+        "sata", "taśma", "układ scalony", "mikroprocesor", "karta sieciowa",
+        # awarie i uszkodzenia (wszystkie formy)
+        "uszkodzony", "uszkodzona", "uszkodzeni", "uszkodzone",
+        "popsuty", "popsuta", "popsute", "popsutym", "popsutych",
+        "zepsuty", "zepsuta", "zepsute", "zepsutym", "zepsutych",
+        "awaria", "awarie", "złamany", "złamana", "złamane", "popsuty",
+        "nie działa sprzęt", "sprzęt nie działa"
     ],
     'software': [
-        "program", "aplikacja", "system", "windows", "linux", "mac", "office", "excel", 
-        "word", "powerpoint", "software", "oprogramowanie", "instalacja", "aktualizacja", 
-        "update", "wersja", "licencja", "klucz", "aktywacja", "błąd", "error", "crash", 
-        "zawiesza", "nie działa program", "reinstalacja", "deinstalacja", "sterownik", 
-        "driver", "antywirus", "wirus", "złośliwe", "zakup programu", "zakup licencji"
+        # aplikacje, systemy, biblioteki
+        "program", "aplikacja", "system", "windows", "linux", "mac", "office", "excel",
+        "word", "powerpoint", "software", "oprogramowanie",
+        # instalacja i aktualizacje
+        "instalacja", "instaluje się", "zainstalowany", "deinstalacja",
+        "aktualizacja", "update", "wersja", "kompilacja", "runtime",
+        # błędy i logi
+        "błąd", "błędy", "error", "errors", "crash", "crashe", "zawiesza się", "zawiesił się",
+        "nie działa program", "exception", "stack trace", "log", "crash dump",
+        # licencje i klucze
+        "licencja", "klucz", "aktywacja", "klucz produktu",
+        # sterowniki, wirusy, skrypty
+        "sterownik", "driver", "antywirus", "wirus", "złośliwe",
+        "skrypt", "batch", "shell", "framework", "biblioteka", "dll",
+        # inne
+        "pakiet", "rpm", "deb", "apk", "iso", "konfiguracja", "cfg", "ini",
+        "cache", "profil użytkownika", "wirtualizacja", "docker", "vm",
+        # języki
+        "java", "python", "c#", "javascript"
     ],
     'network': [
-        "internet", "sieć", "wifi", "połączenie", "router", "modem", "lan", "ethernet", 
-        "ip", "dns", "vpn", "firewall", "zapora", "transfer", "pobieranie", "upload", 
-        "download", "ping", "prędkość", "szybkość", "łącze", "bezprzewodowy", "przewodowy", 
-        "kabel sieciowy", "serwer", "brak internetu", "wolny internet", "zdalne", "zdalna"
+        # połączenia sieciowe i protokoły
+        "internet", "sieć", "wifi", "ethernet", "połączenie", "brak internetu",
+        "wolny internet", "router", "modem", "lan", "wan", "switch", "router",
+        "ip", "dns", "dhcp", "nat", "firewall", "zapora", "proxy", "vpn",
+        # diagnostyka
+        "ping", "traceroute", "trasowanie", "packet loss", "straty pakietów",
+        "latencja", "MTU", "QoS",
+        # sprzęt sieciowy
+        "kabel sieciowy", "port lan", "port wan", "gniazdo sieciowe",
+        # inne
+        "isp", "operator", "serwer proxy", "hotspot", "ssid", "bridging",
+        "routing", "adresacja", "maskowanie"
     ],
     'account': [
-        "konto", "użytkownik", "login", "hasło", "logowanie", "wylogowanie", "rejestracja", 
-        "profil", "e-mail", "email", "mail", "uprawnienia", "dostęp", "blokada", 
-        "odblokowanie", "zmiana hasła", "przypomnienie hasła", "autoryzacja", 
-        "uwierzytelnianie", "2fa", "dwuskładnikowe", "administrator", "admin", "id", 
-        "resetowanie", "reset hasła", "nie pamiętam hasła", "nie mogę się zalogować"
+        # logowanie, uprawnienia
+        "konto", "użytkownik", "login", "logowanie", "wylogowanie", "hasło",
+        "zmiana hasła", "reset hasła", "przypomnienie hasła", "nie pamiętam hasła",
+        "nie mogę się zalogować", "blokada konta", "odblokowanie",
+        "uprawnienia", "dostęp", "rola", "role", "grupa", "grupy",
+        # uwierzytelnianie
+        "2fa", "dwuskładnikowe", "token", "sesja", "timeout",
+        "ldap", "active directory", "azure ad", "sso", "oauth", "saml",
+        # administrator
+        "admin", "administrator", "elevacja", "zatwierdzenie"
     ],
     'other': [
-        "inny", "różne", "ogólne", "pytanie", "prośba", "informacja", "pomoc", "wsparcie", 
-        "sugestia", "propozycja", "uwaga", "opinia", "feedback", "zgłoszenie", "problem"
+        # ogólne
+        "inny", "różne", "ogólne", "pytanie", "prośba", "informacja",
+        "pomoc", "wsparcie", "sugestia", "propozycja", "uwaga", "opinia",
+        "feedback", "zgłoszenie", "problem",
+        # procesy i zadania
+        "zadanie", "status", "priorytet", "eskalacja", "handover",
+        "koordynacja", "spotkanie", "planowanie", "raport", "analiza"
     ]
 }
+
+# Lista wyjątków - słowa, które nie powinny być brane pod uwagę przy dopasowywaniu podobieństwa 
+# do słów kluczowych z powodu zbyt wielu fałszywych pozytywnych dopasowań
+EXCEPTION_WORDS = [
+    # Przyimki i spójniki
+    "sie", "się", "nie", "jak", "czy", "ale", "lub", "oraz", "tylko", "tez", "też",
+    
+    # Zaimki i formy czasownikowe
+    "jest", "był", "być", "są", "ma", "mam", "mamy", "mi", "to", "tu", "tam",
+    "ten", "ta", "te", "ich", "im", "go", "jej", "ona", "one", "on", "ja", "ty",
+    
+    # Krótkie słowa, które mogą być podobne do słów kluczowych
+    "nic", "coś", "cos", "nas", "was", "dla", "dom", "już", "juz", "gdy", "tak", "pod",
+    "przy", "bez", "nad", "mac", "ram", "lan", "dwa", "trzy", "raz", "din", "ups", "ssd",
+    
+    # Krótkie słowa, które mogą być podobne do "sieć"
+    "się", "sięgnać", "siedzi", "siebie", "siedzieć", "siekiera", "sieć",
+    
+    # Inne typowe słowa w języku polskim
+    "bardzo", "może", "moze", "nasz", "wasz", "jego", "moje", "twoje", "swoje",
+    "dziś", "jutro", "wczoraj", "dzisiaj", "teraz", "potem", "kiedy", "gdzie"
+]
+
 
 def similar(a, b, threshold=0.8):
     """
@@ -75,6 +139,10 @@ def detect_category(title, description):
     
     for word in words:
         if len(word) < 3:  # Skip very short words
+            continue
+            
+        # Skip exception words - to prevent false positives
+        if word.lower() in EXCEPTION_WORDS:
             continue
             
         for category, keywords in CATEGORY_KEYWORDS.items():
