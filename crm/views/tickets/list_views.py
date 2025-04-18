@@ -1,0 +1,210 @@
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+from django.db.models import Q
+from django.http import HttpResponse
+from datetime import datetime, timedelta
+import logging
+import json
+
+# Configure logger
+logger = logging.getLogger(__name__)
+
+from ...models import Organization, Ticket
+
+@login_required
+def ticket_list(request):
+    """Widok listy zgłoszeń"""
+    user = request.user
+    role = user.profile.role
+    
+    # Filtrowanie i sortowanie
+    status_filter = request.GET.get('status', '')
+    priority_filter = request.GET.get('priority', '')
+    category_filter = request.GET.get('category', '')
+    assigned_filter = request.GET.get('assigned', '')
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+    ticket_id = request.GET.get('ticket_id', '')
+    sort_by = request.GET.get('sort_by', '-created_at')
+    exclude_closed = request.GET.get('exclude_closed', 'true') == 'true'  # New parameter, default to true
+    
+    # Get user organizations and log their IDs for debugging
+    user_orgs = user.profile.organizations.all()
+    org_ids = list(user_orgs.values_list('id', flat=True))
+    logger.debug(f"User {user.username} belongs to organizations: {org_ids}")
+    
+    # Określenie widocznych zgłoszeń na podstawie roli
+    if role == 'admin':
+        # Admin widzi wszystkie zgłoszenia
+        tickets = Ticket.objects.all()
+        logger.debug(f"Admin user {user.username} - showing all tickets")
+    elif role == 'agent':
+        # Agent widzi wszystkie zgłoszenia z organizacji, do których należy,
+        # niezależnie od tego, do kogo są przypisane
+        if not org_ids:
+            tickets = Ticket.objects.none()
+            logger.warning(f"Agent {user.username} has no organizations")
+        else:
+            # Force an explicit IN clause in SQL for clearer debugging and to avoid any optimization issues
+            tickets = Ticket.objects.filter(organization_id__in=org_ids)
+            # Log which organizations the user belongs to
+            logger.debug(f"Agent {user.username} - showing tickets where organization_id IN {org_ids}")
+            logger.debug(f"SQL Query: {str(tickets.query)}")
+            
+            # Debug: Log all ticket IDs from these organizations 
+            ticket_ids = list(tickets.values_list('id', flat=True))
+            logger.debug(f"Found {len(ticket_ids)} tickets: {ticket_ids}")
+            
+            # Debug: Log assigned tickets info
+            assigned_tickets = tickets.filter(assigned_to__isnull=False)
+            assigned_data = [(t.id, t.assigned_to.username) for t in assigned_tickets]
+            logger.debug(f"Assigned tickets: {assigned_data}")
+    else:  # client
+        # Klient widzi zgłoszenia ze swoich organizacji i swoje własne
+        tickets = Ticket.objects.filter(Q(organization__in=user_orgs) | Q(created_by=user))
+        logger.debug(f"Client {user.username} - showing tickets from orgs and created by user")
+    
+    # Apply exclude_closed filter by default
+    if exclude_closed:
+        tickets = tickets.exclude(status='closed')
+        logger.debug(f"Excluding closed tickets")
+    
+    # Debug: Count results before filtering
+    initial_count = tickets.count()
+    logger.debug(f"Initial ticket count before filters: {initial_count}")
+    
+    # Zastosowanie filtrów
+    if status_filter:
+        tickets = tickets.filter(status=status_filter)
+    if priority_filter:
+        tickets = tickets.filter(priority=priority_filter)
+    if category_filter:
+        tickets = tickets.filter(category=category_filter)
+    
+    # Filtrowanie po przypisaniu
+    if assigned_filter == 'me':
+        tickets = tickets.filter(assigned_to=user)
+    elif assigned_filter == 'unassigned':
+        tickets = tickets.filter(assigned_to__isnull=True)
+    # 'all' nie wymaga filtrowania - pokazuje wszystkie zgłoszenia z organizacji agenta
+    
+    # Filtrowanie po ID zgłoszenia
+    if ticket_id:
+        try:
+            ticket_id = int(ticket_id)
+            tickets = tickets.filter(id=ticket_id)
+        except ValueError:
+            # Jeśli podano nieprawidłowy ID, nie filtruj
+            pass
+    
+    # Filtrowanie po zakresie dat
+    if date_from:
+        try:
+            date_from_obj = datetime.strptime(date_from, '%Y-%m-%d')
+            tickets = tickets.filter(created_at__gte=date_from_obj)
+        except ValueError:
+            # Nieprawidłowy format daty, ignorujemy
+            pass
+    
+    if date_to:
+        try:
+            date_to_obj = datetime.strptime(date_to, '%Y-%m-%d')
+            # Dodajemy jeden dzień, aby uwzględnić całą datę "do"
+            date_to_obj = date_to_obj + timedelta(days=1)
+            tickets = tickets.filter(created_at__lt=date_to_obj)
+        except ValueError:
+            # Nieprawidłowy format daty, ignorujemy
+            pass
+    
+    # Dodaj logging do diagnostyki
+    logger.debug(f"User {user.username} role {role} - final query: {str(tickets.query)}")
+    final_count = tickets.count()
+    logger.debug(f"Final ticket count after filters: {final_count}")
+    
+    # Zastosowanie sortowania
+    tickets = tickets.order_by(sort_by)
+    
+    # Lista dostępnych opcji sortowania dla wyboru w interfejsie
+    sort_options = [
+        ('-created_at', 'Data utworzenia (najnowsze)'),
+        ('created_at', 'Data utworzenia (najstarsze)'),
+        ('title', 'Tytuł (A-Z)'),
+        ('-title', 'Tytuł (Z-A)'),
+        ('priority', 'Priorytet (rosnąco)'),
+        ('-priority', 'Priorytet (malejąco)'),
+        ('status', 'Status (rosnąco)'),
+        ('-status', 'Status (malejąco)'),
+        ('category', 'Kategoria (A-Z)'),
+        ('-category', 'Kategoria (Z-A)'),
+        ('organization__name', 'Organizacja (A-Z)'),
+        ('-organization__name', 'Organizacja (Z-A)'),
+    ]
+    
+    context = {
+        'tickets': tickets,
+        'status_filter': status_filter,
+        'priority_filter': priority_filter,
+        'category_filter': category_filter,
+        'assigned_filter': assigned_filter,
+        'date_from': date_from,
+        'date_to': date_to,
+        'ticket_id': ticket_id,
+        'sort_by': sort_by,
+        'sort_options': sort_options,
+        'user_organizations': user_orgs,  # Add user's organizations for debugging in template
+        'exclude_closed': exclude_closed,  # Add the exclude_closed filter to context
+    }
+    
+    return render(request, 'crm/tickets/ticket_list.html', context)
+
+
+@login_required
+def debug_tickets(request):
+    """Debug view to check access permissions"""
+    if not request.user.is_staff:
+        return HttpResponseForbidden("Only staff can access this debugging view")
+    
+    user = request.user
+    result = {
+        "username": user.username,
+        "role": user.profile.role,
+        "organizations": [],
+        "tickets_visible": [],
+    }
+    
+    # Get user's organizations
+    user_orgs = user.profile.organizations.all()
+    for org in user_orgs:
+        org_data = {
+            "id": org.id,
+            "name": org.name,
+            "tickets": []
+        }
+        
+        # Get all tickets from this organization
+        org_tickets = Ticket.objects.filter(organization=org)
+        for ticket in org_tickets:
+            org_data["tickets"].append({
+                "id": ticket.id,
+                "title": ticket.title,
+                "assigned_to": ticket.assigned_to.username if ticket.assigned_to else "Unassigned",
+                "status": ticket.status
+            })
+        
+        result["organizations"].append(org_data)
+    
+    # Test the query that should show tickets
+    if user.profile.role == 'agent':
+        visible_tickets = Ticket.objects.filter(organization__in=user_orgs)
+        for ticket in visible_tickets:
+            result["tickets_visible"].append({
+                "id": ticket.id,
+                "title": ticket.title,
+                "organization": ticket.organization.name,
+                "assigned_to": ticket.assigned_to.username if ticket.assigned_to else "Unassigned"
+            })
+    
+    return HttpResponse(
+        json.dumps(result, indent=2), 
+        content_type="application/json"
+    )

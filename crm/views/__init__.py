@@ -16,7 +16,8 @@ from .organization_views import (
     organization_list, organization_detail, 
     organization_create, organization_update
 )
-from .ticket_views import (
+# Import from the tickets package instead of ticket_views
+from .tickets import (
     ticket_list, ticket_detail, ticket_create, ticket_update,
     ticket_close, ticket_reopen, ticket_assign_to_me, debug_tickets
 )
