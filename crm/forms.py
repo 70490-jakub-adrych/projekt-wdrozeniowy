@@ -1,6 +1,7 @@
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth.models import User, Group
+from django.core.exceptions import ValidationError
 from .models import (
     UserProfile, Organization, Ticket,
     TicketComment, TicketAttachment
@@ -78,6 +79,15 @@ class TicketCommentForm(forms.ModelForm):
         }
 
 
+# Define max file size: 20MB
+MAX_UPLOAD_SIZE = 20 * 1024 * 1024  # 20MB in bytes
+
+def validate_file_size(value):
+    """Validate that file size is under the limit"""
+    if value.size > MAX_UPLOAD_SIZE:
+        raise ValidationError(f'Rozmiar pliku przekracza limit 20MB. Twój plik ma {value.size/(1024*1024):.2f}MB.')
+
+
 class TicketAttachmentForm(forms.ModelForm):
     accepted_policy = forms.BooleanField(
         required=True,
@@ -92,3 +102,10 @@ class TicketAttachmentForm(forms.ModelForm):
             'file': 'Załącznik',
             'accepted_policy': 'Akceptuję politykę prywatności i regulamin'
         }
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Add the validator to the file field
+        self.fields['file'].validators.append(validate_file_size)
+        # Update help_text to inform users about the size limit
+        self.fields['file'].help_text = f"Maksymalny rozmiar pliku: 20MB."

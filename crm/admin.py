@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.models import User, Group
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.admin import GroupAdmin as BaseGroupAdmin
+from django.contrib import messages  # Add this import
 from django import forms
 from .models import (
     UserProfile, Organization, Ticket, TicketComment,
@@ -24,6 +25,40 @@ class UserProfileInline(admin.StackedInline):
 
 class UserAdmin(BaseUserAdmin):
     inlines = (UserProfileInline,)
+    
+    def save_model(self, request, obj, form, change):
+        """Override save_model to enforce one group per user"""
+        # Save the user instance first
+        super().save_model(request, obj, form, change)
+        
+        # Check if the user belongs to multiple groups
+        groups = obj.groups.all()
+        if groups.count() > 1:
+            # Remove all groups except the latest one
+            latest_group = groups.last()
+            obj.groups.clear()
+            obj.groups.add(latest_group)
+            messages.warning(request, 
+                f"Użytkownik może należeć tylko do jednej grupy. Przypisano tylko do grupy {latest_group.name}.")
+    
+    def save_related(self, request, form, formsets, change):
+        """Override save_related to enforce one organization for clients"""
+        # Call the original save_related to save the inline forms
+        super().save_related(request, form, formsets, change)
+        
+        # Get the user instance
+        user = form.instance
+        
+        # Check if the user is a client and has multiple organizations
+        if hasattr(user, 'profile') and user.profile.role == 'client':
+            orgs = user.profile.organizations.all()
+            if orgs.count() > 1:
+                # Keep only the first organization
+                first_org = orgs.first()
+                user.profile.organizations.clear()
+                user.profile.organizations.add(first_org)
+                messages.warning(request, 
+                    f"Klient może być przypisany tylko do jednej organizacji. Przypisano tylko do {first_org.name}.")
 
 
 # Custom Group admin with role field
