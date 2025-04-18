@@ -10,6 +10,14 @@ cd projekt-wdrozeniowy-crm/projekt-wdrozeniowy
 
 pip install -r requirements.txt
 
+# Pobieranie bibliotek statycznych
+
+# Linux
+.\download_static_files.sh
+
+# Windows (PowerShell script)
+.\download_static_files.ps1
+
 # Tworzenie migracji na podstawie modeli
 python manage.py makemigrations
 
