@@ -2,7 +2,7 @@
 
 Poniżej znajdują się komendy niezbędne do skonfigurowania i uruchomienia systemu Helpdesk.
 
-
+# For Linux
 ```bash
 # Klonowanie repozytorium z GitHub
 git clone https://github.com/70490-jakub-adrych/projekt-wdrozeniowy/
@@ -13,10 +13,6 @@ pip install -r requirements.txt
 # Pobieranie bibliotek statycznych
 # Linux
 .\download_static_files.sh
-
-# Windows (PowerShell script)
-.\download_static_files.ps1
-
 
 # Tworzenie migracji na podstawie modeli
 python manage.py makemigrations
@@ -30,7 +26,30 @@ python manage.py setup_demo_data
 # Uruchomienie serwera deweloperskiego
 python manage.py runserver
 ```
+# For Windows
+```bash
+# Klonowanie repozytorium z GitHub
+git clone https://github.com/70490-jakub-adrych/projekt-wdrozeniowy/
+cd projekt-wdrozeniowy-crm/projekt-wdrozeniowy
 
+pip install -r requirements.txt
+
+# Pobieranie bibliotek statycznych
+# Windows (PowerShell script)
+.\download_static_files.ps1
+
+# Tworzenie migracji na podstawie modeli
+python manage.py makemigrations
+
+# Zastosowanie migracji do bazy danych
+python manage.py migrate
+
+# Tworzenie kont i ustawienie grup oraz uprawnień
+python manage.py setup_demo_data
+
+# Uruchomienie serwera deweloperskiego
+python manage.py runserver
+```
 Po wykonaniu tych kroków aplikacja będzie dostępna pod adresem: http://127.0.0.1:8000/
 
 ### Pierwsze logowanie
