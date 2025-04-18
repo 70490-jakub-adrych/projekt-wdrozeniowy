@@ -5,6 +5,8 @@ from django.contrib.auth.models import Group
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
 from django.contrib.auth.views import LoginView
+from django.contrib.auth.forms import PasswordChangeForm
+from django.contrib.auth import update_session_auth_hash
 
 from ..forms import UserRegisterForm, UserProfileForm, CustomAuthenticationForm
 from ..models import UserProfile, User
@@ -180,3 +182,21 @@ def reject_user(request, user_id):
         return redirect('pending_approvals')
     
     return render(request, 'crm/approvals/reject_user.html', {'profile': profile})
+
+
+@login_required
+def custom_password_change_view(request):
+    """Widok zmiany hasła użytkownika"""
+    if request.method == 'POST':
+        form = PasswordChangeForm(user=request.user, data=request.POST)
+        if form.is_valid():
+            form.save()
+            # Update the session to prevent the user from being logged out
+            update_session_auth_hash(request, form.user)
+            log_activity(request, 'password_changed')
+            messages.success(request, 'Twoje hasło zostało zmienione pomyślnie!')
+            return redirect('dashboard')
+    else:
+        form = PasswordChangeForm(user=request.user)
+    
+    return render(request, 'crm/auth/password_change.html', {'form': form})

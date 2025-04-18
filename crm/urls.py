@@ -12,6 +12,8 @@ from .views import (
 )
 from . import views
 from .views import secure_file_views
+from django.contrib.auth import views as auth_views
+from .views.auth_views import custom_password_change_view
 
 urlpatterns = [
     # Landing and authentication
@@ -55,4 +57,7 @@ urlpatterns = [
     # Test error pages
     path('test-404/', views.error_views.test_404_page, name='test_404_page'),
     path('test-403/', views.error_views.test_403_page, name='test_403_page'),
+
+    # Password change
+    path('password/change/', custom_password_change_view, name='password_change'),
 ]

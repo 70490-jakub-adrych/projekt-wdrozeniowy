@@ -252,6 +252,7 @@ class ActivityLog(models.Model):
         ('ticket_closed', 'Zamknięcie'),
         ('ticket_reopened', 'Wznowienie'),
         ('preferences_updated', 'Aktualizacja preferencji'),
+        ('password_changed', 'Zmiana hasła'),
         ('404_error', 'Błąd 404 - Strona nie znaleziona'),
         ('403_error', 'Błąd 403 - Brak dostępu'),
     )

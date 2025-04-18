@@ -70,6 +70,9 @@
                                 {% endif %}
                             </div>
                             <div class="dropdown-divider"></div>
+                            <a class="dropdown-item" href="{% url 'password_change' %}">
+                                <i class="fas fa-key"></i> Zmiana hasła
+                            </a>
                             <a class="dropdown-item" href="{% url 'logout' %}">Wyloguj</a>
                         </div>
                     </li>
