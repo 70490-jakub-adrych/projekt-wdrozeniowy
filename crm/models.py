@@ -250,6 +250,7 @@ class ActivityLog(models.Model):
         ('ticket_resolved', 'Rozwiązanie'),
         ('ticket_closed', 'Zamknięcie'),
         ('ticket_reopened', 'Wznowienie'),
+        ('preferences_updated', 'Aktualizacja preferencji'),
     )
     
     user = models.ForeignKey(User, related_name='activities', on_delete=models.CASCADE, verbose_name="Użytkownik")
@@ -266,3 +267,26 @@ class ActivityLog(models.Model):
         ordering = ['-created_at']
         verbose_name = "Log aktywności"
         verbose_name_plural = "Logi aktywności"
+
+
+class UserPreference(models.Model):
+    """Model przechowujący preferencje użytkownika"""
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='preferences')
+    show_closed_tickets = models.BooleanField(default=False, verbose_name="Pokaż zamknięte zgłoszenia")
+    items_per_page = models.IntegerField(default=10, verbose_name="Elementów na stronę")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"Preferencje użytkownika {self.user.username}"
+    
+    class Meta:
+        verbose_name = "Preferencja użytkownika"
+        verbose_name_plural = "Preferencje użytkownika"
+
+
+@receiver(post_save, sender=User)
+def create_user_preferences(sender, instance, created, **kwargs):
+    """Automatyczne tworzenie preferencji dla nowego użytkownika"""
+    if created:
+        UserPreference.objects.create(user=instance)
