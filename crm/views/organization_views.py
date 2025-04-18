@@ -10,15 +10,12 @@ from ..forms import OrganizationForm
 @login_required
 def organization_list(request):
     """Widok listy organizacji"""
-    # Tylko admin i moderator mogą widzieć wszystkie organizacje
-    if request.user.profile.role in ['admin', 'moderator']:
+    # Tylko admin i agent mogą widzieć wszystkie organizacje
+    if request.user.profile.role in ['admin', 'agent']:
         organizations = Organization.objects.all()
     else:
-        # Klient widzi tylko swoją organizację
-        if request.user.profile.organization:
-            organizations = [request.user.profile.organization]
-        else:
-            organizations = []
+        # Klient widzi tylko swoje organizacje
+        organizations = request.user.profile.organizations.all()
     
     return render(request, 'crm/organizations/organization_list.html', {'organizations': organizations})
 
@@ -29,11 +26,11 @@ def organization_detail(request, pk):
     organization = get_object_or_404(Organization, pk=pk)
     
     # Sprawdzenie uprawnień
-    if (request.user.profile.role not in ['admin', 'moderator'] and 
-        request.user.profile.organization != organization):
+    if (request.user.profile.role not in ['admin', 'agent'] and 
+        organization not in request.user.profile.organizations.all()):
         return HttpResponseForbidden("Brak dostępu")
     
-    members = UserProfile.objects.filter(organization=organization)
+    members = UserProfile.objects.filter(organizations=organization)
     tickets = Ticket.objects.filter(organization=organization)
     
     # Liczenie biletów według statusu

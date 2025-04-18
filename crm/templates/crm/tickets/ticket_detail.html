@@ -8,20 +8,24 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Zgłoszenie #{{ ticket.id }}: {{ ticket.title }}</h2>
     <div>
+        {% if can_edit %}
         <a href="{% url 'ticket_update' ticket.pk %}" class="btn btn-primary">
             <i class="fas fa-edit"></i> Edytuj
         </a>
-        {% if ticket.status != 'closed' %}
+        {% endif %}
+        
+        {% if can_close and ticket.status != 'closed' %}
         <a href="{% url 'ticket_close' ticket.pk %}" class="btn btn-secondary">
             <i class="fas fa-lock"></i> Zamknij
         </a>
-        {% else %}
-        {% if user.profile.role != 'client' %}
+        {% endif %}
+        
+        {% if can_reopen and ticket.status == 'closed' %}
         <a href="{% url 'ticket_reopen' ticket.pk %}" class="btn btn-success">
             <i class="fas fa-lock-open"></i> Otwórz ponownie
         </a>
         {% endif %}
-        {% endif %}
+        
         <a href="{% url 'ticket_list' %}" class="btn btn-outline-secondary">
             <i class="fas fa-arrow-left"></i> Powrót
         </a>
@@ -138,14 +142,14 @@
             <div class="card-body">
                 {% if comments %}
                 {% for comment in comments %}
-                <div class="media mb-3 p-3 {% if comment.author == ticket.created_by %}bg-light{% endif %}" style="border-left: 3px solid {% if comment.author.profile.role == 'admin' %}#dc3545{% elif comment.author.profile.role == 'moderator' %}#17a2b8{% else %}#6c757d{% endif %};">
+                <div class="media mb-3 p-3 {% if comment.author == ticket.created_by %}bg-light{% endif %} border-left-user-role-{{ comment.author.profile.role }}">
                     <div class="media-body">
                         <h5 class="mt-0">
                             {{ comment.author.username }}
                             {% if comment.author.profile.role == 'admin' %}
                                 <span class="badge badge-danger">Admin</span>
-                            {% elif comment.author.profile.role == 'moderator' %}
-                                <span class="badge badge-info">Moderator</span>
+                            {% elif comment.author.profile.role == 'agent' %}
+                                <span class="badge badge-info">Agent</span>
                             {% else %}
                                 <span class="badge badge-secondary">Klient</span>
                             {% endif %}
@@ -156,10 +160,11 @@
                 </div>
                 {% endfor %}
                 {% else %}
-                <p class="text-muted">Brak komentarzy. Dodaj pierwszy komentarz poniżej.</p>
+                <p class="text-muted">Brak komentarzy. {% if can_comment %}Dodaj pierwszy komentarz poniżej.{% endif %}</p>
                 {% endif %}
                 
                 <!-- Formularz dodawania komentarza -->
+                {% if can_comment %}
                 <hr>
                 <h5>Dodaj komentarz</h5>
                 <form method="post" action="{% url 'ticket_detail' ticket.pk %}">
@@ -167,6 +172,7 @@
                     {{ comment_form|crispy }}
                     <button type="submit" name="submit_comment" class="btn btn-primary mt-3">Dodaj komentarz</button>
                 </form>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -174,6 +180,7 @@
     <!-- Panel boczny -->
     <div class="col-md-4">
         <!-- Dodawanie załączników -->
+        {% if can_attach %}
         <div class="card mb-4">
             <div class="card-header">
                 <i class="fas fa-paperclip"></i> Dodaj załącznik
@@ -186,6 +193,7 @@
                 </form>
             </div>
         </div>
+        {% endif %}
         
         <!-- Informacje o zgłoszeniu -->
         <div class="card mb-4">
@@ -265,6 +273,19 @@
         margin-bottom: 5px;
         font-size: 16px;
         font-weight: bold;
+    }
+
+    /* Comment border styles based on user role */
+    .border-left-user-role-admin {
+        border-left: 3px solid #dc3545;
+    }
+    
+    .border-left-user-role-agent {
+        border-left: 3px solid #17a2b8;
+    }
+    
+    .border-left-user-role-client {
+        border-left: 3px solid #6c757d;
     }
 </style>
 {% endblock %}

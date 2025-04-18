@@ -15,7 +15,7 @@ class UserProfile(models.Model):
     
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     role = models.CharField(max_length=20, choices=USER_ROLES, default='client', verbose_name="Rola")
-    organization = models.ForeignKey('Organization', on_delete=models.SET_NULL, null=True, blank=True, related_name='members', verbose_name="Organizacja")
+    organizations = models.ManyToManyField('Organization', blank=True, related_name='members', verbose_name="Organizacje")
     phone = models.CharField(max_length=20, blank=True, verbose_name="Telefon")
     is_approved = models.BooleanField(default=False, verbose_name="Zatwierdzony")
     

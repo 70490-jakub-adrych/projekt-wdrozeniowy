@@ -21,10 +21,10 @@ class UserRegisterForm(UserCreationForm):
 class UserProfileForm(forms.ModelForm):
     class Meta:
         model = UserProfile
-        fields = ['phone', 'organization']
+        fields = ['phone', 'organizations']
         labels = {
             'phone': 'Telefon',
-            'organization': 'Organizacja',
+            'organizations': 'Organizacje',
         }
 
 

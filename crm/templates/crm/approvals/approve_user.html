@@ -36,6 +36,20 @@
                                 {% endif %}
                             </div>
                         </div>
+                        <div class="row">
+                            <div class="col-md-4 font-weight-bold">Organizacje:</div>
+                            <div class="col-md-8">
+                                {% if profile.organizations.exists %}
+                                    <ul>
+                                        {% for org in profile.organizations.all %}
+                                            <li>{{ org.name }}</li>
+                                        {% endfor %}
+                                    </ul>
+                                {% else %}
+                                    <span class="text-muted">Brak</span>
+                                {% endif %}
+                            </div>
+                        </div>
                     </div>
                 </div>
                 

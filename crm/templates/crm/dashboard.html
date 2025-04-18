@@ -84,7 +84,7 @@
     </div>
 </div>
 
-{% if user.profile.role == 'admin' or user.profile.role == 'moderator' %}
+{% if user.profile.role == 'admin' or user.profile.role == 'agent' %}
 <div class="row">
     <div class="col-md-6">
         <div class="card mb-4">
@@ -194,6 +194,7 @@
     </div>
 </div>
 
+{% if user.profile.role == 'admin' %}
 <div class="row">
     <div class="col-md-12">
         <div class="card mb-4">
@@ -235,14 +236,14 @@
                 <p>Brak aktywności.</p>
                 {% endif %}
             </div>
-            {% if user.profile.role == 'admin' %}
             <div class="card-footer">
                 <a href="{% url 'activity_logs' %}" class="btn btn-sm btn-primary">Zobacz wszystkie logi</a>
             </div>
-            {% endif %}
         </div>
     </div>
 </div>
+{% endif %}
+
 {% else %}
 <!-- Dla klientów -->
 <div class="row">

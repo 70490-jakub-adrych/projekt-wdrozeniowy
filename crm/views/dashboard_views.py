@@ -11,7 +11,7 @@ from django.contrib.auth.models import Group
 def dashboard(request):
     """Widok panelu głównego"""
     user = request.user
-    context = {}
+    role = user.profile.role
     
     # Check if user has a profile, create one if not
     try:
@@ -45,80 +45,104 @@ def dashboard(request):
         
         messages.info(request, message)
     
-    # Statystyki dla wszystkich użytkowników
-    if user.profile.role == 'admin' or user.profile.role == 'agent':
-        # Statystyki dla administratorów i agentów
+    # Tickets by status count
+    if role == 'admin':
+        # Admin sees all
         new_tickets = Ticket.objects.filter(status='new').count()
         in_progress_tickets = Ticket.objects.filter(status='in_progress').count()
         waiting_tickets = Ticket.objects.filter(status='waiting').count()
         resolved_tickets = Ticket.objects.filter(status='resolved').count()
         closed_tickets = Ticket.objects.filter(status='closed').count()
         
-        # Get pending approvals count
-        if user.profile.role == 'admin':
-            pending_approvals = UserProfile.objects.filter(is_approved=False).count()
-        else:
-            org = user.profile.organization
-            if org:
-                pending_approvals = UserProfile.objects.filter(
-                    is_approved=False, 
-                    organization=org
-                ).count()
-            else:
-                pending_approvals = 0
+        # Admin also sees assigned tickets and unassigned tickets
+        assigned_tickets = Ticket.objects.filter(assigned_to__isnull=False).order_by('-updated_at')[:5]
+        unassigned_tickets = Ticket.objects.filter(assigned_to__isnull=True).order_by('-created_at')[:5]
         
-        # Jeśli agent, pokaż tylko swoje przypisane zgłoszenia
-        if user.profile.role == 'agent':
-            assigned_tickets = Ticket.objects.filter(assigned_to=user)
-            unassigned_tickets = Ticket.objects.filter(
-                assigned_to=None,
-                organization=user.profile.organization
-            )
-        else:
-            assigned_tickets = Ticket.objects.filter(assigned_to=user)
-            unassigned_tickets = Ticket.objects.filter(assigned_to=None)
+        # Get recent activities
+        recent_activities = ActivityLog.objects.all().order_by('-created_at')[:10]
         
-        # Ostatnie aktualizacje zgłoszeń
+        # Check for pending approvals
+        pending_approvals = UserProfile.objects.filter(is_approved=False).count()
+        
+    elif role == 'agent':
+        # Agent sees tickets from their organizations
+        user_orgs = user.profile.organizations.all()
+        org_tickets = Ticket.objects.filter(organization__in=user_orgs)
+        
+        new_tickets = org_tickets.filter(status='new').count()
+        in_progress_tickets = org_tickets.filter(status='in_progress').count()
+        waiting_tickets = org_tickets.filter(status='waiting').count()
+        resolved_tickets = org_tickets.filter(status='resolved').count()
+        closed_tickets = org_tickets.filter(status='closed').count()
+        
+        # Fix: Use org_tickets as base query to ensure we only show tickets from agent's organizations
+        # and filter to show tickets assigned to this agent
+        assigned_tickets = org_tickets.filter(assigned_to=user).order_by('-updated_at')[:5]
+        unassigned_tickets = org_tickets.filter(assigned_to__isnull=True).order_by('-created_at')[:5]
+        
+        # Get recent activities
         recent_activities = ActivityLog.objects.filter(
-            action_type__in=['ticket_created', 'ticket_updated', 'ticket_commented', 'ticket_resolved', 'ticket_closed']
-        ).select_related('user', 'ticket')[:10]
+            Q(user=user) | Q(ticket__organization__in=user_orgs)
+        ).distinct().order_by('-created_at')[:10]
         
+        # Check for pending approvals in agent's organizations
+        pending_approvals = UserProfile.objects.filter(
+            is_approved=False,
+            organizations__in=user_orgs
+        ).distinct().count()
+        
+    else:  # client
+        # Client sees tickets from their organizations or created by them
+        user_orgs = user.profile.organizations.all()
+        if user_orgs.exists():
+            org_tickets = Ticket.objects.filter(
+                Q(organization__in=user_orgs) | Q(created_by=user)
+            ).distinct()
+        else:
+            org_tickets = Ticket.objects.filter(created_by=user)
+        
+        new_tickets = org_tickets.filter(status='new').count()
+        in_progress_tickets = org_tickets.filter(status='in_progress').count()
+        waiting_tickets = org_tickets.filter(status='waiting').count()
+        resolved_tickets = org_tickets.filter(status='resolved').count()
+        closed_tickets = org_tickets.filter(status='closed').count()
+        
+        # Client sees their tickets
+        user_tickets = Ticket.objects.filter(created_by=user).order_by('-created_at')[:5]
+        
+        # Client sees other tickets from their organization
+        if user_orgs.exists():
+            org_recent_tickets = org_tickets.exclude(created_by=user).order_by('-created_at')[:5]
+        else:
+            org_recent_tickets = []
+            
+        # Variables not needed for client view
+        assigned_tickets = None
+        unassigned_tickets = None
+        recent_activities = None
+        pending_approvals = None
+    
+    # Common context
+    context = {
+        'new_tickets': new_tickets,
+        'in_progress_tickets': in_progress_tickets,
+        'waiting_tickets': waiting_tickets,
+        'resolved_tickets': resolved_tickets,
+        'closed_tickets': closed_tickets,
+    }
+    
+    # Add role specific context
+    if role == 'client':
         context.update({
-            'new_tickets': new_tickets,
-            'in_progress_tickets': in_progress_tickets,
-            'waiting_tickets': waiting_tickets,
-            'resolved_tickets': resolved_tickets,
-            'closed_tickets': closed_tickets,
-            'assigned_tickets': assigned_tickets[:5],
-            'unassigned_tickets': unassigned_tickets[:5],
+            'user_tickets': user_tickets,
+            'org_recent_tickets': org_recent_tickets,
+        })
+    else:
+        context.update({
+            'assigned_tickets': assigned_tickets,
+            'unassigned_tickets': unassigned_tickets,
             'recent_activities': recent_activities,
             'pending_approvals': pending_approvals,
         })
-    else:
-        # Statystyki dla klientów
-        user_org = user.profile.organization
-        if user_org:
-            org_tickets = Ticket.objects.filter(organization=user_org)
-            new_tickets = org_tickets.filter(status='new').count()
-            in_progress_tickets = org_tickets.filter(status='in_progress').count()
-            waiting_tickets = org_tickets.filter(status='waiting').count()
-            resolved_tickets = org_tickets.filter(status='resolved').count()
-            closed_tickets = org_tickets.filter(status='closed').count()
-            
-            # Ostatnie zgłoszenia użytkownika
-            user_tickets = Ticket.objects.filter(created_by=user).order_by('-created_at')[:5]
-            
-            # Ostatnie zgłoszenia organizacji
-            org_recent_tickets = org_tickets.order_by('-created_at')[:5]
-            
-            context.update({
-                'new_tickets': new_tickets,
-                'in_progress_tickets': in_progress_tickets,
-                'waiting_tickets': waiting_tickets,
-                'resolved_tickets': resolved_tickets,
-                'closed_tickets': closed_tickets,
-                'user_tickets': user_tickets,
-                'org_recent_tickets': org_recent_tickets,
-            })
     
     return render(request, 'crm/dashboard.html', context)

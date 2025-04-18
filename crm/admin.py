@@ -13,6 +13,7 @@ class UserProfileInline(admin.StackedInline):
     model = UserProfile
     can_delete = False
     verbose_name_plural = 'Profile'
+    filter_horizontal = ('organizations',)
     
     def get_readonly_fields(self, request, obj=None):
         """Make role field read-only since it's synchronized with groups"""

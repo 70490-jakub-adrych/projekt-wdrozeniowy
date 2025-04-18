@@ -2,6 +2,27 @@
 
 {% block title %}Zgłoszenia | System Helpdesk{% endblock %}
 
+{% block extra_css %}
+<style>
+    .action-btn {
+        width: 36px;
+        height: 36px;
+        padding: 6px 0;
+        text-align: center;
+        margin-right: 2px;
+    }
+    
+    .btn-group .action-btn:last-child {
+        margin-right: 0;
+    }
+    
+    .btn-group {
+        display: flex;
+        justify-content: flex-start;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Zgłoszenia</h2>
@@ -117,23 +138,27 @@
                         <td>{% if ticket.assigned_to %}{{ ticket.assigned_to.username }}{% else %}<span class="text-muted">Nieprzypisane</span>{% endif %}</td>
                         <td>{{ ticket.created_at|date:"d.m.Y H:i" }}</td>
                         <td>
-                            <a href="{% url 'ticket_detail' ticket.pk %}" class="btn btn-sm btn-info" title="Szczegóły">
-                                <i class="fas fa-eye"></i>
-                            </a>
-                            <a href="{% url 'ticket_update' ticket.pk %}" class="btn btn-sm btn-primary" title="Edytuj">
-                                <i class="fas fa-edit"></i>
-                            </a>
-                            {% if ticket.status != 'closed' %}
-                            <a href="{% url 'ticket_close' ticket.pk %}" class="btn btn-sm btn-secondary" title="Zamknij">
-                                <i class="fas fa-lock"></i>
-                            </a>
-                            {% else %}
-                            {% if user.profile.role != 'client' %}
-                            <a href="{% url 'ticket_reopen' ticket.pk %}" class="btn btn-sm btn-success" title="Otwórz ponownie">
-                                <i class="fas fa-lock-open"></i>
-                            </a>
-                            {% endif %}
-                            {% endif %}
+                            <div class="btn-group">
+                                <a href="{% url 'ticket_detail' ticket.pk %}" class="btn btn-sm btn-info action-btn" title="Szczegóły">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                
+                                {% if user.profile.role in 'admin,agent' or ticket.created_by == user %}
+                                <a href="{% url 'ticket_update' ticket.pk %}" class="btn btn-sm btn-primary action-btn" title="Edytuj">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                {% endif %}
+                                
+                                {% if ticket.status != 'closed' and user.profile.role in 'admin,agent' or ticket.created_by == user %}
+                                <a href="{% url 'ticket_close' ticket.pk %}" class="btn btn-sm btn-secondary action-btn" title="Zamknij">
+                                    <i class="fas fa-lock"></i>
+                                </a>
+                                {% elif ticket.status == 'closed' and user.profile.role in 'admin,agent' %}
+                                <a href="{% url 'ticket_reopen' ticket.pk %}" class="btn btn-sm btn-success action-btn" title="Otwórz ponownie">
+                                    <i class="fas fa-lock-open"></i>
+                                </a>
+                                {% endif %}
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}

@@ -18,7 +18,7 @@
                     {% csrf_token %}
                     {{ form|crispy }}
                     
-                    {% if user.profile.role == 'admin' or user.profile.role == 'moderator' %}
+                    {% if user.profile.role == 'admin' or user.profile.role == 'agent' %}
                     {% if not ticket %}
                     <div class="form-group">
                         <label for="organization">Organizacja:</label>

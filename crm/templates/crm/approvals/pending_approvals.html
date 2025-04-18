@@ -32,7 +32,17 @@
                     <tr>
                         <td>{{ profile.user.username }}</td>
                         <td>{{ profile.user.email }}</td>
-                        <td>{% if profile.organization %}{{ profile.organization.name }}{% else %}<span class="text-muted">Brak</span>{% endif %}</td>
+                        <td>
+                            {% if profile.organizations.exists %}
+                                <ul class="list-unstyled mb-0">
+                                {% for org in profile.organizations.all %}
+                                    <li>{{ org.name }}</li>
+                                {% endfor %}
+                                </ul>
+                            {% else %}
+                                <span class="text-muted">Brak</span>
+                            {% endif %}
+                        </td>
                         <td>{{ profile.user.date_joined|date:"d.m.Y H:i" }}</td>
                         <td>
                             <a href="{% url 'approve_user' profile.user.id %}" class="btn btn-sm btn-success">

@@ -68,8 +68,8 @@
                             {{ log.user.username }}
                             {% if log.user.profile.role == 'admin' %}
                                 <span class="badge badge-danger">Admin</span>
-                            {% elif log.user.profile.role == 'moderator' %}
-                                <span class="badge badge-info">Moderator</span>
+                            {% elif log.user.profile.role == 'agent' %}
+                                <span class="badge badge-info">Agent</span>
                             {% else %}
                                 <span class="badge badge-secondary">Klient</span>
                             {% endif %}

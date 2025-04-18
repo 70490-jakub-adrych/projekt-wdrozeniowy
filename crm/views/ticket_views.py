@@ -28,15 +28,14 @@ def ticket_list(request):
     # Określenie widocznych zgłoszeń na podstawie roli
     if role == 'admin':
         tickets = Ticket.objects.all()
-    elif role == 'moderator':
-        tickets = Ticket.objects.filter(
-            Q(assigned_to=user) | Q(assigned_to=None)
-        )
-    else:  # klient
-        if user.profile.organization:
-            tickets = Ticket.objects.filter(organization=user.profile.organization)
-        else:
-            tickets = Ticket.objects.filter(created_by=user)
+    elif role == 'agent':
+        # Agent sees tickets from organizations they belong to
+        user_orgs = user.profile.organizations.all()
+        tickets = Ticket.objects.filter(organization__in=user_orgs)
+    else:  # client
+        # Client sees tickets from their organizations
+        user_orgs = user.profile.organizations.all()
+        tickets = Ticket.objects.filter(Q(organization__in=user_orgs) | Q(created_by=user))
     
     # Zastosowanie filtrów
     if status_filter:
@@ -70,34 +69,46 @@ def ticket_detail(request, pk):
     
     # Sprawdzenie uprawnień dostępu do zgłoszenia
     if role == 'client':
-        if user.profile.organization != ticket.organization and user != ticket.created_by:
+        user_orgs = user.profile.organizations.all()
+        if ticket.organization not in user_orgs and user != ticket.created_by:
             return HttpResponseForbidden("Brak dostępu do tego zgłoszenia")
     
     comments = ticket.comments.all().order_by('created_at')
     attachments = ticket.attachments.all()
     
+    # Sprawdzanie uprawnień do dodawania komentarzy i załączników
+    can_comment = role in ['admin', 'agent'] or user == ticket.created_by
+    can_attach = role in ['admin', 'agent'] or user == ticket.created_by
+    
     # Formularz komentarza
     if request.method == 'POST':
-        comment_form = TicketCommentForm(request.POST)
-        attachment_form = TicketAttachmentForm(request.POST, request.FILES)
-        
-        if 'submit_comment' in request.POST and comment_form.is_valid():
-            comment = comment_form.save(commit=False)
-            comment.ticket = ticket
-            comment.author = request.user
-            comment.save()
-            log_activity(request, 'ticket_commented', ticket, f"Dodano komentarz do zgłoszenia '{ticket.title}'")
-            messages.success(request, 'Komentarz został dodany!')
-            return redirect('ticket_detail', pk=ticket.pk)
+        if 'submit_comment' in request.POST and can_comment:
+            comment_form = TicketCommentForm(request.POST)
+            attachment_form = TicketAttachmentForm()
             
-        if 'submit_attachment' in request.POST and attachment_form.is_valid():
-            attachment = attachment_form.save(commit=False)
-            attachment.ticket = ticket
-            attachment.uploaded_by = request.user
-            attachment.filename = os.path.basename(attachment.file.name)
-            attachment.save()
-            messages.success(request, 'Załącznik został dodany!')
-            return redirect('ticket_detail', pk=ticket.pk)
+            if comment_form.is_valid():
+                comment = comment_form.save(commit=False)
+                comment.ticket = ticket
+                comment.author = request.user
+                comment.save()
+                log_activity(request, 'ticket_commented', ticket, f"Dodano komentarz do zgłoszenia '{ticket.title}'")
+                messages.success(request, 'Komentarz został dodany!')
+                return redirect('ticket_detail', pk=ticket.pk)
+        elif 'submit_attachment' in request.POST and can_attach:
+            comment_form = TicketCommentForm()
+            attachment_form = TicketAttachmentForm(request.POST, request.FILES)
+            
+            if attachment_form.is_valid():
+                attachment = attachment_form.save(commit=False)
+                attachment.ticket = ticket
+                attachment.uploaded_by = request.user
+                attachment.filename = os.path.basename(attachment.file.name)
+                attachment.save()
+                messages.success(request, 'Załącznik został dodany!')
+                return redirect('ticket_detail', pk=ticket.pk)
+        else:
+            # Nieautoryzowana próba dodania komentarza lub załącznika
+            return HttpResponseForbidden("Brak uprawnień do wykonania tej akcji")
     else:
         comment_form = TicketCommentForm()
         attachment_form = TicketAttachmentForm()
@@ -108,6 +119,11 @@ def ticket_detail(request, pk):
         'attachments': attachments,
         'comment_form': comment_form,
         'attachment_form': attachment_form,
+        'can_comment': can_comment,
+        'can_attach': can_attach,
+        'can_edit': role in ['admin', 'agent'] or user == ticket.created_by,
+        'can_close': role in ['admin', 'agent'] or user == ticket.created_by,
+        'can_reopen': role in ['admin', 'agent'],
     }
     
     return render(request, 'crm/tickets/ticket_detail.html', context)
@@ -124,17 +140,23 @@ def ticket_create(request):
             ticket = form.save(commit=False)
             ticket.created_by = user
             
-            # Get the organization for the current user
-            # This assumes the user has a profile with an organization
-            if hasattr(request.user, 'profile') and request.user.profile.organization:
-                ticket.organization = request.user.profile.organization
-            # Alternative approach if user is directly related to organization
-            elif hasattr(request.user, 'organization'):
-                ticket.organization = request.user.organization
+            # Get the organization for the current user or from form
+            if 'organization' in request.POST and request.POST['organization'] and user.profile.role in ['admin', 'agent']:
+                # Admin/agent can select organization
+                org_id = request.POST.get('organization')
+                try:
+                    ticket.organization = Organization.objects.get(id=org_id)
+                except Organization.DoesNotExist:
+                    messages.error(request, "Selected organization does not exist.")
+                    return redirect('ticket_create')
             else:
-                # If no organization found and it's required, redirect with error
-                messages.error(request, "Cannot create ticket: No organization associated with your account.")
-                return redirect('dashboard')
+                # Regular users use their first organization
+                user_orgs = user.profile.organizations.all()
+                if user_orgs.exists():
+                    ticket.organization = user_orgs.first()
+                else:
+                    messages.error(request, "Cannot create ticket: No organization associated with your account.")
+                    return redirect('dashboard')
                 
             ticket.save()
             log_activity(request, 'ticket_created', ticket, f"Utworzono zgłoszenie: '{ticket.title}'")
@@ -165,14 +187,16 @@ def ticket_update(request, pk):
     ticket = get_object_or_404(Ticket, pk=pk)
     
     # Sprawdzenie uprawnień do edycji
-    if role == 'client':
-        # Klient może edytować tylko swoje zgłoszenia
-        if ticket.created_by != user:
-            return HttpResponseForbidden("Nie możesz edytować tego zgłoszenia")
+    if role == 'client' and ticket.created_by != user:
+        return HttpResponseForbidden("Nie możesz edytować tego zgłoszenia")
+    elif role == 'agent' and ticket.assigned_to and ticket.assigned_to != user:
+        # Agent może edytować tylko przypisane do niego zgłoszenia lub nieprzypisane
+        if ticket.assigned_to is not None:
+            return HttpResponseForbidden("Nie możesz edytować zgłoszenia przypisanego do innego agenta")
     
     if request.method == 'POST':
         # Inny formularz w zależności od roli
-        if role in ['admin', 'moderator']:
+        if role in ['admin', 'agent']:
             form = ModeratorTicketForm(request.POST, instance=ticket)
         else:
             form = TicketForm(request.POST, instance=ticket)
@@ -195,7 +219,7 @@ def ticket_update(request, pk):
             messages.success(request, 'Zgłoszenie zostało zaktualizowane!')
             return redirect('ticket_detail', pk=ticket.pk)
     else:
-        if role in ['admin', 'moderator']:
+        if role in ['admin', 'agent']:
             form = ModeratorTicketForm(instance=ticket)
         else:
             form = TicketForm(instance=ticket)
@@ -236,8 +260,8 @@ def ticket_reopen(request, pk):
     user = request.user
     ticket = get_object_or_404(Ticket, pk=pk)
     
-    # Tylko admin i moderator mogą ponownie otwierać zgłoszenia
-    if user.profile.role == 'client':
+    # Tylko admin i agent mogą ponownie otwierać zgłoszenia
+    if user.profile.role not in ['admin', 'agent']:
         return HttpResponseForbidden("Nie możesz ponownie otworzyć zgłoszenia")
     
     if request.method == 'POST':

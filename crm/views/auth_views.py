@@ -40,7 +40,12 @@ def register(request):
             # Just update the other fields
             profile = user.profile
             profile.phone = profile_form.cleaned_data.get('phone')
-            profile.organization = profile_form.cleaned_data.get('organization')
+            
+            # Update for ManyToManyField
+            organization = profile_form.cleaned_data.get('organization')
+            if organization:
+                profile.organizations.add(organization)
+                
             profile.is_approved = is_approved
             profile.save()
             
@@ -99,15 +104,15 @@ def pending_approvals(request):
         # Admins see all pending users
         pending_users = UserProfile.objects.filter(is_approved=False)
     else:
-        # Agents see only users trying to join their organization
-        org = request.user.profile.organization
-        if not org:
+        # Agents see only users trying to join their organizations
+        agent_orgs = request.user.profile.organizations.all()
+        if not agent_orgs.exists():
             messages.warning(request, "Nie masz przypisanej organizacji.")
             return redirect('dashboard')
         pending_users = UserProfile.objects.filter(
             is_approved=False,
-            organization=org
-        )
+            organizations__in=agent_orgs
+        ).distinct()
     
     return render(request, 'crm/approvals/pending_approvals.html', {
         'pending_users': pending_users
@@ -124,8 +129,10 @@ def approve_user(request, user_id):
     
     # Check if agent has permission to approve this user
     if request.user.profile.role == 'agent':
-        if profile.organization != request.user.profile.organization:
-            return HttpResponseForbidden("Możesz zatwierdzać tylko użytkowników z Twojej organizacji.")
+        agent_orgs = set(request.user.profile.organizations.values_list('id', flat=True))
+        user_orgs = set(profile.organizations.values_list('id', flat=True))
+        if not agent_orgs.intersection(user_orgs):
+            return HttpResponseForbidden("Możesz zatwierdzać tylko użytkowników z Twoich organizacji.")
     
     # Approve the user
     if request.method == 'POST':
@@ -148,8 +155,10 @@ def reject_user(request, user_id):
     
     # Check if agent has permission to reject this user
     if request.user.profile.role == 'agent':
-        if profile.organization != request.user.profile.organization:
-            return HttpResponseForbidden("Możesz odrzucać tylko użytkowników z Twojej organizacji.")
+        agent_orgs = set(request.user.profile.organizations.values_list('id', flat=True))
+        user_orgs = set(profile.organizations.values_list('id', flat=True))
+        if not agent_orgs.intersection(user_orgs):
+            return HttpResponseForbidden("Możesz odrzucać tylko użytkowników z Twoich organizacji.")
     
     # Delete the user account
     if request.method == 'POST':
