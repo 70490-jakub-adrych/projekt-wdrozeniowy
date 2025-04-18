@@ -47,6 +47,20 @@ class OrganizationForm(forms.ModelForm):
 
 
 class TicketForm(forms.ModelForm):
+    title = forms.CharField(
+        min_length=8,
+        max_length=255,
+        error_messages={
+            'min_length': 'Tytuł powinien zawierać minimum 8 znaków, aby dokładnie opisać problem.'
+        }
+    )
+    description = forms.CharField(
+        min_length=20, 
+        widget=forms.Textarea(attrs={'rows': 5}),
+        error_messages={
+            'min_length': 'Opis powinien zawierać minimum 20 znaków, aby umożliwić analizę problemu.'
+        }
+    )
     suggested_category = forms.CharField(
         widget=forms.HiddenInput(), 
         required=False
@@ -55,12 +69,23 @@ class TicketForm(forms.ModelForm):
     class Meta:
         model = Ticket
         fields = ['title', 'description', 'category', 'priority', 'assigned_to', 'suggested_category']
-        widgets = {
-            'description': forms.Textarea(attrs={'rows': 5}),
-        }
 
 
 class ModeratorTicketForm(forms.ModelForm):
+    title = forms.CharField(
+        min_length=8,
+        max_length=255,
+        error_messages={
+            'min_length': 'Tytuł powinien zawierać minimum 8 znaków, aby dokładnie opisać problem.'
+        }
+    )
+    description = forms.CharField(
+        min_length=20, 
+        widget=forms.Textarea(attrs={'rows': 5}),
+        error_messages={
+            'min_length': 'Opis powinien zawierać minimum 20 znaków, aby umożliwić analizę problemu.'
+        }
+    )
     suggested_category = forms.CharField(
         widget=forms.HiddenInput(), 
         required=False
@@ -69,13 +94,24 @@ class ModeratorTicketForm(forms.ModelForm):
     class Meta:
         model = Ticket
         fields = ['title', 'description', 'category', 'priority', 'status', 'assigned_to', 'suggested_category']
-        widgets = {
-            'description': forms.Textarea(attrs={'rows': 5}),
-        }
 
 
 class ClientTicketForm(forms.ModelForm):
     """Formularz dla klientów ograniczający dostępne pola"""
+    title = forms.CharField(
+        min_length=8,
+        max_length=255,
+        error_messages={
+            'min_length': 'Tytuł powinien zawierać minimum 8 znaków, aby dokładnie opisać problem.'
+        }
+    )
+    description = forms.CharField(
+        min_length=20, 
+        widget=forms.Textarea(attrs={'rows': 5}),
+        error_messages={
+            'min_length': 'Opis powinien zawierać minimum 20 znaków, aby umożliwić analizę problemu i sugestię kategorii.'
+        }
+    )
     suggested_category = forms.CharField(
         widget=forms.HiddenInput(), 
         required=False
@@ -84,9 +120,6 @@ class ClientTicketForm(forms.ModelForm):
     class Meta:
         model = Ticket
         fields = ['title', 'description', 'category', 'suggested_category']  # Brak pól status i priorytet
-        widgets = {
-            'description': forms.Textarea(attrs={'rows': 5}),
-        }
 
 
 class TicketCommentForm(forms.ModelForm):
