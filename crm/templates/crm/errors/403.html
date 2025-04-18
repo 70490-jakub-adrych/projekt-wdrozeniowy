@@ -1,0 +1,30 @@
+{% extends 'crm/base.html' %}
+
+{% block title %}Brak dostępu | System Helpdesk{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <i class="fas fa-exclamation-triangle mr-2"></i> Błąd 403
+            </div>
+            <div class="card-body text-center">
+                <div class="mb-4">
+                    <i class="fas fa-lock fa-5x text-danger mb-3"></i>
+                    <h4>Brak dostępu</h4>
+                </div>
+                
+                <p>Nie masz uprawnień do przeglądania tej strony.</p>
+                
+                <hr>
+                
+                <div class="mt-4">
+                    <a href="{% url 'dashboard' %}" class="btn btn-primary">Przejdź do panelu głównego</a>
+                    <a href="javascript:history.back()" class="btn btn-outline-secondary">Wróć do poprzedniej strony</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

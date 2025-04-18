@@ -21,3 +21,37 @@ def log_activity(request, action_type, ticket=None, description=""):
             description=description,
             ip_address=get_client_ip(request)
         )
+
+def log_error(request, error_type, url=None, description=None):
+    """Log error activities like 404 and 403 errors"""
+    from ..models import ActivityLog
+    
+    # Get the URL that was attempted to be accessed
+    if url is None:
+        url = request.path
+        
+    # Create descriptive message if not provided
+    if description is None:
+        if error_type == '404_error':
+            description = f"Attempted to access non-existent page: {url}"
+        elif error_type == '403_error':
+            description = f"Attempted to access restricted page: {url}"
+    
+    # Get IP address
+    ip_address = request.META.get('REMOTE_ADDR', '')
+    if 'HTTP_X_FORWARDED_FOR' in request.META:
+        ip_address = request.META.get('HTTP_X_FORWARDED_FOR', '').split(',')[0].strip()
+    
+    # Create log entry
+    log_entry = ActivityLog(
+        action_type=error_type,
+        description=description,
+        ip_address=ip_address
+    )
+    
+    # Add user information if authenticated
+    if request.user.is_authenticated:
+        log_entry.user = request.user
+        
+    log_entry.save()
+    return log_entry

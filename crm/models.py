@@ -251,11 +251,15 @@ class ActivityLog(models.Model):
         ('ticket_closed', 'Zamknięcie'),
         ('ticket_reopened', 'Wznowienie'),
         ('preferences_updated', 'Aktualizacja preferencji'),
+        ('404_error', 'Błąd 404 - Strona nie znaleziona'),
+        ('403_error', 'Błąd 403 - Brak dostępu'),
     )
     
-    user = models.ForeignKey(User, related_name='activities', on_delete=models.CASCADE, verbose_name="Użytkownik")
+    user = models.ForeignKey(User, related_name='activities', on_delete=models.CASCADE, 
+                            null=True, blank=True, verbose_name="Użytkownik")
     action_type = models.CharField(max_length=30, choices=ACTION_TYPES, verbose_name="Typ akcji")
-    ticket = models.ForeignKey(Ticket, related_name='activities', on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Zgłoszenie")
+    ticket = models.ForeignKey(Ticket, related_name='activities', on_delete=models.SET_NULL, 
+                              null=True, blank=True, verbose_name="Zgłoszenie")
     description = models.TextField(blank=True, verbose_name="Opis")
     ip_address = models.GenericIPAddressField(null=True, blank=True, verbose_name="Adres IP")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Data")

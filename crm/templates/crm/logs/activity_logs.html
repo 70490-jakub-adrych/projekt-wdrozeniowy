@@ -55,11 +55,12 @@
         display: inline-block;
     }
     .col-datetime { width: 15%; }
-    .col-user { width: 15%; }
-    .col-action { width: 15%; }
+    .col-user { width: 12%; }
+    .col-action { width: 12%; }
     .col-ticket { width: 10%; }
-    .col-details { width: 30%; }
+    .col-details { width: 23%; }
     .col-ip { width: 15%; }
+    .col-actions { width: 8%; }
 </style>
 
 <!-- Lista logów -->
@@ -79,6 +80,7 @@
                         <th class="col-ticket">Zgłoszenie</th>
                         <th class="col-details">Szczegóły</th>
                         <th class="col-ip">Adres IP</th>
+                        <th class="col-actions">Akcje</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -86,13 +88,17 @@
                     <tr>
                         <td>{{ log.created_at|date:"d.m.Y H:i:s" }}</td>
                         <td>
-                            {{ log.user.username }}
-                            {% if log.user.profile.role == 'admin' %}
-                                <span class="badge badge-danger">Admin</span>
-                            {% elif log.user.profile.role == 'agent' %}
-                                <span class="badge badge-info">Agent</span>
+                            {% if log.user %}
+                                {{ log.user.username }}
+                                {% if log.user.profile.role == 'admin' %}
+                                    <span class="badge badge-danger">Admin</span>
+                                {% elif log.user.profile.role == 'agent' %}
+                                    <span class="badge badge-info">Agent</span>
+                                {% else %}
+                                    <span class="badge badge-secondary">Klient</span>
+                                {% endif %}
                             {% else %}
-                                <span class="badge badge-secondary">Klient</span>
+                                <span class="text-muted">Nieznany</span>
                             {% endif %}
                         </td>
                         <td>{{ log.get_action_type_display }}</td>
@@ -111,6 +117,11 @@
                             {% endif %}
                         </td>
                         <td>{{ log.ip_address|default:"-" }}</td>
+                        <td>
+                            <a href="{% url 'activity_log_detail' log.id %}" class="btn btn-sm btn-info">
+                                <i class="fas fa-search"></i> Szczegóły
+                            </a>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>

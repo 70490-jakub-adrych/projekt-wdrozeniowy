@@ -13,4 +13,5 @@ if settings.DEBUG:
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
 # Custom error handlers
-handler404 = 'crm.views.handle_custom_404'
+handler404 = 'crm.views.error_views.handle_custom_404'
+handler403 = 'crm.views.error_views.handle_custom_403'

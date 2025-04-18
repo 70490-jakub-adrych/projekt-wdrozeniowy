@@ -1,0 +1,122 @@
+{% extends 'crm/base.html' %}
+
+{% block title %}Szczegóły logu #{{ log.id }} | System Helpdesk{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Szczegóły logu #{{ log.id }}</h2>
+    <div>
+        <a href="javascript:history.back()" class="btn btn-outline-secondary ml-2">
+            <i class="fas fa-arrow-left"></i> Powrót do listy logów
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header bg-primary text-white">
+        <i class="fas fa-info-circle"></i> Informacje podstawowe
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <dl class="row">
+                    <dt class="col-sm-4">ID:</dt>
+                    <dd class="col-sm-8">{{ log.id }}</dd>
+                    
+                    <dt class="col-sm-4">Data i czas:</dt>
+                    <dd class="col-sm-8">{{ log.created_at|date:"d.m.Y H:i:s" }}</dd>
+                    
+                    <dt class="col-sm-4">Typ akcji:</dt>
+                    <dd class="col-sm-8">{{ log.get_action_type_display }} ({{ log.action_type }})</dd>
+                    
+                    <dt class="col-sm-4">Adres IP:</dt>
+                    <dd class="col-sm-8">{{ log.ip_address|default:"Brak danych" }}</dd>
+                </dl>
+            </div>
+            <div class="col-md-6">
+                <dl class="row">
+                    <dt class="col-sm-4">Użytkownik:</dt>
+                    <dd class="col-sm-8">
+                        {% if log.user %}
+                            {{ log.user.username }}
+                            {% if log.user.profile.role == 'admin' %}
+                                <span class="badge badge-danger">Admin</span>
+                            {% elif log.user.profile.role == 'agent' %}
+                                <span class="badge badge-info">Agent</span>
+                            {% else %}
+                                <span class="badge badge-secondary">Klient</span>
+                            {% endif %}
+                        {% else %}
+                            <span class="text-muted">Nieznany</span>
+                        {% endif %}
+                    </dd>
+                    
+                    {% if log.user %}
+                    <dt class="col-sm-4">Email:</dt>
+                    <dd class="col-sm-8">{{ log.user.email|default:"Brak" }}</dd>
+                    {% endif %}
+                    
+                    <dt class="col-sm-4">Zgłoszenie:</dt>
+                    <dd class="col-sm-8">
+                        {% if log.ticket %}
+                        <a href="{% url 'ticket_detail' log.ticket.pk %}">#{{ log.ticket.id }} - {{ log.ticket.title }}</a>
+                        {% else %}
+                        <span class="text-muted">Brak powiązanego zgłoszenia</span>
+                        {% endif %}
+                    </dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if log.description %}
+<div class="card mt-4">
+    <div class="card-header bg-info text-white">
+        <i class="fas fa-align-left"></i> Opis akcji
+    </div>
+    <div class="card-body">
+        <p class="mb-0">{{ log.description }}</p>
+    </div>
+</div>
+{% endif %}
+
+{% if log.ticket %}
+<div class="card mt-4">
+    <div class="card-header bg-success text-white">
+        <i class="fas fa-ticket-alt"></i> Szczegóły zgłoszenia
+    </div>
+    <div class="card-body">
+        <dl class="row">
+            <dt class="col-sm-2">ID:</dt>
+            <dd class="col-sm-10">#{{ log.ticket.id }}</dd>
+            
+            <dt class="col-sm-2">Tytuł:</dt>
+            <dd class="col-sm-10">{{ log.ticket.title }}</dd>
+            
+            <dt class="col-sm-2">Status:</dt>
+            <dd class="col-sm-10">{{ log.ticket.get_status_display }}</dd>
+            
+            <dt class="col-sm-2">Priorytet:</dt>
+            <dd class="col-sm-10">{{ log.ticket.get_priority_display }}</dd>
+            
+            <dt class="col-sm-2">Kategoria:</dt>
+            <dd class="col-sm-10">{{ log.ticket.get_category_display }}</dd>
+            
+            <dt class="col-sm-2">Organizacja:</dt>
+            <dd class="col-sm-10">{{ log.ticket.organization.name }}</dd>
+            
+            <dt class="col-sm-2">Utworzył:</dt>
+            <dd class="col-sm-10">{{ log.ticket.created_by.username }} ({{ log.ticket.created_at|date:"d.m.Y H:i" }})</dd>
+            
+            <dt class="col-sm-2">Przypisane do:</dt>
+            <dd class="col-sm-10">{% if log.ticket.assigned_to %}{{ log.ticket.assigned_to.username }}{% else %}Nieprzypisane{% endif %}</dd>
+        </dl>
+        
+        <a href="{% url 'ticket_detail' log.ticket.pk %}" class="btn btn-primary">
+            <i class="fas fa-search"></i> Przejdź do zgłoszenia
+        </a>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

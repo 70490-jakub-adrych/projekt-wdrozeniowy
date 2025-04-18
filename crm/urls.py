@@ -43,7 +43,12 @@ urlpatterns = [
     
     # Logi aktywności
     path('logs/', views.activity_logs, name='activity_logs'),
+    path('logs/<int:log_id>/', views.activity_log_detail, name='activity_log_detail'),
 
     # Secure files
     path('secure-file/<int:attachment_id>/', secure_file_views.serve_attachment, name='serve_attachment'),
+
+    # Test error pages
+    path('test-404/', views.error_views.test_404_page, name='test_404_page'),
+    path('test-403/', views.error_views.test_403_page, name='test_403_page'),
 ]

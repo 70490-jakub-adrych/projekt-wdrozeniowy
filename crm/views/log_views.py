@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
 
@@ -33,3 +33,22 @@ def activity_logs(request):
     }
     
     return render(request, 'crm/logs/activity_logs.html', context)
+
+
+@login_required
+def activity_log_detail(request, log_id):
+    """Widok szczegółów pojedynczego logu"""
+    user = request.user
+    role = user.profile.role
+    
+    # Tylko admin może oglądać szczegóły logów
+    if role != 'admin':
+        return HttpResponseForbidden("Brak dostępu do logów")
+    
+    log = get_object_or_404(ActivityLog, id=log_id)
+    
+    context = {
+        'log': log,
+    }
+    
+    return render(request, 'crm/logs/activity_log_detail.html', context)
