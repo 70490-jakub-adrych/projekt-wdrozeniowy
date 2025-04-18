@@ -18,8 +18,7 @@ def dashboard(request):
         user_profile = user.profile
     except:
         # Create a profile if missing
-        from ..models import UserProfile
-        from django.contrib.auth.models import Group
+        # Note: UserProfile is already imported at the top
         
         # Determine appropriate role based on superuser status
         if user.is_superuser:

@@ -27,7 +27,7 @@ INSTALLED_APPS = [
     'crispy_bootstrap4',
     
     # Local apps
-    'crm',
+    'crm.apps.CrmConfig',  # Use the app config class instead of just the app name
 ]
 
 MIDDLEWARE = [
