@@ -1,7 +1,7 @@
 from django.db import models
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from django.utils import timezone
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, m2m_changed
 from django.dispatch import receiver
 
 
@@ -36,12 +36,39 @@ def create_user_profile(sender, instance, created, **kwargs):
         # Set approved status based on role (admins are auto-approved)
         is_approved = True if instance.is_superuser else False
         UserProfile.objects.create(user=instance, role=role, is_approved=is_approved)
+        
+        # Add user to appropriate group based on role
+        if role == 'admin':
+            group, _ = Group.objects.get_or_create(name='Admin')
+            instance.groups.add(group)
 
 
 @receiver(post_save, sender=User)
 def save_user_profile(sender, instance, **kwargs):
     """Zapisywanie profilu przy zapisie użytkownika"""
     instance.profile.save()
+
+
+@receiver(m2m_changed, sender=User.groups.through)
+def sync_user_groups_with_role(sender, instance, action, **kwargs):
+    """Synchronize user role when groups change"""
+    if action in ['post_add', 'post_remove', 'post_clear']:
+        if hasattr(instance, 'profile'):
+            # Set role based on group membership
+            if instance.groups.filter(name='Admin').exists():
+                instance.profile.role = 'admin'
+                instance.profile.is_approved = True
+            elif instance.groups.filter(name='Agent').exists():
+                instance.profile.role = 'agent'
+                instance.profile.is_approved = True
+            else:
+                instance.profile.role = 'client'
+            
+            # Save profile without triggering the post_save signal recursively
+            UserProfile.objects.filter(pk=instance.profile.pk).update(
+                role=instance.profile.role,
+                is_approved=instance.profile.is_approved
+            )
 
 
 class Organization(models.Model):

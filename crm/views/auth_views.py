@@ -29,18 +29,16 @@ def register(request):
             # Przypisanie do odpowiedniej grupy na podstawie roli
             if user.is_superuser:
                 group, _ = Group.objects.get_or_create(name='Admin')
-                role = 'admin'
                 is_approved = True  # Admin accounts are auto-approved
             else:
                 group, _ = Group.objects.get_or_create(name='Klient')
-                role = 'client'
                 is_approved = False  # Clients need approval
             
             user.groups.add(group)
             
-            # Uzupełnienie profilu
+            # Profile will be automatically updated with correct role via signal
+            # Just update the other fields
             profile = user.profile
-            profile.role = role
             profile.phone = profile_form.cleaned_data.get('phone')
             profile.organization = profile_form.cleaned_data.get('organization')
             profile.is_approved = is_approved

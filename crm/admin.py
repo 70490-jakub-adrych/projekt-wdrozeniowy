@@ -1,6 +1,8 @@
 from django.contrib import admin
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User, Group
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+from django.contrib.auth.admin import GroupAdmin as BaseGroupAdmin
+from django import forms
 from .models import (
     UserProfile, Organization, Ticket, TicketComment,
     TicketAttachment, ActivityLog
@@ -11,15 +13,70 @@ class UserProfileInline(admin.StackedInline):
     model = UserProfile
     can_delete = False
     verbose_name_plural = 'Profile'
+    
+    def get_readonly_fields(self, request, obj=None):
+        """Make role field read-only since it's synchronized with groups"""
+        readonly_fields = list(self.readonly_fields)
+        readonly_fields.append('role')
+        return readonly_fields
 
 
 class UserAdmin(BaseUserAdmin):
     inlines = (UserProfileInline,)
 
 
-# Ponowna rejestracja modelu User z nowym adminem
+# Custom Group admin with role field
+class GroupAdminForm(forms.ModelForm):
+    ROLE_CHOICES = [
+        ('admin', 'Administrator'),
+        ('agent', 'Agent'),
+        ('client', 'Klient'),
+    ]
+    
+    role = forms.ChoiceField(
+        label="Rola użytkowników",
+        choices=ROLE_CHOICES,
+        required=True,
+        help_text="Rola przypisywana użytkownikom w tej grupie."
+    )
+    
+    class Meta:
+        model = Group
+        fields = '__all__'  # Include all fields, including permissions
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Set initial role based on group name
+        if self.instance.pk:
+            if self.instance.name == 'Admin':
+                self.fields['role'].initial = 'admin'
+            elif self.instance.name == 'Agent':
+                self.fields['role'].initial = 'agent'
+            elif self.instance.name == 'Klient':
+                self.fields['role'].initial = 'client'
+
+class GroupAdmin(BaseGroupAdmin):
+    form = GroupAdminForm
+    
+    # Preserve the filter_horizontal for permissions from BaseGroupAdmin
+    filter_horizontal = ('permissions',)
+    
+    def save_model(self, request, obj, form, change):
+        super().save_model(request, obj, form, change)
+        role = form.cleaned_data.get('role')
+        
+        # Update the role display name to match standard conventions
+        standard_names = {'admin': 'Admin', 'agent': 'Agent', 'client': 'Klient'}
+        if role in standard_names and obj.name != standard_names[role]:
+            obj.name = standard_names[role]
+            obj.save(update_fields=['name'])
+
+# Re-register User and Group with custom admins
 admin.site.unregister(User)
 admin.site.register(User, UserAdmin)
+
+admin.site.unregister(Group)
+admin.site.register(Group, GroupAdmin)
 
 
 class TicketCommentInline(admin.TabularInline):
