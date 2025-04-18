@@ -5,6 +5,7 @@ from django.db.models import Q
 from django.utils import timezone
 from django.http import HttpResponseForbidden
 import os
+from datetime import datetime, timedelta
 
 from ..models import Organization, Ticket, TicketComment, TicketAttachment
 from ..forms import (
@@ -24,6 +25,10 @@ def ticket_list(request):
     status_filter = request.GET.get('status', '')
     priority_filter = request.GET.get('priority', '')
     category_filter = request.GET.get('category', '')
+    assigned_filter = request.GET.get('assigned', '')
+    date_from = request.GET.get('date_from', '')
+    date_to = request.GET.get('date_to', '')
+    ticket_id = request.GET.get('ticket_id', '')
     sort_by = request.GET.get('sort_by', '-created_at')
     
     # Określenie widocznych zgłoszeń na podstawie roli
@@ -46,15 +51,71 @@ def ticket_list(request):
     if category_filter:
         tickets = tickets.filter(category=category_filter)
     
+    # Filtrowanie po przypisaniu
+    if assigned_filter == 'me':
+        tickets = tickets.filter(assigned_to=user)
+    elif assigned_filter == 'unassigned':
+        tickets = tickets.filter(assigned_to__isnull=True)
+    # 'all' nie wymaga filtrowania - pokazuje wszystko
+    
+    # Filtrowanie po ID zgłoszenia
+    if ticket_id:
+        try:
+            ticket_id = int(ticket_id)
+            tickets = tickets.filter(id=ticket_id)
+        except ValueError:
+            # Jeśli podano nieprawidłowy ID, nie filtruj
+            pass
+    
+    # Filtrowanie po zakresie dat
+    if date_from:
+        try:
+            date_from_obj = datetime.strptime(date_from, '%Y-%m-%d')
+            tickets = tickets.filter(created_at__gte=date_from_obj)
+        except ValueError:
+            # Nieprawidłowy format daty, ignorujemy
+            pass
+    
+    if date_to:
+        try:
+            date_to_obj = datetime.strptime(date_to, '%Y-%m-%d')
+            # Dodajemy jeden dzień, aby uwzględnić całą datę "do"
+            date_to_obj = date_to_obj + timedelta(days=1)
+            tickets = tickets.filter(created_at__lt=date_to_obj)
+        except ValueError:
+            # Nieprawidłowy format daty, ignorujemy
+            pass
+    
     # Zastosowanie sortowania
     tickets = tickets.order_by(sort_by)
+    
+    # Lista dostępnych opcji sortowania dla wyboru w interfejsie
+    sort_options = [
+        ('-created_at', 'Data utworzenia (najnowsze)'),
+        ('created_at', 'Data utworzenia (najstarsze)'),
+        ('title', 'Tytuł (A-Z)'),
+        ('-title', 'Tytuł (Z-A)'),
+        ('priority', 'Priorytet (rosnąco)'),
+        ('-priority', 'Priorytet (malejąco)'),
+        ('status', 'Status (rosnąco)'),
+        ('-status', 'Status (malejąco)'),
+        ('category', 'Kategoria (A-Z)'),
+        ('-category', 'Kategoria (Z-A)'),
+        ('organization__name', 'Organizacja (A-Z)'),
+        ('-organization__name', 'Organizacja (Z-A)'),
+    ]
     
     context = {
         'tickets': tickets,
         'status_filter': status_filter,
         'priority_filter': priority_filter,
         'category_filter': category_filter,
+        'assigned_filter': assigned_filter,
+        'date_from': date_from,
+        'date_to': date_to,
+        'ticket_id': ticket_id,
         'sort_by': sort_by,
+        'sort_options': sort_options,
     }
     
     return render(request, 'crm/tickets/ticket_list.html', context)
