@@ -30,16 +30,14 @@
                         <div class="row">
                             <div class="col-md-4 font-weight-bold">Organizacja:</div>
                             <div class="col-md-8">
-                                {% if profile.organization %}
+                                <!-- Remove old reference to single organization -->
+                                <!-- {% if profile.organization %}
                                     {{ profile.organization.name }}
                                 {% else %}
                                     <span class="text-muted">Brak</span>
-                                {% endif %}
-                            </div>
-                        </div>
-                        <div class="row">
-                            <div class="col-md-4 font-weight-bold">Organizacje:</div>
-                            <div class="col-md-8">
+                                {% endif %} -->
+                                
+                                <!-- Should only show organizations (already in place) -->
                                 {% if profile.organizations.exists %}
                                     <ul>
                                         {% for org in profile.organizations.all %}

@@ -3,11 +3,16 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db.models import Q
 from django.utils import timezone
-from django.http import HttpResponseForbidden
+from django.http import HttpResponseForbidden, HttpResponse
 import os
 from datetime import datetime, timedelta
+import logging
+import json
 
-from ..models import Organization, Ticket, TicketComment, TicketAttachment
+# Configure logger
+logger = logging.getLogger(__name__)
+
+from ..models import Organization, Ticket, TicketComment, TicketAttachment, UserProfile
 from ..forms import (
     TicketForm, ModeratorTicketForm, TicketCommentForm, TicketAttachmentForm,
     ClientTicketForm
@@ -31,17 +36,45 @@ def ticket_list(request):
     ticket_id = request.GET.get('ticket_id', '')
     sort_by = request.GET.get('sort_by', '-created_at')
     
+    # Get user organizations and log their IDs for debugging
+    user_orgs = user.profile.organizations.all()
+    org_ids = list(user_orgs.values_list('id', flat=True))
+    logger.debug(f"User {user.username} belongs to organizations: {org_ids}")
+    
     # Określenie widocznych zgłoszeń na podstawie roli
     if role == 'admin':
+        # Admin widzi wszystkie zgłoszenia
         tickets = Ticket.objects.all()
+        logger.debug(f"Admin user {user.username} - showing all tickets")
     elif role == 'agent':
-        # Agent sees tickets from organizations they belong to
-        user_orgs = user.profile.organizations.all()
-        tickets = Ticket.objects.filter(organization__in=user_orgs)
+        # Agent widzi wszystkie zgłoszenia z organizacji, do których należy,
+        # niezależnie od tego, do kogo są przypisane
+        if not org_ids:
+            tickets = Ticket.objects.none()
+            logger.warning(f"Agent {user.username} has no organizations")
+        else:
+            # Force an explicit IN clause in SQL for clearer debugging and to avoid any optimization issues
+            tickets = Ticket.objects.filter(organization_id__in=org_ids)
+            # Log which organizations the user belongs to
+            logger.debug(f"Agent {user.username} - showing tickets where organization_id IN {org_ids}")
+            logger.debug(f"SQL Query: {str(tickets.query)}")
+            
+            # Debug: Log all ticket IDs from these organizations 
+            ticket_ids = list(tickets.values_list('id', flat=True))
+            logger.debug(f"Found {len(ticket_ids)} tickets: {ticket_ids}")
+            
+            # Debug: Log assigned tickets info
+            assigned_tickets = tickets.filter(assigned_to__isnull=False)
+            assigned_data = [(t.id, t.assigned_to.username) for t in assigned_tickets]
+            logger.debug(f"Assigned tickets: {assigned_data}")
     else:  # client
-        # Client sees tickets from their organizations
-        user_orgs = user.profile.organizations.all()
+        # Klient widzi zgłoszenia ze swoich organizacji i swoje własne
         tickets = Ticket.objects.filter(Q(organization__in=user_orgs) | Q(created_by=user))
+        logger.debug(f"Client {user.username} - showing tickets from orgs and created by user")
+    
+    # Debug: Count results before filtering
+    initial_count = tickets.count()
+    logger.debug(f"Initial ticket count before filters: {initial_count}")
     
     # Zastosowanie filtrów
     if status_filter:
@@ -56,7 +89,7 @@ def ticket_list(request):
         tickets = tickets.filter(assigned_to=user)
     elif assigned_filter == 'unassigned':
         tickets = tickets.filter(assigned_to__isnull=True)
-    # 'all' nie wymaga filtrowania - pokazuje wszystko
+    # 'all' nie wymaga filtrowania - pokazuje wszystkie zgłoszenia z organizacji agenta
     
     # Filtrowanie po ID zgłoszenia
     if ticket_id:
@@ -85,6 +118,11 @@ def ticket_list(request):
         except ValueError:
             # Nieprawidłowy format daty, ignorujemy
             pass
+    
+    # Dodaj logging do diagnostyki
+    logger.debug(f"User {user.username} role {role} - final query: {str(tickets.query)}")
+    final_count = tickets.count()
+    logger.debug(f"Final ticket count after filters: {final_count}")
     
     # Zastosowanie sortowania
     tickets = tickets.order_by(sort_by)
@@ -116,9 +154,62 @@ def ticket_list(request):
         'ticket_id': ticket_id,
         'sort_by': sort_by,
         'sort_options': sort_options,
+        'user_organizations': user_orgs,  # Add user's organizations for debugging in template
     }
     
     return render(request, 'crm/tickets/ticket_list.html', context)
+
+
+@login_required
+def debug_tickets(request):
+    """Debug view to check access permissions"""
+    if not request.user.is_staff:
+        return HttpResponseForbidden("Only staff can access this debugging view")
+    
+    user = request.user
+    result = {
+        "username": user.username,
+        "role": user.profile.role,
+        "organizations": [],
+        "tickets_visible": [],
+    }
+    
+    # Get user's organizations
+    user_orgs = user.profile.organizations.all()
+    for org in user_orgs:
+        org_data = {
+            "id": org.id,
+            "name": org.name,
+            "tickets": []
+        }
+        
+        # Get all tickets from this organization
+        org_tickets = Ticket.objects.filter(organization=org)
+        for ticket in org_tickets:
+            org_data["tickets"].append({
+                "id": ticket.id,
+                "title": ticket.title,
+                "assigned_to": ticket.assigned_to.username if ticket.assigned_to else "Unassigned",
+                "status": ticket.status
+            })
+        
+        result["organizations"].append(org_data)
+    
+    # Test the query that should show tickets
+    if user.profile.role == 'agent':
+        visible_tickets = Ticket.objects.filter(organization__in=user_orgs)
+        for ticket in visible_tickets:
+            result["tickets_visible"].append({
+                "id": ticket.id,
+                "title": ticket.title,
+                "organization": ticket.organization.name,
+                "assigned_to": ticket.assigned_to.username if ticket.assigned_to else "Unassigned"
+            })
+    
+    return HttpResponse(
+        json.dumps(result, indent=2), 
+        content_type="application/json"
+    )
 
 
 @login_required
@@ -128,11 +219,18 @@ def ticket_detail(request, pk):
     role = user.profile.role
     
     ticket = get_object_or_404(Ticket, pk=pk)
+    user_orgs = user.profile.organizations.all()
     
     # Sprawdzenie uprawnień dostępu do zgłoszenia
     if role == 'client':
-        user_orgs = user.profile.organizations.all()
+        # Klient może widzieć tylko zgłoszenia ze swoich organizacji lub utworzone przez siebie
         if ticket.organization not in user_orgs and user != ticket.created_by:
+            logger.warning(f"Access denied: Client {user.username} tried to access ticket #{ticket.id}")
+            return HttpResponseForbidden("Brak dostępu do tego zgłoszenia")
+    elif role == 'agent':
+        # Agent może widzieć wszystkie zgłoszenia z organizacji, do których należy
+        if ticket.organization not in user_orgs:
+            logger.warning(f"Access denied: Agent {user.username} tried to access ticket #{ticket.id} from org {ticket.organization.name}")
             return HttpResponseForbidden("Brak dostępu do tego zgłoszenia")
     
     comments = ticket.comments.all().order_by('created_at')
@@ -257,9 +355,9 @@ def ticket_create(request):
     else:
         form = TicketForm()
     
-    # Dodanie pola wyboru organizacji dla admina i moderatora
+    # Dodanie pola wyboru organizacji dla admina i agenta
     organizations = []
-    if user.profile.role in ['admin', 'moderator']:
+    if user.profile.role in ['admin', 'agent']:  # Changed from 'moderator' to 'agent'
         organizations = Organization.objects.all()
     
     context = {

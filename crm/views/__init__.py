@@ -18,7 +18,7 @@ from .organization_views import (
 )
 from .ticket_views import (
     ticket_list, ticket_detail, ticket_create, ticket_update,
-    ticket_close, ticket_reopen, ticket_assign_to_me
+    ticket_close, ticket_reopen, ticket_assign_to_me, debug_tickets
 )
 from .log_views import activity_logs
 
@@ -43,6 +43,7 @@ __all__ = [
     'ticket_close',
     'ticket_reopen',
     'ticket_assign_to_me',
+    'debug_tickets',
     'activity_logs',
     'pending_approvals',
     'approve_user',

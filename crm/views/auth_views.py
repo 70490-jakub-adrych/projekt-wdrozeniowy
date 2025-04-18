@@ -41,11 +41,13 @@ def register(request):
             profile = user.profile
             profile.phone = profile_form.cleaned_data.get('phone')
             
-            # Update for ManyToManyField
-            organization = profile_form.cleaned_data.get('organization')
-            if organization:
-                profile.organizations.add(organization)
-                
+            # Update for ManyToManyField - fix: get the organizations (plural) field
+            selected_organizations = profile_form.cleaned_data.get('organizations')
+            if selected_organizations:
+                # Add all selected organizations to the user's profile
+                for org in selected_organizations:
+                    profile.organizations.add(org)
+                    
             profile.is_approved = is_approved
             profile.save()
             
