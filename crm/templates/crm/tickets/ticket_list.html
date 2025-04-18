@@ -287,26 +287,4 @@
 </div>
 {% endif %}
 
-<!-- Debug section moved to bottom, still staff-only -->
-{% if user.is_staff %}
-<div class="card mb-4 bg-light">
-    <div class="card-header bg-warning">
-        <i class="fas fa-bug"></i> Debug Information (Staff Only)
-    </div>
-    <div class="card-body">
-        <p><strong>Username:</strong> {{ user.username }}, <strong>Role:</strong> {{ user.profile.role }}</p>
-        <p><strong>Organizations:</strong> 
-            {% for org in user_organizations %}
-                {{ org.name }}{% if not forloop.last %}, {% endif %}
-            {% empty %}
-                None
-            {% endfor %}
-        </p>
-        <p><strong>Found {{ tickets.count }} tickets</strong> with current filters</p>
-        <a href="{% url 'debug_tickets' %}" target="_blank" class="btn btn-sm btn-warning">
-            <i class="fas fa-bug"></i> Detailed Debug Info
-        </a>
-    </div>
-</div>
-{% endif %}
 {% endblock %}
