@@ -2,3 +2,4 @@ db.sqlite3
 *.pyc
 crm/migrations/0003_auto_20250412_0827.py
 media
+/static
