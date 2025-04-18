@@ -16,11 +16,8 @@ python manage.py makemigrations
 # Zastosowanie migracji do bazy danych
 python manage.py migrate
 
-# Tworzenie konta superużytkownika
-python manage.py createsuperuser
-
-# Automatyczne tworzenie profili dla istniejących użytkowników
-python manage.py create_missing_profiles
+# Tworzenie kont i ustawienie grup oraz uprawnień
+python manage.py setup_demo_data
 
 # Uruchomienie serwera deweloperskiego
 python manage.py runserver
