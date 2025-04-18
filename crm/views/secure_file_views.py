@@ -4,6 +4,8 @@ from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_GET
 from django.utils.text import slugify
 from django.core.exceptions import PermissionDenied
+import os
+import mimetypes
 from ..models import TicketAttachment
 
 @login_required
@@ -37,13 +39,17 @@ def serve_attachment(request, attachment_id):
     # Get decrypted file content
     file_content = attachment.get_decrypted_content()
     
+    # Try to guess content type
+    content_type, _ = mimetypes.guess_type(attachment.filename)
+    if not content_type:
+        content_type = 'application/octet-stream'
+    
     # Prepare response
-    response = HttpResponse(file_content, content_type='application/octet-stream')
+    response = HttpResponse(file_content, content_type=content_type)
     
-    # Set filename
-    filename = slugify(attachment.filename) if attachment.filename else f"attachment-{attachment_id}"
-    if not filename.endswith(attachment.filename.split('.')[-1]):
-        filename += '.' + attachment.filename.split('.')[-1]
+    # Extract original filename parts
+    original_filename = attachment.filename
     
-    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    # Set proper filename for download
+    response['Content-Disposition'] = f'attachment; filename="{original_filename}"'
     return response
