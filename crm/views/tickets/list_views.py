@@ -33,10 +33,21 @@ def ticket_list(request):
     created_by_filter = request.GET.get('created_by', '')
     exclude_created_by = request.GET.get('exclude_created_by', '')
     
+    # Add organization filter
+    organization_filter = request.GET.get('organization', '')
+    
     # Get user organizations and log their IDs for debugging
     user_orgs = user.profile.organizations.all()
     org_ids = list(user_orgs.values_list('id', flat=True))
     logger.debug(f"User {user.username} belongs to organizations: {org_ids}")
+    
+    # For admin users, get all organizations for the filter dropdown
+    # For agent users, get only organizations they belong to
+    all_organizations = None
+    if role == 'admin':
+        all_organizations = Organization.objects.all().order_by('name')
+    elif role == 'agent':
+        all_organizations = user_orgs.order_by('name')
     
     # Określenie widocznych zgłoszeń na podstawie roli
     if role == 'admin':
@@ -85,6 +96,16 @@ def ticket_list(request):
         tickets = tickets.filter(priority=priority_filter)
     if category_filter:
         tickets = tickets.filter(category=category_filter)
+    
+    # Apply organization filter if provided
+    if organization_filter:
+        try:
+            org_id = int(organization_filter)
+            tickets = tickets.filter(organization_id=org_id)
+            logger.debug(f"Filtering tickets by organization ID: {org_id}")
+        except ValueError:
+            # Invalid organization ID format, ignore this filter
+            logger.warning(f"Invalid organization ID format: {organization_filter}")
     
     # Filtrowanie po przypisaniu
     if assigned_filter == 'me':
@@ -166,6 +187,8 @@ def ticket_list(request):
         'exclude_closed': exclude_closed,  # Add the exclude_closed filter to context
         'created_by_filter': created_by_filter,  # Add new filters to context
         'exclude_created_by': exclude_created_by,
+        'organization_filter': organization_filter,  # Add to context
+        'all_organizations': all_organizations,  # Add all organizations for admin filter
     }
     
     return render(request, 'crm/tickets/ticket_list.html', context)

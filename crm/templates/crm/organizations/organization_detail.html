@@ -105,7 +105,7 @@
                     <a href="{% url 'ticket_create' %}" class="btn btn-primary btn-sm">
                         <i class="fas fa-plus"></i> Nowe zgłoszenie
                     </a>
-                    <a href="{% url 'ticket_list' %}" class="btn btn-outline-secondary btn-sm">
+                    <a href="{% url 'ticket_list' %}?organization={{ organization.id }}&exclude_closed=true" class="btn btn-outline-secondary btn-sm">
                         <i class="fas fa-list"></i> Lista zgłoszeń
                     </a>
                 </div>

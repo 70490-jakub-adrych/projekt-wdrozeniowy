@@ -33,29 +33,6 @@
 {% endblock %}
 
 {% block content %}
-<!-- Debug section for staff only -->
-{% if user.is_staff %}
-<div class="card mb-4 bg-light">
-    <div class="card-header bg-warning">
-        <i class="fas fa-bug"></i> Debug Information (Staff Only)
-    </div>
-    <div class="card-body">
-        <p><strong>Username:</strong> {{ user.username }}, <strong>Role:</strong> {{ user.profile.role }}</p>
-        <p><strong>Organizations:</strong> 
-            {% for org in user_organizations %}
-                {{ org.name }}{% if not forloop.last %}, {% endif %}
-            {% empty %}
-                None
-            {% endfor %}
-        </p>
-        <p><strong>Found {{ tickets.count }} tickets</strong> with current filters</p>
-        <a href="{% url 'debug_tickets' %}" target="_blank" class="btn btn-sm btn-warning">
-            <i class="fas fa-bug"></i> Detailed Debug Info
-        </a>
-    </div>
-</div>
-{% endif %}
-
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Zgłoszenia</h2>
     <a href="{% url 'ticket_create' %}" class="btn btn-primary">
@@ -113,6 +90,26 @@
                         </select>
                     </div>
                 </div>
+                
+                <!-- Organization filter for admin and agent users -->
+                {% if user.profile.role in 'admin,agent' and all_organizations %}
+                <div class="row filter-row">
+                    <div class="col-md-3">
+                        <label for="organization" class="filter-label">Organizacja:</label>
+                        <select name="organization" id="organization" class="form-control form-control-sm">
+                            <option value="" {% if not organization_filter %}selected{% endif %}>Wszystkie</option>
+                            {% for org in all_organizations %}
+                                <option value="{{ org.id }}" {% if organization_filter == org.id|stringformat:"i" %}selected{% endif %}>
+                                    {{ org.name }}
+                                </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-9">
+                        <!-- Empty space to align with other rows -->
+                    </div>
+                </div>
+                {% endif %}
                 
                 <!-- Additional filters for client-specific views -->
                 {% if user.profile.role == 'client' %}
@@ -291,6 +288,29 @@
 {% else %}
 <div class="alert alert-info">
     <p>Nie znaleziono zgłoszeń spełniających wybrane kryteria.</p>
+</div>
+{% endif %}
+
+<!-- Debug section moved to bottom, still staff-only -->
+{% if user.is_staff %}
+<div class="card mb-4 bg-light">
+    <div class="card-header bg-warning">
+        <i class="fas fa-bug"></i> Debug Information (Staff Only)
+    </div>
+    <div class="card-body">
+        <p><strong>Username:</strong> {{ user.username }}, <strong>Role:</strong> {{ user.profile.role }}</p>
+        <p><strong>Organizations:</strong> 
+            {% for org in user_organizations %}
+                {{ org.name }}{% if not forloop.last %}, {% endif %}
+            {% empty %}
+                None
+            {% endfor %}
+        </p>
+        <p><strong>Found {{ tickets.count }} tickets</strong> with current filters</p>
+        <a href="{% url 'debug_tickets' %}" target="_blank" class="btn btn-sm btn-warning">
+            <i class="fas fa-bug"></i> Detailed Debug Info
+        </a>
+    </div>
 </div>
 {% endif %}
 {% endblock %}
