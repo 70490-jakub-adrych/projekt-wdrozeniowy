@@ -47,18 +47,28 @@ class OrganizationForm(forms.ModelForm):
 
 
 class TicketForm(forms.ModelForm):
+    suggested_category = forms.CharField(
+        widget=forms.HiddenInput(), 
+        required=False
+    )
+    
     class Meta:
         model = Ticket
-        fields = ['title', 'description', 'category', 'priority', 'assigned_to']
+        fields = ['title', 'description', 'category', 'priority', 'assigned_to', 'suggested_category']
         widgets = {
             'description': forms.Textarea(attrs={'rows': 5}),
         }
 
 
 class ModeratorTicketForm(forms.ModelForm):
+    suggested_category = forms.CharField(
+        widget=forms.HiddenInput(), 
+        required=False
+    )
+    
     class Meta:
         model = Ticket
-        fields = ['title', 'description', 'category', 'priority', 'status', 'assigned_to']
+        fields = ['title', 'description', 'category', 'priority', 'status', 'assigned_to', 'suggested_category']
         widgets = {
             'description': forms.Textarea(attrs={'rows': 5}),
         }
@@ -66,9 +76,14 @@ class ModeratorTicketForm(forms.ModelForm):
 
 class ClientTicketForm(forms.ModelForm):
     """Formularz dla klientów ograniczający dostępne pola"""
+    suggested_category = forms.CharField(
+        widget=forms.HiddenInput(), 
+        required=False
+    )
+    
     class Meta:
         model = Ticket
-        fields = ['title', 'description', 'category']  # Brak pól status i priorytet
+        fields = ['title', 'description', 'category', 'suggested_category']  # Brak pól status i priorytet
         widgets = {
             'description': forms.Textarea(attrs={'rows': 5}),
         }

@@ -1,10 +1,12 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.http import JsonResponse
 
 from ...models import Organization
 from ...forms import TicketForm, ClientTicketForm
 from ..helpers import log_activity
+from ...utils.category_suggestion import should_suggest_category
 
 @login_required
 def ticket_create(request):
@@ -18,9 +20,32 @@ def ticket_create(request):
         else:
             form = ClientTicketForm(request.POST)
             
+        # Check if this is an AJAX request asking for category suggestion
+        if 'suggest_category' in request.POST and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            title = request.POST.get('title', '')
+            description = request.POST.get('description', '')
+            selected_category = request.POST.get('category', '')
+            
+            should_suggest, suggested_category, confidence, match_details = \
+                should_suggest_category(selected_category, title, description)
+                
+            return JsonResponse({
+                'should_suggest': should_suggest,
+                'suggested_category': suggested_category,
+                'confidence': confidence,
+                'selected_category': selected_category,
+                'match_details': {k: [(word, score) for word, score in v] 
+                                 for k, v in match_details.items()}
+            })
+            
         if form.is_valid():
             ticket = form.save(commit=False)
             ticket.created_by = user
+            
+            # Check if we should override the category based on suggestion
+            if form.cleaned_data.get('suggested_category') and form.cleaned_data.get('category') != form.cleaned_data.get('suggested_category'):
+                # User accepted the suggestion - override category
+                ticket.category = form.cleaned_data.get('suggested_category')
             
             # Set default priority for clients
             if user.profile.role == 'client':
