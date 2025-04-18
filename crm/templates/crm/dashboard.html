@@ -140,7 +140,7 @@
                 {% endif %}
             </div>
             <div class="card-footer">
-                <a href="{% url 'ticket_list' %}?assigned=me" class="btn btn-sm btn-primary">Zobacz wszystkie</a>
+                <a href="{% url 'ticket_list' %}?assigned=me&exclude_closed=true" class="btn btn-sm btn-primary">Zobacz wszystkie</a>
             </div>
         </div>
     </div>
@@ -188,7 +188,7 @@
                 {% endif %}
             </div>
             <div class="card-footer">
-                <a href="{% url 'ticket_list' %}?assigned=unassigned" class="btn btn-sm btn-primary">Zobacz wszystkie</a>
+                <a href="{% url 'ticket_list' %}?assigned=unassigned&exclude_closed=true" class="btn btn-sm btn-primary">Zobacz wszystkie</a>
             </div>
         </div>
     </div>

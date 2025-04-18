@@ -162,9 +162,9 @@
                 <div class="row mt-3">
                     <div class="col-md-6">
                         <div class="form-check">
-                            <input type="hidden" name="exclude_closed" value="false">
-                            <input class="form-check-input" type="checkbox" name="exclude_closed" id="exclude_closed" value="true" {% if exclude_closed %}checked{% endif %}>
-                            <label class="form-check-label" for="exclude_closed">
+                            <!-- Use a checkbox without a name attribute so it's not submitted directly -->
+                            <input class="form-check-input" type="checkbox" id="exclude_closed_checkbox" {% if exclude_closed %}checked{% endif %}>
+                            <label class="form-check-label" for="exclude_closed_checkbox">
                                 Pokaż tylko niezamknięte zgłoszenia
                             </label>
                         </div>
@@ -180,6 +180,19 @@
                 </div>
             </div>
         </form>
+        
+        <!-- JavaScript to ensure exclude_closed is always added to the form -->
+        <script>
+            document.querySelector('form').addEventListener('submit', function() {
+                // Add hidden input with current checkbox state before submission
+                var isChecked = document.getElementById('exclude_closed_checkbox').checked;
+                var input = document.createElement('input');
+                input.type = 'hidden';
+                input.name = 'exclude_closed';
+                input.value = isChecked ? 'true' : 'false';
+                this.appendChild(input);
+            });
+        </script>
     </div>
 </div>
 

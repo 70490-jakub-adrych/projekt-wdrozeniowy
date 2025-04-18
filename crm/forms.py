@@ -42,7 +42,7 @@ class OrganizationForm(forms.ModelForm):
 class TicketForm(forms.ModelForm):
     class Meta:
         model = Ticket
-        fields = ['title', 'description', 'category', 'priority']
+        fields = ['title', 'description', 'category', 'priority', 'assigned_to']
         widgets = {
             'description': forms.Textarea(attrs={'rows': 5}),
         }
