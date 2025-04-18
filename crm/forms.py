@@ -79,9 +79,16 @@ class TicketCommentForm(forms.ModelForm):
 
 
 class TicketAttachmentForm(forms.ModelForm):
+    accepted_policy = forms.BooleanField(
+        required=True,
+        label="Akceptuję politykę prywatności i regulamin dotyczący załączników",
+        error_messages={'required': 'Musisz zaakceptować regulamin, aby dodać załącznik.'}
+    )
+    
     class Meta:
         model = TicketAttachment
-        fields = ['file']
+        fields = ['file', 'accepted_policy']
         labels = {
             'file': 'Załącznik',
+            'accepted_policy': 'Akceptuję politykę prywatności i regulamin'
         }

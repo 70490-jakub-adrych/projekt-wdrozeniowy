@@ -292,7 +292,10 @@ def ticket_detail(request, pk):
                 attachment.ticket = ticket
                 attachment.uploaded_by = request.user
                 attachment.filename = os.path.basename(attachment.file.name)
+                attachment.accepted_policy = attachment_form.cleaned_data['accepted_policy']
                 attachment.save()
+                log_activity(request, 'ticket_attachment_added', ticket=ticket, 
+                            description=f"Added attachment: {attachment.filename}")
                 messages.success(request, 'Załącznik został dodany!')
                 return redirect('ticket_detail', pk=ticket.pk)
         else:

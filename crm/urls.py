@@ -1,6 +1,7 @@
 from django.urls import path
 from django.contrib.auth import views as auth_views
 from . import views
+from .views import secure_file_views
 
 urlpatterns = [
     # Strona główna
@@ -42,4 +43,7 @@ urlpatterns = [
     
     # Logi aktywności
     path('logs/', views.activity_logs, name='activity_logs'),
+
+    # Secure files
+    path('secure-file/<int:attachment_id>/', secure_file_views.serve_attachment, name='serve_attachment'),
 ]

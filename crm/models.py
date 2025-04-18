@@ -3,6 +3,12 @@ from django.contrib.auth.models import User, Group
 from django.utils import timezone
 from django.db.models.signals import post_save, m2m_changed
 from django.dispatch import receiver
+import os
+import uuid
+import tempfile
+from django.conf import settings
+from cryptography.fernet import Fernet
+import base64
 
 
 class UserProfile(models.Model):
@@ -171,6 +177,59 @@ class TicketAttachment(models.Model):
     filename = models.CharField(max_length=255, verbose_name="Nazwa pliku")
     uploaded_by = models.ForeignKey(User, related_name='ticket_attachments', on_delete=models.CASCADE, verbose_name="Dodany przez")
     uploaded_at = models.DateTimeField(auto_now_add=True, verbose_name="Data dodania")
+    encryption_key = models.BinaryField(blank=True, null=True, verbose_name="Klucz szyfrowania")
+    accepted_policy = models.BooleanField(default=False, verbose_name="Zaakceptowano regulamin")
+    
+    def save(self, *args, **kwargs):
+        # Generate encryption key if it doesn't exist
+        if not self.encryption_key:
+            # Generate a random key for this file
+            self.encryption_key = Fernet.generate_key()
+            
+            if self.file and hasattr(self.file, 'file'):
+                # Read the file content
+                self.file.file.seek(0)
+                file_content = self.file.file.read()
+                
+                # Encrypt the content
+                fernet = Fernet(self.encryption_key)
+                encrypted_content = fernet.encrypt(file_content)
+                
+                # Create a temporary file with encrypted content using tempfile module
+                fd, temp_path = tempfile.mkstemp()
+                try:
+                    with os.fdopen(fd, 'wb') as temp_file:
+                        temp_file.write(encrypted_content)
+                    
+                    # Replace the file with encrypted version
+                    with open(temp_path, 'rb') as f:
+                        self.file.save(self.file.name, f, save=False)
+                        
+                finally:
+                    # Clean up the temp file
+                    if os.path.exists(temp_path):
+                        os.remove(temp_path)
+        
+        super().save(*args, **kwargs)
+    
+    def get_decrypted_content(self):
+        """Return decrypted content of the file"""
+        if self.encryption_key:
+            fernet = Fernet(self.encryption_key)
+            
+            # Read the encrypted content
+            self.file.open('rb')
+            encrypted_content = self.file.read()
+            self.file.close()
+            
+            # Decrypt and return
+            return fernet.decrypt(encrypted_content)
+        
+        # If no encryption key, return the file as is
+        self.file.open('rb')
+        content = self.file.read()
+        self.file.close()
+        return content
     
     def __str__(self):
         return self.filename

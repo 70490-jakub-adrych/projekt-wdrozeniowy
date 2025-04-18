@@ -25,6 +25,7 @@ INSTALLED_APPS = [
     # Third-party apps
     'crispy_forms',
     'crispy_bootstrap4',
+    'cryptography',  # Add cryptography package
     
     # Local apps
     'crm.apps.CrmConfig',  # Use the app config class instead of just the app name
@@ -110,3 +111,6 @@ CRISPY_TEMPLATE_PACK = 'bootstrap4'
 LOGIN_URL = '/login/'
 LOGIN_REDIRECT_URL = '/dashboard/'
 LOGOUT_REDIRECT_URL = '/login/'
+
+# Encryption settings
+FILE_ENCRYPTION_KEY = SECRET_KEY[:32]  # Use part of SECRET_KEY as base for file encryption

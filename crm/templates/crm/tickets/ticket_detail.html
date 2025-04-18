@@ -130,7 +130,7 @@
                     <li class="list-group-item d-flex justify-content-between align-items-center">
                         <div>
                             <i class="fas fa-file"></i> 
-                            <a href="{{ attachment.file.url }}" target="_blank">{{ attachment.filename }}</a>
+                            <a href="{% url 'serve_attachment' attachment.id %}" target="_blank">{{ attachment.filename }}</a>
                             <small class="text-muted ml-2">(Dodane przez: {{ attachment.uploaded_by.username }}, {{ attachment.uploaded_at|date:"d.m.Y H:i" }})</small>
                         </div>
                     </li>
@@ -195,6 +195,12 @@
                 <form method="post" enctype="multipart/form-data" action="{% url 'ticket_detail' ticket.pk %}">
                     {% csrf_token %}
                     {{ attachment_form|crispy }}
+                    <div class="form-text text-muted mb-3">
+                        <small>
+                            Pliki załączników są szyfrowane i dostępne wyłącznie dla uprawnionych użytkowników.
+                            <a href="#" data-toggle="modal" data-target="#privacyPolicyModal">Zobacz regulamin dotyczący załączników</a>
+                        </small>
+                    </div>
                     <button type="submit" name="submit_attachment" class="btn btn-primary mt-3">Dodaj załącznik</button>
                 </form>
             </div>
@@ -234,6 +240,50 @@
                     </div>
                     {% endif %}
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Privacy Policy -->
+<div class="modal fade" id="privacyPolicyModal" tabindex="-1" aria-labelledby="privacyPolicyModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="privacyPolicyModalLabel">Polityka prywatności i regulamin dotyczący załączników</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <h6>Regulamin dotyczący załączników w systemie Helpdesk</h6>
+                <p>
+                    1. Zabrania się przesyłania plików zawierających złośliwe oprogramowanie, wirusy lub inne szkodliwe treści.
+                </p>
+                <p>
+                    2. Zabrania się przesyłania plików naruszających prawa autorskie osób trzecich.
+                </p>
+                <p>
+                    3. Zabrania się przesyłania plików zawierających treści nielegalne, obraźliwe, wulgarne lub nieodpowiednie.
+                </p>
+                <p>
+                    4. Administrator systemu zastrzega sobie prawo do usunięcia załączników naruszających regulamin.
+                </p>
+                <p>
+                    5. Przesyłane pliki są szyfrowane i przechowywane w sposób bezpieczny, ale użytkownik powinien unikać przesyłania wrażliwych danych osobowych.
+                </p>
+                <h6>Polityka prywatności</h6>
+                <p>
+                    Pliki są przechowywane na serwerze w formie zaszyfrowanej i dostępne tylko dla uprawnionych użytkowników.
+                    Załączniki mogą być przeglądane przez administratorów systemu oraz agentów przypisanych do obsługi danego zgłoszenia.
+                </p>
+                <p>
+                    Akceptując regulamin, użytkownik oświadcza, że został poinformowany o zasadach przetwarzania danych zawartych w załącznikach
+                    i bierze pełną odpowiedzialność za treści przesyłanych plików.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Zamknij</button>
             </div>
         </div>
     </div>
