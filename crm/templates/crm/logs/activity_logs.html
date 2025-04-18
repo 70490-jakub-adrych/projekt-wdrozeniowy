@@ -41,6 +41,27 @@
     </div>
 </div>
 
+<!-- Style dla tabeli logów -->
+<style>
+    .logs-table th, .logs-table td {
+        font-size: 0.9rem;
+        padding: 0.5rem;
+    }
+    .truncate-text {
+        max-width: 200px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: inline-block;
+    }
+    .col-datetime { width: 15%; }
+    .col-user { width: 15%; }
+    .col-action { width: 15%; }
+    .col-ticket { width: 10%; }
+    .col-details { width: 30%; }
+    .col-ip { width: 15%; }
+</style>
+
 <!-- Lista logów -->
 {% if logs %}
 <div class="card">
@@ -49,15 +70,15 @@
     </div>
     <div class="card-body">
         <div class="table-responsive">
-            <table class="table table-hover">
+            <table class="table table-hover logs-table">
                 <thead>
                     <tr>
-                        <th>Data i czas</th>
-                        <th>Użytkownik</th>
-                        <th>Akcja</th>
-                        <th>Zgłoszenie</th>
-                        <th>Szczegóły</th>
-                        <th>Adres IP</th>
+                        <th class="col-datetime">Data i czas</th>
+                        <th class="col-user">Użytkownik</th>
+                        <th class="col-action">Akcja</th>
+                        <th class="col-ticket">Zgłoszenie</th>
+                        <th class="col-details">Szczegóły</th>
+                        <th class="col-ip">Adres IP</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -82,7 +103,13 @@
                             -
                             {% endif %}
                         </td>
-                        <td>{{ log.description|default:"-" }}</td>
+                        <td>
+                            {% if log.description %}
+                            <span class="truncate-text" title="{{ log.description }}">{{ log.description }}</span>
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
                         <td>{{ log.ip_address|default:"-" }}</td>
                     </tr>
                     {% endfor %}

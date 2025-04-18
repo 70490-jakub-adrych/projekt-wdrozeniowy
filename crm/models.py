@@ -244,12 +244,12 @@ class ActivityLog(models.Model):
     ACTION_TYPES = (
         ('login', 'Zalogowanie'),
         ('logout', 'Wylogowanie'),
-        ('ticket_created', 'Utworzenie zgłoszenia'),
-        ('ticket_updated', 'Aktualizacja zgłoszenia'),
-        ('ticket_commented', 'Komentarz do zgłoszenia'),
-        ('ticket_resolved', 'Rozwiązanie zgłoszenia'),
-        ('ticket_closed', 'Zamknięcie zgłoszenia'),
-        ('ticket_reopened', 'Ponowne otwarcie zgłoszenia'),
+        ('ticket_created', 'Utworzenie'),
+        ('ticket_updated', 'Aktualizacja'),
+        ('ticket_commented', 'Komentarz'),
+        ('ticket_resolved', 'Rozwiązanie'),
+        ('ticket_closed', 'Zamknięcie'),
+        ('ticket_reopened', 'Wznowienie'),
     )
     
     user = models.ForeignKey(User, related_name='activities', on_delete=models.CASCADE, verbose_name="Użytkownik")
