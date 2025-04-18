@@ -55,7 +55,14 @@ CATEGORY_KEYWORDS = {
         "kabel sieciowy", "port lan", "port wan", "gniazdo sieciowe",
         # inne
         "isp", "operator", "serwer proxy", "hotspot", "ssid", "bridging",
-        "routing", "adresacja", "maskowanie"
+        "routing", "adresacja", "maskowanie",
+        # nowe słowa kluczowe - problemy z internetem
+        "net", "strony się nie ładują", "strony wolno się ładują", "wolno chodzi", 
+        "wywala", "sieć nie działa", "sieć działa wolno", "problem z internetem",
+        "problem z siecią", "nie mogę się połączyć", "zrywa połączenie", "słaby sygnał",
+        "strony internetowe", "nie działa internet", "internet wolno działa", 
+        "strony nie otwierają się", "nie ładuje", "wolno ładuje", "internet zrywa",
+        "wifi słabe", "nie mogę wejść na stronę", "stracone pakiety"
     ],
     'account': [
         # logowanie, uprawnienia
