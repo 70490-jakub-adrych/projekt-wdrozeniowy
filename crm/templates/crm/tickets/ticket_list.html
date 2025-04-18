@@ -135,7 +135,14 @@
                                 {{ ticket.get_status_display }}
                             </span>
                         </td>
-                        <td>{% if ticket.assigned_to %}{{ ticket.assigned_to.username }}{% else %}<span class="text-muted">Nieprzypisane</span>{% endif %}</td>
+                        <td>{% if ticket.assigned_to %}{{ ticket.assigned_to.username }}{% else %}
+                            <span class="text-muted">Nieprzypisane</span>
+                            {% if user.profile.role == 'agent' %}
+                            <a href="{% url 'ticket_assign_to_me' ticket.pk %}" class="btn btn-sm btn-outline-info ml-2">
+                                <i class="fas fa-user-check"></i>
+                            </a>
+                            {% endif %}
+                        {% endif %}</td>
                         <td>{{ ticket.created_at|date:"d.m.Y H:i" }}</td>
                         <td>
                             <div class="btn-group">

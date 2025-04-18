@@ -35,6 +35,7 @@ urlpatterns = [
     path('tickets/<int:pk>/update/', views.ticket_update, name='ticket_update'),
     path('tickets/<int:pk>/close/', views.ticket_close, name='ticket_close'),
     path('tickets/<int:pk>/reopen/', views.ticket_reopen, name='ticket_reopen'),
+    path('tickets/<int:pk>/assign-to-me/', views.ticket_assign_to_me, name='ticket_assign_to_me'),
     
     # Logi aktywności
     path('logs/', views.activity_logs, name='activity_logs'),

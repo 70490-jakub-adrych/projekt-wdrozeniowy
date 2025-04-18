@@ -14,6 +14,12 @@
         </a>
         {% endif %}
         
+        {% if can_assign_to_self %}
+        <a href="{% url 'ticket_assign_to_me' ticket.pk %}" class="btn btn-info">
+            <i class="fas fa-user-check"></i> Przypisz do mnie
+        </a>
+        {% endif %}
+        
         {% if can_close and ticket.status != 'closed' %}
         <a href="{% url 'ticket_close' ticket.pk %}" class="btn btn-secondary">
             <i class="fas fa-lock"></i> Zamknij

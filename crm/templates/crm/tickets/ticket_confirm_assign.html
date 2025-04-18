@@ -1,0 +1,38 @@
+{% extends 'crm/base.html' %}
+
+{% block title %}Przypisz zgłoszenie | System Helpdesk{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6 offset-md-3">
+        <div class="card">
+            <div class="card-header">
+                <i class="fas fa-user-check"></i> Przypisz zgłoszenie do siebie
+            </div>
+            <div class="card-body">
+                <h5>Czy na pewno chcesz przypisać to zgłoszenie do siebie?</h5>
+                <p>Zgłoszenie: <strong>{{ ticket.title }}</strong> (ID: #{{ ticket.id }})</p>
+                <p>Status: <span class="badge 
+                    {% if ticket.status == 'new' %}badge-primary
+                    {% elif ticket.status == 'in_progress' %}badge-info
+                    {% elif ticket.status == 'waiting' %}badge-warning
+                    {% elif ticket.status == 'resolved' %}badge-success
+                    {% elif ticket.status == 'closed' %}badge-secondary
+                    {% endif %}">
+                    {{ ticket.get_status_display }}
+                </span></p>
+                
+                <form method="post" class="mt-4">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-user-check"></i> Przypisz do mnie
+                    </button>
+                    <a href="{% url 'ticket_detail' ticket.pk %}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Anuluj
+                    </a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

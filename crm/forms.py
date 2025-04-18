@@ -56,6 +56,16 @@ class ModeratorTicketForm(forms.ModelForm):
         }
 
 
+class ClientTicketForm(forms.ModelForm):
+    """Formularz dla klientów ograniczający dostępne pola"""
+    class Meta:
+        model = Ticket
+        fields = ['title', 'description', 'category']  # Brak pól status i priorytet
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 5}),
+        }
+
+
 class TicketCommentForm(forms.ModelForm):
     class Meta:
         model = TicketComment

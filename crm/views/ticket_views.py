@@ -8,7 +8,8 @@ import os
 
 from ..models import Organization, Ticket, TicketComment, TicketAttachment
 from ..forms import (
-    TicketForm, ModeratorTicketForm, TicketCommentForm, TicketAttachmentForm
+    TicketForm, ModeratorTicketForm, TicketCommentForm, TicketAttachmentForm,
+    ClientTicketForm
 )
 from .helpers import log_activity
 
@@ -76,9 +77,38 @@ def ticket_detail(request, pk):
     comments = ticket.comments.all().order_by('created_at')
     attachments = ticket.attachments.all()
     
-    # Sprawdzanie uprawnień do dodawania komentarzy i załączników
-    can_comment = role in ['admin', 'agent'] or user == ticket.created_by
-    can_attach = role in ['admin', 'agent'] or user == ticket.created_by
+    # Wszyscy mogą komentować
+    can_comment = True
+    
+    # Sprawdzanie uprawnień do dodawania załączników
+    if role == 'client':
+        can_attach = user == ticket.created_by
+    else:
+        can_attach = True  # Admin i agent mogą dodawać załączniki
+    
+    # Sprawdzanie uprawnień do edycji
+    if role == 'admin':
+        can_edit = True
+    elif role == 'agent':
+        # Agent może edytować tylko nieprzypisane zgłoszenia lub przypisane do niego
+        can_edit = not ticket.assigned_to or ticket.assigned_to == user
+    else:  # client
+        can_edit = user == ticket.created_by
+    
+    # Sprawdzanie uprawnień do zamykania
+    if role == 'admin':
+        can_close = True
+    elif role == 'agent':
+        # Agent może zamykać tylko nieprzypisane zgłoszenia lub przypisane do niego
+        can_close = not ticket.assigned_to or ticket.assigned_to == user
+    else:  # client
+        can_close = user == ticket.created_by
+    
+    # Tylko admin i przypisany agent mogą ponownie otwierać
+    can_reopen = role == 'admin' or (role == 'agent' and ticket.assigned_to == user)
+    
+    # Możliwość przypisania do siebie (tylko dla agentów, gdy zgłoszenie nieprzypisane)
+    can_assign_to_self = role == 'agent' and not ticket.assigned_to
     
     # Formularz komentarza
     if request.method == 'POST':
@@ -121,9 +151,10 @@ def ticket_detail(request, pk):
         'attachment_form': attachment_form,
         'can_comment': can_comment,
         'can_attach': can_attach,
-        'can_edit': role in ['admin', 'agent'] or user == ticket.created_by,
-        'can_close': role in ['admin', 'agent'] or user == ticket.created_by,
-        'can_reopen': role in ['admin', 'agent'],
+        'can_edit': can_edit,
+        'can_close': can_close,
+        'can_reopen': can_reopen,
+        'can_assign_to_self': can_assign_to_self,
     }
     
     return render(request, 'crm/tickets/ticket_detail.html', context)
@@ -187,23 +218,41 @@ def ticket_update(request, pk):
     ticket = get_object_or_404(Ticket, pk=pk)
     
     # Sprawdzenie uprawnień do edycji
-    if role == 'client' and ticket.created_by != user:
-        return HttpResponseForbidden("Nie możesz edytować tego zgłoszenia")
-    elif role == 'agent' and ticket.assigned_to and ticket.assigned_to != user:
-        # Agent może edytować tylko przypisane do niego zgłoszenia lub nieprzypisane
-        if ticket.assigned_to is not None:
+    if role == 'client':
+        # Klient może edytować tylko swoje zgłoszenia
+        if ticket.created_by != user:
+            return HttpResponseForbidden("Nie możesz edytować tego zgłoszenia")
+    elif role == 'agent':
+        # Agent może edytować tylko nieprzypisane zgłoszenia lub przypisane do niego
+        if ticket.assigned_to and ticket.assigned_to != user:
             return HttpResponseForbidden("Nie możesz edytować zgłoszenia przypisanego do innego agenta")
     
     if request.method == 'POST':
         # Inny formularz w zależności od roli
-        if role in ['admin', 'agent']:
+        if role == 'admin':
             form = ModeratorTicketForm(request.POST, instance=ticket)
+        elif role == 'agent':
+            form = ModeratorTicketForm(request.POST, instance=ticket)
+            
+            # Jeśli zgłoszenie nie jest przypisane, a agent je edytuje, przypisz do niego automatycznie
+            if not ticket.assigned_to:
+                old_form = form.save(commit=False)
+                old_form.assigned_to = user
+                form = ModeratorTicketForm(instance=old_form)
         else:
-            form = TicketForm(request.POST, instance=ticket)
+            # Klient używa ograniczonego formularza
+            form = ClientTicketForm(request.POST, instance=ticket)
             
         if form.is_valid():
             old_status = ticket.status
-            updated_ticket = form.save()
+            
+            # Przypisanie zgłoszenia do agenta, jeśli nie jest przypisane
+            updated_ticket = form.save(commit=False)
+            if role == 'agent' and not ticket.assigned_to:
+                updated_ticket.assigned_to = user
+                messages.info(request, "Zgłoszenie zostało automatycznie przypisane do Ciebie.")
+            
+            updated_ticket.save()
             
             # Logowanie zmiany statusu
             if old_status != updated_ticket.status:
@@ -219,10 +268,11 @@ def ticket_update(request, pk):
             messages.success(request, 'Zgłoszenie zostało zaktualizowane!')
             return redirect('ticket_detail', pk=ticket.pk)
     else:
-        if role in ['admin', 'agent']:
+        if role == 'admin' or role == 'agent':
             form = ModeratorTicketForm(instance=ticket)
         else:
-            form = TicketForm(instance=ticket)
+            # Klient widzi ograniczony formularz
+            form = ClientTicketForm(instance=ticket)
     
     context = {
         'form': form,
@@ -236,11 +286,18 @@ def ticket_update(request, pk):
 def ticket_close(request, pk):
     """Widok zamykania zgłoszenia"""
     user = request.user
+    role = user.profile.role
+    
     ticket = get_object_or_404(Ticket, pk=pk)
     
     # Sprawdzenie uprawnień
-    if user.profile.role == 'client' and ticket.created_by != user:
-        return HttpResponseForbidden("Nie możesz zamknąć tego zgłoszenia")
+    if role == 'client':
+        if ticket.created_by != user:
+            return HttpResponseForbidden("Nie możesz zamknąć tego zgłoszenia")
+    elif role == 'agent':
+        # Agent może zamykać tylko nieprzypisane zgłoszenia lub przypisane do niego
+        if ticket.assigned_to and ticket.assigned_to != user:
+            return HttpResponseForbidden("Nie możesz zamknąć zgłoszenia przypisanego do innego agenta")
     
     if request.method == 'POST':
         ticket.status = 'closed'
@@ -258,10 +315,17 @@ def ticket_close(request, pk):
 def ticket_reopen(request, pk):
     """Widok ponownego otwierania zamkniętego zgłoszenia"""
     user = request.user
+    role = user.profile.role
+    
     ticket = get_object_or_404(Ticket, pk=pk)
     
-    # Tylko admin i agent mogą ponownie otwierać zgłoszenia
-    if user.profile.role not in ['admin', 'agent']:
+    # Tylko admin i przypisany agent mogą ponownie otworzyć zgłoszenie
+    if role == 'admin':
+        pass  # Admin może wszystko
+    elif role == 'agent':
+        if ticket.assigned_to and ticket.assigned_to != user:
+            return HttpResponseForbidden("Nie możesz ponownie otworzyć zgłoszenia przypisanego do innego agenta")
+    else:
         return HttpResponseForbidden("Nie możesz ponownie otworzyć zgłoszenia")
     
     if request.method == 'POST':
@@ -274,3 +338,35 @@ def ticket_reopen(request, pk):
         return redirect('ticket_detail', pk=ticket.pk)
     
     return render(request, 'crm/tickets/ticket_confirm_reopen.html', {'ticket': ticket})
+
+
+@login_required
+def ticket_assign_to_me(request, pk):
+    """Widok przypisywania zgłoszenia do siebie (tylko dla agentów)"""
+    user = request.user
+    
+    if user.profile.role != 'agent':
+        return HttpResponseForbidden("Tylko agenci mogą przypisywać zgłoszenia do siebie")
+    
+    ticket = get_object_or_404(Ticket, pk=pk)
+    
+    # Sprawdź czy zgłoszenie jest już przypisane do kogoś innego
+    if ticket.assigned_to and ticket.assigned_to != user:
+        return HttpResponseForbidden("To zgłoszenie jest już przypisane do innego agenta")
+    
+    if request.method == 'POST':
+        # Przypisz zgłoszenie do aktualnego użytkownika
+        ticket.assigned_to = user
+        ticket.save()
+        
+        log_activity(
+            request,
+            'ticket_updated',
+            ticket,
+            f"Przypisano zgłoszenie '{ticket.title}' do {user.username}"
+        )
+        
+        messages.success(request, 'Zgłoszenie zostało przypisane do Ciebie!')
+        return redirect('ticket_detail', pk=ticket.pk)
+    
+    return render(request, 'crm/tickets/ticket_confirm_assign.html', {'ticket': ticket})
