@@ -1,8 +1,10 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
+from django.contrib import messages
 
 from ..models import ActivityLog
+from .error_views import log_not_found
 
 
 @login_required
@@ -45,7 +47,11 @@ def activity_log_detail(request, log_id):
     if role != 'admin':
         return HttpResponseForbidden("Brak dostępu do logów")
     
-    log = get_object_or_404(ActivityLog, id=log_id)
+    # Try to get the log, use custom 404 handler if not found
+    try:
+        log = get_object_or_404(ActivityLog, id=log_id)
+    except:
+        return log_not_found(request, log_id)
     
     context = {
         'log': log,

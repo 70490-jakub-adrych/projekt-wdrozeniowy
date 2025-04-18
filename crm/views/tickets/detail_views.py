@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 from ...models import Ticket, TicketComment, TicketAttachment
 from ...forms import TicketCommentForm, TicketAttachmentForm
 from ..helpers import log_activity
-from ..error_views import ticket_not_found
+from ..error_views import ticket_not_found, forbidden_access
 
 @login_required
 def ticket_detail(request, pk):
@@ -31,12 +31,12 @@ def ticket_detail(request, pk):
         # Klient może widzieć tylko zgłoszenia ze swoich organizacji lub utworzone przez siebie
         if ticket.organization not in user_orgs and user != ticket.created_by:
             logger.warning(f"Access denied: Client {user.username} tried to access ticket #{ticket.id}")
-            return HttpResponseForbidden("Brak dostępu do tego zgłoszenia")
+            return forbidden_access(request, 'zgłoszenia', ticket.id)
     elif role == 'agent':
         # Agent może widzieć wszystkie zgłoszenia z organizacji, do których należy
         if ticket.organization not in user_orgs:
             logger.warning(f"Access denied: Agent {user.username} tried to access ticket #{ticket.id} from org {ticket.organization.name}")
-            return HttpResponseForbidden("Brak dostępu do tego zgłoszenia")
+            return forbidden_access(request, 'zgłoszenia', ticket.id)
     
     comments = ticket.comments.all().order_by('created_at')
     attachments = ticket.attachments.all()

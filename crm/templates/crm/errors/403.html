@@ -12,10 +12,14 @@
             <div class="card-body text-center">
                 <div class="mb-4">
                     <i class="fas fa-lock fa-5x text-danger mb-3"></i>
-                    <h4>Brak dostępu</h4>
+                    <h4>{{ message|default:"Brak dostępu" }}</h4>
                 </div>
                 
+                {% if resource_type and resource_id %}
+                <p>Nie masz uprawnień do {{ resource_type }} o identyfikatorze: <strong>{{ resource_id }}</strong></p>
+                {% else %}
                 <p>Nie masz uprawnień do przeglądania tej strony.</p>
+                {% endif %}
                 
                 <hr>
                 

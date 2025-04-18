@@ -38,9 +38,7 @@ def log_error(request, error_type, url=None, description=None):
             description = f"Attempted to access restricted page: {url}"
     
     # Get IP address
-    ip_address = request.META.get('REMOTE_ADDR', '')
-    if 'HTTP_X_FORWARDED_FOR' in request.META:
-        ip_address = request.META.get('HTTP_X_FORWARDED_FOR', '').split(',')[0].strip()
+    ip_address = get_client_ip(request)
     
     # Create log entry
     log_entry = ActivityLog(
