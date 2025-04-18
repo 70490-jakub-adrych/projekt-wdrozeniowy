@@ -27,12 +27,18 @@
                     <button type="submit" class="btn btn-primary">
                         <i class="fas fa-user-check"></i> Przypisz do mnie
                     </button>
-                    <a href="{% url 'ticket_detail' ticket.pk %}" class="btn btn-secondary">
+                    <button type="button" class="btn btn-secondary" onclick="goBack()">
                         <i class="fas fa-times"></i> Anuluj
-                    </a>
+                    </button>
                 </form>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+    function goBack() {
+        window.history.back();
+    }
+</script>
 {% endblock %}

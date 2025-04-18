@@ -20,10 +20,16 @@
                 <form method="post">
                     {% csrf_token %}
                     <button type="submit" class="btn btn-success">Ponownie otwórz zgłoszenie</button>
-                    <a href="{% url 'ticket_detail' ticket.pk %}" class="btn btn-outline-secondary">Anuluj</a>
+                    <button type="button" class="btn btn-outline-secondary" onclick="goBack()">Anuluj</button>
                 </form>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+    function goBack() {
+        window.history.back();
+    }
+</script>
 {% endblock %}

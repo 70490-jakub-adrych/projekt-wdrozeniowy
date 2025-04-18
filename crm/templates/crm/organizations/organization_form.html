@@ -21,15 +21,19 @@
                         <button type="submit" class="btn btn-primary">
                             <i class="fas fa-save"></i> Zapisz
                         </button>
-                        {% if organization %}
-                            <a href="{% url 'organization_detail' organization.pk %}" class="btn btn-secondary">Anuluj</a>
-                        {% else %}
-                            <a href="{% url 'organization_list' %}" class="btn btn-secondary">Anuluj</a>
-                        {% endif %}
+                        <button type="button" class="btn btn-secondary" onclick="goBack()">
+                            <i class="fas fa-times"></i> Anuluj
+                        </button>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+    function goBack() {
+        window.history.back();
+    }
+</script>
 {% endblock %}
