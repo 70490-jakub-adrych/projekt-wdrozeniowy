@@ -7,6 +7,16 @@
     {% load static %}
     <link rel="stylesheet" href="{% static 'crm/css/bootstrap.min.css' %}">
     <link rel="stylesheet" href="{% static 'crm/css/all.min.css' %}">
+    <style>
+        .navbar-dark .navbar-nav .nav-link.active {
+            /* Remove background and border-radius that could affect layout */
+            border-bottom: 2px solid #fff;
+            font-weight: 500;
+            color: #fff;
+            /* Ensure no change in spacing */
+            margin-bottom: -2px;
+        }
+    </style>
     {% block extra_css %}{% endblock %}
 </head>
 <body>
@@ -20,22 +30,22 @@
                 <ul class="navbar-nav mr-auto">
                     {% if user.is_authenticated %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'dashboard' %}">Panel główny</a>
+                        <a class="nav-link {% if request.path == '/dashboard/' %}active{% endif %}" href="{% url 'dashboard' %}">Panel główny</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'ticket_list' %}">Zgłoszenia</a>
+                        <a class="nav-link {% if request.path|slice:':9' == '/tickets/' %}active{% endif %}" href="{% url 'ticket_list' %}">Zgłoszenia</a>
                     </li>
                     {% if user.profile.role == 'admin' or user.profile.role == 'agent' %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'organization_list' %}">Organizacje</a>
+                        <a class="nav-link {% if request.path|slice:':15' == '/organizations/' %}active{% endif %}" href="{% url 'organization_list' %}">Organizacje</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'pending_approvals' %}">Zatwierdzanie kont</a>
+                        <a class="nav-link {% if request.path|slice:':11' == '/approvals/' %}active{% endif %}" href="{% url 'pending_approvals' %}">Zatwierdzanie kont</a>
                     </li>
                     {% endif %}
                     {% if user.profile.role == 'admin' %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'activity_logs' %}">Logi</a>
+                        <a class="nav-link {% if request.path|slice:':6' == '/logs/' %}active{% endif %}" href="{% url 'activity_logs' %}">Logi</a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link" href="/admin/" target="_blank">Panel admina</a>
