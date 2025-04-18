@@ -35,6 +35,7 @@ def ticket_list(request):
     date_to = request.GET.get('date_to', '')
     ticket_id = request.GET.get('ticket_id', '')
     sort_by = request.GET.get('sort_by', '-created_at')
+    exclude_closed = request.GET.get('exclude_closed', 'true') == 'true'  # New parameter, default to true
     
     # Get user organizations and log their IDs for debugging
     user_orgs = user.profile.organizations.all()
@@ -71,6 +72,11 @@ def ticket_list(request):
         # Klient widzi zgłoszenia ze swoich organizacji i swoje własne
         tickets = Ticket.objects.filter(Q(organization__in=user_orgs) | Q(created_by=user))
         logger.debug(f"Client {user.username} - showing tickets from orgs and created by user")
+    
+    # Apply exclude_closed filter by default
+    if exclude_closed:
+        tickets = tickets.exclude(status='closed')
+        logger.debug(f"Excluding closed tickets")
     
     # Debug: Count results before filtering
     initial_count = tickets.count()
@@ -114,7 +120,7 @@ def ticket_list(request):
             date_to_obj = datetime.strptime(date_to, '%Y-%m-%d')
             # Dodajemy jeden dzień, aby uwzględnić całą datę "do"
             date_to_obj = date_to_obj + timedelta(days=1)
-            tickets = tickets.filter(created_at__lt=date_to_obj)
+            tickets = tickets.filter(created_at__lt(date_to_obj))
         except ValueError:
             # Nieprawidłowy format daty, ignorujemy
             pass
@@ -155,6 +161,7 @@ def ticket_list(request):
         'sort_by': sort_by,
         'sort_options': sort_options,
         'user_organizations': user_orgs,  # Add user's organizations for debugging in template
+        'exclude_closed': exclude_closed,  # Add the exclude_closed filter to context
     }
     
     return render(request, 'crm/tickets/ticket_list.html', context)
