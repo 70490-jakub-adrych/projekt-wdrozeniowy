@@ -6,7 +6,7 @@ from django.http import HttpResponseForbidden, Http404
 from ...models import Ticket
 from ...forms import ModeratorTicketForm, ClientTicketForm
 from ..helpers import log_activity
-from ..error_views import ticket_not_found
+from ..error_views import ticket_not_found, ticket_edit_forbidden
 
 @login_required
 def ticket_update(request, pk):
@@ -28,11 +28,11 @@ def ticket_update(request, pk):
     if role == 'client':
         # Klient może edytować tylko swoje zgłoszenia
         if ticket.created_by != user:
-            return HttpResponseForbidden("Nie możesz edytować tego zgłoszenia")
+            return ticket_edit_forbidden(request, pk)
     elif role == 'agent':
         # Agent może edytować tylko nieprzypisane zgłoszenia lub przypisane do niego
         if ticket.assigned_to and ticket.assigned_to != user:
-            return HttpResponseForbidden("Nie możesz edytować zgłoszenia przypisanego do innego agenta")
+            return ticket_edit_forbidden(request, pk)
     
     if request.method == 'POST':
         # Inny formularz w zależności od roli

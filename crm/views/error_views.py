@@ -107,3 +107,14 @@ def feature_access_forbidden(request, feature_name):
     }
     
     return render(request, 'crm/errors/403.html', context, status=403)
+
+def ticket_edit_forbidden(request, ticket_id):
+    """Handle forbidden access to ticket editing"""
+    log_error(request, '403_error', 
+             description=f"Attempted to edit ticket #{ticket_id} without proper permissions")
+    
+    return render(request, 'crm/errors/403.html', {
+        'resource_type': 'zgłoszenia',
+        'resource_id': ticket_id,
+        'message': "Nie możesz edytować tego zgłoszenia"
+    }, status=403)
