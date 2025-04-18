@@ -23,12 +23,16 @@
                     <option value="" {% if not action_filter %}selected{% endif %}>Wszystkie</option>
                     <option value="login" {% if action_filter == 'login' %}selected{% endif %}>Zalogowanie</option>
                     <option value="logout" {% if action_filter == 'logout' %}selected{% endif %}>Wylogowanie</option>
+                    <option value="login_failed" {% if action_filter == 'login_failed' %}selected{% endif %}>Nieudane logowanie</option>
                     <option value="ticket_created" {% if action_filter == 'ticket_created' %}selected{% endif %}>Utworzenie zgłoszenia</option>
                     <option value="ticket_updated" {% if action_filter == 'ticket_updated' %}selected{% endif %}>Aktualizacja zgłoszenia</option>
                     <option value="ticket_commented" {% if action_filter == 'ticket_commented' %}selected{% endif %}>Komentarz do zgłoszenia</option>
                     <option value="ticket_resolved" {% if action_filter == 'ticket_resolved' %}selected{% endif %}>Rozwiązanie zgłoszenia</option>
                     <option value="ticket_closed" {% if action_filter == 'ticket_closed' %}selected{% endif %}>Zamknięcie zgłoszenia</option>
                     <option value="ticket_reopened" {% if action_filter == 'ticket_reopened' %}selected{% endif %}>Ponowne otwarcie zgłoszenia</option>
+                    <option value="preferences_updated" {% if action_filter == 'preferences_updated' %}selected{% endif %}>Aktualizacja preferencji</option>
+                    <option value="404_error" {% if action_filter == '404_error' %}selected{% endif %}>Błąd 404 - Strona nie znaleziona</option>
+                    <option value="403_error" {% if action_filter == '403_error' %}selected{% endif %}>Błąd 403 - Brak dostępu</option>
                 </select>
             </div>
             <div class="form-group mr-3">
