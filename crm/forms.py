@@ -145,7 +145,7 @@ def validate_file_size(value):
 
 class TicketAttachmentForm(forms.ModelForm):
     accepted_policy = forms.BooleanField(
-        required=True,
+        required=False,  # Changed to False, validation will be handled in clean()
         label="Akceptuję politykę prywatności i regulamin dotyczący załączników",
         error_messages={'required': 'Musisz zaakceptować regulamin, aby dodać załącznik.'}
     )
@@ -154,7 +154,7 @@ class TicketAttachmentForm(forms.ModelForm):
         model = TicketAttachment
         fields = ['file', 'accepted_policy']
         labels = {
-            'file': 'Załącznik',
+            'file': 'Załącznik (opcjonalnie)',
             'accepted_policy': 'Akceptuję politykę prywatności i regulamin'
         }
     
@@ -164,6 +164,22 @@ class TicketAttachmentForm(forms.ModelForm):
         self.fields['file'].validators.append(validate_file_size)
         # Update help_text to inform users about the size limit
         self.fields['file'].help_text = f"Maksymalny rozmiar pliku: 20MB."
+        # Make file field optional
+        self.fields['file'].required = False
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        file = cleaned_data.get('file')
+        accepted_policy = cleaned_data.get('accepted_policy')
+        
+        # Only require policy acceptance if a file is uploaded
+        if file and not accepted_policy:
+            self.add_error(
+                'accepted_policy', 
+                'Musisz zaakceptować regulamin, aby dodać załącznik.'
+            )
+        
+        return cleaned_data
 
 
 class CustomAuthenticationForm(AuthenticationForm):

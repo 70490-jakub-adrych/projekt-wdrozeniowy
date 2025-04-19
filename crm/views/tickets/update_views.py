@@ -2,9 +2,10 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import HttpResponseForbidden, Http404, JsonResponse
+import os
 
-from ...models import Ticket
-from ...forms import ModeratorTicketForm, ClientTicketForm
+from ...models import Ticket, TicketAttachment
+from ...forms import ModeratorTicketForm, ClientTicketForm, TicketAttachmentForm
 from ..helpers import log_activity
 from ..error_views import ticket_not_found, ticket_edit_forbidden
 
@@ -42,6 +43,9 @@ def ticket_update(request, pk):
     original_title = ticket.title
     original_description = ticket.description
     
+    # Initialize the attachment form
+    attachment_form = TicketAttachmentForm()
+    
     if request.method == 'POST':
         # Handle AJAX category suggestion requests
         if 'suggest_category' in request.POST and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -68,18 +72,42 @@ def ticket_update(request, pk):
         else:
             # Klient używa ograniczonego formularza
             form = ClientTicketForm(request.POST, instance=ticket)
-            
-        if form.is_valid():
+        
+        # Handle file upload and attachment form validation
+        attachment_form = TicketAttachmentForm(request.POST, request.FILES)
+        has_attachment = bool(request.FILES.get('file'))
+        accepted_policy = request.POST.get('accepted_policy') == 'on'
+        
+        # Validate forms - only validate attachment if a file was uploaded
+        form_valid = form.is_valid()
+        attachment_valid = True
+        if has_attachment and not accepted_policy:
+            attachment_valid = False
+            # Add error directly to the attachment form
+            attachment_form.add_error('accepted_policy', 'Musisz zaakceptować regulamin, aby dodać załącznik.')
+        
+        if form_valid and attachment_valid:
             # Przypisanie zgłoszenia do agenta, jeśli nie jest przypisane
             updated_ticket = form.save(commit=False)
             
-            # Assign ticket to agent if unassigned - but don't recreate the form
+            # Assign ticket to agent if unassigned
             if role == 'agent' and not ticket.assigned_to:
                 updated_ticket.assigned_to = user
                 messages.info(request, "Zgłoszenie zostało automatycznie przypisane do Ciebie.")
             
             # Save changes
             updated_ticket.save()
+            
+            # Handle attachment upload if provided
+            if has_attachment:
+                attachment = attachment_form.save(commit=False)
+                attachment.ticket = updated_ticket
+                attachment.uploaded_by = user
+                attachment.filename = os.path.basename(attachment.file.name)
+                attachment.accepted_policy = True  # User agreed to terms
+                attachment.save()
+                log_activity(request, 'ticket_attachment_added', ticket=updated_ticket, 
+                            description=f"Added attachment: {attachment.filename}")
             
             # Log all significant changes
             changes = []
@@ -111,7 +139,7 @@ def ticket_update(request, pk):
                 changes.append("aktualizacja opisu")
             
             # Log detailed changes
-            if changes:
+            if changes or has_attachment:
                 change_description = ", ".join(changes)
                 log_activity(
                     request, 
@@ -125,10 +153,8 @@ def ticket_update(request, pk):
             messages.success(request, 'Zgłoszenie zostało zaktualizowane!')
             return redirect('ticket_detail', pk=updated_ticket.pk)
         else:
-            # Show validation errors
-            for field, errors in form.errors.items():
-                for error in errors:
-                    messages.error(request, f"Błąd w polu {field}: {error}")
+            # No need to display explicit error messages - they'll show inline
+            pass
     else:
         # GET request - initialize form
         if role in ['admin', 'agent']:
@@ -140,6 +166,7 @@ def ticket_update(request, pk):
     context = {
         'form': form,
         'ticket': ticket,
+        'attachment_form': attachment_form,
     }
     
     return render(request, 'crm/tickets/ticket_form.html', context)

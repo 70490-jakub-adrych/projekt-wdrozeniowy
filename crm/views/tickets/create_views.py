@@ -2,9 +2,10 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
+import os
 
-from ...models import Organization
-from ...forms import TicketForm, ClientTicketForm
+from ...models import Organization, TicketAttachment
+from ...forms import TicketForm, ClientTicketForm, TicketAttachmentForm
 from ..helpers import log_activity
 from ...utils.category_suggestion import should_suggest_category
 
@@ -13,12 +14,18 @@ def ticket_create(request):
     """Widok tworzenia nowego zgłoszenia"""
     user = request.user
     
+    # Initialize the attachment form
+    attachment_form = TicketAttachmentForm()
+    
     if request.method == 'POST':
         # Use different form based on user role
         if user.profile.role in ['admin', 'agent']:
             form = TicketForm(request.POST)
         else:
             form = ClientTicketForm(request.POST)
+        
+        # Handle file upload
+        attachment_form = TicketAttachmentForm(request.POST, request.FILES)
             
         # Check if this is an AJAX request asking for category suggestion
         if 'suggest_category' in request.POST and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
@@ -37,8 +44,22 @@ def ticket_create(request):
                 'match_details': {k: [(word, score) for word, score in v] 
                                  for k, v in match_details.items()}
             })
-            
-        if form.is_valid():
+        
+        # Check if a file was uploaded
+        has_attachment = bool(request.FILES.get('file'))
+        accepted_policy = request.POST.get('accepted_policy') == 'on'
+        
+        # First validate the main form
+        form_valid = form.is_valid()
+        
+        # For attachments, only validate policy acceptance if a file exists
+        attachment_valid = True
+        if has_attachment and not accepted_policy:
+            attachment_valid = False
+            # Add error directly to the attachment form
+            attachment_form.add_error('accepted_policy', 'Musisz zaakceptować regulamin, aby dodać załącznik.')
+        
+        if form_valid and attachment_valid:
             ticket = form.save(commit=False)
             ticket.created_by = user
             
@@ -78,8 +99,25 @@ def ticket_create(request):
                 
             ticket.save()
             log_activity(request, 'ticket_created', ticket, f"Utworzono zgłoszenie: '{ticket.title}'")
-            messages.success(request, 'Zgłoszenie zostało utworzone!')
+            
+            # Handle attachment upload if provided
+            if has_attachment:
+                attachment = attachment_form.save(commit=False)
+                attachment.ticket = ticket
+                attachment.uploaded_by = user
+                attachment.filename = os.path.basename(attachment.file.name)
+                attachment.accepted_policy = True  # User agreed to terms
+                attachment.save()
+                log_activity(request, 'ticket_attachment_added', ticket=ticket, 
+                            description=f"Added attachment: {attachment.filename}")
+                messages.success(request, 'Zgłoszenie oraz załącznik zostały utworzone!')
+            else:
+                messages.success(request, 'Zgłoszenie zostało utworzone!')
+                
             return redirect('ticket_detail', pk=ticket.pk)
+        else:
+            # Let the form validation errors display inline - no need for explicit messages
+            pass
     else:
         # Also use different form for GET requests based on user role
         if user.profile.role in ['admin', 'agent']:
@@ -98,6 +136,7 @@ def ticket_create(request):
     
     context = {
         'form': form,
+        'attachment_form': attachment_form,
         'organizations': organizations,
     }
     

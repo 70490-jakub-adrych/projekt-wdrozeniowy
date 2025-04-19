@@ -14,23 +14,9 @@
                 {% if ticket %}Edytuj zgłoszenie{% else %}Nowe zgłoszenie{% endif %}
             </div>
             <div class="card-body">
-                {% if form.errors %}
-                    <div class="alert alert-danger">
-                        <strong>Wystąpiły błędy w formularzu:</strong>
-                        <ul>
-                            {% for field in form %}
-                                {% for error in field.errors %}
-                                    <li><strong>{{ field.label }}:</strong> {{ error }}</li>
-                                {% endfor %}
-                            {% endfor %}
-                            {% for error in form.non_field_errors %}
-                                <li>{{ error }}</li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                {% endif %}
+                <!-- Error banner completely removed -->
                 
-                <form method="post" id="ticketForm">
+                <form method="post" id="ticketForm" enctype="multipart/form-data">
                     {% csrf_token %}
                     
                     <!-- We need to get title and description fields first -->
@@ -105,6 +91,26 @@
                         </div>
                         {% endif %}
                     {% endif %}
+
+                    <!-- Attachment upload section -->
+                    <hr>
+                    <h5 class="mb-3"><i class="fas fa-paperclip"></i> Załączniki (opcjonalnie)</h5>
+                    
+                    <div class="form-group">
+                        {{ attachment_form.file|as_crispy_field }}
+                    </div>
+                    
+                    <!-- Always show policy checkbox - no longer conditionally hidden -->
+                    <div class="form-group attachment-policy" id="policy-section">
+                        {{ attachment_form.accepted_policy|as_crispy_field }}
+                    </div>
+                    
+                    <div class="form-text text-muted mb-3">
+                        <small>
+                            Pliki załączników są szyfrowane i dostępne wyłącznie dla uprawnionych użytkowników.
+                            <a href="#" data-toggle="modal" data-target="#privacyPolicyModal">Zobacz regulamin dotyczący załączników</a>
+                        </small>
+                    </div>
                     
                     <div class="mt-4">
                         <button type="submit" class="btn btn-primary">
@@ -115,6 +121,50 @@
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal for Privacy Policy -->
+<div class="modal fade" id="privacyPolicyModal" tabindex="-1" aria-labelledby="privacyPolicyModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="privacyPolicyModalLabel">Polityka prywatności i regulamin dotyczący załączników</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <h6>Regulamin dotyczący załączników w systemie Helpdesk</h6>
+                <p>
+                    1. Zabrania się przesyłania plików zawierających złośliwe oprogramowanie, wirusy lub inne szkodliwe treści.
+                </p>
+                <p>
+                    2. Zabrania się przesyłania plików naruszających prawa autorskie osób trzecich.
+                </p>
+                <p>
+                    3. Zabrania się przesyłania plików zawierających treści nielegalne, obraźliwe, wulgarne lub nieodpowiednie.
+                </p>
+                <p>
+                    4. Administrator systemu zastrzega sobie prawo do usunięcia załączników naruszających regulamin.
+                </p>
+                <p>
+                    5. Przesyłane pliki są szyfrowane i przechowywane w sposób bezpieczny, ale użytkownik powinien unikać przesyłania wrażliwych danych osobowych.
+                </p>
+                <h6>Polityka prywatności</h6>
+                <p>
+                    Pliki są przechowywane na serwerze w formie zaszyfrowanej i dostępne tylko dla uprawnionych użytkowników.
+                    Załączniki mogą być przeglądane przez administratorów systemu oraz agentów przypisanych do obsługi danego zgłoszenia.
+                </p>
+                <p>
+                    Akceptując regulamin, użytkownik oświadcza, że został poinformowany o zasadach przetwarzania danych zawartych w załącznikach
+                    i bierze pełną odpowiedzialność za treści przesyłanych plików.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Zamknij</button>
             </div>
         </div>
     </div>
@@ -235,6 +285,72 @@
                     suggestionAlert.classList.add('d-none');
                 });
             }
+        }
+        
+        // Client-side validation for attachment and policy checkbox
+        const fileInput = document.querySelector('#id_file');
+        const policyCheckbox = document.querySelector('#id_accepted_policy');
+        const policyField = document.querySelector('.attachment-policy');
+        
+        if (form && fileInput && policyCheckbox) {
+            // Add form submission handler for validation
+            form.addEventListener('submit', function(event) {
+                // Check if an attachment was selected but terms not accepted
+                if (fileInput.files && fileInput.files.length > 0 && !policyCheckbox.checked) {
+                    // Add custom error message directly to the field
+                    const errorElement = document.querySelector('#error_id_accepted_policy');
+                    
+                    // Create error message if it doesn't exist
+                    if (!errorElement) {
+                        const newErrorElement = document.createElement('p');
+                        newErrorElement.id = 'error_id_accepted_policy';
+                        newErrorElement.className = 'invalid-feedback';
+                        newErrorElement.style.display = 'block';
+                        newErrorElement.textContent = 'Musisz zaakceptować regulamin, aby dodać załącznik.';
+                        
+                        // Find the parent div that contains the checkbox
+                        const formGroup = policyCheckbox.closest('.form-group');
+                        formGroup.appendChild(newErrorElement);
+                        
+                        // Add error class to the checkbox
+                        policyCheckbox.classList.add('is-invalid');
+                    }
+                    
+                    // Prevent form submission
+                    event.preventDefault();
+                    
+                    // Scroll to the error message
+                    policyField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    
+                    return false;
+                }
+                
+                // If we get here, form is valid (either no attachment or terms accepted)
+                return true;
+            });
+            
+            // Add change handler for file input to clear errors when changed
+            fileInput.addEventListener('change', function() {
+                // If user removes the file, clear any error on the checkbox
+                if (!this.files || this.files.length === 0) {
+                    const errorElement = document.querySelector('#error_id_accepted_policy');
+                    if (errorElement) {
+                        errorElement.remove();
+                        policyCheckbox.classList.remove('is-invalid');
+                    }
+                }
+            });
+            
+            // Add change handler for checkbox to clear errors when checked
+            policyCheckbox.addEventListener('change', function() {
+                if (this.checked) {
+                    const errorElement = document.querySelector('#error_id_accepted_policy');
+                    if (errorElement) {
+                        errorElement.remove();
+                        this.classList.remove('is-invalid');
+                    }
+                }
+            });
         }
     });
 </script>
