@@ -259,7 +259,53 @@
                             <p>{{ ticket.created_at|date:"d.m.Y H:i" }} - {{ ticket.created_by.username }}</p>
                         </div>
                     </div>
-                    {% if ticket.resolved_at %}
+                    
+                    {% for activity in ticket_activities %}
+                        {% if activity.action_type == 'ticket_updated' %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-info"></div>
+                            <div class="timeline-content">
+                                <h3 class="timeline-title">Aktualizacja zgłoszenia</h3>
+                                <p>{{ activity.created_at|date:"d.m.Y H:i" }} - {{ activity.user.username }}</p>
+                                <p class="text-muted">{{ activity.description }}</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if activity.action_type == 'ticket_commented' %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-primary"></div>
+                            <div class="timeline-content">
+                                <h3 class="timeline-title">Dodano komentarz</h3>
+                                <p>{{ activity.created_at|date:"d.m.Y H:i" }} - {{ activity.user.username }}</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if activity.action_type == 'ticket_closed' %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-secondary"></div>
+                            <div class="timeline-content">
+                                <h3 class="timeline-title">Zamknięto zgłoszenie</h3>
+                                <p>{{ activity.created_at|date:"d.m.Y H:i" }} - {{ activity.user.username }}</p>
+                                <p class="text-muted">{{ activity.description }}</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if activity.action_type == 'ticket_reopened' %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-warning"></div>
+                            <div class="timeline-content">
+                                <h3 class="timeline-title">Ponowne otwarcie zgłoszenia</h3>
+                                <p>{{ activity.created_at|date:"d.m.Y H:i" }} - {{ activity.user.username }}</p>
+                                <p class="text-muted">{{ activity.description }}</p>
+                            </div>
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if ticket.resolved_at and ticket.status == 'resolved' %}
                     <div class="timeline-item">
                         <div class="timeline-marker bg-success"></div>
                         <div class="timeline-content">
@@ -268,11 +314,12 @@
                         </div>
                     </div>
                     {% endif %}
-                    {% if ticket.closed_at %}
+                    
+                    {% if ticket.status == 'closed' and ticket.closed_at %}
                     <div class="timeline-item">
                         <div class="timeline-marker bg-secondary"></div>
                         <div class="timeline-content">
-                            <h3 class="timeline-title">Zamknięto zgłoszenie</h3>
+                            <h3 class="timeline-title">Aktualnie zamknięte</h3>
                             <p>{{ ticket.closed_at|date:"d.m.Y H:i" }}</p>
                         </div>
                     </div>

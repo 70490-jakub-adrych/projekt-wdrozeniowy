@@ -250,12 +250,13 @@ class ActivityLog(models.Model):
         ('ticket_updated', 'Aktualizacja'),
         ('ticket_commented', 'Komentarz'),
         ('ticket_resolved', 'Rozwiązanie'),
-        ('ticket_closed', 'Zamknięcie'),
+        ('ticket_closed', 'Zamknięcie'),  # Make sure this is defined
         ('ticket_reopened', 'Wznowienie'),
         ('preferences_updated', 'Aktualizacja preferencji'),
         ('password_changed', 'Zmiana hasła'),
         ('404_error', 'Błąd 404 - Strona nie znaleziona'),
         ('403_error', 'Błąd 403 - Brak dostępu'),
+        ('ticket_attachment_added', 'Dodano załącznik'),
     )
     
     user = models.ForeignKey(User, related_name='activities', on_delete=models.CASCADE, 

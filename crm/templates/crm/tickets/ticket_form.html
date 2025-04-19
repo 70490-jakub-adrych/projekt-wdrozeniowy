@@ -14,6 +14,22 @@
                 {% if ticket %}Edytuj zgłoszenie{% else %}Nowe zgłoszenie{% endif %}
             </div>
             <div class="card-body">
+                {% if form.errors %}
+                    <div class="alert alert-danger">
+                        <strong>Wystąpiły błędy w formularzu:</strong>
+                        <ul>
+                            {% for field in form %}
+                                {% for error in field.errors %}
+                                    <li><strong>{{ field.label }}:</strong> {{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                            {% for error in form.non_field_errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+                
                 <form method="post" id="ticketForm">
                     {% csrf_token %}
                     
@@ -53,7 +69,11 @@
                     </div>
                     
                     <!-- Hidden field for suggested category -->
-                    {{ form.suggested_category }}
+                    {% if form.suggested_category %}
+                        {{ form.suggested_category }}
+                    {% else %}
+                        <input type="hidden" name="suggested_category" id="id_suggested_category">
+                    {% endif %}
                     
                     <!-- Render remaining fields -->
                     {% if user.profile.role == 'admin' or user.profile.role == 'agent' %}
@@ -61,7 +81,13 @@
                             {{ form.priority|as_crispy_field }}
                         </div>
                         
-                        {% if user.profile.role == 'admin' %}
+                        {% if form.status %}
+                            <div class="form-group">
+                                {{ form.status|as_crispy_field }}
+                            </div>
+                        {% endif %}
+                        
+                        {% if user.profile.role == 'admin' and form.assigned_to %}
                             <div class="form-group">
                                 {{ form.assigned_to|as_crispy_field }}
                             </div>
@@ -96,7 +122,13 @@
 
 <script>
     function goBack() {
-        window.history.back();
+        // First try to go back to the ticket detail if it was an edit
+        {% if ticket %}
+            window.location.href = "{% url 'ticket_detail' ticket.pk %}";
+        {% else %}
+            // Otherwise just use history.back() as a fallback
+            window.history.back();
+        {% endif %}
     }
     
     // Category suggestion functionality
@@ -121,92 +153,89 @@
             'other': 'Inne'
         };
         
-        // Function to check for category suggestion
-        function checkCategorySuggestion() {
-            // Only check if both title and description have content
-            if (titleInput.value.trim() === '' || descInput.value.trim() === '') {
-                return;
-            }
-            
-            // Get current selected category
-            const selectedCategory = categorySelect.value;
-            
-            const formData = new FormData();
-            formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
-            formData.append('title', titleInput.value);
-            formData.append('description', descInput.value);
-            formData.append('category', selectedCategory);
-            formData.append('suggest_category', 'true');
-            
-            fetch(window.location.href, {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
+        // Only run this code if we have all the necessary elements
+        if (titleInput && descInput && categorySelect && suggestedCategoryInput) {
+            // Function to check for category suggestion
+            function checkCategorySuggestion() {
+                // Only check if both title and description have content
+                if (titleInput.value.trim() === '' || descInput.value.trim() === '') {
+                    return;
                 }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.should_suggest) {
-                    // Show suggestion
-                    suggestionAlert.classList.remove('d-none');
-                    suggestedCategorySpan.textContent = categoryNames[data.suggested_category] || data.suggested_category;
-                    suggestedCategoryInput.value = data.suggested_category;
-                    
-                    // Display match details
-                    const matchDetails = data.match_details[data.suggested_category];
-                    if (matchDetails && matchDetails.length > 0) {
-                        let keywords = matchDetails.map(item => item[0]).join(", ");
-                        matchDetailsContainer.textContent = `Znalezione słowa kluczowe: ${keywords}`;
+                
+                // Get current selected category
+                const selectedCategory = categorySelect.value;
+                
+                const formData = new FormData();
+                formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+                formData.append('title', titleInput.value);
+                formData.append('description', descInput.value);
+                formData.append('category', selectedCategory);
+                formData.append('suggest_category', 'true');
+                
+                fetch(window.location.href, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
                     }
-                } else {
-                    // Hide suggestion
-                    suggestionAlert.classList.add('d-none');
-                    suggestedCategoryInput.value = '';
-                }
-            })
-            .catch(error => {
-                console.error('Error checking category suggestion:', error);
-            });
-        }
-        
-        // Debounce function to limit API calls
-        function debounce(func, wait) {
-            let timeout;
-            return function(...args) {
-                clearTimeout(timeout);
-                timeout = setTimeout(() => func.apply(this, args), wait);
-            };
-        }
-        
-        // Check for suggestion when user finishes typing description
-        const debouncedCheck = debounce(checkCategorySuggestion, 500);
-        descInput.addEventListener('input', debouncedCheck);
-        titleInput.addEventListener('input', debouncedCheck);
-        
-        // Also check when category is changed
-        categorySelect.addEventListener('change', checkCategorySuggestion);
-        
-        // Setup button handlers
-        acceptBtn.addEventListener('click', function() {
-            // Change the selected category to the suggested one
-            categorySelect.value = suggestedCategoryInput.value;
-            suggestionAlert.classList.add('d-none');
-        });
-        
-        rejectBtn.addEventListener('click', function() {
-            // Keep user's choice and hide suggestion
-            suggestedCategoryInput.value = '';
-            suggestionAlert.classList.add('d-none');
-        });
-        
-        // Form submission handler
-        form.addEventListener('submit', function(e) {
-            // If suggestion is showing, add a hidden field for it
-            if (!suggestionAlert.classList.contains('d-none')) {
-                suggestedCategoryInput.value = suggestedCategoryInput.value || '';
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.should_suggest) {
+                        // Show suggestion
+                        suggestionAlert.classList.remove('d-none');
+                        suggestedCategorySpan.textContent = categoryNames[data.suggested_category] || data.suggested_category;
+                        suggestedCategoryInput.value = data.suggested_category;
+                        
+                        // Display match details
+                        const matchDetails = data.match_details[data.suggested_category];
+                        if (matchDetails && matchDetails.length > 0) {
+                            let keywords = matchDetails.map(item => item[0]).join(", ");
+                            matchDetailsContainer.textContent = `Znalezione słowa kluczowe: ${keywords}`;
+                        }
+                    } else {
+                        // Hide suggestion
+                        suggestionAlert.classList.add('d-none');
+                        suggestedCategoryInput.value = '';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking category suggestion:', error);
+                });
             }
-        });
+            
+            // Debounce function to limit API calls
+            function debounce(func, wait) {
+                let timeout;
+                return function(...args) {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => func.apply(this, args), wait);
+                };
+            }
+            
+            // Check for suggestion when user finishes typing description
+            const debouncedCheck = debounce(checkCategorySuggestion, 500);
+            descInput.addEventListener('input', debouncedCheck);
+            titleInput.addEventListener('input', debouncedCheck);
+            
+            // Also check when category is changed
+            categorySelect.addEventListener('change', checkCategorySuggestion);
+            
+            // Setup button handlers
+            if (acceptBtn && rejectBtn) {
+                acceptBtn.addEventListener('click', function() {
+                    // Change the selected category to the suggested one
+                    categorySelect.value = suggestedCategoryInput.value;
+                    suggestionAlert.classList.add('d-none');
+                });
+                
+                rejectBtn.addEventListener('click', function() {
+                    // Keep user's choice and hide suggestion
+                    suggestedCategoryInput.value = '';
+                    suggestionAlert.classList.add('d-none');
+                });
+            }
+        }
     });
 </script>
 {% endblock %}

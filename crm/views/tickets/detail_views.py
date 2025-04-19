@@ -8,7 +8,7 @@ import logging
 # Configure logger
 logger = logging.getLogger(__name__)
 
-from ...models import Ticket, TicketComment, TicketAttachment
+from ...models import Ticket, TicketComment, TicketAttachment, ActivityLog
 from ...forms import TicketCommentForm, TicketAttachmentForm
 from ..helpers import log_activity
 from ..error_views import ticket_not_found, forbidden_access
@@ -125,6 +125,11 @@ def ticket_detail(request, pk):
         comment_form = TicketCommentForm()
         attachment_form = TicketAttachmentForm()
     
+    # Get ticket activities for history
+    ticket_activities = ActivityLog.objects.filter(
+        ticket=ticket
+    ).order_by('created_at')
+    
     context = {
         'ticket': ticket,
         'comments': comments,
@@ -137,7 +142,8 @@ def ticket_detail(request, pk):
         'can_close': can_close,
         'can_reopen': can_reopen,
         'can_assign_to_self': can_assign_to_self,
-        'is_closed': is_closed,  # Add this to context
+        'is_closed': is_closed,
+        'ticket_activities': ticket_activities,
     }
     
     return render(request, 'crm/tickets/ticket_detail.html', context)

@@ -33,11 +33,21 @@ def ticket_close(request, pk):
             return HttpResponseForbidden("Nie można zamknąć nieprzypisanego zgłoszenia")
     
     if request.method == 'POST':
+        # Store the old status for the log
+        old_status = ticket.status
+        
         ticket.status = 'closed'
         ticket.closed_at = timezone.now()
         ticket.save()
         
-        log_activity(request, 'ticket_closed', ticket, f"Zamknięto zgłoszenie '{ticket.title}'")
+        # Log closing with detailed information
+        log_activity(
+            request, 
+            'ticket_closed', 
+            ticket, 
+            f"Zamknięto zgłoszenie '{ticket.title}' (zmiana statusu z '{old_status}' na 'closed')"
+        )
+        
         messages.success(request, 'Zgłoszenie zostało zamknięte!')
         return redirect('ticket_detail', pk=ticket.pk)
     
@@ -65,11 +75,17 @@ def ticket_reopen(request, pk):
         return HttpResponseForbidden("Nie możesz ponownie otworzyć zgłoszenia")
     
     if request.method == 'POST':
+        old_status = ticket.status
         ticket.status = 'new'
         ticket.closed_at = None
         ticket.save()
         
-        log_activity(request, 'ticket_reopened', ticket, f"Ponownie otwarto zgłoszenie '{ticket.title}'")
+        log_activity(
+            request, 
+            'ticket_reopened', 
+            ticket, 
+            f"Ponownie otwarto zgłoszenie '{ticket.title}' (zmiana statusu z '{old_status}' na '{ticket.status}')"
+        )
         messages.success(request, 'Zgłoszenie zostało ponownie otwarte!')
         return redirect('ticket_detail', pk=ticket.pk)
     
