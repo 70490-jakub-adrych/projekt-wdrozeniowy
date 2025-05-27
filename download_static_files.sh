@@ -5,24 +5,38 @@ mkdir -p static/crm/css
 mkdir -p static/crm/js
 mkdir -p static/crm/webfonts
 
-# Download Bootstrap
-wget https://github.com/twbs/bootstrap/releases/download/v4.5.2/bootstrap-4.5.2-dist.zip
-unzip bootstrap-4.5.2-dist.zip
-cp bootstrap-4.5.2-dist/css/bootstrap.min.css static/crm/css/
-cp bootstrap-4.5.2-dist/js/bootstrap.min.js static/crm/js/
-rm -rf bootstrap-4.5.2-dist bootstrap-4.5.2-dist.zip
+echo "Downloading static files from GitHub repository..."
 
-# Download jQuery
-wget -O static/crm/js/jquery-3.5.1.slim.min.js https://code.jquery.com/jquery-3.5.1.slim.min.js
+# Base URL for your static files repository
+BASE_URL="https://raw.githubusercontent.com/70490-jakub-adrych/static/main/static"
 
-# Download Popper.js
-wget -O static/crm/js/popper.min.js https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js
+# Download CSS files
+echo "Downloading CSS files..."
+wget -O static/crm/css/bootstrap.min.css "$BASE_URL/crm/css/bootstrap.min.css"
+wget -O static/crm/css/all.min.css "$BASE_URL/crm/css/all.min.css"
 
-# Download Font Awesome
-wget https://use.fontawesome.com/releases/v5.15.1/fontawesome-free-5.15.1-web.zip
-unzip fontawesome-free-5.15.1-web.zip
-cp fontawesome-free-5.15.1-web/css/all.min.css static/crm/css/
-cp -r fontawesome-free-5.15.1-web/webfonts/* static/crm/webfonts/
-rm -rf fontawesome-free-5.15.1-web fontawesome-free-5.15.1-web.zip
+# Download JS files
+echo "Downloading JavaScript files..."
+wget -O static/crm/js/bootstrap.min.js "$BASE_URL/crm/js/bootstrap.min.js"
+wget -O static/crm/js/jquery-3.5.1.slim.min.js "$BASE_URL/crm/js/jquery-3.5.1.slim.min.js"
+wget -O static/crm/js/popper.min.js "$BASE_URL/crm/js/popper.min.js"
+
+# Download Font Awesome webfonts
+echo "Downloading Font Awesome webfonts..."
+wget -O static/crm/webfonts/fa-brands-400.eot "$BASE_URL/crm/webfonts/fa-brands-400.eot"
+wget -O static/crm/webfonts/fa-brands-400.svg "$BASE_URL/crm/webfonts/fa-brands-400.svg"
+wget -O static/crm/webfonts/fa-brands-400.ttf "$BASE_URL/crm/webfonts/fa-brands-400.ttf"
+wget -O static/crm/webfonts/fa-brands-400.woff "$BASE_URL/crm/webfonts/fa-brands-400.woff"
+wget -O static/crm/webfonts/fa-brands-400.woff2 "$BASE_URL/crm/webfonts/fa-brands-400.woff2"
+wget -O static/crm/webfonts/fa-regular-400.eot "$BASE_URL/crm/webfonts/fa-regular-400.eot"
+wget -O static/crm/webfonts/fa-regular-400.svg "$BASE_URL/crm/webfonts/fa-regular-400.svg"
+wget -O static/crm/webfonts/fa-regular-400.ttf "$BASE_URL/crm/webfonts/fa-regular-400.ttf"
+wget -O static/crm/webfonts/fa-regular-400.woff "$BASE_URL/crm/webfonts/fa-regular-400.woff"
+wget -O static/crm/webfonts/fa-regular-400.woff2 "$BASE_URL/crm/webfonts/fa-regular-400.woff2"
+wget -O static/crm/webfonts/fa-solid-900.eot "$BASE_URL/crm/webfonts/fa-solid-900.eot"
+wget -O static/crm/webfonts/fa-solid-900.svg "$BASE_URL/crm/webfonts/fa-solid-900.svg"
+wget -O static/crm/webfonts/fa-solid-900.ttf "$BASE_URL/crm/webfonts/fa-solid-900.ttf"
+wget -O static/crm/webfonts/fa-solid-900.woff "$BASE_URL/crm/webfonts/fa-solid-900.woff"
+wget -O static/crm/webfonts/fa-solid-900.woff2 "$BASE_URL/crm/webfonts/fa-solid-900.woff2"
 
 echo "All static files downloaded successfully!"

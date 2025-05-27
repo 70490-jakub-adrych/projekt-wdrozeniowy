@@ -1,43 +1,66 @@
 # Static Files Setup Instructions
 
-## 1. Create Directory Structure
+## Automated Download (Recommended)
 
+### Linux/macOS
+```bash
+chmod +x download_static_files.sh
+./download_static_files.sh
+```
+
+### Windows (PowerShell)
+```powershell
+Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+.\download_static_files.ps1
+```
+
+## What Gets Downloaded
+
+The scripts automatically download all required static files from our GitHub repository:
+
+### CSS Files
+- Bootstrap 4.5.2 (`bootstrap.min.css`)
+- Font Awesome 5.15.1 (`all.min.css`)
+
+### JavaScript Files
+- jQuery 3.5.1 Slim (`jquery-3.5.1.slim.min.js`)
+- Popper.js 1.16.1 (`popper.min.js`)
+- Bootstrap 4.5.2 JS (`bootstrap.min.js`)
+
+### Font Files
+- Font Awesome webfonts (all variants: eot, svg, ttf, woff, woff2)
+
+## Manual Download (Alternative)
+
+If the scripts don't work, you can manually download files from:
+https://github.com/70490-jakub-adrych/static/tree/main/static
+
+1. Create directory structure:
 ```bash
 mkdir -p static/crm/css
 mkdir -p static/crm/js
 mkdir -p static/crm/webfonts
 ```
 
-## 2. Download Required Libraries
+2. Download individual files and place them in the correct directories
 
-### Bootstrap 4.5.2
-Download from: https://github.com/twbs/bootstrap/releases/download/v4.5.2/bootstrap-4.5.2-dist.zip
-Extract and copy:
-- `css/bootstrap.min.css` to `static/crm/css/`
-- `js/bootstrap.min.js` to `static/crm/js/`
+## Collect Static Files
 
-### jQuery 3.5.1 Slim
-Download from: https://code.jquery.com/jquery-3.5.1.slim.min.js
-Save to `static/crm/js/jquery-3.5.1.slim.min.js`
-
-### Popper.js 1.16.1
-Download from: https://cdn.jsdelivr.net/npm/popper.js@1.16.1/dist/umd/popper.min.js
-Save to `static/crm/js/popper.min.js`
-
-### Font Awesome 5.15.1
-Download from: https://use.fontawesome.com/releases/v5.15.1/fontawesome-free-5.15.1-web.zip
-Extract and copy:
-- `css/all.min.css` to `static/crm/css/`
-- `webfonts/*` to `static/crm/webfonts/`
-
-## 3. Collect Static Files
-
-After placing all files in the correct directories, run:
+After downloading, run Django's collectstatic command:
 
 ```bash
 python manage.py collectstatic
 ```
 
-## 4. Verify
+## Verify
 
-Start the development server and verify that all styles and scripts load correctly.
+Start the development server and verify that all styles and scripts load correctly:
+
+```bash
+python manage.py runserver
+```
+
+Visit http://127.0.0.1:8000/ and check that:
+- Bootstrap styling is applied
+- Font Awesome icons appear correctly
+- JavaScript interactions work
