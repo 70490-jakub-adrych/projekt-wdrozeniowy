@@ -15,7 +15,9 @@ from .auth_views import (
     custom_logout_view, 
     pending_approvals, 
     approve_user, 
-    reject_user
+    reject_user,
+    unlock_user,
+    custom_password_change_view
 )
 
 # Import ticket views
@@ -63,6 +65,6 @@ __all__ = [
     'pending_approvals',
     'approve_user',
     'reject_user',
-    'ticket_not_found',
-    'handle_custom_404'
+    'unlock_user',
+    'custom_password_change_view'
 ]

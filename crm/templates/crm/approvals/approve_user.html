@@ -7,7 +7,7 @@
     <div class="col-md-6">
         <div class="card">
             <div class="card-header bg-success text-white">
-                <i class="fas fa-check-circle mr-2"></i> Zatwierdź użytkownika
+                <i class="fas fa-check mr-2"></i> Zatwierdź użytkownika
             </div>
             <div class="card-body">
                 <h5 class="card-title">Czy na pewno chcesz zatwierdzić tego użytkownika?</h5>
@@ -21,6 +21,10 @@
                         <div class="row mb-2">
                             <div class="col-md-4 font-weight-bold">Email:</div>
                             <div class="col-md-8">{{ profile.user.email }}</div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-md-4 font-weight-bold">Imię i nazwisko:</div>
+                            <div class="col-md-8">{{ profile.user.first_name }} {{ profile.user.last_name }}</div>
                         </div>
                         <div class="row mb-2">
                             <div class="col-md-4 font-weight-bold">Data rejestracji:</div>
@@ -41,6 +45,10 @@
                             </div>
                         </div>
                     </div>
+                </div>
+                
+                <div class="alert alert-success">
+                    <strong>Uwaga:</strong> Po zatwierdzeniu użytkownik będzie mógł logować się do systemu.
                 </div>
                 
                 <form method="post">

@@ -1,16 +1,16 @@
 {% extends 'crm/base.html' %}
 
-{% block title %}Odrzuć użytkownika | System Helpdesk{% endblock %}
+{% block title %}Odblokuj konto | System Helpdesk{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-6">
         <div class="card">
-            <div class="card-header bg-danger text-white">
-                <i class="fas fa-times mr-2"></i> Odrzuć użytkownika
+            <div class="card-header bg-warning text-dark">
+                <i class="fas fa-unlock mr-2"></i> Odblokuj konto użytkownika
             </div>
             <div class="card-body">
-                <h5 class="card-title">Czy na pewno chcesz odrzucić tego użytkownika?</h5>
+                <h5 class="card-title">Czy na pewno chcesz odblokować to konto?</h5>
                 
                 <div class="card bg-light mb-4">
                     <div class="card-body">
@@ -23,12 +23,14 @@
                             <div class="col-md-8">{{ profile.user.email }}</div>
                         </div>
                         <div class="row mb-2">
-                            <div class="col-md-4 font-weight-bold">Imię i nazwisko:</div>
-                            <div class="col-md-8">{{ profile.user.first_name }} {{ profile.user.last_name }}</div>
+                            <div class="col-md-4 font-weight-bold">Data blokady:</div>
+                            <div class="col-md-8">{{ profile.locked_at|date:"d.m.Y H:i" }}</div>
                         </div>
                         <div class="row mb-2">
-                            <div class="col-md-4 font-weight-bold">Data rejestracji:</div>
-                            <div class="col-md-8">{{ profile.user.date_joined|date:"d.m.Y H:i" }}</div>
+                            <div class="col-md-4 font-weight-bold">Nieudane próby:</div>
+                            <div class="col-md-8">
+                                <span class="badge badge-danger">{{ profile.failed_login_attempts }}</span>
+                            </div>
                         </div>
                         <div class="row">
                             <div class="col-md-4 font-weight-bold">Organizacja:</div>
@@ -47,15 +49,15 @@
                     </div>
                 </div>
                 
-                <div class="alert alert-danger">
-                    <strong>Uwaga:</strong> Odrzucenie użytkownika spowoduje trwałe usunięcie jego konta z systemu. Ta operacja jest nieodwracalna.
+                <div class="alert alert-info">
+                    <strong>Uwaga:</strong> Odblokowanie konta spowoduje zresetowanie licznika nieudanych prób logowania.
                 </div>
                 
                 <form method="post">
                     {% csrf_token %}
                     <div class="text-center">
-                        <button type="submit" class="btn btn-danger">
-                            <i class="fas fa-times"></i> Odrzuć i usuń użytkownika
+                        <button type="submit" class="btn btn-warning">
+                            <i class="fas fa-unlock"></i> Odblokuj konto
                         </button>
                         <a href="{% url 'pending_approvals' %}" class="btn btn-secondary">
                             <i class="fas fa-arrow-left"></i> Powrót

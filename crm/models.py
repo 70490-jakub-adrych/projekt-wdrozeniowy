@@ -26,6 +26,37 @@ class UserProfile(models.Model):
     phone = models.CharField(max_length=20, blank=True, verbose_name="Telefon", validators=[phone_regex])
     is_approved = models.BooleanField(default=False, verbose_name="Zatwierdzony")
     
+    # Account locking fields
+    failed_login_attempts = models.IntegerField(default=0, verbose_name="Nieudane próby logowania")
+    is_locked = models.BooleanField(default=False, verbose_name="Konto zablokowane")
+    locked_at = models.DateTimeField(null=True, blank=True, verbose_name="Data blokady")
+    
+    def lock_account(self):
+        """Lock the user account"""
+        self.is_locked = True
+        self.locked_at = timezone.now()
+        self.save()
+    
+    def unlock_account(self):
+        """Unlock the user account and reset failed attempts"""
+        self.is_locked = False
+        self.locked_at = None
+        self.failed_login_attempts = 0
+        self.save()
+    
+    def increment_failed_login(self):
+        """Increment failed login attempts and lock if necessary"""
+        self.failed_login_attempts += 1
+        if self.failed_login_attempts >= 5:
+            self.lock_account()
+        else:
+            self.save()
+    
+    def reset_failed_login(self):
+        """Reset failed login attempts after successful login"""
+        self.failed_login_attempts = 0
+        self.save()
+    
     def __str__(self):
         return f"{self.user.username} - {self.get_role_display()}"
     
@@ -246,11 +277,13 @@ class ActivityLog(models.Model):
         ('login', 'Zalogowanie'),
         ('logout', 'Wylogowanie'),
         ('login_failed', 'Nieudane logowanie'),
+        ('account_locked', 'Blokada konta'),
+        ('account_unlocked', 'Odblokowanie konta'),
         ('ticket_created', 'Utworzenie'),
         ('ticket_updated', 'Aktualizacja'),
         ('ticket_commented', 'Komentarz'),
         ('ticket_resolved', 'Rozwiązanie'),
-        ('ticket_closed', 'Zamknięcie'),  # Make sure this is defined
+        ('ticket_closed', 'Zamknięcie'),
         ('ticket_reopened', 'Wznowienie'),
         ('preferences_updated', 'Aktualizacja preferencji'),
         ('password_changed', 'Zmiana hasła'),

@@ -10,6 +10,7 @@ from .views import (
     activity_logs, activity_log_detail,
     pending_approvals, approve_user, reject_user
 )
+from .views.auth_views import unlock_user
 from . import views
 from .views import secure_file_views
 from django.contrib.auth import views as auth_views
@@ -50,6 +51,7 @@ urlpatterns = [
     path('approvals/', pending_approvals, name='pending_approvals'),
     path('approvals/<int:user_id>/approve/', approve_user, name='approve_user'),
     path('approvals/<int:user_id>/reject/', reject_user, name='reject_user'),
+    path('approvals/<int:user_id>/unlock/', unlock_user, name='unlock_user'),
 
     # Secure files
     path('secure-file/<int:attachment_id>/', secure_file_views.serve_attachment, name='serve_attachment'),

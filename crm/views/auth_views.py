@@ -93,6 +93,14 @@ def custom_login_success(request):
         messages.error(request, 'Twoje konto oczekuje na zatwierdzenie przez administratora lub agenta.')
         logout(request)
         return redirect('login')
+    
+    # Check if account is locked
+    if request.user.profile.is_locked:
+        messages.error(request, 
+            'Twoje konto zostało zablokowane z powodu zbyt wielu nieudanych prób logowania. '
+            'Skontaktuj się ze swoim agentem, aby odblokować konto.')
+        logout(request)
+        return redirect('login')
         
     # Otherwise log login activity and proceed
     log_activity(request, 'login')
@@ -116,10 +124,11 @@ def pending_approvals(request):
     
     # Get pending users based on role
     if user_role == 'admin':
-        # Admins see all pending users
+        # Admins see all pending users and locked accounts
         pending_users = UserProfile.objects.filter(is_approved=False)
+        locked_users = UserProfile.objects.filter(is_locked=True)
     else:
-        # Agents see only users trying to join their organizations
+        # Agents see only users trying to join their organizations and locked users from their orgs
         agent_orgs = request.user.profile.organizations.all()
         if not agent_orgs.exists():
             messages.warning(request, "Nie masz przypisanej organizacji.")
@@ -128,32 +137,46 @@ def pending_approvals(request):
             is_approved=False,
             organizations__in=agent_orgs
         ).distinct()
+        locked_users = UserProfile.objects.filter(
+            is_locked=True,
+            organizations__in=agent_orgs
+        ).distinct()
     
     return render(request, 'crm/approvals/pending_approvals.html', {
-        'pending_users': pending_users
+        'pending_users': pending_users,
+        'locked_users': locked_users
     })
 
 
 @login_required
 def approve_user(request, user_id):
-    """Zatwierdzanie konta użytkownika"""
-    if request.user.profile.role not in ['admin', 'agent']:
+    """Zatwierdzanie użytkownika przez administratora lub agenta"""
+    user_role = request.user.profile.role
+    
+    if user_role not in ['admin', 'agent']:
         return forbidden_access(request, "funkcji zatwierdzania")
     
     profile = get_object_or_404(UserProfile, user_id=user_id, is_approved=False)
     
     # Check if agent has permission to approve this user
-    if request.user.profile.role == 'agent':
+    if user_role == 'agent':
         agent_orgs = set(request.user.profile.organizations.values_list('id', flat=True))
         user_orgs = set(profile.organizations.values_list('id', flat=True))
         if not agent_orgs.intersection(user_orgs):
             return forbidden_access(request, "zatwierdzania tego użytkownika", user_id)
     
-    # Approve the user
     if request.method == 'POST':
         profile.is_approved = True
         profile.save()
-        messages.success(request, f"Konto użytkownika {profile.user.username} zostało zatwierdzone.")
+        
+        # Log the approval
+        log_activity(
+            request,
+            'preferences_updated',
+            description=f"Zatwierdzono konto użytkownika {profile.user.username}"
+        )
+        
+        messages.success(request, f"Użytkownik {profile.user.username} został zatwierdzony.")
         return redirect('pending_approvals')
     
     return render(request, 'crm/approvals/approve_user.html', {'profile': profile})
@@ -161,43 +184,89 @@ def approve_user(request, user_id):
 
 @login_required
 def reject_user(request, user_id):
-    """Odrzucanie konta użytkownika"""
-    if request.user.profile.role not in ['admin', 'agent']:
+    """Odrzucenie użytkownika przez administratora lub agenta"""
+    user_role = request.user.profile.role
+    
+    if user_role not in ['admin', 'agent']:
         return forbidden_access(request, "funkcji odrzucania")
     
-    user = get_object_or_404(User, id=user_id)
-    profile = get_object_or_404(UserProfile, user=user, is_approved=False)
+    profile = get_object_or_404(UserProfile, user_id=user_id, is_approved=False)
     
     # Check if agent has permission to reject this user
-    if request.user.profile.role == 'agent':
+    if user_role == 'agent':
         agent_orgs = set(request.user.profile.organizations.values_list('id', flat=True))
         user_orgs = set(profile.organizations.values_list('id', flat=True))
         if not agent_orgs.intersection(user_orgs):
             return forbidden_access(request, "odrzucania tego użytkownika", user_id)
     
-    # Delete the user account
     if request.method == 'POST':
-        username = user.username
-        user.delete()
-        messages.success(request, f"Konto użytkownika {username} zostało odrzucone i usunięte.")
+        username = profile.user.username
+        
+        # Log the rejection before deleting
+        log_activity(
+            request,
+            'preferences_updated',
+            description=f"Odrzucono konto użytkownika {username}"
+        )
+        
+        # Delete the user (this will cascade delete the profile)
+        profile.user.delete()
+        
+        messages.success(request, f"Użytkownik {username} został odrzucony i usunięty.")
         return redirect('pending_approvals')
     
     return render(request, 'crm/approvals/reject_user.html', {'profile': profile})
 
 
 @login_required
-def custom_password_change_view(request):
-    """Widok zmiany hasła użytkownika"""
+def unlock_user(request, user_id):
+    """Odblokowanie konta użytkownika"""
+    if request.user.profile.role not in ['admin', 'agent']:
+        return forbidden_access(request, "funkcji odblokowywania")
+    
+    profile = get_object_or_404(UserProfile, user_id=user_id, is_locked=True)
+    
+    # Check if agent has permission to unlock this user
+    if request.user.profile.role == 'agent':
+        agent_orgs = set(request.user.profile.organizations.values_list('id', flat=True))
+        user_orgs = set(profile.organizations.values_list('id', flat=True))
+        if not agent_orgs.intersection(user_orgs):
+            return forbidden_access(request, "odblokowywania tego użytkownika", user_id)
+    
+    # Unlock the user
     if request.method == 'POST':
-        form = PasswordChangeForm(user=request.user, data=request.POST)
+        profile.unlock_account()
+        
+        # Log the unlock action
+        log_activity(
+            request,
+            'account_unlocked',
+            description=f"Odblokowano konto użytkownika {profile.user.username}"
+        )
+        
+        messages.success(request, f"Konto użytkownika {profile.user.username} zostało odblokowane.")
+        return redirect('pending_approvals')
+    
+    return render(request, 'crm/approvals/unlock_user.html', {'profile': profile})
+
+
+@login_required
+def custom_password_change_view(request):
+    """Custom password change view with activity logging"""
+    if request.method == 'POST':
+        form = PasswordChangeForm(request.user, request.POST)
         if form.is_valid():
-            form.save()
-            # Update the session to prevent the user from being logged out
-            update_session_auth_hash(request, form.user)
-            log_activity(request, 'password_changed')
-            messages.success(request, 'Twoje hasło zostało zmienione pomyślnie!')
+            user = form.save()
+            update_session_auth_hash(request, user)  # Important to keep user logged in
+            
+            # Log the password change
+            log_activity(request, 'password_changed', description="Użytkownik zmienił hasło")
+            
+            messages.success(request, 'Twoje hasło zostało pomyślnie zmienione!')
             return redirect('dashboard')
     else:
-        form = PasswordChangeForm(user=request.user)
+        form = PasswordChangeForm(request.user)
     
-    return render(request, 'crm/auth/password_change.html', {'form': form})
+    return render(request, 'registration/password_change_form.html', {
+        'form': form
+    })

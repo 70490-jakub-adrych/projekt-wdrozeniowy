@@ -4,12 +4,69 @@
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>Oczekujące zatwierdzenia</h2>
+    <h2>Zatwierdzanie kont</h2>
     <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">
         <i class="fas fa-arrow-left"></i> Powrót do panelu
     </a>
 </div>
 
+<!-- Locked Users Section -->
+{% if locked_users %}
+<div class="card mb-4">
+    <div class="card-header bg-warning text-dark">
+        <i class="fas fa-lock"></i> Zablokowane konta użytkowników
+    </div>
+    <div class="card-body">
+        <div class="alert alert-warning">
+            <strong>Uwaga:</strong> Te konta zostały zablokowane z powodu zbyt wielu nieudanych prób logowania.
+        </div>
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Nazwa użytkownika</th>
+                        <th>Email</th>
+                        <th>Organizacja</th>
+                        <th>Data blokady</th>
+                        <th>Nieudane próby</th>
+                        <th>Akcje</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for profile in locked_users %}
+                    <tr>
+                        <td>{{ profile.user.username }}</td>
+                        <td>{{ profile.user.email }}</td>
+                        <td>
+                            {% if profile.organizations.exists %}
+                                <ul class="list-unstyled mb-0">
+                                {% for org in profile.organizations.all %}
+                                    <li>{{ org.name }}</li>
+                                {% endfor %}
+                                </ul>
+                            {% else %}
+                                <span class="text-muted">Brak</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ profile.locked_at|date:"d.m.Y H:i" }}</td>
+                        <td>
+                            <span class="badge badge-danger">{{ profile.failed_login_attempts }}</span>
+                        </td>
+                        <td>
+                            <a href="{% url 'unlock_user' profile.user.id %}" class="btn btn-sm btn-warning">
+                                <i class="fas fa-unlock"></i> Odblokuj
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Pending Users Section -->
 {% if pending_users %}
 <div class="card">
     <div class="card-header">
@@ -59,9 +116,11 @@
         </div>
     </div>
 </div>
-{% else %}
+{% endif %}
+
+{% if not pending_users and not locked_users %}
 <div class="alert alert-info">
-    <i class="fas fa-info-circle"></i> Brak użytkowników oczekujących na zatwierdzenie.
+    <i class="fas fa-info-circle"></i> Brak użytkowników oczekujących na zatwierdzenie i brak zablokowanych kont.
 </div>
 {% endif %}
 {% endblock %}

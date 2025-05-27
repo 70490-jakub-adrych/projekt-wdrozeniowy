@@ -190,16 +190,69 @@ class CustomAuthenticationForm(AuthenticationForm):
         password = self.cleaned_data.get('password')
 
         if username and password:
+            # Check if user exists and is locked
+            try:
+                user = User.objects.get(username=username)
+                if hasattr(user, 'profile') and user.profile.is_locked:
+                    # Log the attempt on locked account
+                    ip_address = get_client_ip(self.request)
+                    ActivityLog.objects.create(
+                        user=user,
+                        action_type='login_failed',
+                        description=f"Login attempt on locked account: {username}",
+                        ip_address=ip_address
+                    )
+                    raise forms.ValidationError(
+                        "Twoje konto zostało zablokowane z powodu zbyt wielu nieudanych prób logowania. "
+                        "Skontaktuj się ze swoim agentem, aby odblokować konto.",
+                        code='account_locked',
+                    )
+            except User.DoesNotExist:
+                pass  # User doesn't exist, continue with normal authentication
+            
             self.user_cache = authenticate(self.request, username=username, password=password)
             if self.user_cache is None:
-                # Log the failed login attempt
+                # Handle failed authentication
                 ip_address = get_client_ip(self.request)
-                ActivityLog.objects.create(
-                    user=None,  # No user since login failed
-                    action_type='login_failed',
-                    description=f"Failed login attempt for username: {username}",
-                    ip_address=ip_address
-                )
+                
+                # Try to get user and increment failed attempts
+                try:
+                    user = User.objects.get(username=username)
+                    if hasattr(user, 'profile'):
+                        user.profile.increment_failed_login()
+                        
+                        # Log the failed attempt with current count
+                        ActivityLog.objects.create(
+                            user=user,
+                            action_type='login_failed',
+                            description=f"Failed login attempt #{user.profile.failed_login_attempts} for username: {username}",
+                            ip_address=ip_address
+                        )
+                        
+                        # If account was just locked, log that too
+                        if user.profile.is_locked:
+                            ActivityLog.objects.create(
+                                user=user,
+                                action_type='account_locked',
+                                description=f"Account locked after 5 failed login attempts",
+                                ip_address=ip_address
+                            )
+                    else:
+                        # Log failed attempt for user without profile
+                        ActivityLog.objects.create(
+                            user=None,
+                            action_type='login_failed',
+                            description=f"Failed login attempt for username: {username}",
+                            ip_address=ip_address
+                        )
+                except User.DoesNotExist:
+                    # Log failed attempt for non-existent user
+                    ActivityLog.objects.create(
+                        user=None,
+                        action_type='login_failed',
+                        description=f"Failed login attempt for non-existent username: {username}",
+                        ip_address=ip_address
+                    )
                 
                 raise forms.ValidationError(
                     self.error_messages['invalid_login'],
@@ -207,6 +260,10 @@ class CustomAuthenticationForm(AuthenticationForm):
                     params={'username': self.username_field.verbose_name},
                 )
             else:
+                # Successful authentication - reset failed attempts if not locked
+                if hasattr(self.user_cache, 'profile') and not self.user_cache.profile.is_locked:
+                    self.user_cache.profile.reset_failed_login()
+                
                 self.confirm_login_allowed(self.user_cache)
 
         return self.cleaned_data
