@@ -1,59 +1,73 @@
 # System Helpdesk - Instrukcja uruchomienia
 
-Poniżej znajdują się komendy niezbędne do skonfigurowania i uruchomienia systemu Helpdesk.
+System zarządzania zgłoszeniami IT z funkcjami zarządzania użytkownikami, organizacjami i zabezpieczeniami.
 
-# For Linux
+## Funkcje systemu
+
+- ✅ Zarządzanie zgłoszeniami IT (tickets)
+- ✅ Zarządzanie organizacjami i użytkownikami
+- ✅ System ról (Admin, Agent, Klient)
+- ✅ Blokada konta po 5 nieudanych próbach logowania
+- ✅ Szyfrowane załączniki
+- ✅ Logi aktywności
+- ✅ Automatyczne sugerowanie kategorii zgłoszeń
+
+## Szybkie uruchomienie
+
+### Linux/macOS
 ```bash
-# Klonowanie repozytorium z GitHub
-git clone https://github.com/70490-jakub-adrych/projekt-wdrozeniowy/
-cd projekt-wdrozeniowy-crm/projekt-wdrozeniowy
+# Klonowanie repozytorium
+git clone https://github.com/70490-jakub-adrych/projekt-wdrozeniowy.git
+cd projekt-wdrozeniowy
 
+# Instalacja zależności
 pip install -r requirements.txt
 
 # Pobieranie bibliotek statycznych
-# Linux
-.\download_static_files.sh
+./download_static_files.sh
 
-# Tworzenie migracji na podstawie modeli
+# Konfiguracja bazy danych
 python manage.py makemigrations
-
-# Zastosowanie migracji do bazy danych
 python manage.py migrate
 
-# Tworzenie kont i ustawienie grup oraz uprawnień
+# Tworzenie danych demonstracyjnych
 python manage.py setup_demo_data
 
-# Uruchomienie serwera deweloperskiego
+# Uruchomienie serwera
 python manage.py runserver
 ```
-# For Windows
-```bash
-# Klonowanie repozytorium z GitHub
-git clone https://github.com/70490-jakub-adrych/projekt-wdrozeniowy/
-cd projekt-wdrozeniowy-crm/projekt-wdrozeniowy
 
+### Windows (PowerShell)
+```powershell
+# Klonowanie repozytorium
+git clone https://github.com/70490-jakub-adrych/projekt-wdrozeniowy.git
+cd projekt-wdrozeniowy
+
+# Instalacja zależności
 pip install -r requirements.txt
 
 # Pobieranie bibliotek statycznych
-# Windows (PowerShell script)
 .\download_static_files.ps1
 
-# Tworzenie migracji na podstawie modeli
+# Konfiguracja bazy danych
 python manage.py makemigrations
-
-# Zastosowanie migracji do bazy danych
 python manage.py migrate
 
-# Tworzenie kont i ustawienie grup oraz uprawnień
+# Tworzenie danych demonstracyjnych
 python manage.py setup_demo_data
 
-# Uruchomienie serwera deweloperskiego
+# Uruchomienie serwera
 python manage.py runserver
 ```
-Po wykonaniu tych kroków aplikacja będzie dostępna pod adresem: http://127.0.0.1:8000/
 
-### Pierwsze logowanie
+## Dostęp do systemu
 
-1. Zaloguj się na utworzone wcześniej konto administratora
-2. Konto administratora automatycznie otrzyma rolę "Admin"
-3. Możesz teraz tworzyć organizacje, zgłoszenia oraz zarządzać użytkownikami
+Po uruchomieniu aplikacja będzie dostępna pod adresem: **http://127.0.0.1:8000/**
+
+### Konta demonstracyjne
+
+- **Admin**: username=`admin`, password=`admin123`
+- **Agent 1**: username=`agent1`, password=`agent123`
+- **Klient 1**: username=`client1`, password=`client123`
+
+## Struktura projektu
