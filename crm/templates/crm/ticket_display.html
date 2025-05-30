@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Lista Zgłoszeń{% endblock %}
+
+{% block content %}
+<meta http-equiv="refresh" content="30">
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>Lista Zgłoszeń</h1>
+                {% if user.profile.role == 'viewer' %}
+                <a href="{% url 'logout' %}" class="btn btn-outline-danger">Wyloguj</a>
+                {% endif %}
+            </div>
+            <div id="ticket-list">
+                {% include 'crm/ticket_list_partial.html' %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}{% endblock %} 

@@ -8,7 +8,8 @@ from .views import (
     ticket_list, ticket_detail, ticket_create, ticket_update, 
     ticket_close, ticket_reopen, ticket_assign_to_me,
     activity_logs, activity_log_detail,
-    pending_approvals, approve_user, reject_user
+    pending_approvals, approve_user, reject_user,
+    ticket_display_view
 )
 from .views.auth_views import unlock_user
 from . import views
@@ -42,6 +43,7 @@ urlpatterns = [
     path('tickets/<int:pk>/close/', ticket_close, name='ticket_close'),
     path('tickets/<int:pk>/reopen/', ticket_reopen, name='ticket_reopen'),
     path('tickets/<int:pk>/assign/', ticket_assign_to_me, name='ticket_assign_to_me'),
+    path('tickets/display/', ticket_display_view, name='ticket_display'),
     
     # Activity logs (for admins)
     path('logs/', activity_logs, name='activity_logs'),

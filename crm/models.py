@@ -16,8 +16,10 @@ class UserProfile(models.Model):
     """Model rozszerzający standardowego użytkownika o dodatkowe pola"""
     USER_ROLES = (
         ('admin', 'Administrator'),
+        ('superagent', 'Super Agent'),
         ('agent', 'Agent'),
         ('client', 'Klient'),
+        ('viewer', 'Przeglądający'),
     )
     
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
@@ -71,13 +73,22 @@ def create_user_profile(sender, instance, created, **kwargs):
     if created:
         # Create profile with role based on user type
         role = 'admin' if instance.is_superuser else 'client'
-        # Set approved status based on role (admins are auto-approved)
+        # Set approved status based on role (admins and superagents are auto-approved)
         is_approved = True if instance.is_superuser else False
         UserProfile.objects.create(user=instance, role=role, is_approved=is_approved)
         
         # Add user to appropriate group based on role
         if role == 'admin':
             group, _ = Group.objects.get_or_create(name='Admin')
+            instance.groups.add(group)
+        elif role == 'superagent':
+            group, _ = Group.objects.get_or_create(name='SuperAgent')
+            instance.groups.add(group)
+        elif role == 'agent':
+            group, _ = Group.objects.get_or_create(name='Agent')
+            instance.groups.add(group)
+        elif role == 'viewer':
+            group, _ = Group.objects.get_or_create(name='Viewer')
             instance.groups.add(group)
 
 
@@ -96,8 +107,14 @@ def sync_user_groups_with_role(sender, instance, action, **kwargs):
             if instance.groups.filter(name='Admin').exists():
                 instance.profile.role = 'admin'
                 instance.profile.is_approved = True
+            elif instance.groups.filter(name='SuperAgent').exists():
+                instance.profile.role = 'superagent'
+                instance.profile.is_approved = True
             elif instance.groups.filter(name='Agent').exists():
                 instance.profile.role = 'agent'
+                instance.profile.is_approved = True
+            elif instance.groups.filter(name='Viewer').exists():
+                instance.profile.role = 'viewer'
                 instance.profile.is_approved = True
             else:
                 instance.profile.role = 'client'

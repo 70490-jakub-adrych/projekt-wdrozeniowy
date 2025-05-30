@@ -37,6 +37,9 @@ from .organization_views import organization_list, organization_create, organiza
 # Import error views as a module
 from . import error_views
 
+# Import new ticket display views
+from .ticket_display_views import ticket_display_view
+
 # Define all exported symbols
 __all__ = [
     'get_client_ip',
@@ -66,5 +69,6 @@ __all__ = [
     'approve_user',
     'reject_user',
     'unlock_user',
-    'custom_password_change_view'
+    'custom_password_change_view',
+    'ticket_display_view'
 ]

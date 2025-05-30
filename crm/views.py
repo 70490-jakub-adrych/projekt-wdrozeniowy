@@ -1,5 +1,11 @@
 # This file now imports all views from the 'views' package
 from crm.views import *
+from django.shortcuts import render
+from django.contrib.auth.decorators import login_required
+from .models import Ticket
+from .decorators import viewer_required
+from django.http import JsonResponse
+from django.template.loader import render_to_string
 
 def ticket_list(request):
     """View for listing tickets with filtering options"""
@@ -67,3 +73,23 @@ def ticket_list(request):
     }
     
     return render(request, 'crm/tickets/ticket_list.html', context)
+
+@viewer_required
+def ticket_display_view(request):
+    """Widok wyświetlający listę zgłoszeń dla roli viewer"""
+    tickets = Ticket.objects.all().order_by('-created_at')
+    return render(request, 'crm/ticket_display.html', {
+        'tickets': tickets,
+    })
+
+@viewer_required
+def get_tickets_update(request):
+    """Endpoint do odświeżania listy zgłoszeń"""
+    tickets = Ticket.objects.all().order_by('-created_at')
+    html = render_to_string('crm/ticket_list_partial.html', {
+        'tickets': tickets,
+    })
+    return JsonResponse({
+        'html': html,
+        'ticket_count': tickets.count(),
+    })

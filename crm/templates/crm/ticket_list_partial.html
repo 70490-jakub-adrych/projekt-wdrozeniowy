@@ -1,0 +1,49 @@
+{% if tickets %}
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Tytuł</th>
+                <th>Status</th>
+                <th>Priorytet</th>
+                <th>Kategoria</th>
+                <th>Data utworzenia</th>
+                <th>Ostatnia aktualizacja</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ticket in tickets %}
+            <tr>
+                <td>{{ ticket.id }}</td>
+                <td>{{ ticket.title }}</td>
+                <td>
+                    <span class="badge {% if ticket.status == 'new' %}badge-primary
+                                     {% elif ticket.status == 'in_progress' %}badge-info
+                                     {% elif ticket.status == 'waiting' %}badge-warning
+                                     {% elif ticket.status == 'resolved' %}badge-success
+                                     {% else %}badge-secondary{% endif %}">
+                        {{ ticket.get_status_display }}
+                    </span>
+                </td>
+                <td>
+                    <span class="badge {% if ticket.priority == 'low' %}badge-info
+                                     {% elif ticket.priority == 'medium' %}badge-warning
+                                     {% elif ticket.priority == 'high' %}badge-danger
+                                     {% else %}badge-dark{% endif %}">
+                        {{ ticket.get_priority_display }}
+                    </span>
+                </td>
+                <td>{{ ticket.get_category_display }}</td>
+                <td>{{ ticket.created_at|date:"d.m.Y H:i" }}</td>
+                <td>{{ ticket.updated_at|date:"d.m.Y H:i" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="alert alert-info">
+    Brak zgłoszeń do wyświetlenia.
+</div>
+{% endif %} 

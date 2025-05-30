@@ -53,6 +53,9 @@ pip install -r requirements.txt
 python manage.py makemigrations
 python manage.py migrate
 
+# Usuwanie danych demonstracyjnych
+python manage.py clear_demo_data
+
 # Tworzenie danych demonstracyjnych
 python manage.py setup_demo_data
 
@@ -69,5 +72,6 @@ Po uruchomieniu aplikacja będzie dostępna pod adresem: **http://127.0.0.1:8000
 - **Admin**: username=`admin`, password=`admin123`
 - **Agent 1**: username=`agent1`, password=`agent123`
 - **Klient 1**: username=`client1`, password=`client123`
+- **Viewer**: viewer=`viewer`, password=`viewer123`
 
 ## Struktura projektu

@@ -87,23 +87,9 @@ class CustomLoginView(LoginView):
         return redirect('custom_login_success')
 
 def custom_login_success(request):
-    """Handle successful login - existing function renamed for clarity"""
-    # Check if user is approved before proceeding
-    if not hasattr(request.user, 'profile') or not request.user.profile.is_approved:
-        messages.error(request, 'Twoje konto oczekuje na zatwierdzenie przez administratora lub agenta.')
-        logout(request)
-        return redirect('login')
-    
-    # Check if account is locked
-    if request.user.profile.is_locked:
-        messages.error(request, 
-            'Twoje konto zostało zablokowane z powodu zbyt wielu nieudanych prób logowania. '
-            'Skontaktuj się ze swoim agentem, aby odblokować konto.')
-        logout(request)
-        return redirect('login')
-        
-    # Otherwise log login activity and proceed
-    log_activity(request, 'login')
+    """Przekierowanie po zalogowaniu w zależności od roli użytkownika"""
+    if request.user.profile.role == 'viewer':
+        return redirect('ticket_display')
     return redirect('dashboard')
 
 def custom_logout_view(request):

@@ -19,8 +19,10 @@ class Command(BaseCommand):
         
         # Create users with different roles
         admin_user = self._create_admin_user(organizations)  # Pass organizations to admin creation
+        superagent_user = self._create_superagent_user(organizations)  # Dodaj superagenta
         agent_users = self._create_agent_users(organizations)
         client_users = self._create_client_users(organizations)
+        viewer_user = self._create_viewer_user()  # Create viewer user
         
         # Create sample tickets
         self._create_sample_tickets(client_users, agent_users, organizations)
@@ -37,20 +39,26 @@ class Command(BaseCommand):
             
         for i, user in enumerate(client_users):
             self.stdout.write(f"Client {i+1}: username={user.username}, password=client123")
+            
+        self.stdout.write(f"Viewer: username=viewer, password=viewer123")
+        self.stdout.write(f"Superagent: username=superagent, password=superagent123")
     
     def _setup_groups_and_permissions(self):
         """Create user groups and assign permissions"""
         self.stdout.write("Setting up user groups and permissions...")
         
-        # Get or create the three groups
+        # Get or create the groups
         admin_group, created_admin = Group.objects.get_or_create(name='Admin')
+        superagent_group, created_superagent = Group.objects.get_or_create(name='Superagent')
         agent_group, created_agent = Group.objects.get_or_create(name='Agent')
         client_group, created_client = Group.objects.get_or_create(name='Klient')
+        viewer_group, created_viewer = Group.objects.get_or_create(name='Viewer')
         
         # Clear existing permissions for a fresh start
         admin_group.permissions.clear()
         agent_group.permissions.clear()
         client_group.permissions.clear()
+        viewer_group.permissions.clear()
         
         # Get content types
         ticket_ct = ContentType.objects.get_for_model(Ticket)
@@ -80,6 +88,9 @@ class Command(BaseCommand):
             content_type__in=[ticket_ct, org_ct, profile_ct, comment_ct, attachment_ct]
         )
         admin_group.permissions.add(*admin_permissions)
+        
+        # Superagent permissions (full access jak admin)
+        superagent_group.permissions.set(admin_permissions)
         
         # Agent permissions
         agent_permissions = Permission.objects.filter(
@@ -121,12 +132,24 @@ class Command(BaseCommand):
         client_permissions |= owner_perms
         client_group.permissions.add(*client_permissions)
         
+        # Viewer permissions (only view tickets)
+        viewer_permissions = Permission.objects.filter(
+            content_type=ticket_ct,
+            codename__in=['view_ticket']
+        )
+        viewer_group.permissions.add(*viewer_permissions)
+        
         # Report results
         if created_admin:
             self.stdout.write(self.style.SUCCESS('Created Admin group'))
         else:
             self.stdout.write(self.style.SUCCESS('Updated Admin group permissions'))
 
+        if created_superagent:
+            self.stdout.write(self.style.SUCCESS('Created Superagent group'))
+        else:
+            self.stdout.write(self.style.SUCCESS('Updated Superagent group permissions'))
+            
         if created_agent:
             self.stdout.write(self.style.SUCCESS('Created Agent group'))
         else:
@@ -136,6 +159,11 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS('Created Klient group'))
         else:
             self.stdout.write(self.style.SUCCESS('Updated Klient group permissions'))
+            
+        if created_viewer:
+            self.stdout.write(self.style.SUCCESS('Created Viewer group'))
+        else:
+            self.stdout.write(self.style.SUCCESS('Updated Viewer group permissions'))
 
     def _create_organizations(self):
         """Create sample organizations"""
@@ -230,6 +258,44 @@ class Command(BaseCommand):
                 
             self.stdout.write(f"Admin user already exists: {admin.username}")
             return admin
+    
+    def _create_superagent_user(self, organizations):
+        """Create a superagent user"""
+        superagent_group, _ = Group.objects.get_or_create(name='Superagent')
+        if not User.objects.filter(username='superagent').exists():
+            superagent = User.objects.create_user(
+                username='superagent',
+                email='superagent@example.com',
+                password='superagent123',
+                first_name='Super',
+                last_name='Agent'
+            )
+            try:
+                profile = superagent.profile
+                profile.role = 'superagent'
+                profile.is_approved = True
+                profile.save()
+                for org in organizations:
+                    profile.organizations.add(org)
+            except Exception as e:
+                self.stdout.write(f"Error updating superagent profile: {str(e)}")
+                profile = UserProfile.objects.create(
+                    user=superagent,
+                    role='superagent',
+                    is_approved=True
+                )
+                for org in organizations:
+                    profile.organizations.add(org)
+            superagent.groups.add(superagent_group)
+            self.stdout.write(f"Created superagent user: {superagent.username}")
+            return superagent
+        else:
+            superagent = User.objects.get(username='superagent')
+            profile = superagent.profile
+            for org in organizations:
+                profile.organizations.add(org)
+            self.stdout.write(f"Superagent user already exists: {superagent.username}")
+            return superagent
     
     def _create_agent_users(self, organizations):
         """Create agent users for each organization"""
@@ -461,3 +527,38 @@ class Command(BaseCommand):
             created_tickets.append(ticket)
             
         return created_tickets
+
+    def _create_viewer_user(self):
+        """Create a viewer user"""
+        viewer_group, _ = Group.objects.get_or_create(name='Viewer')
+        
+        if not User.objects.filter(username='viewer').exists():
+            viewer = User.objects.create_user(
+                username='viewer',
+                email='viewer@example.com',
+                password='viewer123',
+                first_name='Viewer',
+                last_name='User'
+            )
+            
+            # Update profile (should be created by signal)
+            try:
+                profile = viewer.profile
+                profile.role = 'viewer'
+                profile.is_approved = True
+                profile.save()
+            except Exception as e:
+                self.stdout.write(f"Error updating viewer profile: {str(e)}")
+                profile = UserProfile.objects.create(
+                    user=viewer,
+                    role='viewer',
+                    is_approved=True
+                )
+            
+            viewer.groups.add(viewer_group)
+            self.stdout.write(f"Created viewer user: {viewer.username}")
+            return viewer
+        else:
+            viewer = User.objects.get(username='viewer')
+            self.stdout.write(f"Viewer user already exists: {viewer.username}")
+            return viewer
