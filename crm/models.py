@@ -82,7 +82,7 @@ def create_user_profile(sender, instance, created, **kwargs):
             group, _ = Group.objects.get_or_create(name='Admin')
             instance.groups.add(group)
         elif role == 'superagent':
-            group, _ = Group.objects.get_or_create(name='SuperAgent')
+            group, _ = Group.objects.get_or_create(name='Superagent')
             instance.groups.add(group)
         elif role == 'agent':
             group, _ = Group.objects.get_or_create(name='Agent')
@@ -95,7 +95,8 @@ def create_user_profile(sender, instance, created, **kwargs):
 @receiver(post_save, sender=User)
 def save_user_profile(sender, instance, **kwargs):
     """Zapisywanie profilu przy zapisie użytkownika"""
-    instance.profile.save()
+    if hasattr(instance, 'profile'):
+        instance.profile.save()
 
 
 @receiver(m2m_changed, sender=User.groups.through)
@@ -103,13 +104,15 @@ def sync_user_groups_with_role(sender, instance, action, **kwargs):
     """Synchronize user role when groups change"""
     if action in ['post_add', 'post_remove', 'post_clear']:
         if hasattr(instance, 'profile'):
-            # Set role based on group membership
+            # Set role based on group membership (priority order: admin > superagent > agent > viewer > client)
             if instance.groups.filter(name='Admin').exists():
                 instance.profile.role = 'admin'
                 instance.profile.is_approved = True
-            elif instance.groups.filter(name='SuperAgent').exists():
-                instance.profile.role = 'superagent'
+            elif instance.groups.filter(name='Superagent').exists():
+                instance.profile.role = 'superagent'  # Make sure this is lowercase to match USER_ROLES
                 instance.profile.is_approved = True
+                # Force save to ensure the role is updated correctly
+                instance.profile.save()
             elif instance.groups.filter(name='Agent').exists():
                 instance.profile.role = 'agent'
                 instance.profile.is_approved = True
@@ -118,6 +121,7 @@ def sync_user_groups_with_role(sender, instance, action, **kwargs):
                 instance.profile.is_approved = True
             else:
                 instance.profile.role = 'client'
+                # Don't auto-approve clients
             
             # Save profile without triggering the post_save signal recursively
             UserProfile.objects.filter(pk=instance.profile.pk).update(
@@ -349,3 +353,124 @@ def create_user_preferences(sender, instance, created, **kwargs):
     """Automatyczne tworzenie preferencji dla nowego użytkownika"""
     if created:
         UserPreference.objects.create(user=instance)
+
+
+class ViewPermission(models.Model):
+    """Model defining which views (pages) are accessible to users"""
+    VIEW_CHOICES = (
+        ('dashboard', 'Panel główny'),
+        ('tickets', 'Zgłoszenia'),
+        ('organizations', 'Organizacje'),
+        ('approvals', 'Zatwierdzanie kont'),
+        ('logs', 'Logi'),
+        ('admin_panel', 'Panel admina'),
+    )
+    
+    name = models.CharField(max_length=30, choices=VIEW_CHOICES, unique=True, verbose_name="Nazwa widoku")
+    description = models.CharField(max_length=255, verbose_name="Opis")
+    
+    def __str__(self):
+        return self.get_name_display()
+    
+    class Meta:
+        verbose_name = "Uprawnienie do widoku"
+        verbose_name_plural = "Uprawnienia do widoków"
+
+
+class GroupViewPermission(models.Model):
+    """Connects groups with allowed views"""
+    group = models.ForeignKey(Group, on_delete=models.CASCADE, related_name='view_permissions', verbose_name="Grupa")
+    view = models.ForeignKey(ViewPermission, on_delete=models.CASCADE, verbose_name="Widok")
+    
+    class Meta:
+        unique_together = ('group', 'view')
+        verbose_name = "Uprawnienie grupy do widoku"
+        verbose_name_plural = "Uprawnienia grup do widoków"
+
+
+class UserViewPermission(models.Model):
+    """Additional view permissions for individual users beyond their group permissions"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='extra_view_permissions', verbose_name="Użytkownik")
+    view = models.ForeignKey(ViewPermission, on_delete=models.CASCADE, verbose_name="Widok")
+    is_granted = models.BooleanField(default=True, verbose_name="Przyznane")
+    
+    class Meta:
+        unique_together = ('user', 'view')
+        verbose_name = "Dodatkowe uprawnienie użytkownika"
+        verbose_name_plural = "Dodatkowe uprawnienia użytkowników"
+
+
+# Update GroupSettings to include default view permissions
+class GroupSettings(models.Model):
+    """Extension for Django Group model to add additional settings"""
+    group = models.OneToOneField(Group, on_delete=models.CASCADE, related_name='settings')
+    allow_multiple_organizations = models.BooleanField(
+        default=False, 
+        verbose_name="Zezwól na wiele organizacji",
+        help_text="Jeśli zaznaczone, użytkownicy w tej grupie mogą być przypisani do więcej niż jednej organizacji."
+    )
+
+    def __str__(self):
+        return f"Ustawienia grupy: {self.group.name}"
+
+    class Meta:
+        verbose_name = "Ustawienia grupy"
+        verbose_name_plural = "Ustawienia grup"
+
+
+@receiver(post_save, sender=Group)
+def create_group_settings(sender, instance, created, **kwargs):
+    """Automatically create settings when a group is created"""
+    if created:
+        # Set default permissions based on group name
+        if instance.name == 'Admin' or instance.name == 'Superagent' or instance.name == 'Agent':
+            # Admins, Superagents and Agents can have multiple organizations by default
+            GroupSettings.objects.create(group=instance, allow_multiple_organizations=True)
+        else:
+            # Other roles (clients, viewers) can't have multiple organizations by default
+            GroupSettings.objects.create(group=instance, allow_multiple_organizations=False)
+            
+        # Setup default view permissions based on group name
+        _setup_default_view_permissions(instance)
+
+
+def _setup_default_view_permissions(group):
+    """Set up default view permissions for a group based on its name"""
+    # Create views if they don't exist
+    for view_code, view_name in ViewPermission.VIEW_CHOICES:
+        ViewPermission.objects.get_or_create(
+            name=view_code, 
+            defaults={"description": view_name}
+        )
+    
+    # Clear existing permissions
+    GroupViewPermission.objects.filter(group=group).delete()
+    
+    # Set default permissions based on group
+    if group.name == 'Admin':
+        # Admin gets all views
+        for view in ViewPermission.objects.all():
+            GroupViewPermission.objects.create(group=group, view=view)
+    
+    elif group.name == 'Superagent':
+        # Superagent gets all views except admin panel
+        for view in ViewPermission.objects.exclude(name='admin_panel'):
+            GroupViewPermission.objects.create(group=group, view=view)
+    
+    elif group.name == 'Agent':
+        # Agent gets dashboard, tickets, organizations, and approvals
+        for view_name in ['dashboard', 'tickets', 'organizations', 'approvals']:
+            view = ViewPermission.objects.get(name=view_name)
+            GroupViewPermission.objects.create(group=group, view=view)
+    
+    elif group.name == 'Klient' or group.name == 'Client':
+        # Client gets only dashboard and tickets
+        for view_name in ['dashboard', 'tickets']:
+            view = ViewPermission.objects.get(name=view_name)
+            GroupViewPermission.objects.create(group=group, view=view)
+    
+    elif group.name == 'Viewer':
+        # Viewer gets only tickets (special view)
+        for view_name in ['tickets']:
+            view = ViewPermission.objects.get(name=view_name)
+            GroupViewPermission.objects.create(group=group, view=view)

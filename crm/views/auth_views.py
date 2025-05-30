@@ -102,15 +102,15 @@ def custom_logout_view(request):
 
 @login_required
 def pending_approvals(request):
-    """Widok dla adminów i agentów do zarządzania oczekującymi zatwierdzeniami"""
+    """Widok dla adminów, superagentów i agentów do zarządzania oczekującymi zatwierdzeniami"""
     user_role = request.user.profile.role
     
-    if user_role not in ['admin', 'agent']:
+    if user_role not in ['admin', 'superagent', 'agent']:
         return forbidden_access(request, "strony zatwierdzeń")
     
     # Get pending users based on role
-    if user_role == 'admin':
-        # Admins see all pending users and locked accounts
+    if user_role in ['admin', 'superagent']:
+        # Admins and superagents see all pending users and locked accounts
         pending_users = UserProfile.objects.filter(is_approved=False)
         locked_users = UserProfile.objects.filter(is_locked=True)
     else:
@@ -136,15 +136,15 @@ def pending_approvals(request):
 
 @login_required
 def approve_user(request, user_id):
-    """Zatwierdzanie użytkownika przez administratora lub agenta"""
+    """Zatwierdzanie użytkownika przez administratora, superagenta lub agenta"""
     user_role = request.user.profile.role
     
-    if user_role not in ['admin', 'agent']:
+    if user_role not in ['admin', 'superagent', 'agent']:
         return forbidden_access(request, "funkcji zatwierdzania")
     
     profile = get_object_or_404(UserProfile, user_id=user_id, is_approved=False)
     
-    # Check if agent has permission to approve this user
+    # Check if agent has permission to approve this user (admins and superagents can approve anyone)
     if user_role == 'agent':
         agent_orgs = set(request.user.profile.organizations.values_list('id', flat=True))
         user_orgs = set(profile.organizations.values_list('id', flat=True))
@@ -170,15 +170,15 @@ def approve_user(request, user_id):
 
 @login_required
 def reject_user(request, user_id):
-    """Odrzucenie użytkownika przez administratora lub agenta"""
+    """Odrzucenie użytkownika przez administratora, superagenta lub agenta"""
     user_role = request.user.profile.role
     
-    if user_role not in ['admin', 'agent']:
+    if user_role not in ['admin', 'superagent', 'agent']:
         return forbidden_access(request, "funkcji odrzucania")
     
     profile = get_object_or_404(UserProfile, user_id=user_id, is_approved=False)
     
-    # Check if agent has permission to reject this user
+    # Check if agent has permission to reject this user (admins and superagents can reject anyone)
     if user_role == 'agent':
         agent_orgs = set(request.user.profile.organizations.values_list('id', flat=True))
         user_orgs = set(profile.organizations.values_list('id', flat=True))
@@ -207,12 +207,12 @@ def reject_user(request, user_id):
 @login_required
 def unlock_user(request, user_id):
     """Odblokowanie konta użytkownika"""
-    if request.user.profile.role not in ['admin', 'agent']:
+    if request.user.profile.role not in ['admin', 'superagent', 'agent']:
         return forbidden_access(request, "funkcji odblokowywania")
     
     profile = get_object_or_404(UserProfile, user_id=user_id, is_locked=True)
     
-    # Check if agent has permission to unlock this user
+    # Check if agent has permission to unlock this user (admins and superagents can unlock anyone)
     if request.user.profile.role == 'agent':
         agent_orgs = set(request.user.profile.organizations.values_list('id', flat=True))
         user_orgs = set(profile.organizations.values_list('id', flat=True))

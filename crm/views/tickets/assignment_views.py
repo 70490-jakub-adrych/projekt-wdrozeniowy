@@ -9,11 +9,11 @@ from ..error_views import ticket_not_found
 
 @login_required
 def ticket_assign_to_me(request, pk):
-    """Widok przypisywania zgłoszenia do siebie (tylko dla agentów)"""
+    """Widok przypisywania zgłoszenia do siebie (dla agentów i superagentów)"""
     user = request.user
     
-    if user.profile.role != 'agent':
-        return HttpResponseForbidden("Tylko agenci mogą przypisywać zgłoszenia do siebie")
+    if user.profile.role not in ['agent', 'superagent']:
+        return HttpResponseForbidden("Tylko agenci i superagenci mogą przypisywać zgłoszenia do siebie")
     
     try:
         ticket = get_object_or_404(Ticket, pk=pk)

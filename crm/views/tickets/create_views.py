@@ -125,13 +125,13 @@ def ticket_create(request):
         else:
             form = ClientTicketForm()
     
-    # Dodanie pola wyboru organizacji dla admina i agenta
+    # Dodanie pola wyboru organizacji dla admina, superagenta i agenta
     organizations = []
-    if user.profile.role == 'admin':
-        # Admin sees all organizations
+    if user.profile.role in ['admin', 'superagent']:
+        # Admin i superagent widzą wszystkie organizacje
         organizations = Organization.objects.all()
     elif user.profile.role == 'agent':
-        # Agent sees only organizations they belong to
+        # Agent widzi tylko organizacje, do których należy
         organizations = user.profile.organizations.all()
     
     context = {

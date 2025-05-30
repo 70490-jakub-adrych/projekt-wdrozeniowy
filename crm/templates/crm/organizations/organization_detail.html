@@ -149,11 +149,15 @@
                                 <td>{{ member.phone|default:"Brak" }}</td>
                                 <td>
                                     {% if member.role == 'admin' %}
-                                        <span class="badge badge-danger">Administrator</span>
+                                    <span class="badge badge-danger">Administrator</span>
+                                    {% elif member.role == 'superagent' %}
+                                    <span class="badge badge-warning">Superagent</span>
                                     {% elif member.role == 'agent' %}
-                                        <span class="badge badge-info">Agent</span>
+                                    <span class="badge badge-info">Agent</span>
+                                    {% elif member.role == 'viewer' %}
+                                    <span class="badge badge-dark">Viewer</span>
                                     {% else %}
-                                        <span class="badge badge-secondary">Klient</span>
+                                    <span class="badge badge-secondary">Klient</span>
                                     {% endif %}
                                 </td>
                             </tr>

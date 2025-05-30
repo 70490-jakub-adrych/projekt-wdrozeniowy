@@ -29,28 +29,43 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav mr-auto">
                     {% if user.is_authenticated %}
+                    
+                    {% if user_view_permissions.dashboard %}
                     <li class="nav-item">
                         <a class="nav-link {% if request.path == '/dashboard/' %}active{% endif %}" href="{% url 'dashboard' %}">Panel główny</a>
                     </li>
+                    {% endif %}
+                    
+                    {% if user_view_permissions.tickets %}
                     <li class="nav-item">
                         <a class="nav-link {% if request.path|slice:':9' == '/tickets/' %}active{% endif %}" href="{% url 'ticket_list' %}">Zgłoszenia</a>
                     </li>
-                    {% if user.profile.role == 'admin' or user.profile.role == 'agent' %}
+                    {% endif %}
+                    
+                    {% if user_view_permissions.organizations %}
                     <li class="nav-item">
                         <a class="nav-link {% if request.path|slice:':15' == '/organizations/' %}active{% endif %}" href="{% url 'organization_list' %}">Organizacje</a>
                     </li>
+                    {% endif %}
+                    
+                    {% if user_view_permissions.approvals %}
                     <li class="nav-item">
                         <a class="nav-link {% if request.path|slice:':11' == '/approvals/' %}active{% endif %}" href="{% url 'pending_approvals' %}">Zatwierdzanie kont</a>
                     </li>
                     {% endif %}
-                    {% if user.profile.role == 'admin' %}
+                    
+                    {% if user_view_permissions.logs %}
                     <li class="nav-item">
                         <a class="nav-link {% if request.path|slice:':6' == '/logs/' %}active{% endif %}" href="{% url 'activity_logs' %}">Logi</a>
                     </li>
+                    {% endif %}
+                    
+                    {% if user_view_permissions.admin_panel %}
                     <li class="nav-item">
                         <a class="nav-link" href="/admin/" target="_blank">Panel admina</a>
                     </li>
                     {% endif %}
+                    
                     {% endif %}
                 </ul>
                 <ul class="navbar-nav ml-auto">
@@ -60,10 +75,15 @@
                             {{ user.username }} 
                             {% if user.profile.role == 'admin' %}
                                 <span class="badge badge-danger">Admin</span>
+                            {% elif user.profile.role == 'superagent' %}
+                                <span class="badge badge-warning">Superagent</span>
                             {% elif user.profile.role == 'agent' %}
                                 <span class="badge badge-info">Agent</span>
+                            {% elif user.profile.role == 'viewer' %}
+                                <span class="badge badge-dark">Viewer</span>
                             {% else %}
                                 <span class="badge badge-secondary">Klient</span>
+                                <!-- Debug info: {{ user.profile.role }} -->
                             {% endif %}
                         </a>
                         <div class="dropdown-menu dropdown-menu-right">

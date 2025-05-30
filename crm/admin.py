@@ -6,7 +6,8 @@ from django.contrib import messages  # Add this import
 from django import forms
 from .models import (
     UserProfile, Organization, Ticket, TicketComment,
-    TicketAttachment, ActivityLog
+    TicketAttachment, ActivityLog, GroupSettings,
+    ViewPermission, GroupViewPermission, UserViewPermission
 )
 
 
@@ -42,31 +43,59 @@ class UserAdmin(BaseUserAdmin):
                 f"Użytkownik może należeć tylko do jednej grupy. Przypisano tylko do grupy {latest_group.name}.")
     
     def save_related(self, request, form, formsets, change):
-        """Override save_related to enforce one organization for clients"""
+        """Override save_related to enforce one organization based on group settings"""
         # Call the original save_related to save the inline forms
         super().save_related(request, form, formsets, change)
         
         # Get the user instance
         user = form.instance
         
-        # Check if the user is a client and has multiple organizations
-        if hasattr(user, 'profile') and user.profile.role == 'client':
-            orgs = user.profile.organizations.all()
-            if orgs.count() > 1:
-                # Keep only the first organization
-                first_org = orgs.first()
-                user.profile.organizations.clear()
-                user.profile.organizations.add(first_org)
-                messages.warning(request, 
-                    f"Klient może być przypisany tylko do jednej organizacji. Przypisano tylko do {first_org.name}.")
+        # Check if the user has a profile and belongs to a group
+        if hasattr(user, 'profile') and user.groups.exists():
+            # Get the user's group
+            group = user.groups.first()
+            
+            # Check if the group has settings
+            try:
+                group_settings = group.settings
+                allow_multiple = group_settings.allow_multiple_organizations
+            except GroupSettings.DoesNotExist:
+                # If settings don't exist, create them with default values
+                allow_multiple = group.name in ['Admin', 'Superagent', 'Agent']
+                group_settings = GroupSettings.objects.create(
+                    group=group, 
+                    allow_multiple_organizations=allow_multiple
+                )
+            
+            # If multiple organizations are not allowed for this group
+            if not allow_multiple:
+                orgs = user.profile.organizations.all()
+                if orgs.count() > 1:
+                    # Keep only the first organization
+                    first_org = orgs.first()
+                    user.profile.organizations.clear()
+                    user.profile.organizations.add(first_org)
+                    messages.warning(request, 
+                        f"Użytkownicy w grupie {group.name} mogą być przypisani tylko do jednej organizacji. Przypisano tylko do {first_org.name}.")
 
+
+class GroupSettingsInline(admin.StackedInline):
+    model = GroupSettings
+    can_delete = False
+    verbose_name_plural = 'Ustawienia'
+
+class GroupViewPermissionInline(admin.TabularInline):
+    model = GroupViewPermission
+    extra = 1
 
 # Custom Group admin with role field
 class GroupAdminForm(forms.ModelForm):
     ROLE_CHOICES = [
         ('admin', 'Administrator'),
+        ('superagent', 'Super Agent'),
         ('agent', 'Agent'),
         ('client', 'Klient'),
+        ('viewer', 'Przeglądający'),
     ]
     
     role = forms.ChoiceField(
@@ -86,13 +115,18 @@ class GroupAdminForm(forms.ModelForm):
         if self.instance.pk:
             if self.instance.name == 'Admin':
                 self.fields['role'].initial = 'admin'
+            elif self.instance.name == 'Superagent':
+                self.fields['role'].initial = 'superagent'
             elif self.instance.name == 'Agent':
                 self.fields['role'].initial = 'agent'
             elif self.instance.name == 'Klient':
                 self.fields['role'].initial = 'client'
+            elif self.instance.name == 'Viewer':
+                self.fields['role'].initial = 'viewer'
 
 class GroupAdmin(BaseGroupAdmin):
     form = GroupAdminForm
+    inlines = [GroupSettingsInline, GroupViewPermissionInline]
     
     # Preserve the filter_horizontal for permissions from BaseGroupAdmin
     filter_horizontal = ('permissions',)
@@ -102,10 +136,25 @@ class GroupAdmin(BaseGroupAdmin):
         role = form.cleaned_data.get('role')
         
         # Update the role display name to match standard conventions
-        standard_names = {'admin': 'Admin', 'agent': 'Agent', 'client': 'Klient'}
-        if role in standard_names and obj.name != standard_names[role]:
-            obj.name = standard_names[role]
-            obj.save(update_fields=['name'])
+        standard_names = {
+            'admin': 'Admin', 
+            'superagent': 'Superagent',
+            'agent': 'Agent', 
+            'client': 'Klient',
+            'viewer': 'Viewer'
+        }
+        
+        if role in standard_names:
+            target_name = standard_names[role]
+            # Only update if the name is different and the target name doesn't exist
+            if obj.name != target_name:
+                # Check if target name already exists (excluding current object)
+                existing_group = Group.objects.filter(name=target_name).exclude(pk=obj.pk).first()
+                if not existing_group:
+                    obj.name = target_name
+                    obj.save(update_fields=['name'])
+                else:
+                    messages.warning(request, f'Grupa o nazwie "{target_name}" już istnieje. Nazwa nie została zmieniona.')
 
 # Re-register User and Group with custom admins
 admin.site.unregister(User)
@@ -170,3 +219,16 @@ class ActivityLogAdmin(admin.ModelAdmin):
     
     def has_change_permission(self, request, obj=None):
         return False
+
+
+@admin.register(ViewPermission)
+class ViewPermissionAdmin(admin.ModelAdmin):
+    list_display = ('name', 'get_name_display', 'description')
+    search_fields = ('name', 'description')
+
+
+@admin.register(UserViewPermission)
+class UserViewPermissionAdmin(admin.ModelAdmin):
+    list_display = ('user', 'view', 'is_granted')
+    list_filter = ('user', 'view', 'is_granted')
+    search_fields = ('user__username', 'view__name')

@@ -30,6 +30,9 @@ def role_required(allowed_roles=[]):
 def admin_required(view_func):
     return role_required(['admin'])(view_func)
 
+def admin_or_superagent_required(view_func):
+    return role_required(['admin', 'superagent'])(view_func)
+
 def superagent_required(view_func):
     return role_required(['admin', 'superagent'])(view_func)
 

@@ -2,7 +2,10 @@ from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User, Group, Permission
 from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
-from crm.models import Organization, UserProfile, Ticket, TicketComment, TicketAttachment
+from crm.models import (
+    Organization, UserProfile, Ticket, TicketComment, TicketAttachment,
+    ViewPermission, GroupViewPermission  # Add these imports
+)
 import random
 
 class Command(BaseCommand):
@@ -11,6 +14,9 @@ class Command(BaseCommand):
     def handle(self, *args, **kwargs):
         # Step 1: Set up groups and permissions
         self._setup_groups_and_permissions()
+        
+        # Step 1b: Set up view permissions
+        self._setup_view_permissions()
         
         self.stdout.write(self.style.SUCCESS('Setting up demo data...'))
         
@@ -261,7 +267,7 @@ class Command(BaseCommand):
     
     def _create_superagent_user(self, organizations):
         """Create a superagent user"""
-        superagent_group, _ = Group.objects.get_or_create(name='Superagent')
+        superagent_group, _ = Group.objects.get_or_create(name='Superagent')  # Fixed: was 'Superagent'
         if not User.objects.filter(username='superagent').exists():
             superagent = User.objects.create_user(
                 username='superagent',
@@ -562,3 +568,52 @@ class Command(BaseCommand):
             viewer = User.objects.get(username='viewer')
             self.stdout.write(f"Viewer user already exists: {viewer.username}")
             return viewer
+    
+    def _setup_view_permissions(self):
+        """Create view permissions and assign them to groups"""
+        self.stdout.write("Setting up view permissions...")
+        
+        # Create all view permissions
+        views = [
+            ('dashboard', 'Panel główny'),
+            ('tickets', 'Zgłoszenia'),
+            ('organizations', 'Organizacje'),
+            ('approvals', 'Zatwierdzanie kont'),
+            ('logs', 'Logi'),
+            ('admin_panel', 'Panel admina'),
+        ]
+        
+        for code, description in views:
+            view, created = ViewPermission.objects.get_or_create(
+                name=code,
+                defaults={'description': description}
+            )
+            if created:
+                self.stdout.write(f"Created view permission: {description}")
+        
+        # Set permissions for each group
+        for group in Group.objects.all():
+            # Clear existing permissions
+            GroupViewPermission.objects.filter(group=group).delete()
+            
+            # Determine which views to grant based on group name
+            if group.name == 'Admin':
+                view_codes = ['dashboard', 'tickets', 'organizations', 'approvals', 'logs', 'admin_panel']
+            elif group.name == 'Superagent':
+                view_codes = ['dashboard', 'tickets', 'organizations', 'approvals', 'logs']
+            elif group.name == 'Agent':
+                view_codes = ['dashboard', 'tickets', 'organizations', 'approvals']
+            elif group.name == 'Klient':
+                view_codes = ['dashboard', 'tickets']
+            elif group.name == 'Viewer':
+                view_codes = ['tickets']
+            else:
+                # Unknown group - grant basic views
+                view_codes = ['dashboard', 'tickets']
+            
+            # Grant permissions
+            for code in view_codes:
+                view = ViewPermission.objects.get(name=code)
+                GroupViewPermission.objects.create(group=group, view=view)
+                
+            self.stdout.write(f"Set up view permissions for group: {group.name}")

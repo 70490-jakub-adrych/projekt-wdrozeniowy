@@ -15,8 +15,8 @@ def organization_list(request):
     if request.user.profile.role == 'client':
         return forbidden_access(request, "listy organizacji")
     
-    # Only admin can see all organizations
-    if request.user.profile.role == 'admin':
+    # Only admin and superagent can see all organizations
+    if request.user.profile.role in ['admin', 'superagent']:
         organizations = Organization.objects.all()
     else:
         # Agent can only see their organizations
@@ -34,8 +34,8 @@ def organization_detail(request, pk):
         return organization_not_found(request, pk)
     
     # Sprawdzenie uprawnień
-    if request.user.profile.role == 'admin':
-        # Admin ma dostęp do wszystkich organizacji
+    if request.user.profile.role in ['admin', 'superagent']:
+        # Admin i superagent ma dostęp do wszystkich organizacji
         pass
     elif request.user.profile.role == 'agent':
         # Agent ma dostęp tylko do swoich organizacji
@@ -68,8 +68,8 @@ def organization_detail(request, pk):
 @login_required
 def organization_create(request):
     """Widok tworzenia organizacji"""
-    # Tylko admin może tworzyć organizacje
-    if request.user.profile.role != 'admin':
+    # Admin i superagent mogą tworzyć organizacje
+    if request.user.profile.role not in ['admin', 'superagent']:
         return forbidden_access(request, "funkcji tworzenia organizacji")
     
     if request.method == 'POST':
@@ -87,8 +87,8 @@ def organization_create(request):
 @login_required
 def organization_update(request, pk):
     """Widok aktualizacji organizacji"""
-    # Tylko admin może aktualizować organizacje
-    if request.user.profile.role != 'admin':
+    # Admin i superagent mogą aktualizować organizacje
+    if request.user.profile.role not in ['admin', 'superagent']:
         return forbidden_access(request, "funkcji edycji organizacji")
     
     try:
