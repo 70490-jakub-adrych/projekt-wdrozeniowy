@@ -14,6 +14,8 @@ System zarządzania zgłoszeniami IT z funkcjami zarządzania użytkownikami, or
 
 ## Szybkie uruchomienie
 
+!! WYMAGANA WERSJA PYTHON: 3.12
+
 ### Linux/macOS
 ```bash
 # Klonowanie repozytorium
