@@ -30,4 +30,13 @@ def view_permissions(request):
         for key in permissions:
             permissions[key] = True
     
+    # Check if user's group has the statistics permission
+    try:
+        group = request.user.groups.first()
+        if hasattr(group, 'settings') and group.settings.show_statistics:
+            permissions['statistics'] = True
+    except:
+        # If group settings don't exist, default to no statistics access
+        permissions['statistics'] = False
+    
     return {'user_view_permissions': permissions}

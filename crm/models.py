@@ -409,6 +409,11 @@ class GroupSettings(models.Model):
         verbose_name="Zezwól na wiele organizacji",
         help_text="Jeśli zaznaczone, użytkownicy w tej grupie mogą być przypisani do więcej niż jednej organizacji."
     )
+    show_statistics = models.BooleanField(
+        default=False,
+        verbose_name="Pokaż statystyki",
+        help_text="Jeśli zaznaczone, użytkownicy w tej grupie mają dostęp do panelu statystyk."
+    )
 
     def __str__(self):
         return f"Ustawienia grupy: {self.group.name}"
@@ -474,3 +479,102 @@ def _setup_default_view_permissions(group):
         for view_name in ['tickets']:
             view = ViewPermission.objects.get(name=view_name)
             GroupViewPermission.objects.create(group=group, view=view)
+
+
+# New models for statistics
+class WorkHours(models.Model):
+    """Define work hours for calculating agent activity metrics"""
+    day_of_week_choices = [
+        (0, "Poniedziałek"),
+        (1, "Wtorek"),
+        (2, "Środa"),
+        (3, "Czwartek"),
+        (4, "Piątek"),
+        (5, "Sobota"),
+        (6, "Niedziela"),
+    ]
+    day_of_week = models.IntegerField(choices=day_of_week_choices)
+    start_time = models.TimeField()
+    end_time = models.TimeField()
+    is_working_day = models.BooleanField(default=True)
+    
+    class Meta:
+        verbose_name = "Godziny pracy"
+        verbose_name_plural = "Godziny pracy"
+        ordering = ['day_of_week', 'start_time']
+    
+    def __str__(self):
+        return f"{self.get_day_of_week_display()} {self.start_time} - {self.end_time}"
+
+
+class TicketStatistics(models.Model):
+    """Store aggregated ticket statistics"""
+    PERIOD_CHOICES = [
+        ('day', 'Dzień'),
+        ('week', 'Tydzień'),
+        ('month', 'Miesiąc'),
+        ('year', 'Rok'),
+    ]
+    
+    period_type = models.CharField(max_length=10, choices=PERIOD_CHOICES)
+    period_start = models.DateField()
+    period_end = models.DateField()
+    organization = models.ForeignKey(Organization, on_delete=models.CASCADE, null=True, blank=True)
+    agent = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True, 
+                             related_name='agent_statistics')
+    
+    # Ticket counts
+    tickets_opened = models.IntegerField(default=0)
+    tickets_closed = models.IntegerField(default=0)
+    tickets_resolved = models.IntegerField(default=0)
+    
+    # Time metrics (in minutes)
+    avg_resolution_time = models.FloatField(default=0)
+    avg_first_response_time = models.FloatField(default=0)
+    avg_agent_work_time = models.FloatField(default=0)
+    
+    # Categorical breakdowns
+    priority_distribution = models.JSONField(default=dict)  # {'low': 5, 'medium': 10, etc.}
+    category_distribution = models.JSONField(default=dict)  # {'hardware': 8, 'software': 12, etc.}
+    
+    # Performance indicators
+    satisfaction_score = models.FloatField(null=True, blank=True)  # Could be from a survey
+    sla_compliance = models.FloatField(null=True, blank=True)  # % of tickets meeting SLA
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Statystyka zgłoszeń"
+        verbose_name_plural = "Statystyki zgłoszeń"
+        indexes = [
+            models.Index(fields=['period_type', 'period_start']),
+            models.Index(fields=['organization']),
+            models.Index(fields=['agent']),
+        ]
+    
+    def __str__(self):
+        base = f"{self.get_period_type_display()}: {self.period_start} - {self.period_end}"
+        if self.organization:
+            base += f", {self.organization.name}"
+        if self.agent:
+            base += f", {self.agent.username}"
+        return base
+
+
+class AgentWorkLog(models.Model):
+    """Track agent activity on tickets for accurate time calculations"""
+    agent = models.ForeignKey(User, on_delete=models.CASCADE, related_name='work_logs')
+    ticket = models.ForeignKey(Ticket, on_delete=models.CASCADE, related_name='work_logs')
+    start_time = models.DateTimeField()
+    end_time = models.DateTimeField(null=True, blank=True) 
+    work_time_minutes = models.FloatField(default=0)  # Calculated work time
+    notes = models.TextField(blank=True, null=True)
+    
+    class Meta:
+        verbose_name = "Log pracy agenta"
+        verbose_name_plural = "Logi pracy agentów"
+        ordering = ['-start_time']
+    
+    def __str__(self):
+        return f"{self.agent.username} - #{self.ticket.id} - {self.start_time}"

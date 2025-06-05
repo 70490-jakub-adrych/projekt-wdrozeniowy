@@ -16,6 +16,7 @@ from . import views
 from .views import secure_file_views
 from django.contrib.auth import views as auth_views
 from .views.auth_views import custom_password_change_view
+from .views.statistics_views import statistics_dashboard, update_agent_work_log, generate_statistics_report
 
 urlpatterns = [
     # Landing and authentication
@@ -85,4 +86,9 @@ urlpatterns = [
     path('password/reset/complete/', auth_views.PasswordResetCompleteView.as_view(
         template_name='registration/password_reset_complete.html'
     ), name='password_reset_complete'),
+
+    # Statistics URLs
+    path('statistics/', statistics_dashboard, name='statistics_dashboard'),
+    path('statistics/update-work-log/', update_agent_work_log, name='update_work_log'),
+    path('statistics/generate-report/', generate_statistics_report, name='generate_statistics_report'),
 ]

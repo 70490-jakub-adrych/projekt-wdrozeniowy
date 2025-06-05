@@ -1,0 +1,373 @@
+{% extends 'crm/base.html' %}
+{% load static %}
+{% load custom_filters %}
+
+{% block title %}Statystyki | System Helpdesk{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stats-card {
+        transition: transform 0.2s;
+    }
+    .stats-card:hover {
+        transform: translateY(-5px);
+    }
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin-bottom: 20px;
+    }
+    .data-table {
+        font-size: 0.9rem;
+    }
+    .filter-section {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 5px;
+        margin-bottom: 20px;
+    }
+    .performance-indicator {
+        font-weight: bold;
+    }
+    .performance-good {
+        color: #28a745;
+    }
+    .performance-medium {
+        color: #ffc107;
+    }
+    .performance-poor {
+        color: #dc3545;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="fas fa-chart-line"></i> Statystyki zgłoszeń</h2>
+    <div>
+        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Powrót do panelu
+        </a>
+    </div>
+</div>
+
+<!-- Hidden data elements for JavaScript -->
+<div style="display: none;">
+    <div data-new-tickets="{{ new_tickets }}"></div>
+    <div data-in-progress-tickets="{{ in_progress_tickets }}"></div>
+    <div data-waiting-tickets="{{ waiting_tickets }}"></div>
+    <div data-resolved-tickets="{{ resolved_tickets }}"></div>
+    <div data-closed-tickets="{{ closed_tickets }}"></div>
+    <div data-priority-distribution="{{ priority_distribution }}"></div>
+    <div data-category-distribution="{{ category_distribution }}"></div>
+    <div data-tickets-by-date="{{ tickets_by_date }}"></div>
+    <div data-period="{{ period }}"></div>
+</div>
+
+<!-- Filter Section -->
+<div class="filter-section mb-4">
+    <form method="get" id="statsFilterForm">
+        <div class="row">
+            <div class="col-md-2 mb-2">
+                <label for="period">Okres:</label>
+                <select name="period" id="period" class="form-control">
+                    <option value="day" {% if period == 'day' %}selected{% endif %}>Dzień</option>
+                    <option value="week" {% if period == 'week' %}selected{% endif %}>Tydzień</option>
+                    <option value="month" {% if period == 'month' %}selected{% endif %}>Miesiąc</option>
+                    <option value="year" {% if period == 'year' %}selected{% endif %}>Rok</option>
+                </select>
+            </div>
+            <div class="col-md-2 mb-2">
+                <label for="date_from">Od:</label>
+                <input type="date" name="date_from" id="date_from" class="form-control" value="{{ date_from|date:'Y-m-d' }}">
+            </div>
+            <div class="col-md-2 mb-2">
+                <label for="date_to">Do:</label>
+                <input type="date" name="date_to" id="date_to" class="form-control" value="{{ date_to|date:'Y-m-d' }}">
+            </div>
+            <div class="col-md-2 mb-2">
+                <label for="organization">Organizacja:</label>
+                <select name="organization" id="organization" class="form-control">
+                    <option value="">Wszystkie</option>
+                    {% for org in organizations %}
+                    <option value="{{ org.id }}" {% if org_filter == org.id|stringformat:"s" %}selected{% endif %}>{{ org.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2 mb-2">
+                <label for="agent">Agent:</label>
+                <select name="agent" id="agent" class="form-control">
+                    <option value="">Wszyscy</option>
+                    {% for agent_profile in agents %}
+                    <option value="{{ agent_profile.user.id }}" {% if agent_filter == agent_profile.user.id|stringformat:"s" %}selected{% endif %}>
+                        {% if agent_profile.user.first_name %}{{ agent_profile.user.first_name }} {{ agent_profile.user.last_name }}{% else %}{{ agent_profile.user.username }}{% endif %}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2 d-flex align-items-end mb-2">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="fas fa-filter"></i> Filtruj
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Summary Row -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title">Podsumowanie za okres: {{ date_from|date:"d.m.Y" }} - {{ date_to|date:"d.m.Y" }}</h5>
+                <div class="row text-center">
+                    <div class="col-md-2 mb-3">
+                        <div class="stats-card bg-light p-3 rounded h-100">
+                            <h3 class="text-primary">{{ total_tickets }}</h3>
+                            <p class="mb-0 text-muted">Wszystkich zgłoszeń</p>
+                        </div>
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <div class="stats-card bg-light p-3 rounded h-100">
+                            <h3 class="text-primary">{{ new_tickets }}</h3>
+                            <p class="mb-0 text-muted">Nowych</p>
+                        </div>
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <div class="stats-card bg-light p-3 rounded h-100">
+                            <h3 class="text-info">{{ in_progress_tickets }}</h3>
+                            <p class="mb-0 text-muted">W trakcie</p>
+                        </div>
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <div class="stats-card bg-light p-3 rounded h-100">
+                            <h3 class="text-warning">{{ waiting_tickets }}</h3>
+                            <p class="mb-0 text-muted">Oczekujących</p>
+                        </div>
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <div class="stats-card bg-light p-3 rounded h-100">
+                            <h3 class="text-success">{{ resolved_tickets }}</h3>
+                            <p class="mb-0 text-muted">Rozwiązanych</p>
+                        </div>
+                    </div>
+                    <div class="col-md-2 mb-3">
+                        <div class="stats-card bg-light p-3 rounded h-100">
+                            <h3 class="text-secondary">{{ closed_tickets }}</h3>
+                            <p class="mb-0 text-muted">Zamkniętych</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row mb-4">
+    <div class="col-md-6 mb-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0">Zgłoszenia według statusu</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="statusChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0">Zgłoszenia według priorytetu</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="priorityChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-6 mb-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0">Zgłoszenia według kategorii</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0">Zgłoszenia w czasie</h5>
+            </div>
+            <div class="card-body">
+                <div class="chart-container">
+                    <canvas id="timelineChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Key Performance Indicators -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0">Wskaźniki wydajności</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <div class="stats-card bg-light p-3 rounded text-center h-100">
+                            <h5 class="text-muted">Średni czas rozwiązania</h5>
+                            <h2 class="mb-0 
+                                {% if avg_resolution_hours < 24 %}performance-good
+                                {% elif avg_resolution_hours < 48 %}performance-medium
+                                {% else %}performance-poor{% endif %}">
+                                {% if avg_resolution_hours %}
+                                    {{ avg_resolution_hours|floatformat:2 }} godzin
+                                {% else %}
+                                    Brak danych
+                                {% endif %}
+                            </h2>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="stats-card bg-light p-3 rounded text-center h-100">
+                            <h5 class="text-muted">Wskaźnik rozwiązania</h5>
+                            {% if total_tickets > 0 %}
+                                {% widthratio resolved_tickets|add:closed_tickets total_tickets 100 as resolution_rate %}
+                                <h2 class="mb-0 
+                                    {% if resolution_rate > 80 %}performance-good
+                                    {% elif resolution_rate > 50 %}performance-medium
+                                    {% else %}performance-poor{% endif %}">
+                                    {{ resolution_rate|floatformat:1 }}%
+                                </h2>
+                            {% else %}
+                                <h2 class="mb-0">0%</h2>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="stats-card bg-light p-3 rounded text-center h-100">
+                            <h5 class="text-muted">Obciążenie agentów</h5>
+                            {% if agents.count > 0 %}
+                                {% widthratio total_tickets 1 agents.count as tickets_per_agent %}
+                                <h2 class="mb-0 
+                                    {% if tickets_per_agent < 10 %}performance-good
+                                    {% elif tickets_per_agent < 20 %}performance-medium
+                                    {% else %}performance-poor{% endif %}">
+                                    {{ tickets_per_agent|floatformat:1 }} zgłoszeń/agenta
+                                </h2>
+                            {% else %}
+                                <h2 class="mb-0">0 zgłoszeń/agenta</h2>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Agent Performance Table -->
+{% if agent_performance %}
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white">
+                <h5 class="card-title mb-0">Wydajność agentów</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover data-table">
+                        <thead>
+                            <tr>
+                                <th>Agent</th>
+                                <th>Liczba zgłoszeń</th>
+                                <th>Rozwiązanych</th>
+                                <th>% rozwiązanych</th>
+                                <th>Śr. czas rozwiązania</th>
+                                {% if agent_work_time_stats %}
+                                <th>Śr. czas pracy</th>
+                                {% endif %}
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ap in agent_performance %}
+                            <tr>
+                                <td>{{ ap.agent_name }}</td>
+                                <td>{{ ap.ticket_count }}</td>
+                                <td>{{ ap.resolved_count }}</td>
+                                <td>
+                                    <span class="
+                                        {% if ap.resolution_rate > 80 %}text-success
+                                        {% elif ap.resolution_rate > 50 %}text-warning
+                                        {% else %}text-danger{% endif %}">
+                                        {{ ap.resolution_rate|floatformat:1 }}%
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if ap.avg_resolution_time %}
+                                        <span class="
+                                            {% if ap.avg_resolution_time < 24 %}text-success
+                                            {% elif ap.avg_resolution_time < 48 %}text-warning
+                                            {% else %}text-danger{% endif %}">
+                                            {{ ap.avg_resolution_time|floatformat:1 }} godz.
+                                        </span>
+                                    {% else %}
+                                        <span class="text-muted">Brak danych</span>
+                                    {% endif %}
+                                </td>
+                                {% if agent_work_time_stats %}
+                                <td>
+                                    {% if ap.work_time_stats %}
+                                        {{ ap.work_time_stats.avg_minutes_per_ticket|floatformat:1 }} min/zgłoszenie
+                                    {% else %}
+                                        <span class="text-muted">Brak danych</span>
+                                    {% endif %}
+                                </td>
+                                {% endif %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Generate Report Button -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <h5 class="card-title mb-3">Generowanie raportu</h5>
+                <button id="generateReportBtn" class="btn btn-primary">
+                    <i class="fas fa-file-export"></i> Wygeneruj raport z aktualnych filtrów
+                </button>
+                <div id="reportStatus" class="mt-3"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'crm/js/statistics.js' %}"></script>
+{% endblock %}

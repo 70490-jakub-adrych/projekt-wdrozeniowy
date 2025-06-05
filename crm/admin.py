@@ -6,8 +6,9 @@ from django.contrib import messages  # Add this import
 from django import forms
 from .models import (
     UserProfile, Organization, Ticket, TicketComment,
-    TicketAttachment, ActivityLog, GroupSettings,
-    ViewPermission, GroupViewPermission, UserViewPermission
+    TicketAttachment, ActivityLog, GroupSettings, 
+    ViewPermission, GroupViewPermission, UserViewPermission,
+    WorkHours, TicketStatistics, AgentWorkLog  # Add the new models
 )
 
 
@@ -232,3 +233,26 @@ class UserViewPermissionAdmin(admin.ModelAdmin):
     list_display = ('user', 'view', 'is_granted')
     list_filter = ('user', 'view', 'is_granted')
     search_fields = ('user__username', 'view__name')
+
+
+@admin.register(WorkHours)
+class WorkHoursAdmin(admin.ModelAdmin):
+    list_display = ('get_day_of_week_display', 'start_time', 'end_time', 'is_working_day')
+    list_filter = ('day_of_week', 'is_working_day')
+
+
+@admin.register(TicketStatistics)
+class TicketStatisticsAdmin(admin.ModelAdmin):
+    list_display = ('period_type', 'period_start', 'period_end', 'organization', 'agent', 
+                   'tickets_opened', 'tickets_closed', 'tickets_resolved', 'created_at')
+    list_filter = ('period_type', 'organization', 'agent')
+    search_fields = ('organization__name',)
+    date_hierarchy = 'period_start'
+
+
+@admin.register(AgentWorkLog)
+class AgentWorkLogAdmin(admin.ModelAdmin):
+    list_display = ('agent', 'ticket', 'start_time', 'end_time', 'work_time_minutes')
+    list_filter = ('agent', 'start_time')
+    search_fields = ('agent__username', 'ticket__title', 'notes')
+    date_hierarchy = 'start_time'

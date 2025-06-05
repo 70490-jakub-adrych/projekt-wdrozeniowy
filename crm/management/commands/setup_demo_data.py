@@ -4,7 +4,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
 from crm.models import (
     Organization, UserProfile, Ticket, TicketComment, TicketAttachment,
-    ViewPermission, GroupViewPermission  # Add these imports
+    ViewPermission, GroupViewPermission, GroupSettings  # Add GroupSettings import
 )
 import random
 
@@ -62,10 +62,36 @@ class Command(BaseCommand):
         
         # Clear existing permissions for a fresh start
         admin_group.permissions.clear()
+        superagent_group.permissions.clear()
         agent_group.permissions.clear()
         client_group.permissions.clear()
         viewer_group.permissions.clear()
         
+        # Create or update group settings
+        GroupSettings.objects.update_or_create(
+            group=admin_group,
+            defaults={
+                'allow_multiple_organizations': True,
+                'show_statistics': True  # Admin can see statistics
+            }
+        )
+        
+        GroupSettings.objects.update_or_create(
+            group=superagent_group,
+            defaults={
+                'allow_multiple_organizations': True,
+                'show_statistics': True  # Superagent can see statistics
+            }
+        )
+        
+        GroupSettings.objects.update_or_create(
+            group=agent_group,
+            defaults={
+                'allow_multiple_organizations': True,
+                'show_statistics': False  # Regular agents cannot see statistics by default
+            }
+        )
+
         # Get content types
         ticket_ct = ContentType.objects.get_for_model(Ticket)
         comment_ct = ContentType.objects.get_for_model(TicketComment)

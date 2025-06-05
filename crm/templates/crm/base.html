@@ -60,6 +60,15 @@
                     </li>
                     {% endif %}
                     
+                    <!-- Add statistics link for admin and superagent users, or users with specific permission -->
+                    {% if user.profile.role == 'admin' or user.profile.role == 'superagent' or user.groups.first.settings.show_statistics %}
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path|slice:':12' == '/statistics/' %}active{% endif %}" href="{% url 'statistics_dashboard' %}">
+                            <i class="fas fa-chart-line"></i> Statystyki
+                        </a>
+                    </li>
+                    {% endif %}
+                    
                     {% if user_view_permissions.admin_panel %}
                     <li class="nav-item">
                         <a class="nav-link" href="/admin/" target="_blank">Panel admina</a>
