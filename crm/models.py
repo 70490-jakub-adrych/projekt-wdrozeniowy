@@ -10,8 +10,6 @@ from django.conf import settings
 from cryptography.fernet import Fernet
 import base64
 from .validators import phone_regex
-from asgiref.sync import async_to_sync
-from channels.layers import get_channel_layer
 
 
 class UserProfile(models.Model):

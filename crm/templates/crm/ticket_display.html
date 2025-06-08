@@ -26,13 +26,56 @@
 // AJAX polling do dynamicznego odświeżania listy zgłoszeń
 const userRole = '{{ user.profile.role }}';
 if (userRole === 'viewer') {
-    setInterval(function() {
-        fetch('/get_tickets_update/', {headers: {'X-Requested-With': 'XMLHttpRequest'}})
-            .then(response => response.json())
-            .then(data => {
-                document.getElementById('ticket-list').innerHTML = data.html;
-            });
-    }, 15000); // co 15 sekund
+    let lastUpdateTime = new Date();
+    
+    function updateTicketList() {
+        console.log('Wysyłanie żądania aktualizacji...', new Date().toLocaleTimeString());
+        
+        fetch('/get_tickets_update/', {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'Accept': 'application/json',
+                'Cache-Control': 'no-cache'
+            },
+            credentials: 'same-origin'
+        })
+        .then(response => {
+            console.log('Otrzymano odpowiedź:', response.status);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data && data.html) {
+                const ticketListDiv = document.getElementById('ticket-list');
+                console.log('Podmieniam HTML w #ticket-list:', data.html);
+                ticketListDiv.innerHTML = data.html;
+                ticketListDiv.style.backgroundColor = '#ffff99';
+                setTimeout(() => ticketListDiv.style.backgroundColor = '', 1000);
+                lastUpdateTime = new Date();
+            } else {
+                console.error('Brak danych HTML w odpowiedzi:', data);
+            }
+        })
+        .catch(error => {
+            console.error('Błąd podczas aktualizacji listy:', error);
+        });
+    }
+
+    // Pierwsze odświeżenie od razu
+    console.log('Inicjalizacja odświeżania listy...');
+    updateTicketList();
+    
+    // Następnie co 15 sekund
+    const intervalId = setInterval(updateTicketList, 15000);
+    console.log('Ustawiono odświeżanie co 15 sekund');
+    
+    // Czyszczenie interwału przy opuszczaniu strony
+    window.addEventListener('beforeunload', () => {
+        clearInterval(intervalId);
+    });
 }
 </script>
 {% endblock %} 

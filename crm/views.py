@@ -81,15 +81,3 @@ def ticket_display_view(request):
     return render(request, 'crm/ticket_display.html', {
         'tickets': tickets,
     })
-
-@viewer_required
-def get_tickets_update(request):
-    """Endpoint do odświeżania listy zgłoszeń"""
-    tickets = Ticket.objects.all().order_by('-created_at')
-    html = render_to_string('crm/ticket_list_partial.html', {
-        'tickets': tickets,
-    })
-    return JsonResponse({
-        'html': html,
-        'ticket_count': tickets.count(),
-    })

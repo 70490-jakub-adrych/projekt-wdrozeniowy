@@ -9,7 +9,7 @@ from .views import (
     ticket_close, ticket_reopen, ticket_assign_to_me,
     activity_logs, activity_log_detail,
     pending_approvals, approve_user, reject_user,
-    ticket_display_view
+    ticket_display_view, get_tickets_update
 )
 from .views.auth_views import unlock_user
 from . import views
@@ -91,4 +91,6 @@ urlpatterns = [
     path('statistics/', statistics_dashboard, name='statistics_dashboard'),
     path('statistics/update-work-log/', update_agent_work_log, name='update_work_log'),
     path('statistics/generate-report/', generate_statistics_report, name='generate_statistics_report'),
+
+    path('get_tickets_update/', get_tickets_update, name='get_tickets_update'),
 ]

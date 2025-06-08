@@ -38,7 +38,7 @@ from .organization_views import organization_list, organization_create, organiza
 from . import error_views
 
 # Import new ticket display views
-from .ticket_display_views import ticket_display_view
+from .ticket_display_views import ticket_display_view, get_tickets_update
 
 # Define all exported symbols
 __all__ = [
@@ -70,5 +70,6 @@ __all__ = [
     'reject_user',
     'unlock_user',
     'custom_password_change_view',
-    'ticket_display_view'
+    'ticket_display_view',
+    'get_tickets_update'
 ]
