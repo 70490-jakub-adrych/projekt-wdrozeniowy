@@ -34,7 +34,7 @@
     
     {% if can_assign_to_self %}
     <a href="{% url 'ticket_assign_to_me' ticket.pk %}" class="btn btn-info">
-        <i class="fas fa-user-check"></i> Przypisz do mnie
+        <i class="fas fa-user-check"></i> Zaakceptuj
     </a>
     {% endif %}
     
@@ -103,7 +103,7 @@
                 </div>
                 <div class="row mb-3">
                     <div class="col-md-3 font-weight-bold">Przypisane do:</div>
-                    <div class="col-md-9">{% if ticket.assigned_to %}{{ ticket.assigned_to.username }}{% else %}<span class="text-muted">Nieprzypisane</span>{% endif %}</div>
+                    <div class="col-md-9">{% if ticket.assigned_to %}{{ ticket.assigned_to.username }}{% else %}<span class="text-muted">Oczekuje na akceptację</span>{% endif %}</div>
                 </div>
                 <div class="row mb-3">
                     <div class="col-md-3 font-weight-bold">Data utworzenia:</div>
@@ -156,10 +156,10 @@
         </div>
         {% endif %}
         
-        <!-- Komentarze -->
+        <!-- Komunikacja -->
         <div class="card mb-4">
             <div class="card-header">
-                <i class="fas fa-comments"></i> Komentarze ({{ comments|length }})
+                <i class="fas fa-comments"></i> Komunikacja ({{ comments|length }})
             </div>
             <div class="card-body">
                 {% if comments %}
@@ -182,22 +182,22 @@
                 </div>
                 {% endfor %}
                 {% else %}
-                <p class="text-muted">Brak komentarzy. {% if can_comment %}Dodaj pierwszy komentarz poniżej.{% endif %}</p>
+                <p class="text-muted">Brak odpowiedzi. {% if can_comment %}Dodaj pierwszą odpowiedź poniżej.{% endif %}</p>
                 {% endif %}
                 
-                <!-- Formularz dodawania komentarza -->
+                <!-- Formularz dodawania odpowiedzi -->
                 {% if can_comment %}
                 <hr>
-                <h5>Dodaj komentarz</h5>
+                <h5>Dodaj odpowiedź</h5>
                 <form method="post" action="{% url 'ticket_detail' ticket.pk %}">
                     {% csrf_token %}
                     {{ comment_form|crispy }}
-                    <button type="submit" name="submit_comment" class="btn btn-primary mt-3">Dodaj komentarz</button>
+                    <button type="submit" name="submit_comment" class="btn btn-primary mt-3">Dodaj odpowiedź</button>
                 </form>
                 {% elif is_closed %}
                 <hr>
                 <div class="alert alert-secondary">
-                    <i class="fas fa-lock"></i> Nie można dodawać komentarzy do zamkniętego zgłoszenia.
+                    <i class="fas fa-lock"></i> Nie można dodawać odpowiedzi do zamkniętego zgłoszenia.
                     {% if user.profile.role in 'admin,superagent,agent' and can_reopen %}
                         Najpierw otwórz je ponownie.
                     {% endif %}
@@ -276,7 +276,7 @@
                         <div class="timeline-item">
                             <div class="timeline-marker bg-primary"></div>
                             <div class="timeline-content">
-                                <h3 class="timeline-title">Dodano komentarz</h3>
+                                <h3 class="timeline-title">Dodano odpowiedź</h3>
                                 <p>{{ activity.created_at|date:"d.m.Y H:i" }} - {{ activity.user.username }}</p>
                             </div>
                         </div>

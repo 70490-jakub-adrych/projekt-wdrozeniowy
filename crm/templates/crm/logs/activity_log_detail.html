@@ -114,7 +114,7 @@
             <dd class="col-sm-10">{{ log.ticket.created_by.username }} ({{ log.ticket.created_at|date:"d.m.Y H:i" }})</dd>
             
             <dt class="col-sm-2">Przypisane do:</dt>
-            <dd class="col-sm-10">{% if log.ticket.assigned_to %}{{ log.ticket.assigned_to.username }}{% else %}Nieprzypisane{% endif %}</dd>
+            <dd class="col-sm-10">{% if log.ticket.assigned_to %}{{ log.ticket.assigned_to.username }}{% else %}Oczekuje na akceptację{% endif %}</dd>
         </dl>
         
         <a href="{% url 'ticket_detail' log.ticket.pk %}" class="btn btn-primary">

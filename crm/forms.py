@@ -130,7 +130,7 @@ class TicketCommentForm(forms.ModelForm):
             'content': forms.Textarea(attrs={'rows': 3}),
         }
         labels = {
-            'content': 'Treść komentarza',
+            'content': 'Treść odpowiedzi',
         }
 
 
