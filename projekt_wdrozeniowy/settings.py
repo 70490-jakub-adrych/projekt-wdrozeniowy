@@ -74,7 +74,10 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = 'projekt_wdrozeniowy.wsgi.application'
+# WSGI_APPLICATION = 'projekt_wdrozeniowy.wsgi.application'
+
+# ASGI_APPLICATION = 'projekt_wdrozeniowy.asgi.application'
+# CHANNEL_LAYERS = {...}
 
 # Database
 # Default SQLite for development, configurable for production

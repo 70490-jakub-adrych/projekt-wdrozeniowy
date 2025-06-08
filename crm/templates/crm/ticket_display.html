@@ -4,7 +4,6 @@
 {% block title %}Lista Zgłoszeń{% endblock %}
 
 {% block content %}
-<meta http-equiv="refresh" content="30">
 <div class="container-fluid">
     <div class="row">
         <div class="col-12">
@@ -22,4 +21,18 @@
 </div>
 {% endblock %}
 
-{% block extra_js %}{% endblock %} 
+{% block extra_js %}
+<script>
+// AJAX polling do dynamicznego odświeżania listy zgłoszeń
+const userRole = '{{ user.profile.role }}';
+if (userRole === 'viewer') {
+    setInterval(function() {
+        fetch('/get_tickets_update/', {headers: {'X-Requested-With': 'XMLHttpRequest'}})
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('ticket-list').innerHTML = data.html;
+            });
+    }, 15000); // co 15 sekund
+}
+</script>
+{% endblock %} 

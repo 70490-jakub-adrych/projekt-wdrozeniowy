@@ -1,7 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User, Group
 from django.utils import timezone
-from django.db.models.signals import post_save, m2m_changed
+from django.db.models.signals import post_save, m2m_changed, post_delete
 from django.dispatch import receiver
 import os
 import uuid
@@ -10,6 +10,8 @@ from django.conf import settings
 from cryptography.fernet import Fernet
 import base64
 from .validators import phone_regex
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 
 
 class UserProfile(models.Model):

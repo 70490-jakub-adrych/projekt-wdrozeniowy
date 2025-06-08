@@ -75,5 +75,15 @@ Po uruchomieniu aplikacja będzie dostępna pod adresem: **http://127.0.0.1:8000
 - **Agent 1**: username=`agent1`, password=`agent123`
 - **Klient 1**: username=`client1`, password=`client123`
 - **Viewer**: viewer=`viewer`, password=`viewer123`
+- **Superagent**: superagent=`superagent`, password= `superagent123`
+
 
 ## Struktura projektu
+
+## Automatyczne odświeżanie zgłoszeń na współdzielonych hostingach (AJAX polling)
+
+Na hostingach takich jak mydevil.net, gdzie nie można użyć WebSocket/Channels, lista zgłoszeń dla viewer odświeża się automatycznie co 15 sekund dzięki AJAX polling.
+
+- Nie jest wymagany WebSocket, Channels ani serwer ASGI.
+- Działa na każdym hostingu obsługującym klasyczne Django (WSGI).
+- Viewer widzi zawsze aktualną listę zgłoszeń bez przeładowania strony.
