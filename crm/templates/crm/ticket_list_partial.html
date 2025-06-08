@@ -14,7 +14,7 @@
         </thead>
         <tbody>
             {% for ticket in tickets %}
-            <tr>
+            <tr id="ticket-row-{{ ticket.id }}">
                 <td>{{ ticket.id }}</td>
                 <td>{{ ticket.title }}</td>
                 <td>
