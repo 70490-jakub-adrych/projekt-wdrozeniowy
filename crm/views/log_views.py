@@ -13,8 +13,8 @@ def activity_logs(request):
     user = request.user
     role = user.profile.role
     
-    # Tylko admin może oglądać wszystkie logi
-    if role != 'admin':
+    # Tylko admin i superagent mogą oglądać wszystkie logi
+    if role not in ['admin', 'superagent']:
         return logs_access_forbidden(request)
     
     logs = ActivityLog.objects.all().order_by('-created_at')
@@ -43,8 +43,8 @@ def activity_log_detail(request, log_id):
     user = request.user
     role = user.profile.role
     
-    # Tylko admin może oglądać szczegóły logów
-    if role != 'admin':
+    # Tylko admin i superagent mogą oglądać szczegóły logów
+    if role not in ['admin', 'superagent']:
         return logs_access_forbidden(request)
     
     # Try to get the log, use custom 404 handler if not found
