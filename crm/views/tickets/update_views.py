@@ -26,14 +26,8 @@ def ticket_update(request, pk):
         return redirect('ticket_detail', pk=ticket.pk)
     
     # Sprawdzenie uprawnień do edycji
-    if role == 'client':
-        # Klient może edytować tylko swoje zgłoszenia
-        if ticket.created_by != user:
-            return ticket_edit_forbidden(request, pk)
-    elif role == 'agent':
-        # Agent może edytować tylko nieprzypisane zgłoszenia lub przypisane do niego
-        if ticket.assigned_to and ticket.assigned_to != user:
-            return ticket_edit_forbidden(request, pk)
+    if role != 'admin':
+        return ticket_edit_forbidden(request, pk)
     
     # Save original values to compare for logging changes
     original_status = ticket.status

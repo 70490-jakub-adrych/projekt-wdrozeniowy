@@ -16,8 +16,15 @@
             <div class="card-body">
                 <!-- Error banner completely removed -->
                 
+                {% if ticket and user.profile.role != 'admin' %}
+                <div class="alert alert-warning">
+                    Tylko administrator może edytować zgłoszenie. Pozostałe role nie mają dostępu do edycji.
+                </div>
+                {% endif %}
+                
                 <form method="post" id="ticketForm" enctype="multipart/form-data">
                     {% csrf_token %}
+                    <fieldset {% if ticket and user.profile.role != 'admin' %}disabled{% endif %}>
                     
                     <!-- We need to get title and description fields first -->
                     <div class="form-group">
@@ -120,6 +127,7 @@
                             <i class="fas fa-times"></i> Anuluj
                         </button>
                     </div>
+                    </fieldset>
                 </form>
             </div>
         </div>

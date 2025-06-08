@@ -254,7 +254,7 @@
                                     <i class="fas fa-eye"></i>
                                 </a>
                                 
-                                {% if user.profile.role in 'admin,agent' or ticket.created_by == user %}
+                                {% if user.profile.role == 'admin' %}
                                 <a href="{% url 'ticket_update' ticket.pk %}" class="btn btn-sm btn-primary action-btn" title="Edytuj">
                                     <i class="fas fa-edit"></i>
                                 </a>

@@ -56,30 +56,22 @@ def ticket_detail(request, pk):
     else:
         can_attach = True  # Admin i agent mogą dodawać załączniki
     
-    # Sprawdzanie uprawnień do edycji - if ticket is not closed
-    if is_closed:
-        can_edit = False
-    elif role == 'admin':
-        can_edit = True
-    elif role == 'agent':
-        # Agent może edytować tylko nieprzypisane zgłoszenia lub przypisane do niego
-        can_edit = not ticket.assigned_to or ticket.assigned_to == user
-    else:  # client
-        can_edit = user == ticket.created_by
+    # Sprawdzanie uprawnień do edycji - tylko admin może edytować
+    can_edit = role == 'admin'
     
     # Sprawdzanie uprawnień do zamykania - not applicable if already closed
     if is_closed:
         can_close = False
-    elif role == 'admin':
-        can_close = ticket.assigned_to is not None  # Admin can only close if ticket is assigned
+    elif role == 'admin' or role == 'superagent':
+        can_close = ticket.assigned_to is not None  # Admin i superagent mogą zamykać każde przypisane zgłoszenie
     elif role == 'agent':
         # Agent can only close tickets that are assigned to them
         can_close = ticket.assigned_to == user
     else:  # client
         can_close = False  # Clients can no longer close tickets
     
-    # Tylko admin i przypisany agent mogą ponownie otwierać
-    can_reopen = is_closed and (role == 'admin' or (role == 'agent' and ticket.assigned_to == user))
+    # Admin, superagent i przypisany agent mogą ponownie otwierać
+    can_reopen = is_closed and (role == 'admin' or role == 'superagent' or (role == 'agent' and ticket.assigned_to == user))
     
     # Możliwość przypisania do siebie (tylko dla agentów, gdy zgłoszenie nieprzypisane i nie jest zamknięte)
     can_assign_to_self = not is_closed and role == 'agent' and not ticket.assigned_to

@@ -31,6 +31,10 @@ def ticket_close(request, pk):
         # Admin może zamykać tylko przypisane zgłoszenia
         if ticket.assigned_to is None:
             return HttpResponseForbidden("Nie można zamknąć nieprzypisanego zgłoszenia")
+    elif role == 'superagent':
+        # Superagent może zamykać każde zgłoszenie (jak admin)
+        if ticket.assigned_to is None:
+            return HttpResponseForbidden("Nie można zamknąć nieprzypisanego zgłoszenia")
     
     if request.method == 'POST':
         # Store the old status for the log
@@ -65,9 +69,11 @@ def ticket_reopen(request, pk):
     except Http404:
         return ticket_not_found(request, pk)
     
-    # Tylko admin i przypisany agent mogą ponownie otworzyć zgłoszenie
+    # Admin, superagent i przypisany agent mogą ponownie otworzyć zgłoszenie
     if role == 'admin':
         pass  # Admin może wszystko
+    elif role == 'superagent':
+        pass  # Superagent może wszystko co agent
     elif role == 'agent':
         if ticket.assigned_to and ticket.assigned_to != user:
             return HttpResponseForbidden("Nie możesz ponownie otworzyć zgłoszenia przypisanego do innego agenta")
