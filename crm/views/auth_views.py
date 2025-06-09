@@ -8,7 +8,7 @@ from django.contrib.auth.views import LoginView
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
 from django.utils import timezone
-from django.db import transaction, IntegrityError
+from django.db import transaction, IntegrityError, connection
 from django.db.models import Q
 
 from ..forms import UserRegisterForm, UserProfileForm, CustomAuthenticationForm
@@ -131,63 +131,98 @@ def register(request):
                         email = form.cleaned_data.get('email')
                         username = form.cleaned_data.get('username')
                         
-                        # Extra check for orphaned verification records
-                        existing_verifications = EmailVerification.objects.filter(
-                            user__email=email
-                        )
-                        if existing_verifications.exists():
-                            # Clean up orphaned verification records
-                            for verification in existing_verifications:
-                                verification.delete()
-                                logger.warning(f"Deleted orphaned verification record for email: {email}")
+                        # Log current state before any changes
+                        logger.info(f"Registration attempt for username={username}, email={email}")
                         
                         # Check for existing users with this email or username
                         if User.objects.filter(email=email).exists():
+                            logger.info(f"Email {email} already exists - rejecting")
                             form.add_error('email', 'Użytkownik z tym adresem email już istnieje.')
                             raise IntegrityError("User with this email already exists")
                             
                         if User.objects.filter(username=username).exists():
+                            logger.info(f"Username {username} already exists - rejecting")
                             form.add_error('username', 'Użytkownik z tą nazwą użytkownika już istnieje.')
                             raise IntegrityError("User with this username already exists")
                         
-                        # Check for orphaned profiles and clean them up
-                        orphaned_profiles = UserProfile.objects.filter(user_id__isnull=False).exclude(
-                            user_id__in=User.objects.values_list('id', flat=True)
-                        )
-                        if orphaned_profiles.exists():
-                            logger.warning(f"Found {orphaned_profiles.count()} orphaned profiles, cleaning up")
-                            orphaned_profiles.delete()
+                        # Create a savepoint before user creation
+                        sid = transaction.savepoint()
+                        
+                        # Log highest user and profile ids before creation
+                        with connection.cursor() as cursor:
+                            cursor.execute("SELECT MAX(id) FROM auth_user")
+                            max_user_id = cursor.fetchone()[0] or 0
+                            cursor.execute("SELECT MAX(id) FROM crm_userprofile")
+                            max_profile_id = cursor.fetchone()[0] or 0
+                            logger.info(f"Before creation: max user_id={max_user_id}, max profile_id={max_profile_id}")
                         
                         # Create user (inactive until email verification)
                         user = form.save(commit=False)
                         user.is_active = False  # Deactivate until email verification
                         user.save()
+                        logger.info(f"Created user with ID={user.id}, username={user.username}, email={user.email}")
                         
-                        # Create profile
-                        profile = profile_form.save(commit=False)
-                        profile.user = user
-                        profile.is_approved = False
-                        profile.email_verified = False
-                        profile.save()
+                        # Get next ID that will be used for profile
+                        with connection.cursor() as cursor:
+                            cursor.execute("SELECT AUTO_INCREMENT FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'crm_userprofile'")
+                            next_profile_id = cursor.fetchone()[0]
+                            logger.info(f"Next profile ID will be: {next_profile_id}")
+                            
+                            # Check for orphaned profile with same user_id
+                            cursor.execute(f"SELECT id FROM crm_userprofile WHERE user_id = {user.id}")
+                            conflict_profiles = cursor.fetchall()
+                            if conflict_profiles:
+                                profile_ids = [row[0] for row in conflict_profiles]
+                                logger.error(f"CONFLICT: Found profiles {profile_ids} with user_id={user.id}")
+                                # Delete conflicting profiles
+                                cursor.execute(f"DELETE FROM crm_userprofile WHERE user_id = {user.id}")
+                                logger.info(f"Deleted {cursor.rowcount} conflicting profiles")
                         
+                        try:
+                            # Create profile with explicit user_id to avoid conflicts
+                            profile = profile_form.save(commit=False)
+                            profile.user = user
+                            profile.is_approved = False
+                            profile.email_verified = False
+                            logger.info(f"Attempting to save profile for user_id={user.id}")
+                            profile.save()
+                            logger.info(f"Created profile with ID={profile.id} for user_id={user.id}")
+                        except IntegrityError as e:
+                            # If profile creation fails, roll back to savepoint
+                            transaction.savepoint_rollback(sid)
+                            logger.error(f"Profile creation failed: {str(e)}")
+                            raise
+                            
                         # Handle organizations
                         if profile_form.cleaned_data.get('organizations'):
                             profile.organizations.set(profile_form.cleaned_data['organizations'])
                         
+                        # Create a new savepoint before verification
+                        sid2 = transaction.savepoint()
+                        
                         # Generate verification code
                         verification_code = ''.join([str(random.randint(0, 9)) for _ in range(6)])
-                        EmailVerification.objects.create(
-                            user=user,
-                            verification_code=verification_code
-                        )
+                        try:
+                            verif = EmailVerification.objects.create(
+                                user=user,
+                                verification_code=verification_code
+                            )
+                            logger.info(f"Created verification record with ID={verif.id} for user_id={user.id}")
+                        except IntegrityError as e:
+                            # If verification creation fails, roll back to savepoint
+                            transaction.savepoint_rollback(sid2)
+                            logger.error(f"Verification creation failed: {str(e)}")
+                            raise
                         
                         # Send verification email
                         if not EmailNotificationService.send_verification_email(user, verification_code):
                             # If email sending fails, roll back the transaction
+                            logger.error(f"Failed to send verification email to {email}")
                             raise Exception("Failed to send verification email")
                         
                         # Store user ID in session
                         request.session['pending_user_id'] = user.id
+                        logger.info(f"Registration successful for user_id={user.id}, stored in session")
                         
                         messages.success(request, 'Konto zostało utworzone! Sprawdź swój email i wprowadź kod weryfikacyjny.')
                         return render(request, 'crm/verify_email.html', {
@@ -198,17 +233,29 @@ def register(request):
                 except IntegrityError as e:
                     # Handle integrity errors
                     logger.error(f"Registration integrity error: {str(e)}")
+                    
+                    # Get detailed SQL information
+                    with connection.cursor() as cursor:
+                        # Check for any conflicting profiles
+                        cursor.execute("SELECT id, user_id FROM crm_userprofile WHERE user_id IN (SELECT id FROM auth_user WHERE email=%s OR username=%s)", [email, username])
+                        conflicts = cursor.fetchall()
+                        if conflicts:
+                            logger.error(f"Found conflicting profiles: {conflicts}")
+                    
                     if "Duplicate entry" in str(e) and "user_id" in str(e):
-                        # This is likely an auto-increment issue - give a more helpful message
+                        # Extract the problematic ID
+                        import re
+                        match = re.search(r'Duplicate entry \'(\d+)\'', str(e))
+                        conflict_id = match.group(1) if match else "unknown"
+                        
+                        # Check if user with this ID exists
+                        user_exists = User.objects.filter(id=conflict_id).exists()
+                        logger.critical(f"Conflict with user_id={conflict_id}, user exists: {user_exists}")
+                        
                         messages.error(
                             request, 
-                            'Wystąpił problem z bazą danych podczas tworzenia konta. '
+                            f'Wystąpił problem z bazą danych podczas tworzenia konta (ID konfliktu: {conflict_id}). '
                             'Prosimy o kontakt z administratorem.'
-                        )
-                        # Log this as a critical issue that needs admin attention
-                        logger.critical(
-                            f"AUTO_INCREMENT ISSUE DETECTED: {str(e)}. "
-                            f"Run: python manage.py reset_auto_increment --all"
                         )
                     elif not form.errors and not profile_form.errors:
                         messages.error(request, 'Błąd podczas tworzenia konta. Spróbuj ponownie.')

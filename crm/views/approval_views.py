@@ -38,17 +38,20 @@ def reject_user(request, user_id):
                 username = user.username
                 email = user.email
                 
-                # First delete all related records
+                # First delete all related records EXCEPT the profile
                 # Delete verification record if exists
                 EmailVerification.objects.filter(user=user).delete()
                 
                 # Delete notification settings if exists
                 EmailNotificationSettings.objects.filter(user=user).delete()
                 
-                # Delete profile
+                # Important: Delete the profile BEFORE deleting the user
+                # This prevents orphaned profile records
+                profile_id = profile.id
                 profile.delete()
+                logger.info(f"Deleted UserProfile with ID {profile_id}")
                 
-                # Delete the user account itself (cascade deletes other related objects)
+                # Now delete the user account itself
                 user.delete()
                 
                 logger.info(f"User {username} ({email}) rejected and deleted by {request.user.username}")

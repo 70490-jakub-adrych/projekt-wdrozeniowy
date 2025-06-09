@@ -227,6 +227,10 @@ LOGGING = {
             'format': '{levelname} {message}',
             'style': '{',
         },
+        'sql_formatter': {
+            'format': '[SQL] {levelname} {asctime} {message}',
+            'style': '{',
+        }
     },
     'handlers': {
         'file': {
@@ -245,6 +249,12 @@ LOGGING = {
             'class': 'django.utils.log.AdminEmailHandler',
             'formatter': 'verbose',
         },
+        'sql_file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': os.path.join(BASE_DIR, 'sql.log'),
+            'formatter': 'sql_formatter',
+        }
     },
     'loggers': {
         'django': {
@@ -256,6 +266,11 @@ LOGGING = {
             'handlers': ['console', 'file'],
             'level': 'INFO',
             'propagate': True,
+        },
+        'django.db.backends': {
+            'handlers': ['sql_file'],
+            'level': 'DEBUG' if DEBUG else 'INFO',
+            'propagate': False,
         },
     },
 }
