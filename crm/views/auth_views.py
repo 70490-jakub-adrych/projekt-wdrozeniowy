@@ -199,7 +199,17 @@ def register(request):
                     # Handle integrity errors
                     logger.error(f"Registration integrity error: {str(e)}")
                     if "Duplicate entry" in str(e) and "user_id" in str(e):
-                        messages.error(request, 'Błąd systemu: konflikt z istniejącym użytkownikiem. Proszę spróbować ponownie.')
+                        # This is likely an auto-increment issue - give a more helpful message
+                        messages.error(
+                            request, 
+                            'Wystąpił problem z bazą danych podczas tworzenia konta. '
+                            'Prosimy o kontakt z administratorem.'
+                        )
+                        # Log this as a critical issue that needs admin attention
+                        logger.critical(
+                            f"AUTO_INCREMENT ISSUE DETECTED: {str(e)}. "
+                            f"Run: python manage.py reset_auto_increment --all"
+                        )
                     elif not form.errors and not profile_form.errors:
                         messages.error(request, 'Błąd podczas tworzenia konta. Spróbuj ponownie.')
                 
