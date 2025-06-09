@@ -259,6 +259,7 @@ class Command(BaseCommand):
                 profile = admin.profile
                 profile.role = 'admin'
                 profile.is_approved = True
+                profile.email_verified = True  # Mark email as verified
                 profile.save()
                 
                 # Assign admin to all organizations
@@ -270,7 +271,8 @@ class Command(BaseCommand):
                 profile = UserProfile.objects.create(
                     user=admin,
                     role='admin',
-                    is_approved=True
+                    is_approved=True,
+                    email_verified=True  # Mark email as verified
                 )
                 # Assign admin to all organizations
                 for org in organizations:
@@ -281,8 +283,10 @@ class Command(BaseCommand):
             return admin
         else:
             admin = User.objects.get(username='admin')
-            # Make sure existing admin has organizations
+            # Make sure existing admin has organizations and verified email
             profile = admin.profile
+            profile.email_verified = True  # Ensure email is verified
+            profile.save()
             
             # Assign admin to all organizations
             for org in organizations:
@@ -293,7 +297,7 @@ class Command(BaseCommand):
     
     def _create_superagent_user(self, organizations):
         """Create a superagent user"""
-        superagent_group, _ = Group.objects.get_or_create(name='Superagent')  # Fixed: was 'Superagent'
+        superagent_group, _ = Group.objects.get_or_create(name='Superagent')
         if not User.objects.filter(username='superagent').exists():
             superagent = User.objects.create_user(
                 username='superagent',
@@ -306,6 +310,7 @@ class Command(BaseCommand):
                 profile = superagent.profile
                 profile.role = 'superagent'
                 profile.is_approved = True
+                profile.email_verified = True  # Mark email as verified
                 profile.save()
                 for org in organizations:
                     profile.organizations.add(org)
@@ -314,7 +319,8 @@ class Command(BaseCommand):
                 profile = UserProfile.objects.create(
                     user=superagent,
                     role='superagent',
-                    is_approved=True
+                    is_approved=True,
+                    email_verified=True  # Mark email as verified
                 )
                 for org in organizations:
                     profile.organizations.add(org)
@@ -324,6 +330,8 @@ class Command(BaseCommand):
         else:
             superagent = User.objects.get(username='superagent')
             profile = superagent.profile
+            profile.email_verified = True  # Ensure email is verified
+            profile.save()
             for org in organizations:
                 profile.organizations.add(org)
             self.stdout.write(f"Superagent user already exists: {superagent.username}")
@@ -351,17 +359,19 @@ class Command(BaseCommand):
                     profile = agent.profile
                     profile.role = 'agent'
                     profile.is_approved = True
+                    profile.email_verified = True  # Mark email as verified
                     profile.save()
-                    profile.organizations.add(org)  # Use add() for M2M
+                    profile.organizations.add(org)
                     self.stdout.write(f"Added organization {org.name} to agent {agent.username}")
                 except Exception as e:
                     self.stdout.write(f"Error updating agent profile: {str(e)}")
                     profile = UserProfile.objects.create(
                         user=agent,
                         role='agent',
-                        is_approved=True
+                        is_approved=True,
+                        email_verified=True  # Mark email as verified
                     )
-                    profile.organizations.add(org)  # Use add() for M2M
+                    profile.organizations.add(org)
                     self.stdout.write(f"Created new profile and added organization {org.name} to agent {agent.username}")
                 
                 agent.groups.add(agent_group)
@@ -370,6 +380,8 @@ class Command(BaseCommand):
                 agent = User.objects.get(username=username)
                 # Make sure existing agent has organization
                 profile = agent.profile
+                profile.email_verified = True  # Ensure email is verified
+                profile.save()
                 profile.organizations.add(org)
                 self.stdout.write(f"Agent user already exists: {agent.username}")
             
@@ -402,17 +414,19 @@ class Command(BaseCommand):
                         profile = client.profile
                         profile.role = 'client'
                         profile.is_approved = True
+                        profile.email_verified = True  # Mark email as verified
                         profile.save()
-                        profile.organizations.add(org)  # Use add() for M2M
+                        profile.organizations.add(org)
                         self.stdout.write(f"Added organization {org.name} to client {client.username}")
                     except Exception as e:
                         self.stdout.write(f"Error updating client profile: {str(e)}")
                         profile = UserProfile.objects.create(
                             user=client,
                             role='client',
-                            is_approved=True
+                            is_approved=True,
+                            email_verified=True  # Mark email as verified
                         )
-                        profile.organizations.add(org)  # Use add() for M2M
+                        profile.organizations.add(org)
                         self.stdout.write(f"Created new profile and added organization {org.name} to client {client.username}")
                     
                     client.groups.add(client_group)
@@ -421,6 +435,8 @@ class Command(BaseCommand):
                     client = User.objects.get(username=username)
                     # Make sure existing client has organization
                     profile = client.profile
+                    profile.email_verified = True  # Ensure email is verified
+                    profile.save()
                     profile.organizations.add(org)
                     self.stdout.write(f"Client user already exists: {client.username}")
                 
@@ -578,13 +594,15 @@ class Command(BaseCommand):
                 profile = viewer.profile
                 profile.role = 'viewer'
                 profile.is_approved = True
+                profile.email_verified = True  # Mark email as verified
                 profile.save()
             except Exception as e:
                 self.stdout.write(f"Error updating viewer profile: {str(e)}")
                 profile = UserProfile.objects.create(
                     user=viewer,
                     role='viewer',
-                    is_approved=True
+                    is_approved=True,
+                    email_verified=True  # Mark email as verified
                 )
             
             viewer.groups.add(viewer_group)
@@ -592,6 +610,9 @@ class Command(BaseCommand):
             return viewer
         else:
             viewer = User.objects.get(username='viewer')
+            profile = viewer.profile
+            profile.email_verified = True  # Ensure email is verified
+            profile.save()
             self.stdout.write(f"Viewer user already exists: {viewer.username}")
             return viewer
     
