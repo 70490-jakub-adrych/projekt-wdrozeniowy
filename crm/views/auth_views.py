@@ -610,7 +610,7 @@ def custom_password_change_view(request):
                     messages.error(request, 'Błąd podczas wysyłania emaila z kodem weryfikacyjnym. Spróbuj ponownie.')
                     return redirect('password_change')
                 
-                messages.info(request, 'Wysłaliśmy kod weryfikacyjny na Twój adres email. Wprowadź go, aby zmienić hasło.')
+                messages.info(request, 'Wysłaliśmy kod weryfikacyjny na Twój adres email. Wprowadź go i kliknij zatwierdź, aby zmienić hasło.')
                 return redirect('password_change')
         else:
             form = PasswordChangeForm(user)
