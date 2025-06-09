@@ -183,7 +183,8 @@ EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
 EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
 
 # Default from email
-DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='noreply@localhost')
+EMAIL_DISPLAY_NAME = config('EMAIL_DISPLAY_NAME', default='Betula IT - Helpdesk')
+DEFAULT_FROM_EMAIL = f'{EMAIL_DISPLAY_NAME} <{config("DEFAULT_FROM_EMAIL", default="noreply@betulait.usermd.net")}>'
 SERVER_EMAIL = config('SERVER_EMAIL', default='admin@localhost')
 
 # Password reset settings
