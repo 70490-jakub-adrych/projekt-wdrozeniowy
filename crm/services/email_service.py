@@ -453,7 +453,7 @@ class EmailNotificationService:
             bool: True if email was sent successfully, False otherwise
         """
         try:
-            logger.info(f"Starting password changed notification process for {user.username} ({user.email})")
+            logger.info(f"🔵 PASSWORD CHANGED EMAIL: Starting process for {user.username} ({user.email})")
             
             # Generate password reset URL
             site_url = getattr(settings, 'SITE_URL', 'https://betulait.usermd.net')
@@ -468,14 +468,14 @@ class EmailNotificationService:
             
             # Try to render email templates
             try:
-                logger.debug(f"Attempting to render password change success templates for user {user.email}")
+                logger.info(f"🔵 Attempting to render password change success templates for {user.email}")
                 html_content = render_to_string('emails/password_change_success.html', context)
                 text_content = render_to_string('emails/password_change_success.txt', context)
-                logger.debug("Successfully rendered email templates")
+                logger.info("✅ Successfully rendered email templates")
             except Exception as e:
-                logger.error(f"Error rendering password change success email template: {str(e)}", exc_info=True)
+                logger.error(f"❌ Error rendering password change templates: {str(e)}", exc_info=True)
                 # Use hardcoded fallback template
-                logger.warning("Using fallback hardcoded email templates")
+                logger.warning("⚠️ Using fallback hardcoded email templates")
                 html_content = f"""
                 <html>
                 <body>
@@ -494,8 +494,8 @@ class EmailNotificationService:
                 """
 
             # Log email details before sending
-            logger.debug(f"Preparing to send email to {user.email} with subject 'System Helpdesk - Hasło zostało zmienione'")
-            logger.debug(f"Using email backend: {settings.EMAIL_BACKEND}")
+            logger.info(f"🔵 Preparing to send email to {user.email} about password change")
+            logger.info(f"Using email backend: {settings.EMAIL_BACKEND}")
             
             # Create more robust email message with headers to improve deliverability
             msg = EmailMultiAlternatives(
@@ -520,25 +520,27 @@ class EmailNotificationService:
             socket.setdefaulttimeout(15)  # Use longer timeout for this critical email
             
             try:
+                logger.info(f"🔵 SENDING NOW: Password change notification to {user.email}")
                 msg.send(fail_silently=False)
                 # Reset socket timeout
                 socket.setdefaulttimeout(default_timeout)
-                logger.info(f"Password change success notification sent to {user.email}")
+                logger.info(f"✅ Password change notification SUCCESSFULLY sent to {user.email}")
                 return True
             except Exception as send_error:
-                logger.error(f"Failed to send password change notification to {user.email}: {str(send_error)}", exc_info=True)
+                logger.error(f"❌ Failed to send password change notification: {str(send_error)}", exc_info=True)
                 # Try again with a different subject (to avoid spam filters)
                 try:
+                    logger.info("🔄 Retrying with alternate subject...")
                     msg.subject = "Ważna informacja dotycząca Twojego konta w systemie Helpdesk"
                     msg.send(fail_silently=False)
-                    logger.info(f"Password change notification sent with alternate subject to {user.email}")
+                    logger.info(f"✅ Password notification sent with alternate subject to {user.email}")
                     return True
                 except Exception as retry_error:
-                    logger.error(f"Second attempt failed: {str(retry_error)}")
+                    logger.error(f"❌ Second attempt also failed: {str(retry_error)}")
                     socket.setdefaulttimeout(default_timeout)
                     return False
         except Exception as e:
-            logger.error(f"Failed to prepare password change success notification to {user.email}: {str(e)}", exc_info=True)
+            logger.error(f"❌ Failed to prepare password notification: {str(e)}", exc_info=True)
             return False
     
     @staticmethod

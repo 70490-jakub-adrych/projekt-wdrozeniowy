@@ -1,5 +1,6 @@
 from django.urls import path
 from django.contrib.auth.views import LogoutView
+from django.urls import reverse_lazy  # Add this missing import
 from .views import (
     landing_page, register, register_pending,
     CustomLoginView, custom_login_success, custom_logout_view,
@@ -11,14 +12,13 @@ from .views import (
     pending_approvals, approve_user, reject_user,
     ticket_display_view, get_tickets_update
 )
-from .views.auth_views import unlock_user
+from .views.auth_views import unlock_user, HTMLEmailPasswordResetView
 from . import views
 from .views import secure_file_views
 from django.contrib.auth import views as auth_views
 from .views.auth_views import custom_password_reset_complete, custom_password_change_view
 from .views.statistics_views import statistics_dashboard, update_agent_work_log, generate_statistics_report
 from .views.email_test_views import test_email_view, test_smtp_connection
-from .views.auth_views import HTMLEmailPasswordResetView
 
 urlpatterns = [
     # Landing and authentication
@@ -66,14 +66,14 @@ urlpatterns = [
     path('test-404/', views.error_views.test_404_page, name='test_404_page'),
     path('test-403/', views.error_views.test_403_page, name='test_403_page'),
 
-    # Password management
+    # Password management - unified flow
     path('password/change/', custom_password_change_view, name='password_change'),
     path('password/change/done/', auth_views.PasswordChangeDoneView.as_view(
         template_name='emails/password_change_done.html'
     ), name='password_change_done'),
     
-    # Unified password reset - used for both forgotten password and password change
-    path('password_reset/', auth_views.PasswordResetView.as_view(
+    # Password reset flow (both for logged-in users and forgotten passwords)
+    path('password_reset/', HTMLEmailPasswordResetView.as_view(
         template_name='emails/password_reset_form.html',
         email_template_name='emails/password_reset_email.txt',
         html_email_template_name='emails/password_reset_email.html',

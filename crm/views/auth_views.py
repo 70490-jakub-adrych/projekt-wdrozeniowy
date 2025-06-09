@@ -20,6 +20,7 @@ from .helpers import log_activity
 from .error_views import forbidden_access
 import random
 import logging
+from django.conf import settings
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -636,8 +637,11 @@ def custom_password_change_view(request):
                         if stored_data:
                             form = PasswordChangeForm(user, stored_data)
                             if form.is_valid():
+                                logger.info(f"Password change form validated for user {user.username}")
+                                
                                 # Change password
                                 form.save()
+                                logger.info(f"Password successfully changed in database for user {user.username}")
                                 
                                 # Update session to prevent logout
                                 update_session_auth_hash(request, user)
@@ -655,23 +659,22 @@ def custom_password_change_view(request):
                                     description=f"Zmiana hasła użytkownika {user.username}"
                                 )
                                 
-                                # Send notification about password change - with explicit error handling
-                                logger.info(f"Attempting to send password changed notification to {user.email}")
+                                # Send notification about password change with enhanced logging
+                                logger.info(f"SENDING PASSWORD CHANGED EMAIL: Starting notification process for {user.username}")
                                 try:
                                     # Generate password reset URL for security
                                     site_url = getattr(settings, 'SITE_URL', 'https://betulait.usermd.net')
                                     password_reset_url = f"{site_url}/password_reset/"
                                     
-                                    # Important: Directly use the email service to send the notification
-                                    # This ensures the email is actually sent and properly logged
+                                    # Directly call email service with explicit success check
                                     success = EmailNotificationService.send_password_changed_notification(user)
                                     
                                     if success:
-                                        logger.info(f"Password changed notification successfully sent to {user.email}")
+                                        logger.info(f"✅ Password changed notification SUCCESSFULLY sent to {user.email}")
                                     else:
-                                        logger.error(f"Failed to send password changed notification to {user.email}")
+                                        logger.error(f"❌ Failed to send password changed notification to {user.email}")
                                 except Exception as e:
-                                    logger.error(f"Error sending password change notification: {str(e)}", exc_info=True)
+                                    logger.error(f"❌ CRITICAL ERROR sending password change notification: {str(e)}", exc_info=True)
                                 
                                 messages.success(request, "Twoje hasło zostało pomyślnie zmienione.")
                                 return redirect('dashboard')
@@ -917,45 +920,63 @@ class HTMLEmailPasswordResetView(PasswordResetView):
 
 def custom_password_reset_complete(request):
     """Custom view for password reset completion that sends notification"""
-    # First determine which user just reset their password
+    # First determine which user just reset their password using multiple methods
     user = None
+    user_id = None
+    
+    # Method 1: Try logged in user
     if request.user.is_authenticated:
         user = request.user
-    else:
-        # Try to get user from session if set by PasswordResetConfirmView
-        user_id = request.session.get('_password_reset_user_id')
-        if not user_id:
-            # Try to get from session storage (set via JavaScript)
-            user_id = request.GET.get('user_id')
-            
-        if user_id:
-            try:
-                user = User.objects.get(pk=user_id)
-                logger.info(f"Found user {user.username} from session after password reset")
-                # Clean up session
-                if '_password_reset_user_id' in request.session:
-                    del request.session['_password_reset_user_id']
-            except User.DoesNotExist:
-                logger.error(f"User ID {user_id} not found")
+        logger.info(f"Using authenticated user for password reset notification: {user.username}")
     
+    # Method 2: Try to get from session (Django's built-in)
+    if not user:
+        user_id = request.session.get('_password_reset_user_id')
+        if user_id:
+            logger.info(f"Found user ID {user_id} in Django session for password reset")
+    
+    # Method 3: Try to get from query parameters (set by our JavaScript)
+    if not user_id:
+        user_id = request.GET.get('user_id')
+        if user_id:
+            logger.info(f"Found user ID {user_id} in query parameters for password reset")
+    
+    # Method 4: Try to get from session storage (our custom JavaScript solution)
+    if not user_id and request.headers.get('X-Password-Reset-User-Id'):
+        user_id = request.headers.get('X-Password-Reset-User-Id')
+        logger.info(f"Found user ID {user_id} in X-Password-Reset-User-Id header")
+    
+    # If we have a user_id but not a user object yet, get the user
+    if not user and user_id:
+        try:
+            user = User.objects.get(pk=user_id)
+            logger.info(f"Retrieved user {user.username} from ID {user_id} for password reset notification")
+            
+            # Clean up session
+            if '_password_reset_user_id' in request.session:
+                del request.session['_password_reset_user_id']
+        except User.DoesNotExist:
+            logger.error(f"User ID {user_id} from session/parameters not found")
+    
+    # Send notification if we found the user
     if user:
-        logger.info(f"Sending password change notification after reset for user {user.username}")
+        logger.info(f"SENDING PASSWORD CHANGED EMAIL: Starting notification after reset for {user.username}")
         try:
             # Generate password reset URL for security
             site_url = getattr(settings, 'SITE_URL', 'https://betulait.usermd.net')
             password_reset_url = f"{site_url}/password_reset/"
             
-            # Important: Use direct call to ensure notification is sent
+            # Direct call with explicit success check
             success = EmailNotificationService.send_password_changed_notification(user)
             
             if success:
-                logger.info(f"Password changed notification successfully sent after reset to {user.email}")
+                logger.info(f"✅ Password changed notification SUCCESSFULLY sent after reset to {user.email}")
             else:
-                logger.error(f"Failed to send password changed notification after reset to {user.email}")
+                logger.error(f"❌ Failed to send password changed notification after reset to {user.email}")
         except Exception as e:
-            logger.error(f"Error sending password change notification after reset: {str(e)}", exc_info=True)
+            logger.error(f"❌ CRITICAL ERROR sending password reset notification: {str(e)}", exc_info=True)
     else:
-        logger.warning("Could not determine user for password reset notification")
+        logger.warning("❓ Could not determine user for password reset notification - NO EMAIL SENT")
     
     # Always show the success template
     return render(request, 'emails/password_reset_complete.html')
