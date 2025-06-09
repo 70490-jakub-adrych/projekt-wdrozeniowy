@@ -526,3 +526,126 @@ def custom_password_change_view(request):
     return render(request, 'registration/password_change_form.html', {
         'form': form
     })
+
+
+def verify_email(request):
+    """Standalone view for email verification"""
+    # If user is not logged in and there's no pending user ID in the session, redirect to login
+    if not request.user.is_authenticated and 'pending_user_id' not in request.session:
+        messages.error(request, 'Musisz się zalogować, aby zweryfikować email.')
+        return redirect('login')
+    
+    # Get the user - either the authenticated user or from the session
+    if request.user.is_authenticated:
+        user = request.user
+        # If user is already verified, redirect to dashboard
+        if user.profile.email_verified:
+            messages.info(request, 'Twój email jest już zweryfikowany.')
+            return redirect('dashboard')
+    else:
+        # Get user from session (for users who just registered)
+        user_id = request.session.get('pending_user_id')
+        try:
+            user = User.objects.get(id=user_id)
+        except User.DoesNotExist:
+            messages.error(request, 'Sesja wygasła. Zaloguj się, aby zweryfikować email.')
+            return redirect('login')
+    
+    # Process verification
+    if request.method == 'POST':
+        if 'verify_email' in request.POST:
+            # Process verification code submission
+            verification_form = EmailVerificationForm(request.POST)
+            if verification_form.is_valid():
+                code = verification_form.cleaned_data['verification_code']
+                
+                try:
+                    verification = EmailVerification.objects.get(user=user)
+                    
+                    if verification.is_expired():
+                        messages.error(request, 'Kod weryfikacyjny wygasł. Wygeneruj nowy kod.')
+                        return render(request, 'crm/verify_email.html', {
+                            'verification_form': verification_form,
+                            'user': user,
+                            'expired': True
+                        })
+                    
+                    if verification.verification_code == code:
+                        # Email verified successfully
+                        verification.is_verified = True
+                        verification.verified_at = timezone.now()
+                        verification.save()
+                        
+                        # Update user profile
+                        profile = user.profile
+                        profile.email_verified = True
+                        profile.save()
+                        
+                        # Activate the user account if not already
+                        if not user.is_active:
+                            user.is_active = True
+                            user.save()
+                        
+                        # Create default notification settings if needed
+                        EmailNotificationSettings.objects.get_or_create(user=user)
+                        
+                        # Clear session if exists
+                        if 'pending_user_id' in request.session:
+                            del request.session['pending_user_id']
+                        
+                        messages.success(request, 'Email został zweryfikowany pomyślnie!')
+                        
+                        # Redirect to appropriate page
+                        if profile.is_approved:
+                            # If user is already approved, redirect to dashboard
+                            next_url = request.session.get('next_after_verification', 'dashboard')
+                            if 'next_after_verification' in request.session:
+                                del request.session['next_after_verification']
+                            return redirect(next_url)
+                        else:
+                            # If user is not approved, redirect to pending approval page
+                            return redirect('register_pending')
+                    else:
+                        messages.error(request, 'Nieprawidłowy kod weryfikacyjny.')
+                        
+                except EmailVerification.DoesNotExist:
+                    messages.error(request, 'Błąd weryfikacji. Spróbuj ponownie później.')
+                    return redirect('login')
+                
+            return render(request, 'crm/verify_email.html', {
+                'verification_form': verification_form,
+                'user': user
+            })
+            
+        elif 'resend_code' in request.POST:
+            # Resend verification code
+            try:
+                verification = EmailVerification.objects.get(user=user)
+                new_code = verification.generate_new_code()
+                
+                if EmailNotificationService.send_verification_email(user, new_code):
+                    messages.success(request, 'Nowy kod weryfikacyjny został wysłany na Twój email.')
+                else:
+                    messages.error(request, 'Błąd podczas wysyłania emaila. Spróbuj ponownie.')
+            except EmailVerification.DoesNotExist:
+                # Create new verification if it doesn't exist
+                verification_code = ''.join([str(random.randint(0, 9)) for _ in range(6)])
+                verification = EmailVerification.objects.create(
+                    user=user,
+                    verification_code=verification_code
+                )
+                if EmailNotificationService.send_verification_email(user, verification_code):
+                    messages.success(request, 'Kod weryfikacyjny został wysłany na Twój email.')
+                else:
+                    messages.error(request, 'Błąd podczas wysyłania emaila. Spróbuj ponownie.')
+            
+            return render(request, 'crm/verify_email.html', {
+                'verification_form': EmailVerificationForm(),
+                'user': user
+            })
+    
+    # GET request or other cases
+    return render(request, 'crm/verify_email.html', {
+        'verification_form': EmailVerificationForm(),
+        'user': user
+    })
