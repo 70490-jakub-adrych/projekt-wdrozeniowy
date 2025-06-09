@@ -637,25 +637,32 @@ def custom_password_change_view(request):
                             form = PasswordChangeForm(user, stored_data)
                             if form.is_valid():
                                 # Change password
-                                user = form.save()
-                                update_session_auth_hash(request, user)  # Important to keep user logged in
+                                form.save()
                                 
-                                # Log the password change
-                                log_activity(request, 'password_changed', description="Użytkownik zmienił hasło")
+                                # Update session to prevent logout
+                                update_session_auth_hash(request, user)
                                 
-                                # Clear session data
-                                for key in ['password_form_data', 'password_verification_code', 'password_change_verification', 'verification_code_sent']:
+                                # Clear all session data related to password change
+                                for key in ['password_form_data', 'password_verification_code', 
+                                          'password_change_verification', 'verification_code_sent']:
                                     if key in request.session:
                                         del request.session[key]
                                 
-                                messages.success(request, 'Twoje hasło zostało pomyślnie zmienione!')
+                                # Log the activity
+                                log_activity(
+                                    request,
+                                    'password_changed',
+                                    description=f"Zmiana hasła użytkownika {user.username}"
+                                )
+                                
+                                # Send notification about password change
+                                EmailNotificationService.send_password_changed_notification(user)
+                                
+                                messages.success(request, "Twoje hasło zostało pomyślnie zmienione.")
                                 return redirect('dashboard')
                             else:
-                                # Reset verification if form is now invalid
-                                for key in ['password_form_data', 'password_verification_code', 'password_change_verification', 'verification_code_sent']:
-                                    if key in request.session:
-                                        del request.session[key]
-                                messages.error(request, 'Wystąpił błąd z danymi formularza. Spróbuj ponownie.')
+                                # Form validation error
+                                messages.error(request, "Wystąpił błąd z zapisanymi danymi. Spróbuj ponownie.")
                                 return redirect('password_change')
                     else:
                         messages.error(request, 'Nieprawidłowy kod weryfikacyjny. Spróbuj ponownie.')

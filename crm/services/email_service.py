@@ -406,3 +406,58 @@ class EmailNotificationService:
         except Exception as e:
             logger.error(f"Failed to send password verification email to {user.email}: {str(e)}")
             return False
+    
+    @staticmethod
+    def send_password_changed_notification(user):
+        """
+        Send notification about successful password change
+        
+        Args:
+            user: User object of the recipient
+            
+        Returns:
+            bool: True if email was sent successfully, False otherwise
+        """
+        try:
+            context = {
+                'user': user,
+                'site_name': 'System Helpdesk',
+                'timestamp': timezone.now(),
+            }
+            
+            # Try to render email templates
+            try:
+                html_content = render_to_string('emails/password_change_success.html', context)
+                text_content = render_to_string('emails/password_change_success.txt', context)
+            except Exception as e:
+                logger.error(f"Error rendering password change success email template: {str(e)}")
+                # Use hardcoded fallback template
+                html_content = f"""
+                <html>
+                <body>
+                    <h2>Witaj {user.username}!</h2>
+                    <p>Twoje hasło do systemu Helpdesk zostało pomyślnie zmienione.</p>
+                    <p>Jeśli nie dokonywałeś tej zmiany, skontaktuj się natychmiast z administratorem.</p>
+                </body>
+                </html>
+                """
+                text_content = f"""
+                Witaj {user.username}!
+                Twoje hasło do systemu Helpdesk zostało pomyślnie zmienione.
+                Jeśli nie dokonywałeś tej zmiany, skontaktuj się natychmiast z administratorem.
+                """
+
+            msg = EmailMultiAlternatives(
+                subject=f'System Helpdesk - Hasło zostało zmienione',
+                body=text_content,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=[user.email]
+            )
+            msg.attach_alternative(html_content, "text/html")
+            msg.send()
+            
+            logger.info(f"Password change success notification sent to {user.email}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to send password change success notification to {user.email}: {str(e)}")
+            return False

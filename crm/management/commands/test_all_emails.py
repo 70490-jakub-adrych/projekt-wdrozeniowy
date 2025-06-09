@@ -5,6 +5,9 @@ from django.core.mail import EmailMultiAlternatives
 from django.conf import settings
 from django.urls import reverse
 from django.utils import timezone
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.encoding import force_bytes
+from django.utils.http import urlsafe_base64_encode
 
 from crm.models import Ticket
 from crm.services.email_service import EmailNotificationService
@@ -40,13 +43,13 @@ class Command(BaseCommand):
             self.stdout.write(self.style.ERROR(f'No ticket found with ID {ticket_id}'))
             return
             
-        # Test all ticket notification types
+        self.stdout.write(self.style.SUCCESS('Starting email template tests...'))
+        
+        # 1. Test all ticket notification types
         notification_types = [
             'created', 'updated', 'commented', 'assigned', 
             'closed', 'reopened', 'status_changed'
         ]
-        
-        self.stdout.write(self.style.SUCCESS('Starting email template tests...'))
         
         for notification_type in notification_types:
             self.stdout.write(f'Testing {notification_type} notification...')
@@ -62,16 +65,61 @@ class Command(BaseCommand):
                 self.stdout.write(self.style.SUCCESS(f'✅ Successfully sent {notification_type} notification'))
             else:
                 self.stdout.write(self.style.ERROR(f'❌ Failed to send {notification_type} notification'))
-                   
-        # Test password verification email
+        
+        # 2. Test email verification code
+        self.stdout.write('Testing email verification code...')
+        verification_success = EmailNotificationService.send_verification_email(user, '123456')
+        if verification_success:
+            self.stdout.write(self.style.SUCCESS('✅ Successfully sent email verification code'))
+        else:
+            self.stdout.write(self.style.ERROR('❌ Failed to send email verification code'))
+        
+        # 3. Test password verification email for password change
         self.stdout.write('Testing password verification email...')
-        verification_success = EmailNotificationService.send_password_verification_email(user, '123456')
+        verification_success = EmailNotificationService.send_password_verification_email(user, '654321')
         if verification_success:
             self.stdout.write(self.style.SUCCESS('✅ Successfully sent password verification email'))
         else:
             self.stdout.write(self.style.ERROR('❌ Failed to send password verification email'))
+        
+        # 4. Test password change success notification
+        self.stdout.write('Testing password change success notification...')
+        password_changed_success = EmailNotificationService.send_password_changed_notification(user)
+        if password_changed_success:
+            self.stdout.write(self.style.SUCCESS('✅ Successfully sent password change success notification'))
+        else:
+            self.stdout.write(self.style.ERROR('❌ Failed to send password change success notification'))
             
-        # Test account approved email
+        # 5. Test password reset email with link
+        self.stdout.write('Testing password reset email with link...')
+        
+        # Create password reset context similar to Django's PasswordResetForm
+        uid = urlsafe_base64_encode(force_bytes(user.pk))
+        token = default_token_generator.make_token(user)
+        
+        context = {
+            'user': user,
+            'uid': uid,
+            'token': token,
+            'protocol': 'https',
+            'domain': settings.SITE_URL.replace('https://', '').replace('http://', '')
+        }
+        
+        # Use our service to send password reset email
+        reset_success = EmailNotificationService.send_password_reset_email(
+            user=user,
+            subject="System Helpdesk - Resetowanie hasła",
+            email_template_name='emails/password_reset_email.txt',
+            html_email_template_name='emails/password_reset_email.html',
+            context=context
+        )
+        
+        if reset_success:
+            self.stdout.write(self.style.SUCCESS('✅ Successfully sent password reset email'))
+        else:
+            self.stdout.write(self.style.ERROR('❌ Failed to send password reset email'))
+        
+        # 6. Test account approved email
         self.stdout.write('Testing account approved email...')
         site_url = getattr(settings, 'SITE_URL', 'https://betulait.usermd.net')
         login_url = f"{site_url}/login/"
