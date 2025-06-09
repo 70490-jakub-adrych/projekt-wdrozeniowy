@@ -8,6 +8,8 @@
         .header { background-color: #007bff; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }
         .content { background-color: #f8f9fa; padding: 30px; border-radius: 0 0 5px 5px; border: 1px solid #dee2e6; }
         .ticket-info { background-color: white; padding: 20px; border-radius: 5px; margin: 20px 0; }
+        .changes { background-color: #fff3cd; padding: 15px; border-left: 4px solid #ffc107; margin: 20px 0; }
+        .comment { background-color: #e2f0fb; padding: 15px; border-left: 4px solid #17a2b8; margin: 20px 0; }
         .btn { background-color: #007bff; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; display: inline-block; }
     </style>
 </head>
@@ -31,6 +33,27 @@
             <p><strong>Status:</strong> {{ ticket.get_status_display }}</p>
             <p><strong>Typ powiadomienia:</strong> {{ notification_type }}</p>
         </div>
+
+        {% if changes %}
+        <div class="changes">
+            <h3>Wprowadzone zmiany:</h3>
+            <p>{{ changes }}</p>
+        </div>
+        {% endif %}
+
+        {% if comment_content %}
+        <div class="comment">
+            <h3>Treść komentarza:</h3>
+            <p>{{ comment_content|linebreaks }}</p>
+        </div>
+        {% endif %}
+
+        {% if old_status %}
+        <div class="changes">
+            <h3>Zmiana statusu:</h3>
+            <p>Z: <strong>{{ old_status }}</strong> → Na: <strong>{{ ticket.get_status_display }}</strong></p>
+        </div>
+        {% endif %}
         
         <p style="text-align: center; margin: 30px 0;">
             <a href="{{ ticket_url }}" class="btn">Zobacz zgłoszenie</a>

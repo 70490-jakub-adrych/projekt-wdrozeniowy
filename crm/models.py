@@ -10,6 +10,9 @@ from django.conf import settings
 from cryptography.fernet import Fernet
 import base64
 from .validators import phone_regex
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class UserProfile(models.Model):
@@ -95,8 +98,12 @@ def create_user_profile(sender, instance, created, **kwargs):
 @receiver(post_save, sender=User)
 def save_user_profile(sender, instance, **kwargs):
     """Zapisywanie profilu przy zapisie użytkownika"""
-    if hasattr(instance, 'profile'):
-        instance.profile.save()
+    try:
+        if hasattr(instance, 'profile'):
+            instance.profile.save()
+    except Exception as e:
+        # Log the error but don't let it crash the request
+        logger.error(f"Error saving user profile for {instance.username}: {str(e)}")
 
 
 @receiver(m2m_changed, sender=User.groups.through)

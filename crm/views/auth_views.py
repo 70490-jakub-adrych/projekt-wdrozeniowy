@@ -7,6 +7,7 @@ from django.http import HttpResponseForbidden
 from django.contrib.auth.views import LoginView
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
+from django.utils import timezone  # Add this import - critical for verification code
 
 from ..forms import UserRegisterForm, UserProfileForm, CustomAuthenticationForm
 from ..models import UserProfile, User, EmailVerification, EmailNotificationSettings

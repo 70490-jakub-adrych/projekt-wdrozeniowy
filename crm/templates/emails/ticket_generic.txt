@@ -2,7 +2,9 @@
 
 Witaj {{ user.first_name|default:user.username }}!
 
-Nastąpiła zmiana w zgłoszeniu, na które zwracamy Twoją uwagę.
+Nastąpiła zmiana w zgłoszeniu: "{{ ticket.title }}" (ID: #{{ ticket.id }})
+
+TYP POWIADOMIENIA: {{ notification_type }}
 
 SZCZEGÓŁY ZGŁOSZENIA:
 Tytuł: {{ ticket.title }}
@@ -12,7 +14,21 @@ Kategoria: {{ ticket.get_category_display }}
 Priorytet: {{ ticket.get_priority_display }}
 Status: {{ ticket.get_status_display }}
 
-Typ powiadomienia: {{ notification_type }}
+{% if changes %}
+WPROWADZONE ZMIANY:
+{{ changes }}
+{% endif %}
+
+{% if comment_content %}
+TREŚĆ KOMENTARZA:
+{{ comment_content }}
+{% endif %}
+
+{% if old_status %}
+ZMIANA STATUSU:
+Z: {{ old_status }}
+Na: {{ ticket.get_status_display }}
+{% endif %}
 
 Aby zobaczyć pełne szczegóły, odwiedź:
 {{ ticket_url }}
