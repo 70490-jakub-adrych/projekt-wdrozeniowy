@@ -6,7 +6,7 @@ from django.contrib.auth import authenticate
 from .views.helpers import get_client_ip
 from .models import (
     UserProfile, Organization, Ticket,
-    TicketComment, TicketAttachment, ActivityLog
+    TicketComment, TicketAttachment, ActivityLog, EmailVerification
 )
 from .validators import phone_regex
 
@@ -211,6 +211,22 @@ class TicketAttachmentForm(forms.ModelForm):
 class CustomAuthenticationForm(AuthenticationForm):
     """Custom authentication form that logs failed login attempts"""
     
+    def confirm_login_allowed(self, user):
+        """Override to allow inactive users with pending email verification"""
+        # Check if user is inactive because of pending email verification
+        if not user.is_active:
+            try:
+                # Check if there's a pending verification for this user
+                verification = EmailVerification.objects.filter(user=user, is_verified=False).exists()
+                if verification:
+                    # Allow login for users with pending verification
+                    return
+            except:
+                pass
+                
+        # For all other cases, use the default behavior
+        super().confirm_login_allowed(user)
+        
     def clean(self):
         username = self.cleaned_data.get('username')
         password = self.cleaned_data.get('password')

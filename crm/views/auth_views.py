@@ -292,52 +292,45 @@ class CustomLoginView(LoginView):
         """Check if user has verified email before proceeding"""
         user = form.get_user()
         
-        # If login was successful but email verification pending, redirect to verification
+        # First complete the standard login process
+        # This ensures the user is properly authenticated and the session is set up
+        response = super().form_valid(form)
+        
+        # After login, check if email verification is needed
         if user and hasattr(user, 'profile'):
-            # Check if profile has email_verified attribute (for backwards compatibility)
+            # Check if profile has email_verified attribute
             email_verified = getattr(user.profile, 'email_verified', True)
             
             if not email_verified:
+                # Store user ID in session for verification (might be needed)
+                self.request.session['pending_user_id'] = user.id
+                
+                # Try to find or create verification record
                 try:
                     verification = EmailVerification.objects.get(user=user, is_verified=False)
                     
-                    # If verification exists and is not too old, redirect to verification page
-                    if not verification.is_expired():
-                        # Store user ID in session for verification
-                        self.request.session['pending_user_id'] = user.id
-                        messages.info(self.request, 'Musisz zweryfikować swój adres email przed kontynuowaniem.')
-                        
-                        # Don't actually log the user in yet
-                        return redirect('verify_email')
-                    else:
-                        # If expired, generate new code
+                    # If expired, generate new code
+                    if verification.is_expired():
                         new_code = verification.generate_new_code()
                         EmailNotificationService.send_verification_email(user, new_code)
-                        
-                        # Store user ID in session for verification
-                        self.request.session['pending_user_id'] = user.id
                         messages.info(self.request, 'Kod weryfikacyjny wygasł. Wysłaliśmy nowy kod na Twój adres email.')
+                    else:
+                        messages.info(self.request, 'Musisz zweryfikować swój adres email przed kontynuowaniem.')
                         
-                        # Don't actually log the user in yet
-                        return redirect('verify_email')
                 except EmailVerification.DoesNotExist:
-                    # If for some reason verification doesn't exist, create one
+                    # Create new verification record
                     verification_code = ''.join([str(random.randint(0, 9)) for _ in range(6)])
                     verification = EmailVerification.objects.create(
                         user=user,
                         verification_code=verification_code
                     )
                     EmailNotificationService.send_verification_email(user, verification_code)
-                    
-                    # Store user ID in session for verification
-                    self.request.session['pending_user_id'] = user.id
                     messages.info(self.request, 'Musisz zweryfikować swój adres email przed kontynuowaniem.')
-                    
-                    # Don't actually log the user in yet
-                    return redirect('verify_email')
+                
+                # Redirect to verification page (middleware will handle restriction of other pages)
+                return redirect('verify_email')
         
-        # Continue with normal login if email is verified
-        return super().form_valid(form)
+        return response
 
 def custom_login_success(request):
     """Przekierowanie po zalogowaniu w zależności od roli użytkownika"""
@@ -550,6 +543,20 @@ def verify_email(request):
         except User.DoesNotExist:
             messages.error(request, 'Sesja wygasła. Zaloguj się, aby zweryfikować email.')
             return redirect('login')
+    
+    # Create or retrieve the verification code
+    try:
+        verification = EmailVerification.objects.get(user=user)
+    except EmailVerification.DoesNotExist:
+        # Create a new verification code
+        verification_code = ''.join([str(random.randint(0, 9)) for _ in range(6)])
+        verification = EmailVerification.objects.create(
+            user=user,
+            verification_code=verification_code
+        )
+        # Send the verification email
+        EmailNotificationService.send_verification_email(user, verification_code)
+        messages.info(request, 'Wysłaliśmy nowy kod weryfikacyjny na Twój adres email.')
     
     # Process verification
     if request.method == 'POST':
