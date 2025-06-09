@@ -66,7 +66,59 @@
 </div>
 {% endif %}
 
-<!-- Pending Users Section -->
+<!-- Users waiting for email verification -->
+{% if pending_email_verification %}
+<div class="card mb-4">
+    <div class="card-header bg-info text-white">
+        <i class="fas fa-envelope"></i> Użytkownicy oczekujący na weryfikację email
+    </div>
+    <div class="card-body">
+        <div class="alert alert-info">
+            <strong>Uwaga:</strong> Ci użytkownicy muszą potwierdzić swój adres email przed zatwierdzeniem.
+        </div>
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Nazwa użytkownika</th>
+                        <th>Email</th>
+                        <th>Organizacja</th>
+                        <th>Data rejestracji</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for profile in pending_email_verification %}
+                    <tr>
+                        <td>{{ profile.user.username }}</td>
+                        <td>{{ profile.user.email }}</td>
+                        <td>
+                            {% if profile.organizations.exists %}
+                                <ul class="list-unstyled mb-0">
+                                {% for org in profile.organizations.all %}
+                                    <li>{{ org.name }}</li>
+                                {% endfor %}
+                                </ul>
+                            {% else %}
+                                <span class="text-muted">Brak</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ profile.user.date_joined|date:"d.m.Y H:i" }}</td>
+                        <td>
+                            <span class="badge badge-info">
+                                <i class="fas fa-clock"></i> Oczekuje na weryfikację email
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Users waiting for approval -->
 {% if pending_users %}
 <div class="card">
     <div class="card-header">
@@ -118,9 +170,9 @@
 </div>
 {% endif %}
 
-{% if not pending_users and not locked_users %}
+{% if not pending_users and not pending_email_verification and not locked_users %}
 <div class="alert alert-info">
-    <i class="fas fa-info-circle"></i> Brak użytkowników oczekujących na zatwierdzenie i brak zablokowanych kont.
+    <i class="fas fa-info-circle"></i> Brak użytkowników oczekujących na zatwierdzenie, weryfikację email lub odblokowanie.
 </div>
 {% endif %}
 {% endblock %}

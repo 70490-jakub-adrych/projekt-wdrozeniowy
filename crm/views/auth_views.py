@@ -323,7 +323,7 @@ class CustomLoginView(LoginView):
                 except EmailVerification.DoesNotExist:
                     # If for some reason verification doesn't exist, create one
                     verification_code = ''.join([str(random.randint(0, 9)) for _ in range(6)])
-                    EmailVerification.objects.create(
+                    verification = EmailVerification.objects.create(
                         user=user,
                         verification_code=verification_code
                     )
@@ -364,18 +364,34 @@ def pending_approvals(request):
     # Get pending users based on role
     if user_role in ['admin', 'superagent']:
         # Admins and superagents see all pending users and locked accounts
-        pending_users = UserProfile.objects.filter(is_approved=False)
+        pending_users = UserProfile.objects.filter(
+            is_approved=False,
+            email_verified=True  # Only show users who verified their email
+        )
+        pending_email_verification = UserProfile.objects.filter(
+            is_approved=False,
+            email_verified=False  # Users who haven't verified email yet
+        )
         locked_users = UserProfile.objects.filter(is_locked=True)
     else:
-        # Agents see only users trying to join their organizations and locked users from their orgs
+        # Agents see only users trying to join their organizations
         agent_orgs = request.user.profile.organizations.all()
         if not agent_orgs.exists():
             messages.warning(request, "Nie masz przypisanej organizacji.")
             return redirect('dashboard')
+        
         pending_users = UserProfile.objects.filter(
             is_approved=False,
+            email_verified=True,  # Only show users who verified their email
             organizations__in=agent_orgs
         ).distinct()
+        
+        pending_email_verification = UserProfile.objects.filter(
+            is_approved=False,
+            email_verified=False,  # Users who haven't verified email yet
+            organizations__in=agent_orgs
+        ).distinct()
+        
         locked_users = UserProfile.objects.filter(
             is_locked=True,
             organizations__in=agent_orgs
@@ -383,6 +399,7 @@ def pending_approvals(request):
     
     return render(request, 'crm/approvals/pending_approvals.html', {
         'pending_users': pending_users,
+        'pending_email_verification': pending_email_verification,
         'locked_users': locked_users
     })
 

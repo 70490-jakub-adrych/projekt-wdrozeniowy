@@ -1,3 +1,4 @@
+<!-- filepath: c:\Users\Kuba\Documents\proj_wdroz\projekt-wdrozeniowy\crm\templates\crm\verify_email.html -->
 {% extends 'crm/base.html' %}
 {% load crispy_forms_tags %}
 
@@ -52,8 +53,8 @@
                     <p class="text-muted">Nie otrzymałeś kodu?</p>
                     <form method="post" class="d-inline">
                         {% csrf_token %}
-                        <button type="submit" name="resend_code" class="btn btn-outline-secondary">
-                            <i class="fas fa-redo"></i> Wyślij ponownie
+                        <button type="submit" name="resend_code" class="btn btn-info">
+                            <i class="fas fa-redo"></i> Wyślij ponownie kod
                         </button>
                     </form>
                 </div>

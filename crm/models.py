@@ -9,6 +9,7 @@ import tempfile
 from django.conf import settings
 from cryptography.fernet import Fernet
 import base64
+from datetime import timedelta  # Add this import for the EmailVerification model
 from .validators import phone_regex
 
 
