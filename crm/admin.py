@@ -259,3 +259,9 @@ class AgentWorkLogAdmin(admin.ModelAdmin):
     list_filter = ('agent', 'start_time')
     search_fields = ('agent__username', 'ticket__title', 'notes')
     date_hierarchy = 'start_time'
+
+    def has_delete_permission(self, request, obj=None):
+        """Prevent deletion of the admin user"""
+        if obj is not None and obj.username == 'admin':
+            return False
+        return super().has_delete_permission(request, obj)
