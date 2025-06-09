@@ -22,6 +22,20 @@
                 </div>
                 {% endif %}
                 
+                <!-- Add general form errors display -->
+                {% if form.errors %}
+                    <div class="alert alert-danger">
+                        <strong>Popraw poniższe błędy:</strong>
+                        <ul>
+                            {% for field in form %}
+                                {% for error in field.errors %}
+                                    <li>{{ field.label }}: {{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+                
                 <form method="post" id="ticketForm" enctype="multipart/form-data">
                     {% csrf_token %}
                     <fieldset {% if ticket and user.profile.role != 'admin' %}disabled{% endif %}>
@@ -110,6 +124,11 @@
                     <!-- Always show policy checkbox - no longer conditionally hidden -->
                     <div class="form-group attachment-policy" id="policy-section">
                         {{ attachment_form.accepted_policy|as_crispy_field }}
+                        {% if attachment_form.accepted_policy.errors %}
+                            <div class="alert alert-danger mt-2">
+                                {{ attachment_form.accepted_policy.errors }}
+                            </div>
+                        {% endif %}
                     </div>
                     
                     <div class="form-text text-muted mb-3">

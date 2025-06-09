@@ -31,7 +31,7 @@
                         {{ verification_form.verification_code.label_tag }}
                         {{ verification_form.verification_code }}
                         {% if verification_form.verification_code.errors %}
-                            <div class="text-danger mt-2">
+                            <div class="alert alert-danger mt-2">
                                 {{ verification_form.verification_code.errors }}
                             </div>
                         {% endif %}
