@@ -26,6 +26,7 @@ urlpatterns = [
     path('login/success/', custom_login_success, name='custom_login_success'),
     path('logout/', custom_logout_view, name='logout'),
     path('register/', register, name='register'),
+    path('register/verify/', register, name='verify_email'),  # Email verification step
     path('register/pending/', register_pending, name='register_pending'),
     
     # Dashboard

@@ -578,3 +578,58 @@ class AgentWorkLog(models.Model):
     
     def __str__(self):
         return f"{self.agent.username} - #{self.ticket.id} - {self.start_time}"
+
+
+class EmailVerification(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, verbose_name="Użytkownik")
+    verification_code = models.CharField(max_length=6, verbose_name="Kod weryfikacyjny")
+    is_verified = models.BooleanField(default=False, verbose_name="Zweryfikowany")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Data utworzenia")
+    verified_at = models.DateTimeField(null=True, blank=True, verbose_name="Data weryfikacji")
+    
+    def __str__(self):
+        return f"Weryfikacja dla {self.user.username}"
+    
+    def is_expired(self):
+        """Check if verification code is expired (valid for 24 hours)"""
+        return timezone.now() > self.created_at + timedelta(hours=24)
+    
+    def generate_new_code(self):
+        """Generate new 6-digit verification code"""
+        import random
+        self.verification_code = ''.join([str(random.randint(0, 9)) for _ in range(6)])
+        self.created_at = timezone.now()
+        self.save()
+        return self.verification_code
+    
+    class Meta:
+        verbose_name = "Weryfikacja email"
+        verbose_name_plural = "Weryfikacje email"
+
+
+class EmailNotificationSettings(models.Model):
+    """User email notification preferences"""
+    user = models.OneToOneField(User, on_delete=models.CASCADE, verbose_name="Użytkownik")
+    
+    # Ticket notifications
+    notify_ticket_created = models.BooleanField(default=True, verbose_name="Nowe zgłoszenie")
+    notify_ticket_assigned = models.BooleanField(default=True, verbose_name="Przypisanie zgłoszenia")
+    notify_ticket_status_changed = models.BooleanField(default=True, verbose_name="Zmiana statusu")
+    notify_ticket_commented = models.BooleanField(default=True, verbose_name="Nowy komentarz")
+    notify_ticket_updated = models.BooleanField(default=True, verbose_name="Aktualizacja zgłoszenia")
+    notify_ticket_closed = models.BooleanField(default=True, verbose_name="Zamknięcie zgłoszenia")
+    notify_ticket_reopened = models.BooleanField(default=True, verbose_name="Ponowne otwarcie")
+    
+    # System notifications
+    notify_account_approved = models.BooleanField(default=True, verbose_name="Zatwierdzenie konta")
+    notify_password_reset = models.BooleanField(default=True, verbose_name="Reset hasła")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"Ustawienia powiadomień dla {self.user.username}"
+    
+    class Meta:
+        verbose_name = "Ustawienia powiadomień email"
+        verbose_name_plural = "Ustawienia powiadomień email"

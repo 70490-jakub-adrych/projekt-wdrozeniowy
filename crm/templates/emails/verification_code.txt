@@ -1,0 +1,19 @@
+{{ site_name }} - Weryfikacja adresu email
+
+Witaj {{ user.first_name|default:user.username }}!
+
+Dziękujemy za rejestrację w systemie {{ site_name }}. Aby dokończyć proces rejestracji, musisz zweryfikować swój adres email.
+
+Twój kod weryfikacyjny to: {{ verification_code }}
+
+Wprowadź ten kod na stronie rejestracji, aby potwierdzić swój adres email.
+
+WAŻNE INFORMACJE:
+- Kod jest ważny przez 24 godziny
+- Nie udostępniaj tego kodu nikomu  
+- Jeśli nie rejestrowałeś się w naszym systemie, zignoruj ten email
+
+Jeśli masz problemy z weryfikacją, skontaktuj się z administratorem systemu.
+
+Pozdrawiamy,
+Zespół {{ site_name }}

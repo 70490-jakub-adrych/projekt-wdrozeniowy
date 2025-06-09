@@ -9,9 +9,12 @@ from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
 
 from ..forms import UserRegisterForm, UserProfileForm, CustomAuthenticationForm
-from ..models import UserProfile, User
+from ..models import UserProfile, User, EmailVerification, EmailNotificationSettings
 from .helpers import log_activity
 from .error_views import forbidden_access
+from ..forms import EmailVerificationForm
+from ..services.email_service import EmailNotificationService
+import random
 
 
 def landing_page(request):
@@ -21,54 +24,134 @@ def landing_page(request):
     return render(request, 'crm/landing_page.html')
 
 
+@login_required
 def register(request):
-    """Widok rejestracji nowego użytkownika z wymaganiem zatwierdzenia"""
+    """Widok rejestracji użytkownika z weryfikacją email"""
     if request.method == 'POST':
-        form = UserRegisterForm(request.POST)
-        profile_form = UserProfileForm(request.POST)
-        
-        if form.is_valid() and profile_form.is_valid():
-            user = form.save()
-            
-            # Przypisanie do odpowiedniej grupy na podstawie roli
-            if user.is_superuser:
-                group, _ = Group.objects.get_or_create(name='Admin')
-                is_approved = True  # Admin accounts are auto-approved
-            else:
-                group, _ = Group.objects.get_or_create(name='Klient')
-                is_approved = False  # Clients need approval
-            
-            user.groups.add(group)
-            
-            # Profile will be automatically updated with correct role via signal
-            # Just update the other fields
-            profile = user.profile
-            profile.phone = profile_form.cleaned_data.get('phone')
-            
-            # Update for ManyToManyField - fix: get the organizations (plural) field
-            selected_organizations = profile_form.cleaned_data.get('organizations')
-            if selected_organizations:
-                # Add all selected organizations to the user's profile
-                for org in selected_organizations:
-                    profile.organizations.add(org)
+        if 'verify_email' in request.POST:
+            # Email verification step
+            verification_form = EmailVerificationForm(request.POST)
+            if verification_form.is_valid():
+                code = verification_form.cleaned_data['verification_code']
+                user_id = request.session.get('pending_user_id')
+                
+                if not user_id:
+                    messages.error(request, 'Sesja wygasła. Rozpocznij rejestrację ponownie.')
+                    return redirect('register')
+                
+                try:
+                    user = User.objects.get(id=user_id)
+                    verification = EmailVerification.objects.get(user=user)
                     
-            profile.is_approved = is_approved
-            profile.save()
+                    if verification.is_expired():
+                        messages.error(request, 'Kod weryfikacyjny wygasł. Wygeneruj nowy kod.')
+                        return render(request, 'crm/verify_email.html', {
+                            'verification_form': verification_form,
+                            'user': user,
+                            'expired': True
+                        })
+                    
+                    if verification.verification_code == code:
+                        # Email verified successfully
+                        verification.is_verified = True
+                        verification.verified_at = timezone.now()
+                        verification.save()
+                        
+                        # Activate user profile
+                        profile = user.profile
+                        profile.email_verified = True
+                        profile.save()
+                        
+                        # Create default notification settings
+                        EmailNotificationSettings.objects.get_or_create(user=user)
+                        
+                        # Clear session
+                        del request.session['pending_user_id']
+                        
+                        messages.success(request, 'Email został zweryfikowany pomyślnie! Twoje konto oczekuje na zatwierdzenie przez administratora.')
+                        return redirect('register_pending')
+                    else:
+                        messages.error(request, 'Nieprawidłowy kod weryfikacyjny.')
+                        
+                except (User.DoesNotExist, EmailVerification.DoesNotExist):
+                    messages.error(request, 'Błąd weryfikacji. Rozpocznij rejestrację ponownie.')
+                    return redirect('register')
             
-            # Redirect to pending approval page instead of login
-            if is_approved:
-                login(request, user)
-                log_activity(request, 'login')
-                messages.success(request, 'Konto zostało utworzone!')
-                return redirect('dashboard')
-            else:
-                messages.info(request, 'Twoje konto zostało utworzone i czeka na zatwierdzenie przez administratora lub agenta.')
-                return redirect('register_pending')
+            return render(request, 'crm/verify_email.html', {
+                'verification_form': verification_form,
+                'user': User.objects.get(id=request.session.get('pending_user_id'))
+            })
+        
+        elif 'resend_code' in request.POST:
+            # Resend verification code
+            user_id = request.session.get('pending_user_id')
+            if user_id:
+                try:
+                    user = User.objects.get(id=user_id)
+                    verification = EmailVerification.objects.get(user=user)
+                    new_code = verification.generate_new_code()
+                    
+                    if EmailNotificationService.send_verification_email(user, new_code):
+                        messages.success(request, 'Nowy kod weryfikacyjny został wysłany na Twój email.')
+                    else:
+                        messages.error(request, 'Błąd podczas wysyłania emaila. Spróbuj ponownie.')
+                except:
+                    messages.error(request, 'Błąd podczas generowania nowego kodu.')
+            
+            return render(request, 'crm/verify_email.html', {
+                'verification_form': EmailVerificationForm(),
+                'user': User.objects.get(id=request.session.get('pending_user_id'))
+            })
+        
+        else:
+            # Initial registration step
+            form = UserRegisterForm(request.POST)
+            profile_form = UserProfileForm(request.POST)
+            
+            if form.is_valid() and profile_form.is_valid():
+                # Create user (inactive until email verification)
+                user = form.save(commit=False)
+                user.is_active = False  # Deactivate until email verification
+                user.save()
+                
+                # Create profile
+                profile = profile_form.save(commit=False)
+                profile.user = user
+                profile.is_approved = False
+                profile.email_verified = False
+                profile.save()
+                
+                # Handle organizations
+                if profile_form.cleaned_data.get('organizations'):
+                    profile.organizations.set(profile_form.cleaned_data['organizations'])
+                
+                # Generate verification code
+                verification_code = ''.join([str(random.randint(0, 9)) for _ in range(6)])
+                EmailVerification.objects.create(
+                    user=user,
+                    verification_code=verification_code
+                )
+                
+                # Send verification email
+                if EmailNotificationService.send_verification_email(user, verification_code):
+                    request.session['pending_user_id'] = user.id
+                    messages.success(request, 'Konto zostało utworzone! Sprawdź swój email i wprowadź kod weryfikacyjny.')
+                    return render(request, 'crm/verify_email.html', {
+                        'verification_form': EmailVerificationForm(),
+                        'user': user
+                    })
+                else:
+                    # If email sending fails, delete the user and show error
+                    user.delete()
+                    messages.error(request, 'Błąd podczas wysyłania emaila weryfikacyjnego. Spróbuj ponownie.')
     else:
         form = UserRegisterForm()
         profile_form = UserProfileForm()
     
-    return render(request, 'crm/register.html', {'form': form, 'profile_form': profile_form})
+    return render(request, 'crm/register.html', {
+        'form': form,
+        'profile_form': profile_form
+    })
 
 
 def register_pending(request):

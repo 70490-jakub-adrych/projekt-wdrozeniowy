@@ -12,14 +12,40 @@ from .validators import phone_regex
 
 
 class UserRegisterForm(UserCreationForm):
-    email = forms.EmailField(label="Email")
+    email = forms.EmailField(
+        label="Email",
+        required=True,
+        help_text="Podaj aktywny adres email - wyślemy na niego kod weryfikacyjny"
+    )
     
     class Meta:
         model = User
-        fields = ['username', 'email', 'password1', 'password2']
-        labels = {
-            'username': 'Nazwa użytkownika',
-        }
+        fields = ('username', 'email', 'password1', 'password2', 'first_name', 'last_name')
+    
+    def clean_email(self):
+        email = self.cleaned_data.get('email')
+        if User.objects.filter(email=email).exists():
+            raise ValidationError("Użytkownik z tym adresem email już istnieje.")
+        return email
+
+class EmailVerificationForm(forms.Form):
+    verification_code = forms.CharField(
+        max_length=6,
+        min_length=6,
+        label="Kod weryfikacyjny",
+        help_text="Wprowadź 6-cyfrowy kod otrzymany na email",
+        widget=forms.TextInput(attrs={
+            'class': 'form-control text-center',
+            'placeholder': '123456',
+            'style': 'font-size: 1.2em; letter-spacing: 0.2em;'
+        })
+    )
+    
+    def clean_verification_code(self):
+        code = self.cleaned_data.get('verification_code')
+        if not code.isdigit():
+            raise ValidationError("Kod weryfikacyjny musi składać się z cyfr.")
+        return code
 
 
 class UserProfileForm(forms.ModelForm):
