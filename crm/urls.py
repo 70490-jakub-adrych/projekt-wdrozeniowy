@@ -66,27 +66,19 @@ urlpatterns = [
     path('test-404/', views.error_views.test_404_page, name='test_404_page'),
     path('test-403/', views.error_views.test_403_page, name='test_403_page'),
 
-    # Password change
+    # Password management
     path('password/change/', custom_password_change_view, name='password_change'),
     path('password/change/done/', auth_views.PasswordChangeDoneView.as_view(
         template_name='emails/password_change_done.html'
     ), name='password_change_done'),
-
-    # Password reset - Updated to use templates from emails directory
-    path('password_reset/', HTMLEmailPasswordResetView.as_view(
-        template_name='emails/password_reset_form.html',
-        email_template_name='emails/password_reset_email.txt',
-        html_email_template_name='emails/password_reset_email.html',
-        success_url='/password_reset/done/'
-    ), name='password_reset'),
     
-    # Add alias for password/reset/ to fix the 404 errors
-    path('password/reset/', HTMLEmailPasswordResetView.as_view(
+    # Unified password reset - used for both forgotten password and password change
+    path('password_reset/', auth_views.PasswordResetView.as_view(
         template_name='emails/password_reset_form.html',
         email_template_name='emails/password_reset_email.txt',
         html_email_template_name='emails/password_reset_email.html',
-        success_url='/password_reset/done/'
-    ), name='password_reset_alt'),
+        success_url=reverse_lazy('password_reset_done')
+    ), name='password_reset'),
     
     path('password_reset/done/', auth_views.PasswordResetDoneView.as_view(
         template_name='emails/password_reset_done.html'
@@ -94,7 +86,7 @@ urlpatterns = [
     
     path('reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(
         template_name='emails/password_reset_confirm.html',
-        success_url='/reset/done/'
+        success_url=reverse_lazy('password_reset_complete')
     ), name='password_reset_confirm'),
     
     path('reset/done/', custom_password_reset_complete, name='password_reset_complete'),

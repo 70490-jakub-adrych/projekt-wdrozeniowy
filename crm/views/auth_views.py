@@ -662,8 +662,14 @@ def custom_password_change_view(request):
                                     site_url = getattr(settings, 'SITE_URL', 'https://betulait.usermd.net')
                                     password_reset_url = f"{site_url}/password_reset/"
                                     
+                                    # Important: Directly use the email service to send the notification
+                                    # This ensures the email is actually sent and properly logged
                                     success = EmailNotificationService.send_password_changed_notification(user)
-                                    logger.info(f"Password changed notification sent: {success}")
+                                    
+                                    if success:
+                                        logger.info(f"Password changed notification successfully sent to {user.email}")
+                                    else:
+                                        logger.error(f"Failed to send password changed notification to {user.email}")
                                 except Exception as e:
                                     logger.error(f"Error sending password change notification: {str(e)}", exc_info=True)
                                 
@@ -918,14 +924,19 @@ def custom_password_reset_complete(request):
     else:
         # Try to get user from session if set by PasswordResetConfirmView
         user_id = request.session.get('_password_reset_user_id')
+        if not user_id:
+            # Try to get from session storage (set via JavaScript)
+            user_id = request.GET.get('user_id')
+            
         if user_id:
             try:
                 user = User.objects.get(pk=user_id)
                 logger.info(f"Found user {user.username} from session after password reset")
                 # Clean up session
-                del request.session['_password_reset_user_id']
+                if '_password_reset_user_id' in request.session:
+                    del request.session['_password_reset_user_id']
             except User.DoesNotExist:
-                logger.error(f"User ID {user_id} from session not found")
+                logger.error(f"User ID {user_id} not found")
     
     if user:
         logger.info(f"Sending password change notification after reset for user {user.username}")
@@ -934,10 +945,17 @@ def custom_password_reset_complete(request):
             site_url = getattr(settings, 'SITE_URL', 'https://betulait.usermd.net')
             password_reset_url = f"{site_url}/password_reset/"
             
+            # Important: Use direct call to ensure notification is sent
             success = EmailNotificationService.send_password_changed_notification(user)
-            logger.info(f"Password changed notification sent after reset: {success}")
+            
+            if success:
+                logger.info(f"Password changed notification successfully sent after reset to {user.email}")
+            else:
+                logger.error(f"Failed to send password changed notification after reset to {user.email}")
         except Exception as e:
             logger.error(f"Error sending password change notification after reset: {str(e)}", exc_info=True)
+    else:
+        logger.warning("Could not determine user for password reset notification")
     
     # Always show the success template
     return render(request, 'emails/password_reset_complete.html')

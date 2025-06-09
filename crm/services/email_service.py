@@ -453,6 +453,8 @@ class EmailNotificationService:
             bool: True if email was sent successfully, False otherwise
         """
         try:
+            logger.info(f"Starting password changed notification process for {user.username} ({user.email})")
+            
             # Generate password reset URL
             site_url = getattr(settings, 'SITE_URL', 'https://betulait.usermd.net')
             password_reset_url = f"{site_url}/password_reset/"
@@ -466,11 +468,14 @@ class EmailNotificationService:
             
             # Try to render email templates
             try:
+                logger.debug(f"Attempting to render password change success templates for user {user.email}")
                 html_content = render_to_string('emails/password_change_success.html', context)
                 text_content = render_to_string('emails/password_change_success.txt', context)
+                logger.debug("Successfully rendered email templates")
             except Exception as e:
-                logger.error(f"Error rendering password change success email template: {str(e)}")
+                logger.error(f"Error rendering password change success email template: {str(e)}", exc_info=True)
                 # Use hardcoded fallback template
+                logger.warning("Using fallback hardcoded email templates")
                 html_content = f"""
                 <html>
                 <body>
@@ -488,6 +493,10 @@ class EmailNotificationService:
                 Możesz zresetować hasło pod adresem: {password_reset_url}
                 """
 
+            # Log email details before sending
+            logger.debug(f"Preparing to send email to {user.email} with subject 'System Helpdesk - Hasło zostało zmienione'")
+            logger.debug(f"Using email backend: {settings.EMAIL_BACKEND}")
+            
             # Create more robust email message with headers to improve deliverability
             msg = EmailMultiAlternatives(
                 subject=f'System Helpdesk - Hasło zostało zmienione',
