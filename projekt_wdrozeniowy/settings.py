@@ -189,6 +189,9 @@ PASSWORD_RESET_TIMEOUT = config('PASSWORD_RESET_TIMEOUT', default=86400, cast=in
 # Email timeout settings
 EMAIL_TIMEOUT = config('EMAIL_TIMEOUT', default=10, cast=int)  # 10 seconds timeout
 
+# Test email settings
+TEST_EMAIL_RECIPIENT = config('TEST_EMAIL_RECIPIENT', default='')
+
 # Security settings for production
 if not DEBUG:
     # HTTPS settings

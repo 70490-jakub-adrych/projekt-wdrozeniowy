@@ -36,13 +36,13 @@ Invoke-WebRequest -Uri "$BaseUrl/crm/js/popper.min.js" -OutFile "public/static/c
 Write-Host "Downloading Font Awesome webfonts..." -ForegroundColor Yellow
 $webfonts = @(
     "fa-brands-400.eot",
-    "fa-brands-400.svg", 
+    "fa-brands-400.svg",
     "fa-brands-400.ttf",
     "fa-brands-400.woff",
     "fa-brands-400.woff2",
     "fa-regular-400.eot",
     "fa-regular-400.svg",
-    "fa-regular-400.ttf", 
+    "fa-regular-400.ttf",
     "fa-regular-400.woff",
     "fa-regular-400.woff2",
     "fa-solid-900.eot",

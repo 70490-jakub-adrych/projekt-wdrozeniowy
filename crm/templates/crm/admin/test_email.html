@@ -1,0 +1,169 @@
+{% extends 'crm/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Test Email | System Helpdesk{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <i class="fas fa-envelope-open-text"></i> Test konfiguracji email
+            </div>
+            <div class="card-body">
+                <form method="post" id="emailTestForm">
+                    {% csrf_token %}
+                    {{ form|crispy }}
+                    
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary" id="sendEmailBtn">
+                            <i class="fas fa-paper-plane"></i> Wyślij test email
+                        </button>
+                        <a href="{% url 'dashboard' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Powrót do panelu
+                        </a>
+                    </div>
+                </form>
+                
+                <div id="emailResult" class="mt-3"></div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <i class="fas fa-cog"></i> Aktualna konfiguracja
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-5">Backend:</dt>
+                    <dd class="col-sm-7">
+                        <code>{{ email_config.backend|default:"Nie skonfigurowane" }}</code>
+                    </dd>
+                    
+                    <dt class="col-sm-5">Host:</dt>
+                    <dd class="col-sm-7">
+                        <code>{{ email_config.host|default:"localhost" }}</code>
+                    </dd>
+                    
+                    <dt class="col-sm-5">Port:</dt>
+                    <dd class="col-sm-7">
+                        <code>{{ email_config.port }}</code>
+                    </dd>
+                    
+                    <dt class="col-sm-5">TLS:</dt>
+                    <dd class="col-sm-7">
+                        <span class="badge {% if email_config.use_tls %}badge-success{% else %}badge-secondary{% endif %}">
+                            {{ email_config.use_tls|yesno:"Tak,Nie" }}
+                        </span>
+                    </dd>
+                    
+                    <dt class="col-sm-5">SSL:</dt>
+                    <dd class="col-sm-7">
+                        <span class="badge {% if email_config.use_ssl %}badge-success{% else %}badge-secondary{% endif %}">
+                            {{ email_config.use_ssl|yesno:"Tak,Nie" }}
+                        </span>
+                    </dd>
+                    
+                    <dt class="col-sm-5">Od:</dt>
+                    <dd class="col-sm-7">
+                        <code>{{ email_config.from_email }}</code>
+                    </dd>
+                    
+                    <dt class="col-sm-5">Użytkownik:</dt>
+                    <dd class="col-sm-7">
+                        {% if email_config.host_user %}
+                            <code>{{ email_config.host_user }}</code>
+                        {% else %}
+                            <span class="text-muted">Brak</span>
+                        {% endif %}
+                    </dd>
+                </dl>
+                
+                <hr>
+                
+                <div class="alert alert-info">
+                    <strong>Uwaga:</strong> 
+                    {% if email_config.backend == 'django.core.mail.backends.console.EmailBackend' %}
+                        Używasz backend'u console - emaile będą wyświetlane w konsoli, a nie wysyłane.
+                    {% elif email_config.backend == 'django.core.mail.backends.filebased.EmailBackend' %}
+                        Używasz backend'u file - emaile będą zapisywane do pliku.
+                    {% elif email_config.backend == 'django.core.mail.backends.smtp.EmailBackend' %}
+                        Używasz backend'u SMTP - emaile będą wysyłane przez serwer SMTP.
+                    {% else %}
+                        Nieznany typ backend'u email.
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header bg-warning text-dark">
+                <i class="fas fa-terminal"></i> Test z linii poleceń
+            </div>
+            <div class="card-body">
+                <p>Możesz też przetestować email z linii poleceń:</p>
+                <code class="d-block bg-dark text-light p-2 rounded">
+                    python manage.py test_email --to twoj@email.com
+                </code>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('emailTestForm').addEventListener('submit', function(e) {
+    e.preventDefault();
+    
+    const form = this;
+    const btn = document.getElementById('sendEmailBtn');
+    const result = document.getElementById('emailResult');
+    
+    // Disable button and show loading
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Wysyłanie...';
+    
+    // Clear previous results
+    result.innerHTML = '';
+    
+    // Send AJAX request
+    fetch(form.action, {
+        method: 'POST',
+        body: new FormData(form),
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': form.querySelector('[name=csrfmiddlewaretoken]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            result.innerHTML = `
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle"></i> ${data.message}
+                </div>
+            `;
+        } else {
+            result.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i> ${data.error}
+                </div>
+            `;
+        }
+    })
+    .catch(error => {
+        result.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle"></i> Błąd podczas wysyłania: ${error.message}
+            </div>
+        `;
+    })
+    .finally(() => {
+        // Re-enable button
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-paper-plane"></i> Wyślij test email';
+    });
+});
+</script>
+{% endblock %}

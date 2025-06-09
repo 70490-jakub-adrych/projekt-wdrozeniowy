@@ -17,6 +17,7 @@ from .views import secure_file_views
 from django.contrib.auth import views as auth_views
 from .views.auth_views import custom_password_change_view
 from .views.statistics_views import statistics_dashboard, update_agent_work_log, generate_statistics_report
+from .views.email_test_views import test_email_view
 
 urlpatterns = [
     # Landing and authentication
@@ -93,4 +94,7 @@ urlpatterns = [
     path('statistics/generate-report/', generate_statistics_report, name='generate_statistics_report'),
 
     path('get_tickets_update/', get_tickets_update, name='get_tickets_update'),
+
+    # Admin tools
+    path('admin/test-email/', test_email_view, name='test_email'),
 ]
