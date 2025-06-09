@@ -77,8 +77,41 @@ Po uruchomieniu aplikacja będzie dostępna pod adresem: **http://127.0.0.1:8000
 - **Viewer**: viewer=`viewer`, password=`viewer123`
 - **Superagent**: superagent=`superagent`, password= `superagent123`
 
+## Konfiguracja MySQL dla produkcji
 
-## Struktura projektu
+Domyślnie aplikacja używa bazy SQLite dla szybkiego rozwoju i testowania. Aby skonfigurować aplikację do pracy z MySQL:
+
+1. Zainstaluj sterownik MySQL:
+   ```bash
+   pip install mysqlclient
+   ```
+
+2. Utwórz bazę danych MySQL:
+   ```sql
+   CREATE DATABASE helpdesk_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+   CREATE USER 'helpdesk_user'@'localhost' IDENTIFIED BY 'twoje_haslo';
+   GRANT ALL PRIVILEGES ON helpdesk_db.* TO 'helpdesk_user'@'localhost';
+   FLUSH PRIVILEGES;
+   ```
+
+3. Skopiuj plik `.env-mysql-example` do `.env` i dostosuj wartości:
+   ```bash
+   cp .env-mysql-example .env
+   # Następnie edytuj plik .env z właściwymi danymi
+   ```
+
+4. Uruchom migracje i serwer:
+   ```bash
+   python manage.py migrate
+   python manage.py setup_demo_data
+   python manage.py runserver
+   ```
+
+## Przełączanie między bazami danych
+
+- Do szybkich testów i rozwoju lokalnego, nie musisz tworzyć pliku `.env` - aplikacja domyślnie użyje SQLite
+- Aby używać MySQL, skonfiguruj wszystkie parametry w pliku `.env` zgodnie z przykładem w `.env-mysql-example`
+- Możesz łatwo przełączać się między trybami usuwając lub zmieniając nazwę pliku `.env`
 
 ## Automatyczne odświeżanie zgłoszeń na współdzielonych hostingach (AJAX polling)
 

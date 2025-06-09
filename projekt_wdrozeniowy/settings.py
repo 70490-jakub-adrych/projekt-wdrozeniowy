@@ -74,13 +74,13 @@ TEMPLATES = [
     },
 ]
 
-# WSGI_APPLICATION = 'projekt_wdrozeniowy.wsgi.application'
+WSGI_APPLICATION = 'projekt_wdrozeniowy.wsgi.application'  # Uncomment this line
 
 # ASGI_APPLICATION = 'projekt_wdrozeniowy.asgi.application'
 # CHANNEL_LAYERS = {...}
 
-# Database
-# Default SQLite for development, configurable for production
+# Database configuration
+# Support both SQLite (development) and MySQL (production)
 DATABASES = {
     'default': {
         'ENGINE': config('DB_ENGINE', default='django.db.backends.sqlite3'),
@@ -89,8 +89,24 @@ DATABASES = {
         'PASSWORD': config('DB_PASSWORD', default=''),
         'HOST': config('DB_HOST', default=''),
         'PORT': config('DB_PORT', default=''),
+        # MySQL specific settings
+        'OPTIONS': {},
+        'TEST': {
+            'NAME': config('DB_TEST_NAME', default=None),
+            'CHARSET': config('DB_TEST_CHARSET', default='utf8mb4'),
+            'COLLATION': config('DB_TEST_COLLATION', default='utf8mb4_unicode_ci'),
+        },
+        'CONN_MAX_AGE': config('DB_CONN_MAX_AGE', default=0, cast=int),
     }
 }
+
+# Add MySQL specific options if MySQL is being used
+if 'mysql' in DATABASES['default']['ENGINE']:
+    DATABASES['default']['OPTIONS'].update({
+        'charset': 'utf8mb4',
+        'use_unicode': True,
+        'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+    })
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [
