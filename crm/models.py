@@ -10,9 +10,6 @@ from django.conf import settings
 from cryptography.fernet import Fernet
 import base64
 from .validators import phone_regex
-import logging
-
-logger = logging.getLogger(__name__)
 
 
 class UserProfile(models.Model):
@@ -43,10 +40,10 @@ class UserProfile(models.Model):
         self.save()
     
     def unlock_account(self):
-        """Reset the locked status and failed login attempts"""
+        """Unlock the user account and reset failed attempts"""
         self.is_locked = False
-        self.failed_login_attempts = 0
         self.locked_at = None
+        self.failed_login_attempts = 0
         self.save()
     
     def increment_failed_login(self):
@@ -98,12 +95,8 @@ def create_user_profile(sender, instance, created, **kwargs):
 @receiver(post_save, sender=User)
 def save_user_profile(sender, instance, **kwargs):
     """Zapisywanie profilu przy zapisie użytkownika"""
-    try:
-        if hasattr(instance, 'profile'):
-            instance.profile.save()
-    except Exception as e:
-        # Log the error but don't let it crash the request
-        logger.error(f"Error saving user profile for {instance.username}: {str(e)}")
+    if hasattr(instance, 'profile'):
+        instance.profile.save()
 
 
 @receiver(m2m_changed, sender=User.groups.through)
@@ -320,7 +313,7 @@ class ActivityLog(models.Model):
         ('ticket_attachment_added', 'Dodano załącznik'),
     )
     
-    user = models.ForeignKey(User, related_name='activities', on_delete=models.CASCADE, 
+    user = models.ForeignKey(User, related_name='activities', on_delete=models.SET_NULL, 
                             null=True, blank=True, verbose_name="Użytkownik")
     action_type = models.CharField(max_length=30, choices=ACTION_TYPES, verbose_name="Typ akcji")
     ticket = models.ForeignKey(Ticket, related_name='activities', on_delete=models.SET_NULL, 

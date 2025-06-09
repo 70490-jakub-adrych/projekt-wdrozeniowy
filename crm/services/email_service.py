@@ -61,42 +61,46 @@ class EmailNotificationService:
     @staticmethod
     def notify_ticket_stakeholders(notification_type, ticket, triggered_by=None, **kwargs):
         """Send notification to all stakeholders of a ticket"""
-        stakeholders = []
-        
-        # Always notify the ticket creator if different from triggered_by
-        if ticket.created_by != triggered_by:
-            stakeholders.append(ticket.created_by)
-        
-        # Notify the assigned agent if exists and different from triggered_by
-        if ticket.assigned_to and ticket.assigned_to != triggered_by:
-            stakeholders.append(ticket.assigned_to)
-        
-        # Get agents from the ticket's organization if notification type is 'created'
-        if notification_type == 'created':
-            from ..models import UserProfile
-            agent_profiles = UserProfile.objects.filter(
-                organizations=ticket.organization,
-                role__in=['agent', 'superagent']
-            ).exclude(user=triggered_by)
+        try:
+            stakeholders = []
             
-            for profile in agent_profiles:
-                if profile.user not in stakeholders:
-                    stakeholders.append(profile.user)
-        
-        # Send notifications to each stakeholder
-        results = []
-        for user in stakeholders:
-            try:
-                result = EmailNotificationService.send_ticket_notification(
-                    notification_type, ticket, user, **kwargs
-                )
-                results.append(result)
-            except Exception as e:
-                logger.error(f"Error notifying user {user.username} about ticket #{ticket.id}: {str(e)}")
-                results.append(False)
-        
-        # Return True if at least one notification was sent successfully
-        return any(results)
+            # Always notify the ticket creator if different from triggered_by
+            if ticket.created_by != triggered_by:
+                stakeholders.append(ticket.created_by)
+            
+            # Notify the assigned agent if exists and different from triggered_by
+            if ticket.assigned_to and ticket.assigned_to != triggered_by:
+                stakeholders.append(ticket.assigned_to)
+            
+            # Get agents from the ticket's organization if notification type is 'created'
+            if notification_type == 'created':
+                from ..models import UserProfile
+                agent_profiles = UserProfile.objects.filter(
+                    organizations=ticket.organization,
+                    role__in=['agent', 'superagent']
+                ).exclude(user=triggered_by)
+                
+                for profile in agent_profiles:
+                    if profile.user not in stakeholders:
+                        stakeholders.append(profile.user)
+            
+            # Send notifications to each stakeholder
+            results = []
+            for user in stakeholders:
+                try:
+                    result = EmailNotificationService.send_ticket_notification(
+                        notification_type, ticket, user, **kwargs
+                    )
+                    results.append(result)
+                except Exception as e:
+                    logger.error(f"Error notifying user {user.username} about ticket #{ticket.id}: {str(e)}")
+                    results.append(False)
+            
+            # Return True if at least one notification was sent successfully
+            return any(results)
+        except Exception as e:
+            logger.error(f"Error in notify_ticket_stakeholders: {str(e)}")
+            return False
 
     @staticmethod
     def send_ticket_notification(notification_type, ticket, user, **kwargs):
