@@ -156,14 +156,27 @@ def ticket_detail(request, pk):
             can_reopen = ticket.assigned_to == user
     
     # Check if this ticket can be assigned to the current user
-    can_assign = False
+    can_assign_to_self = False
     if ticket.status != 'closed' and role in ['agent', 'superagent']:
         if ticket.assigned_to is None or ticket.assigned_to != user:
             if role == 'superagent':
-                can_assign = True
+                can_assign_to_self = True
             elif role == 'agent' and ticket.organization in user_orgs:
-                can_assign = True
+                can_assign_to_self = True
     
+    # Check if user can attach files to this ticket
+    can_attach = not is_closed and (
+        # Admin can always attach
+        role == 'admin' or
+        # Creator can attach to their own tickets
+        user == ticket.created_by or
+        # Agent assigned to ticket can attach
+        (role in ['agent', 'superagent'] and ticket.assigned_to == user) or
+        # Agents/superagents from the same organization can attach
+        (role in ['agent', 'superagent'] and 
+         ticket.organization in user_orgs)
+    )
+
     context = {
         'ticket': ticket,
         'comments': comments,
