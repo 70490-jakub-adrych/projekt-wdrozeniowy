@@ -488,49 +488,49 @@ class EmailNotificationService:
                 Możesz zresetować hasło pod adresem: {password_reset_url}
                 """
 
-        # Create more robust email message with headers to improve deliverability
-        msg = EmailMultiAlternatives(
-            subject=f'System Helpdesk - Hasło zostało zmienione',
-            body=text_content,
-            from_email=settings.DEFAULT_FROM_EMAIL,
-            to=[user.email]
-        )
-        msg.attach_alternative(html_content, "text/html")
-        
-        # Add helpful headers to reduce chance of being marked as spam
-        msg.extra_headers = {
-            'X-Application': 'System Helpdesk',
-            'X-Priority': '1',  # High priority for security notification
-            'X-Auto-Response-Suppress': 'OOF, DR, RN, NRN, AutoReply',
-            'Precedence': 'high',
-            'Importance': 'high',
-        }
-        
-        # Set socket timeout for email sending
-        default_timeout = socket.getdefaulttimeout()
-        socket.setdefaulttimeout(15)  # Use longer timeout for this critical email
-        
-        try:
-            msg.send(fail_silently=False)
-            # Reset socket timeout
-            socket.setdefaulttimeout(default_timeout)
-            logger.info(f"Password change success notification sent to {user.email}")
-            return True
-        except Exception as send_error:
-            logger.error(f"Failed to send password change notification to {user.email}: {str(send_error)}", exc_info=True)
-            # Try again with a different subject (to avoid spam filters)
+            # Create more robust email message with headers to improve deliverability
+            msg = EmailMultiAlternatives(
+                subject=f'System Helpdesk - Hasło zostało zmienione',
+                body=text_content,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=[user.email]
+            )
+            msg.attach_alternative(html_content, "text/html")
+            
+            # Add helpful headers to reduce chance of being marked as spam
+            msg.extra_headers = {
+                'X-Application': 'System Helpdesk',
+                'X-Priority': '1',  # High priority for security notification
+                'X-Auto-Response-Suppress': 'OOF, DR, RN, NRN, AutoReply',
+                'Precedence': 'high',
+                'Importance': 'high',
+            }
+            
+            # Set socket timeout for email sending
+            default_timeout = socket.getdefaulttimeout()
+            socket.setdefaulttimeout(15)  # Use longer timeout for this critical email
+            
             try:
-                msg.subject = "Ważna informacja dotycząca Twojego konta w systemie Helpdesk"
                 msg.send(fail_silently=False)
-                logger.info(f"Password change notification sent with alternate subject to {user.email}")
-                return True
-            except Exception as retry_error:
-                logger.error(f"Second attempt failed: {str(retry_error)}")
+                # Reset socket timeout
                 socket.setdefaulttimeout(default_timeout)
-                return False
-    except Exception as e:
-        logger.error(f"Failed to prepare password change success notification to {user.email}: {str(e)}", exc_info=True)
-        return False
+                logger.info(f"Password change success notification sent to {user.email}")
+                return True
+            except Exception as send_error:
+                logger.error(f"Failed to send password change notification to {user.email}: {str(send_error)}", exc_info=True)
+                # Try again with a different subject (to avoid spam filters)
+                try:
+                    msg.subject = "Ważna informacja dotycząca Twojego konta w systemie Helpdesk"
+                    msg.send(fail_silently=False)
+                    logger.info(f"Password change notification sent with alternate subject to {user.email}")
+                    return True
+                except Exception as retry_error:
+                    logger.error(f"Second attempt failed: {str(retry_error)}")
+                    socket.setdefaulttimeout(default_timeout)
+                    return False
+        except Exception as e:
+            logger.error(f"Failed to prepare password change success notification to {user.email}: {str(e)}", exc_info=True)
+            return False
     
     @staticmethod
     def test_smtp_connection():
