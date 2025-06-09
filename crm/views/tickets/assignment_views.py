@@ -37,15 +37,30 @@ def ticket_assign_to_me(request, pk):
     
     if request.method == 'POST':
         # Przypisz zgłoszenie do aktualnego użytkownika
+        old_status = ticket.status
         ticket.assigned_to = user
+        
+        # Change status to 'in_progress' when ticket is assigned
+        if ticket.status == 'new':
+            ticket.status = 'in_progress'
+        
         ticket.save()
         
-        log_activity(
-            request,
-            'ticket_updated',
-            ticket,
-            f"Przypisano zgłoszenie '{ticket.title}' do {user.username}"
-        )
+        # Create activity log with status change information if status changed
+        if old_status != ticket.status:
+            log_activity(
+                request,
+                'ticket_updated',
+                ticket,
+                f"Przypisano zgłoszenie '{ticket.title}' do {user.username} i zmieniono status z '{old_status}' na '{ticket.status}'"
+            )
+        else:
+            log_activity(
+                request,
+                'ticket_updated',
+                ticket,
+                f"Przypisano zgłoszenie '{ticket.title}' do {user.username}"
+            )
         
         # Send email notification about the assignment
         EmailNotificationService.notify_ticket_stakeholders('assigned', ticket, triggered_by=user)
