@@ -7,7 +7,8 @@ from django.http import HttpResponseForbidden
 from django.contrib.auth.views import LoginView
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
-from django.utils import timezone  # Add this import - critical for verification code
+from django.utils import timezone
+from django.db import transaction, IntegrityError
 
 from ..forms import UserRegisterForm, UserProfileForm, CustomAuthenticationForm
 from ..models import UserProfile, User, EmailVerification, EmailNotificationSettings
@@ -16,6 +17,10 @@ from .error_views import forbidden_access
 from ..forms import EmailVerificationForm
 from ..services.email_service import EmailNotificationService
 import random
+import logging
+
+# Configure logger
+logger = logging.getLogger(__name__)
 
 
 def landing_page(request):
@@ -119,41 +124,81 @@ def register(request):
             profile_form = UserProfileForm(request.POST)
             
             if form.is_valid() and profile_form.is_valid():
-                # Create user (inactive until email verification)
-                user = form.save(commit=False)
-                user.is_active = False  # Deactivate until email verification
-                user.save()
+                try:
+                    with transaction.atomic():
+                        # First check if there's an orphaned profile with this email
+                        email = form.cleaned_data.get('email')
+                        username = form.cleaned_data.get('username')
+                        
+                        # Check for existing users with this email or username
+                        if User.objects.filter(email=email).exists():
+                            form.add_error('email', 'Użytkownik z tym adresem email już istnieje.')
+                            raise IntegrityError("User with this email already exists")
+                            
+                        if User.objects.filter(username=username).exists():
+                            form.add_error('username', 'Użytkownik z tą nazwą użytkownika już istnieje.')
+                            raise IntegrityError("User with this username already exists")
+                        
+                        # Check for orphaned profiles and clean them up
+                        orphaned_profiles = UserProfile.objects.filter(user_id__isnull=False).exclude(
+                            user_id__in=User.objects.values_list('id', flat=True)
+                        )
+                        if orphaned_profiles.exists():
+                            logger.warning(f"Found {orphaned_profiles.count()} orphaned profiles, cleaning up")
+                            orphaned_profiles.delete()
+                        
+                        # Create user (inactive until email verification)
+                        user = form.save(commit=False)
+                        user.is_active = False  # Deactivate until email verification
+                        user.save()
+                        
+                        # Create profile
+                        profile = profile_form.save(commit=False)
+                        profile.user = user
+                        profile.is_approved = False
+                        profile.email_verified = False
+                        profile.save()
+                        
+                        # Handle organizations
+                        if profile_form.cleaned_data.get('organizations'):
+                            profile.organizations.set(profile_form.cleaned_data['organizations'])
+                        
+                        # Generate verification code
+                        verification_code = ''.join([str(random.randint(0, 9)) for _ in range(6)])
+                        EmailVerification.objects.create(
+                            user=user,
+                            verification_code=verification_code
+                        )
+                        
+                        # Send verification email
+                        if not EmailNotificationService.send_verification_email(user, verification_code):
+                            # If email sending fails, roll back the transaction
+                            raise Exception("Failed to send verification email")
+                        
+                        # Store user ID in session
+                        request.session['pending_user_id'] = user.id
+                        
+                        messages.success(request, 'Konto zostało utworzone! Sprawdź swój email i wprowadź kod weryfikacyjny.')
+                        return render(request, 'crm/verify_email.html', {
+                            'verification_form': EmailVerificationForm(),
+                            'user': user
+                        })
                 
-                # Create profile
-                profile = profile_form.save(commit=False)
-                profile.user = user
-                profile.is_approved = False
-                profile.email_verified = False
-                profile.save()
+                except IntegrityError as e:
+                    # Handle integrity errors
+                    logger.error(f"Registration integrity error: {str(e)}")
+                    if "Duplicate entry" in str(e) and "user_id" in str(e):
+                        messages.error(request, 'Błąd systemu: konflikt z istniejącym użytkownikiem. Proszę spróbować ponownie.')
+                    elif not form.errors and not profile_form.errors:
+                        messages.error(request, 'Błąd podczas tworzenia konta. Spróbuj ponownie.')
                 
-                # Handle organizations
-                if profile_form.cleaned_data.get('organizations'):
-                    profile.organizations.set(profile_form.cleaned_data['organizations'])
-                
-                # Generate verification code
-                verification_code = ''.join([str(random.randint(0, 9)) for _ in range(6)])
-                EmailVerification.objects.create(
-                    user=user,
-                    verification_code=verification_code
-                )
-                
-                # Send verification email
-                if EmailNotificationService.send_verification_email(user, verification_code):
-                    request.session['pending_user_id'] = user.id
-                    messages.success(request, 'Konto zostało utworzone! Sprawdź swój email i wprowadź kod weryfikacyjny.')
-                    return render(request, 'crm/verify_email.html', {
-                        'verification_form': EmailVerificationForm(),
-                        'user': user
-                    })
-                else:
-                    # If email sending fails, delete the user and show error
-                    user.delete()
-                    messages.error(request, 'Błąd podczas wysyłania emaila weryfikacyjnego. Spróbuj ponownie.')
+                except Exception as e:
+                    # Handle other errors
+                    logger.error(f"Registration error: {str(e)}")
+                    if "Failed to send verification email" in str(e):
+                        messages.error(request, 'Błąd podczas wysyłania emaila weryfikacyjnego. Spróbuj ponownie.')
+                    else:
+                        messages.error(request, f'Wystąpił nieoczekiwany błąd. Spróbuj ponownie później.')
     else:
         form = UserRegisterForm()
         profile_form = UserProfileForm()
