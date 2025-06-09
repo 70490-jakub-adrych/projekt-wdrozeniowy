@@ -70,10 +70,10 @@ urlpatterns = [
     path('password/change/', custom_password_change_view, name='password_change'),
     
     # Password reset
-    path('password/reset/', CustomPasswordResetView.as_view(
+    path('password/reset/', auth_views.PasswordResetView.as_view(
         template_name='registration/password_reset_form.html',
-        email_template_name='registration/password_reset_email.html',  # Plain text version
-        html_email_template_name='registration/password_reset_email.html',  # HTML version
+        email_template_name='registration/password_reset_email.html',
+        html_email_template_name='registration/password_reset_email.html',  # Add this line
         subject_template_name='registration/password_reset_subject.txt',
         success_url='/password/reset/done/'
     ), name='password_reset'),
