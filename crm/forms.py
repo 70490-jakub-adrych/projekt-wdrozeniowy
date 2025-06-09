@@ -355,10 +355,26 @@ class GroupSelectionForm(forms.Form):
         widget=forms.Select(attrs={'class': 'form-control'})
     )
     
+    organizations = forms.ModelMultipleChoiceField(
+        queryset=Organization.objects.all(),
+        label="Przypisz do organizacji",
+        required=True,
+        help_text="Wybierz organizacje, do których użytkownik powinien mieć dostęp.",
+        widget=forms.SelectMultiple(attrs={'class': 'form-control'})
+    )
+    
     def __init__(self, *args, **kwargs):
         # Get available groups that this approver can assign
         available_groups = kwargs.pop('available_groups', None)
+        available_organizations = kwargs.pop('available_organizations', None)
+        initial_organizations = kwargs.pop('initial_organizations', None)
         super().__init__(*args, **kwargs)
         
         if available_groups is not None:
             self.fields['group'].queryset = available_groups
+            
+        if available_organizations is not None:
+            self.fields['organizations'].queryset = available_organizations
+            
+        if initial_organizations is not None:
+            self.fields['organizations'].initial = initial_organizations

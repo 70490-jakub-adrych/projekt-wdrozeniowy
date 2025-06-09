@@ -442,11 +442,35 @@ def approve_user(request, user_id):
         # Agent can only assign client and viewer groups
         available_groups = Group.objects.filter(name__in=['Klient', 'Viewer'])
     
-    # Create form with available groups
-    form = GroupSelectionForm(request.POST or None, available_groups=available_groups)
+    # Determine which organizations the approver can assign
+    if user_role == 'admin' or user_role == 'superagent':
+        available_organizations = Organization.objects.all()
+    else:
+        # Agents can only assign their own organizations
+        available_organizations = request.user.profile.organizations.all()
+    
+    # Create form with available groups and organizations
+    form = GroupSelectionForm(request.POST or None,
+                              available_groups=available_groups,
+                              available_organizations=available_organizations,
+                              initial_organizations=profile.organizations.all())
     
     if request.method == 'POST' and form.is_valid():
         selected_group = form.cleaned_data['group']
+        selected_organizations = form.cleaned_data['organizations']
+        
+        # Check if the selected group allows multiple organizations
+        try:
+            group_settings = selected_group.settings
+            allow_multiple = group_settings.allow_multiple_organizations
+        except GroupSettings.DoesNotExist:
+            allow_multiple = selected_group.name in ['Admin', 'Superagent', 'Agent']
+        
+        # If the group doesn't allow multiple organizations, only keep the first one
+        if not allow_multiple and len(selected_organizations) > 1:
+            first_org = selected_organizations[0]
+            selected_organizations = [first_org]
+            messages.warning(request, f"Użytkownicy w grupie {selected_group.name} mogą być przypisani tylko do jednej organizacji. Przypisano tylko do {first_org.name}.")
         
         # Approve the user
         profile.is_approved = True
@@ -456,6 +480,11 @@ def approve_user(request, user_id):
         user = profile.user
         user.groups.clear()  # Remove any existing groups
         user.groups.add(selected_group)
+        
+        # Update the user's organizations
+        profile.organizations.clear()
+        for org in selected_organizations:
+            profile.organizations.add(org)
         
         # Update the user's role based on the group
         if selected_group.name == 'Admin':

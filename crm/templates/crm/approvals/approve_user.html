@@ -31,7 +31,7 @@
                             <div class="col-md-8">{{ profile.user.date_joined|date:"d.m.Y H:i" }}</div>
                         </div>
                         <div class="row">
-                            <div class="col-md-4 font-weight-bold">Organizacja:</div>
+                            <div class="col-md-4 font-weight-bold">Wybrana organizacja:</div>
                             <div class="col-md-8">
                                 {% if profile.organizations.exists %}
                                     <ul>
@@ -61,8 +61,19 @@
                         {% endif %}
                     </div>
                     
+                    <div class="form-group">
+                        <label for="{{ form.organizations.id_for_label }}">{{ form.organizations.label }}</label>
+                        {{ form.organizations }}
+                        <small class="form-text text-muted">{{ form.organizations.help_text }}</small>
+                        {% if form.organizations.errors %}
+                            <div class="alert alert-danger mt-2">
+                                {{ form.organizations.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
                     <div class="alert alert-success">
-                        <strong>Uwaga:</strong> Po zatwierdzeniu użytkownik będzie mógł logować się do systemu z wybraną rolą.
+                        <strong>Uwaga:</strong> Po zatwierdzeniu użytkownik będzie mógł logować się do systemu z wybraną rolą i dostępem do wybranych organizacji.
                     </div>
                     
                     <div class="text-center">
@@ -85,7 +96,28 @@ function confirmApproval() {
     const groupText = selectedGroup.options[selectedGroup.selectedIndex].text;
     const username = "{{ profile.user.username }}";
     
-    return confirm(`Czy na pewno chcesz zatwierdzić użytkownika ${username} i przypisać go do grupy "${groupText}"?`);
+    // Get selected organizations
+    const selectedOrgs = document.getElementById('id_organizations');
+    const selectedOrgNames = Array.from(selectedOrgs.selectedOptions).map(option => option.text).join(", ");
+    
+    return confirm(`Czy na pewno chcesz zatwierdzić użytkownika ${username} i przypisać go do grupy "${groupText}" oraz organizacji: ${selectedOrgNames}?`);
 }
+
+// Add event listener to handle group change
+document.getElementById('id_group').addEventListener('change', function() {
+    const groupValue = this.value;
+    const orgSelector = document.getElementById('id_organizations');
+    
+    // Find the group name from selected option
+    const groupName = this.options[this.selectedIndex].text;
+    
+    // If the selected group is not Admin/Superagent/Agent, limit to single selection
+    if (!['Admin', 'Superagent', 'Agent'].includes(groupName)) {
+        // Show warning
+        if (orgSelector.selectedOptions.length > 1) {
+            alert('Uwaga: Klienci i użytkownicy przeglądający mogą być przypisani tylko do jednej organizacji. Zostanie zachowana tylko pierwsza wybrana organizacja.');
+        }
+    }
+});
 </script>
 {% endblock %}
