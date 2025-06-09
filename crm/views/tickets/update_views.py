@@ -41,130 +41,88 @@ def ticket_update(request, pk):
     # Initialize the attachment form
     attachment_form = TicketAttachmentForm()
     
+    # If this is a POST request, process the form data
     if request.method == 'POST':
-        # Handle AJAX category suggestion requests
-        if 'suggest_category' in request.POST and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-            from ...utils.category_suggestion import should_suggest_category
-            title = request.POST.get('title', '')
-            description = request.POST.get('description', '')
-            selected_category = request.POST.get('category', '')
-            
-            should_suggest, suggested_category, confidence, match_details = \
-                should_suggest_category(selected_category, title, description)
-                
-            return JsonResponse({
-                'should_suggest': should_suggest,
-                'suggested_category': suggested_category,
-                'confidence': confidence,
-                'selected_category': selected_category,
-                'match_details': {k: [(word, score) for word, score in v] 
-                                for k, v in match_details.items()}
-            })
+        form = ModeratorTicketForm(request.POST, instance=ticket)
         
-        # Regular form submission
-        if role in ['admin', 'agent']:
-            form = ModeratorTicketForm(request.POST, instance=ticket)
-        else:
-            # Klient używa ograniczonego formularza
-            form = ClientTicketForm(request.POST, instance=ticket)
-        
-        # Handle file upload and attachment form validation
+        # Handle file upload as well
         attachment_form = TicketAttachmentForm(request.POST, request.FILES)
+        
+        # Check if a file was uploaded
         has_attachment = bool(request.FILES.get('file'))
-        accepted_policy = request.POST.get('accepted_policy') == 'on'
+        policy_accepted = request.POST.get('accepted_policy') == 'on'
         
-        # Validate forms - only validate attachment if a file was uploaded
-        form_valid = form.is_valid()
-        attachment_valid = True
-        if has_attachment and not accepted_policy:
-            attachment_valid = False
-            # Add error directly to the attachment form
-            attachment_form.add_error('accepted_policy', 'Musisz zaakceptować regulamin, aby dodać załącznik.')
-        
-        if form_valid and attachment_valid:
-            # Przypisanie zgłoszenia do agenta, jeśli nie jest przypisane
-            updated_ticket = form.save(commit=False)
-            
-            # Assign ticket to agent if unassigned
-            if role == 'agent' and not ticket.assigned_to:
-                updated_ticket.assigned_to = user
-                messages.info(request, "Zgłoszenie zostało automatycznie przypisane do Ciebie.")
-            
-            # Save changes
-            updated_ticket.save()
-            
-            # Handle attachment upload if provided
+        # First validate the ticket form
+        if form.is_valid():
+            # Check if attachment form is valid if a file was uploaded
+            attachment_valid = True
             if has_attachment:
-                attachment = attachment_form.save(commit=False)
-                attachment.ticket = updated_ticket
-                attachment.uploaded_by = user
-                attachment.filename = os.path.basename(attachment.file.name)
-                attachment.accepted_policy = True  # User agreed to terms
-                attachment.save()
-                log_activity(request, 'ticket_attachment_added', ticket=updated_ticket, 
-                            description=f"Added attachment: {attachment.filename}")
+                attachment_valid = attachment_form.is_valid() and policy_accepted
             
-            # Log all significant changes
-            changes = []
-            
-            # Check for status change
-            if original_status != updated_ticket.status:
-                changes.append(f"zmiana statusu z '{ticket.get_status_display()}' na '{updated_ticket.get_status_display()}'")
-            
-            # Check for priority change
-            if original_priority != updated_ticket.priority:
-                changes.append(f"zmiana priorytetu z '{ticket.get_priority_display()}' na '{updated_ticket.get_priority_display()}'")
-            
-            # Check for category change
-            if original_category != updated_ticket.category:
-                changes.append(f"zmiana kategorii z '{ticket.get_category_display()}' na '{updated_ticket.get_category_display()}'")
-            
-            # Check for assignment change
-            if original_assigned_to != updated_ticket.assigned_to:
-                if updated_ticket.assigned_to:
-                    changes.append(f"przypisanie do '{updated_ticket.assigned_to.username}'")
-                else:
-                    changes.append("usunięcie przypisania")
-            
-            # Check for title/description changes
-            if original_title != updated_ticket.title:
-                changes.append("aktualizacja tytułu")
-            
-            if original_description != updated_ticket.description:
-                changes.append("aktualizacja opisu")
-            
-            # Log detailed changes
-            if changes or has_attachment:
-                change_description = ", ".join(changes)
+            if attachment_valid:
+                updated_ticket = form.save()
+                
+                # Create list of changes for activity log
+                changes = []
+                if original_status != updated_ticket.status:
+                    changes.append(f"status: {original_status} → {updated_ticket.status}")
+                if original_priority != updated_ticket.priority:
+                    changes.append(f"priorytet: {original_priority} → {updated_ticket.priority}")
+                if original_category != updated_ticket.category:
+                    changes.append(f"kategoria: {original_category} → {updated_ticket.category}")
+                if original_assigned_to != updated_ticket.assigned_to:
+                    old_assignee = original_assigned_to.username if original_assigned_to else 'nieprzypisane'
+                    new_assignee = updated_ticket.assigned_to.username if updated_ticket.assigned_to else 'nieprzypisane'
+                    changes.append(f"przypisanie: {old_assignee} → {new_assignee}")
+                if original_title != updated_ticket.title:
+                    changes.append(f"tytuł: '{original_title}' → '{updated_ticket.title}'")
+                if original_description != updated_ticket.description:
+                    changes.append("zawartość zgłoszenia została zmodyfikowana")
+                
+                changes_text = ", ".join(changes)
                 log_activity(
-                    request, 
-                    'ticket_updated', 
-                    updated_ticket, 
-                    f"Zaktualizowano zgłoszenie '{updated_ticket.title}': {change_description}"
+                    request,
+                    'ticket_updated',
+                    ticket=updated_ticket,
+                    description=f"Zaktualizowano zgłoszenie #{updated_ticket.pk}: {changes_text}"
                 )
                 
-                # Send email notifications for the update
-                EmailNotificationService.notify_ticket_stakeholders('updated', updated_ticket, triggered_by=user, changes=change_description)
+                # Handle attachment upload if provided
+                if has_attachment:
+                    attachment = attachment_form.save(commit=False)
+                    attachment.ticket = updated_ticket
+                    attachment.uploaded_by = user
+                    attachment.filename = os.path.basename(attachment.file.name)
+                    attachment.accepted_policy = True
+                    attachment.save()
+                    
+                    log_activity(request, 'ticket_attachment_added', ticket=updated_ticket, 
+                                description=f"Added attachment: {attachment.filename}")
+                    
+                    messages.success(request, 'Zgłoszenie oraz załącznik zostały zaktualizowane!')
+                else:
+                    messages.success(request, 'Zgłoszenie zostało zaktualizowane!')
+                
+                # Send email notifications about the update
+                if changes:
+                    EmailNotificationService.notify_ticket_stakeholders('updated', updated_ticket, triggered_by=user, changes=changes_text)
+                
+                return redirect('ticket_detail', pk=updated_ticket.pk)
             else:
-                log_activity(request, 'ticket_updated', updated_ticket, f"Zgłoszenie '{updated_ticket.title}' zostało otwarte do edycji, ale nie wprowadzono zmian")
-            
-            messages.success(request, 'Zgłoszenie zostało zaktualizowane!')
-            return redirect('ticket_detail', pk=updated_ticket.pk)
+                if has_attachment and not policy_accepted:
+                    messages.error(request, 'Musisz zaakceptować regulamin, aby dodać załącznik.')
+                else:
+                    messages.error(request, 'Wystąpił błąd z załącznikiem. Sprawdź formularz i spróbuj ponownie.')
         else:
-            # No need to display explicit error messages - they'll show inline
-            pass
+            messages.error(request, 'Wystąpił błąd. Sprawdź formularz i spróbuj ponownie.')
     else:
-        # GET request - initialize form
-        if role in ['admin', 'agent']:
-            form = ModeratorTicketForm(instance=ticket)
-        else:
-            # Klient widzi ograniczony formularz
-            form = ClientTicketForm(instance=ticket)
+        form = ModeratorTicketForm(instance=ticket)
     
     context = {
         'form': form,
         'ticket': ticket,
         'attachment_form': attachment_form,
+        'attachment_enabled': True,
     }
     
     return render(request, 'crm/tickets/ticket_form.html', context)

@@ -11,6 +11,7 @@ System zarządzania zgłoszeniami IT z funkcjami zarządzania użytkownikami, or
 - ✅ Szyfrowane załączniki
 - ✅ Logi aktywności
 - ✅ Automatyczne sugerowanie kategorii zgłoszeń
+- ✅ Powiadomienia email o zgłoszeniach i weryfikacja kont
 
 ## Szybkie uruchomienie
 

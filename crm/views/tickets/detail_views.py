@@ -36,7 +36,7 @@ def ticket_detail(request, pk):
     elif role == 'agent':
         # Agent może widzieć wszystkie zgłoszenia z organizacji, do których należy
         if ticket.organization not in user_orgs:
-            logger.warning(f"Access denied: Agent {user.username} tried to access ticket #{ticket.id} from org {ticket.organization.name}")
+            logger.warning(f"Access denied: Agent {user.username} tried to access ticket #{ticket.id} from outside their organizations")
             return forbidden_access(request, 'zgłoszenia', ticket.id)
     
     comments = ticket.comments.all().order_by('created_at')
@@ -45,87 +45,98 @@ def ticket_detail(request, pk):
     # Check if the ticket is closed
     is_closed = ticket.status == 'closed'
     
-    # No actions allowed on closed tickets except viewing and reopening
-    # Wszyscy mogą komentować - if ticket is not closed
-    can_comment = not is_closed
+    # Initialize forms
+    comment_form = TicketCommentForm()
+    attachment_form = TicketAttachmentForm()
     
-    # Sprawdzanie uprawnień do dodawania załączników - if ticket is not closed
-    if is_closed:
-        can_attach = False
-    elif role == 'client':
-        can_attach = user == ticket.created_by
-    else:
-        can_attach = True  # Admin i agent mogą dodawać załączniki
-    
-    # Sprawdzanie uprawnień do edycji - tylko admin może edytować
-    can_edit = role == 'admin'
-    
-    # Sprawdzanie uprawnień do zamykania - not applicable if already closed
-    if is_closed:
-        can_close = False
-    elif role == 'admin' or role == 'superagent':
-        can_close = ticket.assigned_to is not None  # Admin i superagent mogą zamykać każde przypisane zgłoszenie
-    elif role == 'agent':
-        # Agent can only close tickets that are assigned to them
-        can_close = ticket.assigned_to == user
-    else:  # client
-        can_close = False  # Clients can no longer close tickets
-    
-    # Admin, superagent i przypisany agent mogą ponownie otwierać
-    can_reopen = is_closed and (role == 'admin' or role == 'superagent' or (role == 'agent' and ticket.assigned_to == user))
-    
-    # Możliwość przypisania do siebie (tylko dla agentów, gdy zgłoszenie nieprzypisane i nie jest zamknięte)
-    can_assign_to_self = not is_closed and role == 'agent' and not ticket.assigned_to
-    
-    # Formularz komentarza
-    if request.method == 'POST':
-        # Reject any POST actions if ticket is closed
-        if is_closed:
-            messages.error(request, "Nie można modyfikować zamkniętego zgłoszenia. Najpierw otwórz je ponownie.")
-            return redirect('ticket_detail', pk=ticket.pk)
-            
-        if 'submit_comment' in request.POST and can_comment:
+    # Process forms if this is a POST request and ticket is not closed
+    if request.method == 'POST' and not is_closed:
+        # Handle comment submission
+        if 'add_comment' in request.POST:
             comment_form = TicketCommentForm(request.POST)
-            attachment_form = TicketAttachmentForm()
-            
             if comment_form.is_valid():
                 comment = comment_form.save(commit=False)
                 comment.ticket = ticket
-                comment.author = request.user
+                comment.author = user
                 comment.save()
-                log_activity(request, 'ticket_commented', ticket, f"Dodano komentarz do zgłoszenia '{ticket.title}'")
                 
-                # Send email notification about the new comment
-                EmailNotificationService.notify_ticket_stakeholders('commented', ticket, triggered_by=request.user, comment_content=comment.content)
+                # Log the comment
+                log_activity(request, 'ticket_comment_added', ticket=ticket, 
+                            description=f"Added comment to #{ticket.id}: {comment.content[:50]}...")
+                
+                # Send email notification about the comment
+                EmailNotificationService.notify_ticket_stakeholders('commented', ticket, triggered_by=user, comment=comment)
                 
                 messages.success(request, 'Komentarz został dodany!')
                 return redirect('ticket_detail', pk=ticket.pk)
-        elif 'submit_attachment' in request.POST and can_attach:
-            comment_form = TicketCommentForm()
+        
+        # Handle attachment upload
+        elif 'add_attachment' in request.POST:
             attachment_form = TicketAttachmentForm(request.POST, request.FILES)
             
-            if attachment_form.is_valid():
-                attachment = attachment_form.save(commit=False)
-                attachment.ticket = ticket
-                attachment.uploaded_by = request.user
-                attachment.filename = os.path.basename(attachment.file.name)
-                attachment.accepted_policy = attachment_form.cleaned_data['accepted_policy']
-                attachment.save()
-                log_activity(request, 'ticket_attachment_added', ticket=ticket, 
-                            description=f"Added attachment: {attachment.filename}")
-                messages.success(request, 'Załącznik został dodany!')
-                return redirect('ticket_detail', pk=ticket.pk)
-        else:
-            # Nieautoryzowana próba dodania komentarza lub załącznika
-            return HttpResponseForbidden("Brak uprawnień do wykonania tej akcji")
-    else:
-        comment_form = TicketCommentForm()
-        attachment_form = TicketAttachmentForm()
+            # Check if a file was uploaded
+            has_attachment = bool(request.FILES.get('file'))
+            accepted_policy = request.POST.get('accepted_policy') == 'on'
+            
+            if has_attachment and attachment_form.is_valid():
+                if accepted_policy:
+                    attachment = attachment_form.save(commit=False)
+                    attachment.ticket = ticket
+                    attachment.uploaded_by = user
+                    attachment.filename = os.path.basename(attachment.file.name)
+                    attachment.accepted_policy = True
+                    attachment.save()
+                    
+                    # Log the attachment
+                    log_activity(request, 'ticket_attachment_added', ticket=ticket, 
+                                description=f"Added attachment: {attachment.filename}")
+                    
+                    # Send email notification about the attachment
+                    EmailNotificationService.notify_ticket_stakeholders('updated', ticket, 
+                                                                     triggered_by=user, 
+                                                                     update_type='attachment_added',
+                                                                     attachment_name=attachment.filename)
+                    
+                    messages.success(request, 'Załącznik został dodany!')
+                    return redirect('ticket_detail', pk=ticket.pk)
+                else:
+                    messages.error(request, 'Musisz zaakceptować regulamin, aby dodać załącznik.')
+            else:
+                if not has_attachment:
+                    messages.error(request, 'Nie wybrano pliku do przesłania.')
+                else:
+                    messages.error(request, 'Wystąpił błąd z załącznikiem. Sprawdź formularz i spróbuj ponownie.')
     
-    # Get ticket activities for history
-    ticket_activities = ActivityLog.objects.filter(
-        ticket=ticket
-    ).order_by('created_at')
+    # Check if user can edit this ticket
+    can_edit = (role == 'admin' or
+                (role == 'superagent') or
+                (role == 'agent' and ticket.assigned_to == user))
+    
+    # Check if user can close/reopen this ticket
+    can_close = False
+    can_reopen = False
+    
+    if ticket.status != 'closed':
+        if role in ['admin', 'superagent']:
+            can_close = ticket.assigned_to is not None
+        elif role == 'agent':
+            can_close = ticket.assigned_to == user
+        elif role == 'client':
+            can_close = ticket.created_by == user
+    else:
+        if role in ['admin', 'superagent']:
+            can_reopen = True
+        elif role == 'agent':
+            can_reopen = ticket.assigned_to == user
+    
+    # Check if this ticket can be assigned to the current user
+    can_assign = False
+    if ticket.status != 'closed' and role in ['agent', 'superagent']:
+        if ticket.assigned_to is None or ticket.assigned_to != user:
+            if role == 'superagent':
+                can_assign = True
+            elif role == 'agent' and ticket.organization in user_orgs:
+                can_assign = True
     
     context = {
         'ticket': ticket,
@@ -133,14 +144,11 @@ def ticket_detail(request, pk):
         'attachments': attachments,
         'comment_form': comment_form,
         'attachment_form': attachment_form,
-        'can_comment': can_comment,
-        'can_attach': can_attach,
         'can_edit': can_edit,
         'can_close': can_close,
         'can_reopen': can_reopen,
-        'can_assign_to_self': can_assign_to_self,
+        'can_assign': can_assign,
         'is_closed': is_closed,
-        'ticket_activities': ticket_activities,
     }
     
     return render(request, 'crm/tickets/ticket_detail.html', context)

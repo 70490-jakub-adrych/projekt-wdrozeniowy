@@ -114,14 +114,16 @@ def ticket_create(request):
                 attachment.save()
                 log_activity(request, 'ticket_attachment_added', ticket=ticket, 
                             description=f"Added attachment: {attachment.filename}")
-                messages.success(request, 'Zgłoszenie oraz załącznik zostały utworzone!')
+                messages.success(request, 'Zgłoszenie oraz załącznik zostały utworzone! Odpowiednie osoby zostały powiadomione e-mailem.')
             else:
-                messages.success(request, 'Zgłoszenie zostało utworzone!')
+                messages.success(request, 'Zgłoszenie zostało utworzone! Odpowiednie osoby zostały powiadomione e-mailem.')
                 
             return redirect('ticket_detail', pk=ticket.pk)
         else:
-            # Let the form validation errors display inline - no need for explicit messages
-            pass
+            if not form_valid:
+                messages.error(request, 'Wystąpił błąd w formularzu zgłoszenia. Sprawdź dane i spróbuj ponownie.')
+            if not attachment_valid:
+                messages.error(request, 'Wystąpił błąd z załącznikiem. Sprawdź dane i spróbuj ponownie.')
     else:
         # Also use different form for GET requests based on user role
         if user.profile.role in ['admin', 'agent']:
@@ -132,16 +134,15 @@ def ticket_create(request):
     # Dodanie pola wyboru organizacji dla admina, superagenta i agenta
     organizations = []
     if user.profile.role in ['admin', 'superagent']:
-        # Admin i superagent widzą wszystkie organizacje
         organizations = Organization.objects.all()
     elif user.profile.role == 'agent':
-        # Agent widzi tylko organizacje, do których należy
         organizations = user.profile.organizations.all()
     
     context = {
         'form': form,
         'attachment_form': attachment_form,
         'organizations': organizations,
+        'attachment_enabled': True,
     }
     
     return render(request, 'crm/tickets/ticket_form.html', context)

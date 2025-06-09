@@ -88,6 +88,17 @@ WSGI_APPLICATION = 'projekt_wdrozeniowy.wsgi.application'  # Uncomment this line
 # Site URL for email links - get from environment or use default
 SITE_URL = config('SITE_URL', default='https://betulait.usermd.net')
 
+# Email settings - read from .env or use default console backend for development
+EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
+EMAIL_HOST = config('EMAIL_HOST', default='')
+EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
+EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
+EMAIL_USE_SSL = config('EMAIL_USE_SSL', default=False, cast=bool)
+EMAIL_HOST_USER = config('EMAIL_HOST_USER', default='')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD', default='')
+DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='helpdesk@example.com')
+TEST_EMAIL_RECIPIENT = config('TEST_EMAIL_RECIPIENT', default='')
+
 # ASGI_APPLICATION = 'projekt_wdrozeniowy.asgi.application'
 # CHANNEL_LAYERS = {...}
 
@@ -181,15 +192,6 @@ LOGOUT_REDIRECT_URL = '/login/'
 
 # Encryption settings
 FILE_ENCRYPTION_KEY = SECRET_KEY[:32]  # Use part of SECRET_KEY as base for file encryption
-
-# Email settings - configurable for both development and production
-# Development default: prints to console
-# Production: configure via environment variables
-EMAIL_BACKEND = config(
-    'EMAIL_BACKEND', 
-    default='django.core.mail.backends.console.EmailBackend'  # Development default
-    # For production, set EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
-)
 
 # SMTP Configuration (configurable via environment variables)
 EMAIL_HOST = config('EMAIL_HOST', default='localhost')
