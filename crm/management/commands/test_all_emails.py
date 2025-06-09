@@ -1,9 +1,13 @@
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
-from crm.models import Ticket
-from crm.services.email_service import EmailNotificationService
+from django.template.loader import render_to_string
+from django.core.mail import EmailMultiAlternatives
+from django.conf import settings
 from django.urls import reverse
 from django.utils import timezone
+
+from crm.models import Ticket
+from crm.services.email_service import EmailNotificationService
 
 class Command(BaseCommand):
     help = 'Test all types of email notifications'
@@ -69,7 +73,6 @@ class Command(BaseCommand):
             
         # Test account approved email
         self.stdout.write('Testing account approved email...')
-        from django.conf import settings
         site_url = getattr(settings, 'SITE_URL', 'https://betulait.usermd.net')
         login_url = f"{site_url}/login/"
         
