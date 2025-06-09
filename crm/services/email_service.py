@@ -62,15 +62,18 @@ class EmailNotificationService:
     def notify_ticket_stakeholders(notification_type, ticket, triggered_by=None, **kwargs):
         """Send notification to all stakeholders of a ticket"""
         try:
+            logger.info(f"Starting notification for {notification_type} on ticket #{ticket.id}")
             stakeholders = []
             
             # Always notify the ticket creator if different from triggered_by
             if ticket.created_by != triggered_by:
                 stakeholders.append(ticket.created_by)
+                logger.debug(f"Added creator {ticket.created_by.username} to stakeholders")
             
             # Notify the assigned agent if exists and different from triggered_by
             if ticket.assigned_to and ticket.assigned_to != triggered_by:
                 stakeholders.append(ticket.assigned_to)
+                logger.debug(f"Added assignee {ticket.assigned_to.username} to stakeholders")
             
             # Get agents from the ticket's organization if notification type is 'created'
             if notification_type == 'created':
@@ -83,9 +86,11 @@ class EmailNotificationService:
                 for profile in agent_profiles:
                     if profile.user not in stakeholders:
                         stakeholders.append(profile.user)
+                        logger.debug(f"Added agent {profile.user.username} to stakeholders")
             
             # Send notifications to each stakeholder
             results = []
+            logger.info(f"Sending {notification_type} notifications to {len(stakeholders)} stakeholders")
             for user in stakeholders:
                 try:
                     result = EmailNotificationService.send_ticket_notification(
@@ -97,6 +102,8 @@ class EmailNotificationService:
                     results.append(False)
             
             # Return True if at least one notification was sent successfully
+            sent_count = sum(1 for r in results if r)
+            logger.info(f"Successfully sent {sent_count} notifications out of {len(results)}")
             return any(results)
         except Exception as e:
             logger.error(f"Error in notify_ticket_stakeholders: {str(e)}")
@@ -117,6 +124,7 @@ class EmailNotificationService:
                     return False
             except EmailNotificationSettings.DoesNotExist:
                 # Default to sending notifications if settings don't exist
+                logger.debug(f"No notification settings found for {user.username}, using defaults")
                 pass
             except Exception as settings_error:
                 logger.warning(f"Error checking notification settings for {user.username}: {settings_error}")
@@ -124,6 +132,7 @@ class EmailNotificationService:
             
             # Don't send notification to the user who triggered the action
             if 'triggered_by' in kwargs and kwargs['triggered_by'] == user:
+                logger.debug(f"Skipping notification to {user.username} (triggered by same user)")
                 return False
             
             subject_templates = {
@@ -141,16 +150,27 @@ class EmailNotificationService:
                 ticket_title=ticket.title
             )
             
-            site_url = getattr(settings, 'SITE_URL', 'http://localhost:8000')
+            # Change this to use the production domain
+            site_url = getattr(settings, 'SITE_URL', 'https://betulait.usermd.net')
+            
+            # Make sure there's no double slash in the path
+            ticket_path = f"/tickets/{ticket.id}/"
+            if site_url.endswith('/'):
+                ticket_path = ticket_path.lstrip('/')
+            
+            ticket_url = f"{site_url}{ticket_path}"
             
             context = {
                 'user': user,
                 'ticket': ticket,
                 'notification_type': notification_type,
                 'site_name': 'System Helpdesk',
-                'ticket_url': f"{site_url}/tickets/{ticket.id}/",
+                'ticket_url': ticket_url,
                 **kwargs
             }
+            
+            # Log which template we're going to try
+            logger.debug(f"Trying to render {notification_type} template for user {user.username}")
             
             # Try to render specific templates for this notification type
             try:
@@ -158,15 +178,20 @@ class EmailNotificationService:
                 text_template = f'emails/ticket_{notification_type}.txt'
                 
                 # Check if template files exist first
-                html_exists = os.path.exists(os.path.join(settings.BASE_DIR, 'crm', 'templates', html_template))
-                text_exists = os.path.exists(os.path.join(settings.BASE_DIR, 'crm', 'templates', text_template))
+                template_dir = os.path.join(settings.BASE_DIR, 'crm', 'templates')
+                html_path = os.path.join(template_dir, html_template)
+                text_path = os.path.join(template_dir, text_template)
+                
+                html_exists = os.path.exists(html_path)
+                text_exists = os.path.exists(text_path)
                 
                 if html_exists and text_exists:
+                    logger.debug(f"Using specific templates for {notification_type}")
                     html_content = render_to_string(html_template, context)
                     text_content = render_to_string(text_template, context)
                 else:
                     # Fall back to generic templates
-                    logger.warning(f"Specific template for {notification_type} not found, using generic")
+                    logger.warning(f"Specific template for {notification_type} not found at {html_path}, using generic")
                     html_content = render_to_string('emails/ticket_generic.html', context)
                     text_content = render_to_string('emails/ticket_generic.txt', context)
                 
@@ -183,7 +208,7 @@ class EmailNotificationService:
                 Typ zmiany: {notification_type}
                 
                 Aby zobaczyć szczegóły, odwiedź:
-                {context['ticket_url']}
+                {ticket_url}
                 """
                 
                 html_content = f"""
@@ -193,12 +218,13 @@ class EmailNotificationService:
                     <p>Witaj {user.first_name or user.username}!</p>
                     <p>Nastąpiła zmiana w zgłoszeniu "{ticket.title}" (#{ticket.id}).</p>
                     <p>Typ zmiany: {notification_type}</p>
-                    <p><a href="{context['ticket_url']}">Kliknij tutaj, aby zobaczyć szczegóły</a></p>
+                    <p><a href="{ticket_url}">Kliknij tutaj, aby zobaczyć szczegóły</a></p>
                 </body>
                 </html>
                 """
             
             try:
+                logger.debug(f"Sending email to {user.email} subject: {subject}")
                 msg = EmailMultiAlternatives(
                     subject=subject,
                     body=text_content,
