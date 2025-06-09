@@ -8,6 +8,7 @@ from ...models import Organization, TicketAttachment
 from ...forms import TicketForm, ClientTicketForm, TicketAttachmentForm
 from ..helpers import log_activity
 from ...utils.category_suggestion import should_suggest_category
+from ...services.email_service import EmailNotificationService  # Add this import
 
 @login_required
 def ticket_create(request):
@@ -99,6 +100,9 @@ def ticket_create(request):
                 
             ticket.save()
             log_activity(request, 'ticket_created', ticket, f"Utworzono zgłoszenie: '{ticket.title}'")
+            
+            # Send email notifications to relevant stakeholders
+            EmailNotificationService.notify_ticket_stakeholders('created', ticket, triggered_by=user)
             
             # Handle attachment upload if provided
             if has_attachment:

@@ -8,6 +8,7 @@ from ...models import Ticket, TicketAttachment
 from ...forms import ModeratorTicketForm, ClientTicketForm, TicketAttachmentForm
 from ..helpers import log_activity
 from ..error_views import ticket_not_found, ticket_edit_forbidden
+from ...services.email_service import EmailNotificationService  # Add this import
 
 @login_required
 def ticket_update(request, pk):
@@ -141,6 +142,9 @@ def ticket_update(request, pk):
                     updated_ticket, 
                     f"Zaktualizowano zgłoszenie '{updated_ticket.title}': {change_description}"
                 )
+                
+                # Send email notifications for the update
+                EmailNotificationService.notify_ticket_stakeholders('updated', updated_ticket, triggered_by=user, changes=change_description)
             else:
                 log_activity(request, 'ticket_updated', updated_ticket, f"Zgłoszenie '{updated_ticket.title}' zostało otwarte do edycji, ale nie wprowadzono zmian")
             

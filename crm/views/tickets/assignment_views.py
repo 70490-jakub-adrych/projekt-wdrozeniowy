@@ -6,6 +6,7 @@ from django.http import HttpResponseForbidden, Http404
 from ...models import Ticket
 from ..helpers import log_activity
 from ..error_views import ticket_not_found
+from ...services.email_service import EmailNotificationService  # Add this import
 
 @login_required
 def ticket_assign_to_me(request, pk):
@@ -40,6 +41,9 @@ def ticket_assign_to_me(request, pk):
             ticket,
             f"Przypisano zgłoszenie '{ticket.title}' do {user.username}"
         )
+        
+        # Send email notification about the assignment
+        EmailNotificationService.notify_ticket_stakeholders('assigned', ticket, triggered_by=user)
         
         messages.success(request, 'Zgłoszenie zostało przypisane do Ciebie!')
         return redirect('ticket_detail', pk=ticket.pk)

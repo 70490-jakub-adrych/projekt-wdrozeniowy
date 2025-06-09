@@ -7,6 +7,7 @@ from django.utils import timezone
 from ...models import Ticket
 from ..helpers import log_activity
 from ..error_views import ticket_not_found
+from ...services.email_service import EmailNotificationService  # Add this import
 
 @login_required
 def ticket_close(request, pk):
@@ -52,6 +53,9 @@ def ticket_close(request, pk):
             f"Zamknięto zgłoszenie '{ticket.title}' (zmiana statusu z '{old_status}' na 'closed')"
         )
         
+        # Send email notification about the ticket closure
+        EmailNotificationService.notify_ticket_stakeholders('closed', ticket, triggered_by=user, old_status=old_status)
+        
         messages.success(request, 'Zgłoszenie zostało zamknięte!')
         return redirect('ticket_detail', pk=ticket.pk)
     
@@ -92,6 +96,10 @@ def ticket_reopen(request, pk):
             ticket, 
             f"Ponownie otwarto zgłoszenie '{ticket.title}' (zmiana statusu z '{old_status}' na '{ticket.status}')"
         )
+        
+        # Send email notification about the ticket reopening
+        EmailNotificationService.notify_ticket_stakeholders('reopened', ticket, triggered_by=user, old_status=old_status)
+        
         messages.success(request, 'Zgłoszenie zostało ponownie otwarte!')
         return redirect('ticket_detail', pk=ticket.pk)
     

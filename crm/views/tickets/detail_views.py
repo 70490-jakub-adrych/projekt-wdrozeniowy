@@ -12,6 +12,7 @@ from ...models import Ticket, TicketComment, TicketAttachment, ActivityLog
 from ...forms import TicketCommentForm, TicketAttachmentForm
 from ..helpers import log_activity
 from ..error_views import ticket_not_found, forbidden_access
+from ...services.email_service import EmailNotificationService
 
 @login_required
 def ticket_detail(request, pk):
@@ -93,6 +94,10 @@ def ticket_detail(request, pk):
                 comment.author = request.user
                 comment.save()
                 log_activity(request, 'ticket_commented', ticket, f"Dodano komentarz do zgłoszenia '{ticket.title}'")
+                
+                # Send email notification about the new comment
+                EmailNotificationService.notify_ticket_stakeholders('commented', ticket, triggered_by=request.user, comment_content=comment.content)
+                
                 messages.success(request, 'Komentarz został dodany!')
                 return redirect('ticket_detail', pk=ticket.pk)
         elif 'submit_attachment' in request.POST and can_attach:
