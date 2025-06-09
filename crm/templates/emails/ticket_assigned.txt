@@ -1,0 +1,22 @@
+{{ site_name }} - Zgłoszenie zostało Ci przypisane #{{ ticket.id }}
+
+Witaj {{ user.first_name|default:user.username }}!
+
+Zostałeś przypisany do zgłoszenia #{{ ticket.id }} i oczekuje ono na Twoją reakcję.
+
+SZCZEGÓŁY ZGŁOSZENIA:
+Tytuł: {{ ticket.title }}
+ID: #{{ ticket.id }}
+Organizacja: {{ ticket.organization.name }}
+Kategoria: {{ ticket.get_category_display }}
+Priorytet: {{ ticket.get_priority_display }}
+Status: {{ ticket.get_status_display }}
+
+OPIS:
+{{ ticket.description }}
+
+Aby zobaczyć pełne szczegóły zgłoszenia, odwiedź:
+{{ ticket_url }}
+
+Pozdrawiamy,
+Zespół {{ site_name }}

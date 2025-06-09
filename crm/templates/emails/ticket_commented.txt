@@ -1,0 +1,23 @@
+{{ site_name }} - Nowy komentarz do zgłoszenia #{{ ticket.id }}
+
+Witaj {{ user.first_name|default:user.username }}!
+
+Dodano nowy komentarz do zgłoszenia, na które zwracamy Twoją uwagę.
+
+SZCZEGÓŁY ZGŁOSZENIA:
+Tytuł: {{ ticket.title }}
+ID: #{{ ticket.id }}
+Status: {{ ticket.get_status_display }}
+
+TREŚĆ KOMENTARZA:
+{% if comment_content %}
+{{ comment_content }}
+{% else %}
+Dodano nowy komentarz. Sprawdź szczegóły w systemie.
+{% endif %}
+
+Aby zobaczyć pełną dyskusję, odwiedź:
+{{ ticket_url }}
+
+Pozdrawiamy,
+Zespół {{ site_name }}

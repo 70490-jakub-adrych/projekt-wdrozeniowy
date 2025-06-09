@@ -1,0 +1,22 @@
+{{ site_name }} - Aktualizacja zgłoszenia #{{ ticket.id }}
+
+Witaj {{ user.first_name|default:user.username }}!
+
+Zgłoszenie zostało zaktualizowane:
+
+SZCZEGÓŁY ZGŁOSZENIA:
+Tytuł: {{ ticket.title }}
+ID: #{{ ticket.id }}
+Organizacja: {{ ticket.organization.name }}
+Kategoria: {{ ticket.get_category_display }}
+Priorytet: {{ ticket.get_priority_display }}
+Status: {{ ticket.get_status_display }}
+
+ZMIANY:
+{% if changes %}{{ changes }}{% else %}Zaktualizowano szczegóły zgłoszenia.{% endif %}
+
+Aby zobaczyć pełne szczegóły, odwiedź:
+{{ ticket_url }}
+
+Pozdrawiamy,
+Zespół {{ site_name }}

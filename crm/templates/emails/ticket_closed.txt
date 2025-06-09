@@ -1,0 +1,21 @@
+{{ site_name }} - Zgłoszenie zostało zamknięte #{{ ticket.id }}
+
+Witaj {{ user.first_name|default:user.username }}!
+
+Zgłoszenie #{{ ticket.id }} zostało zamknięte.
+
+SZCZEGÓŁY ZGŁOSZENIA:
+Tytuł: {{ ticket.title }}
+ID: #{{ ticket.id }}
+Organizacja: {{ ticket.organization.name }}
+Poprzedni status: {{ old_status }}
+Obecny status: Zamknięte
+
+Jeśli uważasz, że zamknięcie zgłoszenia było błędem, lub problem nadal występuje,
+skontaktuj się z administratorem systemu.
+
+Aby zobaczyć szczegóły zgłoszenia, odwiedź:
+{{ ticket_url }}
+
+Pozdrawiamy,
+Zespół {{ site_name }}

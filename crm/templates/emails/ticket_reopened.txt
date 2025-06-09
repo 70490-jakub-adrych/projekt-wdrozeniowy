@@ -1,0 +1,20 @@
+{{ site_name }} - Zgłoszenie zostało ponownie otwarte #{{ ticket.id }}
+
+Witaj {{ user.first_name|default:user.username }}!
+
+Zgłoszenie #{{ ticket.id }} zostało ponownie otwarte.
+
+SZCZEGÓŁY ZGŁOSZENIA:
+Tytuł: {{ ticket.title }}
+ID: #{{ ticket.id }}
+Organizacja: {{ ticket.organization.name }}
+Poprzedni status: {{ old_status }}
+Obecny status: {{ ticket.get_status_display }}
+
+Zgłoszenie wymaga dalszej uwagi. Sprawdź co zostało zaktualizowane.
+
+Aby zobaczyć szczegóły zgłoszenia, odwiedź:
+{{ ticket_url }}
+
+Pozdrawiamy,
+Zespół {{ site_name }}
