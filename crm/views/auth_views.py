@@ -4,19 +4,20 @@ from django.contrib import messages
 from django.contrib.auth.models import Group
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
-from django.contrib.auth.views import LoginView
+from django.contrib.auth.views import LoginView, PasswordResetView
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
 from django.utils import timezone
 from django.db import transaction, IntegrityError, connection
 from django.db.models import Q
+from django.core.mail import EmailMultiAlternatives
+from django.template import loader
+from ..services.email_service import EmailNotificationService
 
-from ..forms import UserRegisterForm, UserProfileForm, CustomAuthenticationForm, GroupSelectionForm, PasswordChangeVerificationForm
+from ..forms import UserRegisterForm, UserProfileForm, CustomAuthenticationForm, GroupSelectionForm, PasswordChangeVerificationForm, EmailVerificationForm
 from ..models import UserProfile, User, EmailVerification, EmailNotificationSettings, Organization
 from .helpers import log_activity
 from .error_views import forbidden_access
-from ..forms import EmailVerificationForm
-from ..services.email_service import EmailNotificationService
 import random
 import logging
 
@@ -851,3 +852,24 @@ def verify_email(request):
         'verification_form': EmailVerificationForm(),
         'user': user
     })
+
+
+class HTMLEmailPasswordResetView(PasswordResetView):
+    """Custom password reset view that sends HTML emails"""
+    
+    def send_mail(self, subject_template_name, email_template_name, context, from_email, to_email, html_email_template_name=None):
+        """
+        Override Django's send_mail to use our EmailNotificationService
+        """
+        subject = loader.render_to_string(subject_template_name, context)
+        # Email subject *must not* contain newlines
+        subject = ''.join(subject.splitlines())
+        
+        # Use our service to send both HTML and plain text versions
+        EmailNotificationService.send_password_reset_email(
+            user=context.get('user'),
+            subject=subject, 
+            email_template_name=email_template_name,
+            html_email_template_name=html_email_template_name or 'registration/password_reset_email.html',
+            context=context
+        )

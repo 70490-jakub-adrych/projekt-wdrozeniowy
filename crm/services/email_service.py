@@ -18,6 +18,36 @@ class EmailNotificationService:
     """
     
     @staticmethod
+    def send_email(subject, recipient, text_content, html_content):
+        """
+        Central method for sending all emails with consistent formatting
+        
+        Args:
+            subject: Email subject line
+            recipient: Email address of recipient
+            text_content: Plain text version of email
+            html_content: HTML version of email
+            
+        Returns:
+            bool: True if email was sent successfully, False otherwise
+        """
+        try:
+            msg = EmailMultiAlternatives(
+                subject=subject,
+                body=text_content,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=[recipient]
+            )
+            msg.attach_alternative(html_content, "text/html")
+            msg.send()
+            
+            logger.info(f"Email '{subject}' sent to {recipient}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to send email '{subject}' to {recipient}: {str(e)}")
+            return False
+    
+    @staticmethod
     def send_verification_email(user, verification_code):
         """
         Send email verification code to a newly registered user
@@ -93,18 +123,13 @@ class EmailNotificationService:
             text_content = render_to_string(email_template_name, context)
             html_content = render_to_string(html_email_template_name, context)
             
-            # Create email message with both versions
-            msg = EmailMultiAlternatives(
+            # Use the centralized email sending method
+            return EmailNotificationService.send_email(
                 subject=subject,
-                body=text_content,
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                to=[user.email]
+                recipient=user.email,
+                text_content=text_content,
+                html_content=html_content
             )
-            msg.attach_alternative(html_content, "text/html")
-            msg.send()
-            
-            logger.info(f"Password reset email sent to {user.email}")
-            return True
         except Exception as e:
             logger.error(f"Failed to send password reset email to {user.email}: {str(e)}")
             return False
