@@ -9,6 +9,10 @@ from .models import (
     TicketComment, TicketAttachment, ActivityLog, EmailVerification
 )
 from .validators import phone_regex
+import logging  # Add this import
+
+# Configure logger
+logger = logging.getLogger(__name__)  # Add this line
 
 
 class UserRegisterForm(UserCreationForm):
