@@ -419,10 +419,15 @@ class EmailNotificationService:
             bool: True if email was sent successfully, False otherwise
         """
         try:
+            # Generate password reset URL
+            site_url = getattr(settings, 'SITE_URL', 'https://betulait.usermd.net')
+            password_reset_url = f"{site_url}/password_reset/"
+            
             context = {
                 'user': user,
                 'site_name': 'System Helpdesk',
                 'timestamp': timezone.now(),
+                'password_reset_url': password_reset_url,
             }
             
             # Try to render email templates
