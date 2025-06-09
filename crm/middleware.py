@@ -61,7 +61,7 @@ class EmailVerificationMiddleware:
         
         # Allow access to verification-related paths
         allowed_paths = [
-            '/verify-email/',
+            '/verify-email/',  # Make sure this matches the actual URL path
             '/logout/',
             '/static/',
             '/media/',
