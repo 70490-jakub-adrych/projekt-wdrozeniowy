@@ -12,11 +12,13 @@ from .views import (
     pending_approvals, approve_user, reject_user,
     ticket_display_view, get_tickets_update
 )
-from .views.auth_views import unlock_user, HTMLEmailPasswordResetView
+from .views.auth_views import (
+    unlock_user, HTMLEmailPasswordResetView, EnhancedPasswordResetConfirmView, 
+    custom_password_reset_complete, custom_password_change_view
+)
 from . import views
 from .views import secure_file_views
 from django.contrib.auth import views as auth_views
-from .views.auth_views import custom_password_reset_complete, custom_password_change_view
 from .views.statistics_views import statistics_dashboard, update_agent_work_log, generate_statistics_report
 from .views.email_test_views import test_email_view, test_smtp_connection
 
@@ -84,7 +86,7 @@ urlpatterns = [
         template_name='emails/password_reset_done.html'
     ), name='password_reset_done'),
     
-    path('reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(
+    path('reset/<uidb64>/<token>/', EnhancedPasswordResetConfirmView.as_view(
         template_name='emails/password_reset_confirm.html',
         success_url=reverse_lazy('password_reset_complete')
     ), name='password_reset_confirm'),

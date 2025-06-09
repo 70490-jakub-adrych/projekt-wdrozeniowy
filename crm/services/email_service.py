@@ -442,12 +442,13 @@ class EmailNotificationService:
             return False
     
     @staticmethod
-    def send_password_changed_notification(user):
+    def send_password_changed_notification(user, context=None):
         """
         Send notification about successful password change
         
         Args:
             user: User object of the recipient
+            context: Optional additional context for the email template
             
         Returns:
             bool: True if email was sent successfully, False otherwise
@@ -459,18 +460,24 @@ class EmailNotificationService:
             site_url = getattr(settings, 'SITE_URL', 'https://betulait.usermd.net')
             password_reset_url = f"{site_url}/password_reset/"
             
-            context = {
+            # Default context
+            template_context = {
                 'user': user,
                 'site_name': 'System Helpdesk',
                 'timestamp': timezone.now(),
                 'password_reset_url': password_reset_url,
+                'support_email': getattr(settings, 'SUPPORT_EMAIL', 'support@example.com'),
             }
+            
+            # Add any additional context
+            if context:
+                template_context.update(context)
             
             # Try to render email templates
             try:
                 logger.info(f"🔵 Attempting to render password change success templates for {user.email}")
-                html_content = render_to_string('emails/password_change_success.html', context)
-                text_content = render_to_string('emails/password_change_success.txt', context)
+                html_content = render_to_string('emails/password_change_success.html', template_context)
+                text_content = render_to_string('emails/password_change_success.txt', template_context)
                 logger.info("✅ Successfully rendered email templates")
             except Exception as e:
                 logger.error(f"❌ Error rendering password change templates: {str(e)}", exc_info=True)
@@ -481,6 +488,7 @@ class EmailNotificationService:
                 <body>
                     <h2>Witaj {user.username}!</h2>
                     <p>Twoje hasło do systemu Helpdesk zostało pomyślnie zmienione.</p>
+                    <p>Data zmiany: {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}</p>
                     <p>Jeśli nie dokonywałeś tej zmiany, skontaktuj się natychmiast z administratorem.</p>
                     <p><a href="{password_reset_url}">Kliknij tutaj, aby zresetować hasło</a></p>
                 </body>
@@ -489,6 +497,7 @@ class EmailNotificationService:
                 text_content = f"""
                 Witaj {user.username}!
                 Twoje hasło do systemu Helpdesk zostało pomyślnie zmienione.
+                Data zmiany: {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}
                 Jeśli nie dokonywałeś tej zmiany, skontaktuj się natychmiast z administratorem.
                 Możesz zresetować hasło pod adresem: {password_reset_url}
                 """
@@ -506,7 +515,7 @@ class EmailNotificationService:
             )
             msg.attach_alternative(html_content, "text/html")
             
-            # Add helpful headers to reduce chance of being marked as spam
+            # Add helpful headers for security notifications
             msg.extra_headers = {
                 'X-Application': 'System Helpdesk',
                 'X-Priority': '1',  # High priority for security notification

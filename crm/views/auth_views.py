@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.contrib.auth.models import Group
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
-from django.contrib.auth.views import LoginView, PasswordResetView
+from django.contrib.auth.views import LoginView, PasswordResetView, PasswordResetConfirmView
 from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
 from django.utils import timezone
@@ -12,7 +12,9 @@ from django.db import transaction, IntegrityError, connection
 from django.db.models import Q
 from django.core.mail import EmailMultiAlternatives
 from django.template import loader
+from django.urls import reverse
 from ..services.email_service import EmailNotificationService
+import importlib
 
 from ..forms import UserRegisterForm, UserProfileForm, CustomAuthenticationForm, GroupSelectionForm, PasswordChangeVerificationForm, EmailVerificationForm
 from ..models import UserProfile, User, EmailVerification, EmailNotificationSettings, Organization
@@ -882,14 +884,41 @@ def verify_email(request):
 class HTMLEmailPasswordResetView(PasswordResetView):
     """Custom password reset view that sends HTML emails"""
     
+    def form_valid(self, form):
+        """Override to track which user is resetting their password"""
+        # Get the user's email from the form
+        email = form.cleaned_data.get('email', '')
+        logger.info(f"Password reset requested for email: {email}")
+        
+        # Try to find the user by email
+        try:
+            user = User.objects.get(email=email)
+            # Store user ID in session for later tracking
+            self.request.session['reset_user_email'] = email
+            logger.info(f"Stored user email {email} in session for reset tracking")
+        except User.DoesNotExist:
+            logger.warning(f"Password reset requested for non-existent email: {email}")
+            # We'll still process normally to avoid user enumeration
+            pass
+        
+        return super().form_valid(form)
+    
     def send_mail(self, subject_template_name, email_template_name, context, from_email, to_email, html_email_template_name=None):
         """
-        Override Django's send_mail to use our EmailNotificationService
+        Override Django's send_mail to use our EmailNotificationService and add tracking
         """
         user = context.get('user')
         if not user:
             logger.error("User not found in context for password reset email")
             return
+            
+        # Store user ID in global tracker
+        email = user.email
+        cache_module = importlib.import_module('django.core.cache')
+        cache = cache_module.caches['default']
+        cache_key = f"reset_user_{user.pk}"
+        cache.set(cache_key, user.pk, timeout=86400)  # Store for 24 hours
+        logger.info(f"Stored user ID {user.pk} in cache with key {cache_key}")
             
         try:
             subject = loader.render_to_string(subject_template_name, context)
@@ -918,56 +947,155 @@ class HTMLEmailPasswordResetView(PasswordResetView):
         except Exception as e:
             logger.exception(f"Error in send_mail for password reset: {str(e)}")
 
+
+class EnhancedPasswordResetConfirmView(PasswordResetConfirmView):
+    """Enhanced password reset confirmation view with user tracking"""
+    
+    def dispatch(self, *args, **kwargs):
+        """Override to capture user info early in the process"""
+        # Extract user ID from uidb64 parameter and store in session
+        uidb64 = kwargs.get('uidb64')
+        if uidb64:
+            from django.utils.http import urlsafe_base64_decode
+            from django.utils.encoding import force_str
+            
+            try:
+                uid = force_str(urlsafe_base64_decode(uidb64))
+                user_id = int(uid)
+                # Store in session for later retrieval in success view
+                self.request.session['_password_reset_user_id'] = user_id
+                logger.info(f"Stored reset user ID {user_id} in session from uidb64")
+            except (ValueError, TypeError, OverflowError) as e:
+                logger.error(f"Failed to decode uidb64 {uidb64}: {str(e)}")
+        
+        return super().dispatch(*args, **kwargs)
+    
+    def form_valid(self, form):
+        """Override to track user when form is submitted"""
+        user = form.user
+        if user:
+            # Store user ID for later use in completion handler
+            self.request.session['_password_reset_user_id'] = user.pk
+            logger.info(f"Stored user ID {user.pk} in session after password reset form submission")
+            
+            # Also store in cache as backup
+            cache_module = importlib.import_module('django.core.cache')
+            cache = cache_module.caches['default']
+            cache_key = f"reset_complete_user_{user.pk}"
+            cache.set(cache_key, user.pk, timeout=3600)  # Store for 1 hour
+        
+        # Call parent's form_valid
+        response = super().form_valid(form)
+        
+        # Add user_id to the success URL as query parameter for extra reliability
+        if user:
+            if '?' in self.success_url:
+                self.success_url += f"&user_id={user.pk}"
+            else:
+                self.success_url += f"?user_id={user.pk}"
+        
+        return response
+
+
 def custom_password_reset_complete(request):
     """Custom view for password reset completion that sends notification"""
-    # First determine which user just reset their password using multiple methods
+    # Try multiple methods to determine which user just reset their password
     user = None
     user_id = None
+    methods_tried = []
     
     # Method 1: Try logged in user
     if request.user.is_authenticated:
         user = request.user
-        logger.info(f"Using authenticated user for password reset notification: {user.username}")
+        methods_tried.append("authenticated_user")
+        logger.info(f"Found reset user via authenticated session: {user.username}")
     
     # Method 2: Try to get from session (Django's built-in)
     if not user:
         user_id = request.session.get('_password_reset_user_id')
         if user_id:
-            logger.info(f"Found user ID {user_id} in Django session for password reset")
+            methods_tried.append("session_storage")
+            logger.info(f"Found reset user ID {user_id} in session")
     
-    # Method 3: Try to get from query parameters (set by our JavaScript)
+    # Method 3: Try to get from query parameters
     if not user_id:
-        user_id = request.GET.get('user_id')
-        if user_id:
-            logger.info(f"Found user ID {user_id} in query parameters for password reset")
+        url_user_id = request.GET.get('user_id')
+        if url_user_id:
+            try:
+                user_id = int(url_user_id)
+                methods_tried.append("url_parameter")
+                logger.info(f"Found reset user ID {user_id} in URL parameter")
+            except (ValueError, TypeError):
+                logger.error(f"Invalid user ID in URL parameter: {url_user_id}")
     
-    # Method 4: Try to get from session storage (our custom JavaScript solution)
-    if not user_id and request.headers.get('X-Password-Reset-User-Id'):
-        user_id = request.headers.get('X-Password-Reset-User-Id')
-        logger.info(f"Found user ID {user_id} in X-Password-Reset-User-Id header")
+    # Method 4: Check the cache for recent password resets
+    if not user and not user_id:
+        email = request.session.get('reset_user_email')
+        if email:
+            methods_tried.append("session_email")
+            logger.info(f"Found reset user email in session: {email}")
+            try:
+                user = User.objects.get(email=email)
+                logger.info(f"Retrieved user {user.username} using email {email}")
+            except User.DoesNotExist:
+                logger.error(f"No user found with email {email}")
     
-    # If we have a user_id but not a user object yet, get the user
+    # Method 5: Try cache as last resort
+    if not user and not user_id:
+        # Try to find a recent reset in the cache
+        cache_module = importlib.import_module('django.core.cache')
+        cache = cache_module.caches['default']
+        
+        # Get all active users and check if any have a recent reset
+        active_users = User.objects.filter(is_active=True)
+        for active_user in active_users[:100]:  # Limit to first 100 users to prevent performance issues
+            cache_key = f"reset_complete_user_{active_user.pk}"
+            cached_id = cache.get(cache_key)
+            if cached_id:
+                user_id = cached_id
+                methods_tried.append("cache_lookup")
+                logger.info(f"Found reset user ID {user_id} in cache with key {cache_key}")
+                break
+    
+    # If we have a user_id but not a user object, get the user
     if not user and user_id:
         try:
             user = User.objects.get(pk=user_id)
-            logger.info(f"Retrieved user {user.username} from ID {user_id} for password reset notification")
+            logger.info(f"Retrieved user {user.username} from ID {user_id} for reset notification")
             
             # Clean up session
             if '_password_reset_user_id' in request.session:
                 del request.session['_password_reset_user_id']
         except User.DoesNotExist:
-            logger.error(f"User ID {user_id} from session/parameters not found")
+            logger.error(f"User ID {user_id} not found in database")
+    
+    # Clean up session variable
+    if 'reset_user_email' in request.session:
+        email = request.session.get('reset_user_email')
+        del request.session['reset_user_email']
+        logger.info(f"Cleaned up reset_user_email from session: {email}")
     
     # Send notification if we found the user
     if user:
-        logger.info(f"SENDING PASSWORD CHANGED EMAIL: Starting notification after reset for {user.username}")
+        logger.info(f"SENDING PASSWORD CHANGED EMAIL: Starting notification after reset for {user.username} (found via {', '.join(methods_tried)})")
         try:
             # Generate password reset URL for security
             site_url = getattr(settings, 'SITE_URL', 'https://betulait.usermd.net')
-            password_reset_url = f"{site_url}/password_reset/"
+            password_reset_url = f"{site_url}{reverse('password_reset')}"
+            
+            # Create a context with support information
+            context = {
+                'user': user,
+                'timestamp': timezone.now(),
+                'password_reset_url': password_reset_url,
+                'site_name': 'System Helpdesk',
+                'support_email': getattr(settings, 'SUPPORT_EMAIL', 'support@example.com'),
+                'ip_address': request.META.get('REMOTE_ADDR', 'unknown'),
+                'browser': request.META.get('HTTP_USER_AGENT', 'unknown'),
+            }
             
             # Direct call with explicit success check
-            success = EmailNotificationService.send_password_changed_notification(user)
+            success = EmailNotificationService.send_password_changed_notification(user, context)
             
             if success:
                 logger.info(f"✅ Password changed notification SUCCESSFULLY sent after reset to {user.email}")
@@ -976,7 +1104,7 @@ def custom_password_reset_complete(request):
         except Exception as e:
             logger.error(f"❌ CRITICAL ERROR sending password reset notification: {str(e)}", exc_info=True)
     else:
-        logger.warning("❓ Could not determine user for password reset notification - NO EMAIL SENT")
+        logger.warning(f"❓ Could not determine user for password reset notification - NO EMAIL SENT. Methods tried: {', '.join(methods_tried)}")
     
     # Always show the success template
     return render(request, 'emails/password_reset_complete.html')
