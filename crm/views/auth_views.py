@@ -655,11 +655,17 @@ def custom_password_change_view(request):
                                     description=f"Zmiana hasła użytkownika {user.username}"
                                 )
                                 
-                                # Send notification about password change
-                                # Add log before sending to track if the function is called
-                                logger.info(f"Sending password changed notification to {user.email}")
-                                success = EmailNotificationService.send_password_changed_notification(user)
-                                logger.info(f"Password changed notification sent result: {success}")
+                                # Send notification about password change - with explicit error handling
+                                logger.info(f"Attempting to send password changed notification to {user.email}")
+                                try:
+                                    # Generate password reset URL for security
+                                    site_url = getattr(settings, 'SITE_URL', 'https://betulait.usermd.net')
+                                    password_reset_url = f"{site_url}/password_reset/"
+                                    
+                                    success = EmailNotificationService.send_password_changed_notification(user)
+                                    logger.info(f"Password changed notification sent: {success}")
+                                except Exception as e:
+                                    logger.error(f"Error sending password change notification: {str(e)}", exc_info=True)
                                 
                                 messages.success(request, "Twoje hasło zostało pomyślnie zmienione.")
                                 return redirect('dashboard')
@@ -902,3 +908,36 @@ class HTMLEmailPasswordResetView(PasswordResetView):
                 
         except Exception as e:
             logger.exception(f"Error in send_mail for password reset: {str(e)}")
+
+def custom_password_reset_complete(request):
+    """Custom view for password reset completion that sends notification"""
+    # First determine which user just reset their password
+    user = None
+    if request.user.is_authenticated:
+        user = request.user
+    else:
+        # Try to get user from session if set by PasswordResetConfirmView
+        user_id = request.session.get('_password_reset_user_id')
+        if user_id:
+            try:
+                user = User.objects.get(pk=user_id)
+                logger.info(f"Found user {user.username} from session after password reset")
+                # Clean up session
+                del request.session['_password_reset_user_id']
+            except User.DoesNotExist:
+                logger.error(f"User ID {user_id} from session not found")
+    
+    if user:
+        logger.info(f"Sending password change notification after reset for user {user.username}")
+        try:
+            # Generate password reset URL for security
+            site_url = getattr(settings, 'SITE_URL', 'https://betulait.usermd.net')
+            password_reset_url = f"{site_url}/password_reset/"
+            
+            success = EmailNotificationService.send_password_changed_notification(user)
+            logger.info(f"Password changed notification sent after reset: {success}")
+        except Exception as e:
+            logger.error(f"Error sending password change notification after reset: {str(e)}", exc_info=True)
+    
+    # Always show the success template
+    return render(request, 'emails/password_reset_complete.html')

@@ -15,7 +15,7 @@ from .views.auth_views import unlock_user
 from . import views
 from .views import secure_file_views
 from django.contrib.auth import views as auth_views
-from .views.auth_views import custom_password_change_view
+from .views.auth_views import custom_password_reset_complete, custom_password_change_view
 from .views.statistics_views import statistics_dashboard, update_agent_work_log, generate_statistics_report
 from .views.email_test_views import test_email_view, test_smtp_connection
 from .views.auth_views import HTMLEmailPasswordResetView
@@ -69,7 +69,7 @@ urlpatterns = [
     # Password change
     path('password/change/', custom_password_change_view, name='password_change'),
     
-    # Password reset - Updated to use templates from emails directory and fix URL paths
+    # Password reset - Updated to use templates from emails directory
     path('password_reset/', HTMLEmailPasswordResetView.as_view(
         template_name='emails/password_reset_form.html',
         email_template_name='emails/password_reset_email.txt',
@@ -90,12 +90,11 @@ urlpatterns = [
     ), name='password_reset_done'),
     
     path('reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(
-        template_name='emails/password_reset_confirm.html'
+        template_name='emails/password_reset_confirm.html',
+        success_url='/reset/done/'
     ), name='password_reset_confirm'),
     
-    path('reset/done/', auth_views.PasswordResetCompleteView.as_view(
-        template_name='emails/password_reset_complete.html'
-    ), name='password_reset_complete'),
+    path('reset/done/', custom_password_reset_complete, name='password_reset_complete'),
 
     # Statistics URLs
     path('statistics/', statistics_dashboard, name='statistics_dashboard'),
