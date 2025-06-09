@@ -46,7 +46,7 @@ def ticket_list(request):
     all_organizations = None
     if role == 'admin':
         all_organizations = Organization.objects.all().order_by('name')
-    elif role == 'agent':
+    elif role in ['agent', 'superagent']:  # Include superagents here
         all_organizations = user_orgs.order_by('name')
     
     # Określenie widocznych zgłoszeń na podstawie roli
@@ -54,27 +54,22 @@ def ticket_list(request):
         # Admin widzi wszystkie zgłoszenia
         tickets = Ticket.objects.all()
         logger.debug(f"Admin user {user.username} - showing all tickets")
+    elif role == 'superagent':
+        # Superagent widzi wszystkie zgłoszenia z organizacji, do których należy
+        if not org_ids:
+            tickets = Ticket.objects.none()
+            logger.warning(f"Superagent {user.username} has no organizations")
+        else:
+            tickets = Ticket.objects.filter(organization_id__in=org_ids)
+            logger.debug(f"Superagent {user.username} - showing tickets where organization_id IN {org_ids}")
     elif role == 'agent':
-        # Agent widzi wszystkie zgłoszenia z organizacji, do których należy,
-        # niezależnie od tego, do kogo są przypisane
+        # Agent widzi wszystkie zgłoszenia z organizacji, do których należy
         if not org_ids:
             tickets = Ticket.objects.none()
             logger.warning(f"Agent {user.username} has no organizations")
         else:
-            # Force an explicit IN clause in SQL for clearer debugging and to avoid any optimization issues
             tickets = Ticket.objects.filter(organization_id__in=org_ids)
-            # Log which organizations the user belongs to
             logger.debug(f"Agent {user.username} - showing tickets where organization_id IN {org_ids}")
-            logger.debug(f"SQL Query: {str(tickets.query)}")
-            
-            # Debug: Log all ticket IDs from these organizations 
-            ticket_ids = list(tickets.values_list('id', flat=True))
-            logger.debug(f"Found {len(ticket_ids)} tickets: {ticket_ids}")
-            
-            # Debug: Log assigned tickets info
-            assigned_tickets = tickets.filter(assigned_to__isnull=False)
-            assigned_data = [(t.id, t.assigned_to.username) for t in assigned_tickets]
-            logger.debug(f"Assigned tickets: {assigned_data}")
     else:  # client
         # Klient widzi zgłoszenia ze swoich organizacji i swoje własne
         tickets = Ticket.objects.filter(Q(organization__in=user_orgs) | Q(created_by=user))

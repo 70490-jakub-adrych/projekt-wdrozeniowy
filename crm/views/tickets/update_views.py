@@ -8,9 +8,11 @@ from ...models import Ticket, TicketAttachment
 from ...forms import ModeratorTicketForm, ClientTicketForm, TicketAttachmentForm
 from ..helpers import log_activity
 from ..error_views import ticket_not_found, ticket_edit_forbidden
-from ...services.email_service import EmailNotificationService  # Add this import
+from ...services.email_service import EmailNotificationService
+from ...decorators import admin_required
 
 @login_required
+@admin_required  # Add this decorator to ensure only admins can access
 def ticket_update(request, pk):
     """Widok aktualizacji zgłoszenia"""
     user = request.user
@@ -25,10 +27,6 @@ def ticket_update(request, pk):
     if ticket.status == 'closed':
         messages.error(request, "Nie można edytować zamkniętego zgłoszenia. Najpierw otwórz je ponownie.")
         return redirect('ticket_detail', pk=ticket.pk)
-    
-    # Sprawdzenie uprawnień do edycji
-    if role != 'admin':
-        return ticket_edit_forbidden(request, pk)
     
     # Save original values to compare for logging changes
     original_status = ticket.status

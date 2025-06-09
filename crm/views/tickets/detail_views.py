@@ -49,29 +49,55 @@ def ticket_detail(request, pk):
     comment_form = TicketCommentForm()
     attachment_form = TicketAttachmentForm()
     
+    # Comment form handling
+    comment_form = TicketCommentForm()
+    if request.method == 'POST' and 'submit_comment' in request.POST:
+        comment_form = TicketCommentForm(request.POST)
+        if comment_form.is_valid():
+            # Make sure to not create a comment if the ticket is closed
+            if ticket.status == 'closed':
+                messages.error(request, "Nie można dodawać komentarzy do zamkniętego zgłoszenia.")
+                return redirect('ticket_detail', pk=ticket.pk)
+                
+            comment = comment_form.save(commit=False)
+            comment.ticket = ticket
+            comment.author = request.user
+            comment.save()
+            
+            # Log the activity
+            log_activity(
+                request,
+                'ticket_commented',
+                ticket,
+                f"Komentarz dodany do zgłoszenia '{ticket.title}'"
+            )
+            
+            # Send email notification
+            EmailNotificationService.notify_ticket_stakeholders('commented', ticket, 
+                                                              comment=comment.content,
+                                                              triggered_by=request.user)
+            
+            messages.success(request, 'Komentarz został dodany.')
+            return redirect('ticket_detail', pk=ticket.pk)
+    
+    # Permission checks - fix the logic for determining who can comment
+    is_closed = ticket.status == 'closed'
+    can_comment = not is_closed and (
+        # Admin can always comment
+        request.user.profile.role == 'admin' or
+        # Creator can always comment
+        request.user == ticket.created_by or
+        # Agent assigned to ticket can comment
+        (request.user.profile.role in ['agent', 'superagent'] and ticket.assigned_to == request.user) or
+        # Agents/superagents from the same organization can comment
+        (request.user.profile.role in ['agent', 'superagent'] and 
+         ticket.organization in request.user.profile.organizations.all())
+    )
+    
     # Process forms if this is a POST request and ticket is not closed
     if request.method == 'POST' and not is_closed:
-        # Handle comment submission
-        if 'add_comment' in request.POST:
-            comment_form = TicketCommentForm(request.POST)
-            if comment_form.is_valid():
-                comment = comment_form.save(commit=False)
-                comment.ticket = ticket
-                comment.author = user
-                comment.save()
-                
-                # Log the comment
-                log_activity(request, 'ticket_comment_added', ticket=ticket, 
-                            description=f"Added comment to #{ticket.id}: {comment.content[:50]}...")
-                
-                # Send email notification about the comment
-                EmailNotificationService.notify_ticket_stakeholders('commented', ticket, triggered_by=user, comment=comment)
-                
-                messages.success(request, 'Komentarz został dodany!')
-                return redirect('ticket_detail', pk=ticket.pk)
-        
         # Handle attachment upload
-        elif 'add_attachment' in request.POST:
+        if 'add_attachment' in request.POST:
             attachment_form = TicketAttachmentForm(request.POST, request.FILES)
             
             # Check if a file was uploaded
@@ -145,9 +171,11 @@ def ticket_detail(request, pk):
         'comment_form': comment_form,
         'attachment_form': attachment_form,
         'can_edit': can_edit,
+        'can_comment': can_comment,
+        'can_attach': can_attach,
+        'can_assign_to_self': can_assign_to_self,
         'can_close': can_close,
         'can_reopen': can_reopen,
-        'can_assign': can_assign,
         'is_closed': is_closed,
     }
     

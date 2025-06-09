@@ -13,8 +13,9 @@ def ticket_assign_to_me(request, pk):
     """Widok przypisywania zgłoszenia do siebie (dla agentów i superagentów)"""
     user = request.user
     
-    if user.profile.role not in ['agent', 'superagent']:
-        return HttpResponseForbidden("Tylko agenci i superagenci mogą przypisywać zgłoszenia do siebie")
+    # Update the role check to include admin role
+    if user.profile.role not in ['admin', 'agent', 'superagent']:
+        return HttpResponseForbidden("Tylko administratorzy, agenci i superagenci mogą przypisywać zgłoszenia do siebie")
     
     try:
         ticket = get_object_or_404(Ticket, pk=pk)
@@ -28,7 +29,11 @@ def ticket_assign_to_me(request, pk):
     
     # Sprawdź czy zgłoszenie jest już przypisane do kogoś innego
     if ticket.assigned_to and ticket.assigned_to != user:
-        return HttpResponseForbidden("To zgłoszenie jest już przypisane do innego agenta")
+        if user.profile.role == 'admin':
+            # Admin can override assignments
+            pass
+        else:
+            return HttpResponseForbidden("To zgłoszenie jest już przypisane do innego agenta")
     
     if request.method == 'POST':
         # Przypisz zgłoszenie do aktualnego użytkownika

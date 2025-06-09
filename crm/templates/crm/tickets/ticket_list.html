@@ -253,8 +253,8 @@
                                 </a>
                                 {% endif %}
                                 
-                                <!-- Only show close/reopen buttons for admins and agents -->
-                                {% if user.profile.role in 'admin,agent' %}
+                                <!-- Only show close/reopen buttons for admins, superagents and agents -->
+                                {% if user.profile.role in 'admin,superagent,agent' %}
                                     {% if ticket.status != 'closed' and ticket.assigned_to %}
                                     <a href="{% url 'ticket_close' ticket.pk %}" class="btn btn-sm btn-secondary action-btn" title="Zamknij">
                                         <i class="fas fa-lock"></i>

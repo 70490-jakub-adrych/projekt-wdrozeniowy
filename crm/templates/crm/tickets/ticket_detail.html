@@ -26,7 +26,7 @@
 
 <!-- Action buttons in their own row -->
 <div class="mb-4">
-    {% if can_edit %}
+    {% if user.profile.role == 'admin' %}
     <a href="{% url 'ticket_update' ticket.pk %}" class="btn btn-primary">
         <i class="fas fa-edit"></i> Edytuj
     </a>
