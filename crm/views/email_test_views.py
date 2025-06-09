@@ -51,18 +51,56 @@ Informacje o konfiguracji:
 - TLS: {settings.EMAIL_USE_TLS}
 - SSL: {settings.EMAIL_USE_SSL}
 - Od: {settings.DEFAULT_FROM_EMAIL}
-- Data wysłania: {timezone.now().strftime("%d.%m.%Y %H:%M:%S")}
+- Data wysłania: {timezone.now().strftime("%d.m.Y %H:%M:%S")}
 
 Wysłane przez: {request.user.username} ({request.user.email})
 """
                 
-                send_mail(
+                # Use EmailMultiAlternatives to send HTML version too
+                from django.core.mail import EmailMultiAlternatives
+                msg = EmailMultiAlternatives(
                     subject=subject,
-                    message=full_message,
+                    body=full_message,
                     from_email=settings.DEFAULT_FROM_EMAIL,
-                    recipient_list=[recipient],
-                    fail_silently=False,
+                    to=[recipient]
                 )
+                
+                # Create HTML version with styling
+                html_content = f"""
+                <html>
+                <head>
+                    <style>
+                        body {{ font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px; }}
+                        .header {{ background-color: #007bff; color: white; padding: 20px; text-align: center; border-radius: 5px 5px 0 0; }}
+                        .content {{ background-color: #f8f9fa; padding: 30px; border-radius: 0 0 5px 5px; border: 1px solid #dee2e6; }}
+                        .info {{ background-color: #e2f0fb; padding: 15px; border-left: 4px solid #17a2b8; margin: 20px 0; }}
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h1>Test Email - System Helpdesk</h1>
+                    </div>
+                    <div class="content">
+                        <h2>Witaj!</h2>
+                        <p>{message_text}</p>
+                        <div class="info">
+                            <h3>Informacje o konfiguracji:</h3>
+                            <ul>
+                                <li><strong>Backend:</strong> {settings.EMAIL_BACKEND}</li>
+                                <li><strong>Host:</strong> {settings.EMAIL_HOST}:{settings.EMAIL_PORT}</li>
+                                <li><strong>TLS:</strong> {settings.EMAIL_USE_TLS}</li>
+                                <li><strong>SSL:</strong> {settings.EMAIL_USE_SSL}</li>
+                                <li><strong>Od:</strong> {settings.DEFAULT_FROM_EMAIL}</li>
+                                <li><strong>Data wysłania:</strong> {timezone.now().strftime("%d.m.Y %H:%M:%S")}</li>
+                            </ul>
+                            <p>Wysłane przez: {request.user.username} ({request.user.email})</p>
+                        </div>
+                    </div>
+                </body>
+                </html>
+                """
+                msg.attach_alternative(html_content, "text/html")
+                msg.send(fail_silently=False)
                 
                 logger.info(f"Test email sent successfully to {recipient} by {request.user.username}")
                 messages.success(request, f'Email testowy został wysłany pomyślnie na adres: {recipient}')

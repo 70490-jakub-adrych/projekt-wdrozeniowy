@@ -69,24 +69,24 @@ urlpatterns = [
     # Password change
     path('password/change/', custom_password_change_view, name='password_change'),
     
-    # Password reset
+    # Password reset - Updated to use templates from emails directory
     path('password_reset/', HTMLEmailPasswordResetView.as_view(
-        template_name='registration/password_reset_form.html',
-        email_template_name='registration/password_reset_email.txt',
-        html_email_template_name='registration/password_reset_email.html',
+        template_name='emails/password_reset_form.html',
+        email_template_name='emails/password_reset_email.txt',
+        html_email_template_name='emails/password_reset_email.html',
         success_url='/password_reset/done/'
     ), name='password_reset'),
     
     path('password_reset/done/', auth_views.PasswordResetDoneView.as_view(
-        template_name='registration/password_reset_done.html'
+        template_name='emails/password_reset_done.html'
     ), name='password_reset_done'),
     
     path('reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(
-        template_name='registration/password_reset_confirm.html'
+        template_name='emails/password_reset_confirm.html'
     ), name='password_reset_confirm'),
     
     path('reset/done/', auth_views.PasswordResetCompleteView.as_view(
-        template_name='registration/password_reset_complete.html'
+        template_name='emails/password_reset_complete.html'
     ), name='password_reset_complete'),
 
     # Statistics URLs

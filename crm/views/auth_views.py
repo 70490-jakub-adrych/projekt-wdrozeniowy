@@ -861,15 +861,34 @@ class HTMLEmailPasswordResetView(PasswordResetView):
         """
         Override Django's send_mail to use our EmailNotificationService
         """
-        subject = loader.render_to_string(subject_template_name, context)
-        # Email subject *must not* contain newlines
-        subject = ''.join(subject.splitlines())
-        
-        # Use our service to send both HTML and plain text versions
-        EmailNotificationService.send_password_reset_email(
-            user=context.get('user'),
-            subject=subject, 
-            email_template_name=email_template_name,
-            html_email_template_name=html_email_template_name or 'registration/password_reset_email.html',
-            context=context
-        )
+        user = context.get('user')
+        if not user:
+            logger.error("User not found in context for password reset email")
+            return
+            
+        try:
+            subject = loader.render_to_string(subject_template_name, context)
+            # Email subject *must not* contain newlines
+            subject = ''.join(subject.splitlines())
+            
+            # Make sure we have an HTML template path
+            if not html_email_template_name:
+                html_email_template_name = 'emails/password_reset_email.html'
+                logger.warning(f"No HTML template specified, using default: {html_email_template_name}")
+                
+            # Use our service to send both HTML and plain text versions
+            success = EmailNotificationService.send_password_reset_email(
+                user=user,
+                subject=subject, 
+                email_template_name=email_template_name,
+                html_email_template_name=html_email_template_name,
+                context=context
+            )
+            
+            if success:
+                logger.info(f"Password reset email successfully sent to {user.email}")
+            else:
+                logger.error(f"Failed to send password reset email to {user.email}")
+                
+        except Exception as e:
+            logger.exception(f"Error in send_mail for password reset: {str(e)}")

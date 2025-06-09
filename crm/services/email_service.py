@@ -123,13 +123,22 @@ class EmailNotificationService:
             text_content = render_to_string(email_template_name, context)
             html_content = render_to_string(html_email_template_name, context)
             
-            # Use the centralized email sending method
-            return EmailNotificationService.send_email(
+            logger.debug(f"Sending password reset email to {user.email} using templates:")
+            logger.debug(f"Text template: {email_template_name}")
+            logger.debug(f"HTML template: {html_email_template_name}")
+            
+            # Create and send email with both text and HTML content
+            msg = EmailMultiAlternatives(
                 subject=subject,
-                recipient=user.email,
-                text_content=text_content,
-                html_content=html_content
+                body=text_content,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=[user.email]
             )
+            msg.attach_alternative(html_content, "text/html")
+            msg.send()
+            
+            logger.info(f"Password reset email sent to {user.email}")
+            return True
         except Exception as e:
             logger.error(f"Failed to send password reset email to {user.email}: {str(e)}")
             return False
