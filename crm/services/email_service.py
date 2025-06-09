@@ -9,11 +9,26 @@ import os
 logger = logging.getLogger(__name__)
 
 class EmailNotificationService:
-    """Service for sending email notifications"""
+    """
+    Service for sending email notifications throughout the application
+    
+    This central service handles all email sending operations to ensure consistent
+    formatting, styling, and delivery across the entire application. All emails
+    should be sent through this service rather than using Django's send_mail directly.
+    """
     
     @staticmethod
     def send_verification_email(user, verification_code):
-        """Send email verification code to a newly registered user"""
+        """
+        Send email verification code to a newly registered user
+        
+        Args:
+            user: User object of the recipient
+            verification_code: The verification code to include in the email
+            
+        Returns:
+            bool: True if email was sent successfully, False otherwise
+        """
         try:
             context = {
                 'user': user,
@@ -59,8 +74,55 @@ class EmailNotificationService:
             return False
     
     @staticmethod
+    def send_password_reset_email(user, subject, email_template_name, html_email_template_name, context):
+        """
+        Send password reset email with proper HTML formatting
+        
+        Args:
+            user: User object of the recipient
+            subject: Subject line of the email
+            email_template_name: Path to the plain text template
+            html_email_template_name: Path to the HTML template
+            context: Template context dictionary containing reset link data
+            
+        Returns:
+            bool: True if email was sent successfully, False otherwise
+        """
+        try:
+            # Render both text and HTML versions of the email
+            text_content = render_to_string(email_template_name, context)
+            html_content = render_to_string(html_email_template_name, context)
+            
+            # Create email message with both versions
+            msg = EmailMultiAlternatives(
+                subject=subject,
+                body=text_content,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=[user.email]
+            )
+            msg.attach_alternative(html_content, "text/html")
+            msg.send()
+            
+            logger.info(f"Password reset email sent to {user.email}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to send password reset email to {user.email}: {str(e)}")
+            return False
+    
+    @staticmethod
     def notify_ticket_stakeholders(notification_type, ticket, triggered_by=None, **kwargs):
-        """Send notification to all stakeholders of a ticket"""
+        """
+        Send notification to all stakeholders of a ticket
+        
+        Args:
+            notification_type: Type of notification (created, updated, commented, etc.)
+            ticket: The ticket object related to this notification
+            triggered_by: User who triggered the action (will not receive notification)
+            **kwargs: Additional context data for the email template
+            
+        Returns:
+            bool: True if at least one notification was sent successfully
+        """
         try:
             logger.info(f"Starting notification for {notification_type} on ticket #{ticket.id}")
             stakeholders = []
@@ -111,7 +173,18 @@ class EmailNotificationService:
 
     @staticmethod
     def send_ticket_notification(notification_type, ticket, user, **kwargs):
-        """Send ticket-related notification"""
+        """
+        Send ticket-related notification to a specific user
+        
+        Args:
+            notification_type: Type of notification (created, updated, commented, etc.)
+            ticket: The ticket object related to this notification
+            user: User who should receive the notification
+            **kwargs: Additional context data for the email template
+            
+        Returns:
+            bool: True if notification was sent successfully
+        """
         from ..models import EmailNotificationSettings
         
         try:
@@ -246,7 +319,16 @@ class EmailNotificationService:
     
     @staticmethod
     def send_password_verification_email(user, verification_code):
-        """Send password change verification code"""
+        """
+        Send password change verification code
+        
+        Args:
+            user: User object of the recipient
+            verification_code: The verification code to include in the email
+            
+        Returns:
+            bool: True if email was sent successfully, False otherwise
+        """
         try:
             context = {
                 'user': user,

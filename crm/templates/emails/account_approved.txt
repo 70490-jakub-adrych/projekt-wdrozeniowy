@@ -1,0 +1,22 @@
+{{ site_name }} - Konto zatwierdzone
+
+Witaj {{ user.first_name|default:user.username }}!
+
+Mamy wspaniałe wiadomości! Twoje konto w systemie {{ site_name }} zostało zatwierdzone i możesz teraz korzystać z pełnej funkcjonalności systemu.
+
+{% if approved_by %}Twoje konto zostało zatwierdzone przez: {{ approved_by.get_full_name|default:approved_by.username }}{% endif %}
+
+Aby się zalogować, odwiedź: {{ login_url }}
+
+CO MOŻESZ TERAZ ROBIĆ:
+- Tworzyć nowe zgłoszenia
+- Przeglądać status swoich zgłoszeń
+- Komunikować się z zespołem wsparcia
+- Dodawać załączniki do zgłoszeń
+
+Jeśli masz pytania dotyczące korzystania z systemu, skontaktuj się z naszym zespołem wsparcia.
+
+---
+
+Ten email został wysłany automatycznie z systemu {{ site_name }}. Nie odpowiadaj na ten email.
+Jeśli masz problemy, skontaktuj się z administratorem systemu.
