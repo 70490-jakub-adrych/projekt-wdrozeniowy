@@ -125,11 +125,12 @@ DATABASES = {
 
 # Add MySQL specific options if MySQL is being used
 if 'mysql' in DATABASES['default']['ENGINE']:
-    DATABASES['default']['OPTIONS'].update({
-        'charset': 'utf8mb4',
-        'use_unicode': True,
+    DATABASES['default']['OPTIONS'] = {
         'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
-    })
+        'connect_timeout': 10,
+        'read_timeout': 30,
+        'write_timeout': 30,
+    }
 
 # Password validation
 AUTH_PASSWORD_VALIDATORS = [

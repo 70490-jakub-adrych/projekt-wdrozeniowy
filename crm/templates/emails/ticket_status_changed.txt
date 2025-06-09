@@ -1,19 +1,18 @@
-{{ site_name }} - Zmiana statusu zgłoszenia #{{ ticket.id }}
+{{ site_name }} - Aktualizacja statusu zgłoszenia
 
 Witaj {{ user.first_name|default:user.username }}!
 
-Status zgłoszenia #{{ ticket.id }} został zmieniony.
+Informujemy o zmianie statusu zgłoszenia #{{ ticket.id }}.
 
-SZCZEGÓŁY ZMIANY:
-Z: {{ old_status }}
-Na: {{ ticket.get_status_display }}
+Zmiana statusu: {{ old_status }} → {{ ticket.get_status_display }}
 
-SZCZEGÓŁY ZGŁOSZENIA:
-Tytuł: {{ ticket.title }}
-ID: #{{ ticket.id }}
-Organizacja: {{ ticket.organization.name }}
-Kategoria: {{ ticket.get_category_display }}
-Priorytet: {{ ticket.get_priority_display }}
+Szczegóły zgłoszenia:
+- Tytuł: {{ ticket.title }}
+- ID: #{{ ticket.id }}
+- Organizacja: {{ ticket.organization.name }}
+- Kategoria: {{ ticket.get_category_display }}
+- Priorytet: {{ ticket.get_priority_display }}
+- Status: {{ ticket.get_status_display }}
 
 Aby zobaczyć szczegóły zgłoszenia, odwiedź:
 {{ ticket_url }}

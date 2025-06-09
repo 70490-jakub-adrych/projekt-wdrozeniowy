@@ -656,7 +656,10 @@ def custom_password_change_view(request):
                                 )
                                 
                                 # Send notification about password change
-                                EmailNotificationService.send_password_changed_notification(user)
+                                # Add log before sending to track if the function is called
+                                logger.info(f"Sending password changed notification to {user.email}")
+                                success = EmailNotificationService.send_password_changed_notification(user)
+                                logger.info(f"Password changed notification sent result: {success}")
                                 
                                 messages.success(request, "Twoje hasło zostało pomyślnie zmienione.")
                                 return redirect('dashboard')

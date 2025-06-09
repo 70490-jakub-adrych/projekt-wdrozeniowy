@@ -69,13 +69,21 @@ urlpatterns = [
     # Password change
     path('password/change/', custom_password_change_view, name='password_change'),
     
-    # Password reset - Updated to use templates from emails directory
+    # Password reset - Updated to use templates from emails directory and fix URL paths
     path('password_reset/', HTMLEmailPasswordResetView.as_view(
         template_name='emails/password_reset_form.html',
         email_template_name='emails/password_reset_email.txt',
         html_email_template_name='emails/password_reset_email.html',
         success_url='/password_reset/done/'
     ), name='password_reset'),
+    
+    # Add alias for password/reset/ to fix the 404 errors
+    path('password/reset/', HTMLEmailPasswordResetView.as_view(
+        template_name='emails/password_reset_form.html',
+        email_template_name='emails/password_reset_email.txt',
+        html_email_template_name='emails/password_reset_email.html',
+        success_url='/password_reset/done/'
+    ), name='password_reset_alt'),
     
     path('password_reset/done/', auth_views.PasswordResetDoneView.as_view(
         template_name='emails/password_reset_done.html'
