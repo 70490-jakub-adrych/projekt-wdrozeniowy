@@ -85,9 +85,16 @@ class EmailNotificationService:
         }
         
         try:
-            html_content = render_to_string(f'emails/ticket_{notification_type}.html', context)
-            text_content = render_to_string(f'emails/ticket_{notification_type}.txt', context)
-            
+            # Try to render the template for this notification type
+            try:
+                html_content = render_to_string(f'emails/ticket_{notification_type}.html', context)
+                text_content = render_to_string(f'emails/ticket_{notification_type}.txt', context)
+            except Exception as template_error:
+                # Use generic templates if specific ones don't exist
+                logger.warning(f"Specific template for {notification_type} not found, using generic: {str(template_error)}")
+                html_content = render_to_string('emails/ticket_generic.html', {**context, 'notification_type': notification_type})
+                text_content = render_to_string('emails/ticket_generic.txt', {**context, 'notification_type': notification_type})
+        
             msg = EmailMultiAlternatives(
                 subject=subject,
                 body=text_content,

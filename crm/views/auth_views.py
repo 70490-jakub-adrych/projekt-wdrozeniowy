@@ -57,10 +57,16 @@ def register(request):
                         verification.verified_at = timezone.now()
                         verification.save()
                         
-                        # Activate user profile
+                        # Activate user profile for email verification but set is_approved=False
                         profile = user.profile
                         profile.email_verified = True
+                        profile.is_approved = False  # Ensure this is explicitly set to False
                         profile.save()
+                        
+                        # Activate the user account now that email is verified
+                        # This allows login but they'll see "pending approval" until an admin approves
+                        user.is_active = True  # Activate the user after email verification
+                        user.save()
                         
                         # Create default notification settings
                         EmailNotificationSettings.objects.get_or_create(user=user)

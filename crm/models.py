@@ -40,10 +40,10 @@ class UserProfile(models.Model):
         self.save()
     
     def unlock_account(self):
-        """Unlock the user account and reset failed attempts"""
+        """Reset the locked status and failed login attempts"""
         self.is_locked = False
-        self.locked_at = None
         self.failed_login_attempts = 0
+        self.locked_at = None
         self.save()
     
     def increment_failed_login(self):

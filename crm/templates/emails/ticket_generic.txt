@@ -1,0 +1,21 @@
+{{ site_name }} - Powiadomienie o zgłoszeniu #{{ ticket.id }}
+
+Witaj {{ user.first_name|default:user.username }}!
+
+Nastąpiła zmiana w zgłoszeniu, na które zwracamy Twoją uwagę.
+
+SZCZEGÓŁY ZGŁOSZENIA:
+Tytuł: {{ ticket.title }}
+ID: #{{ ticket.id }}
+Organizacja: {{ ticket.organization.name }}
+Kategoria: {{ ticket.get_category_display }}
+Priorytet: {{ ticket.get_priority_display }}
+Status: {{ ticket.get_status_display }}
+
+Typ powiadomienia: {{ notification_type }}
+
+Aby zobaczyć pełne szczegóły, odwiedź:
+{{ ticket_url }}
+
+Pozdrawiamy,
+Zespół {{ site_name }}

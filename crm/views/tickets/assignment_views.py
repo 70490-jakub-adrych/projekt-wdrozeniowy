@@ -6,7 +6,7 @@ from django.http import HttpResponseForbidden, Http404
 from ...models import Ticket
 from ..helpers import log_activity
 from ..error_views import ticket_not_found
-from ...services.email_service import EmailNotificationService  # Add this import
+from ...services.email_service import EmailNotificationService  # Add this import if missing
 
 @login_required
 def ticket_assign_to_me(request, pk):
