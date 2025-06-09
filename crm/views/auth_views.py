@@ -12,7 +12,7 @@ from django.db import transaction, IntegrityError, connection
 from django.db.models import Q
 
 from ..forms import UserRegisterForm, UserProfileForm, CustomAuthenticationForm, GroupSelectionForm
-from ..models import UserProfile, User, EmailVerification, EmailNotificationSettings
+from ..models import UserProfile, User, EmailVerification, EmailNotificationSettings, Organization
 from .helpers import log_activity
 from .error_views import forbidden_access
 from ..forms import EmailVerificationForm
