@@ -2,6 +2,7 @@ from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
 from crm.models import UserProfile, EmailVerification, EmailNotificationSettings
 from django.db import transaction
+from django.db.models import Q  # Add this import for Q objects
 import logging
 
 logger = logging.getLogger(__name__)
