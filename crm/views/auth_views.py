@@ -11,7 +11,7 @@ from django.utils import timezone
 from django.db import transaction, IntegrityError, connection
 from django.db.models import Q
 
-from ..forms import UserRegisterForm, UserProfileForm, CustomAuthenticationForm
+from ..forms import UserRegisterForm, UserProfileForm, CustomAuthenticationForm, GroupSelectionForm
 from ..models import UserProfile, User, EmailVerification, EmailNotificationSettings
 from .helpers import log_activity
 from .error_views import forbidden_access
