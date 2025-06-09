@@ -243,3 +243,50 @@ class EmailNotificationService:
         except Exception as e:
             logger.error(f"Unexpected error in send_ticket_notification: {str(e)}")
             return False
+    
+    @staticmethod
+    def send_password_verification_email(user, verification_code):
+        """Send password change verification code"""
+        try:
+            context = {
+                'user': user,
+                'verification_code': verification_code,
+                'site_name': 'System Helpdesk',
+            }
+            
+            # Try to render email templates
+            try:
+                html_content = render_to_string('emails/password_verification_code.html', context)
+                text_content = render_to_string('emails/password_verification_code.txt', context)
+            except Exception as e:
+                logger.error(f"Error rendering password verification email template: {str(e)}")
+                # Use hardcoded fallback template
+                html_content = f"""
+                <html>
+                <body>
+                    <h2>Witaj {user.username}!</h2>
+                    <p>Twój kod weryfikacyjny do zmiany hasła to: <strong>{verification_code}</strong></p>
+                    <p>Jeśli nie próbowałeś zmienić hasła, zignoruj tę wiadomość lub skontaktuj się z administratorem.</p>
+                </body>
+                </html>
+                """
+                text_content = f"""
+                Witaj {user.username}!
+                Twój kod weryfikacyjny do zmiany hasła to: {verification_code}
+                Jeśli nie próbowałeś zmienić hasła, zignoruj tę wiadomość lub skontaktuj się z administratorem.
+                """
+
+            msg = EmailMultiAlternatives(
+                subject=f'System Helpdesk - Weryfikacja zmiany hasła',
+                body=text_content,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=[user.email]
+            )
+            msg.attach_alternative(html_content, "text/html")
+            msg.send()
+            
+            logger.info(f"Password verification email sent to {user.email}")
+            return True
+        except Exception as e:
+            logger.error(f"Failed to send password verification email to {user.email}: {str(e)}")
+            return False

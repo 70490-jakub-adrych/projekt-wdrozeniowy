@@ -11,7 +11,7 @@ from django.utils import timezone
 from django.db import transaction, IntegrityError, connection
 from django.db.models import Q
 
-from ..forms import UserRegisterForm, UserProfileForm, CustomAuthenticationForm, GroupSelectionForm
+from ..forms import UserRegisterForm, UserProfileForm, CustomAuthenticationForm, GroupSelectionForm, PasswordChangeVerificationForm
 from ..models import UserProfile, User, EmailVerification, EmailNotificationSettings, Organization
 from .helpers import log_activity
 from .error_views import forbidden_access
@@ -585,24 +585,106 @@ def unlock_user(request, user_id):
 
 @login_required
 def custom_password_change_view(request):
-    """Custom password change view with activity logging"""
-    if request.method == 'POST':
-        form = PasswordChangeForm(request.user, request.POST)
-        if form.is_valid():
-            user = form.save()
-            update_session_auth_hash(request, user)  # Important to keep user logged in
-            
-            # Log the password change
-            log_activity(request, 'password_changed', description="Użytkownik zmienił hasło")
-            
-            messages.success(request, 'Twoje hasło zostało pomyślnie zmienione!')
-            return redirect('dashboard')
-    else:
-        form = PasswordChangeForm(request.user)
+    """Custom password change view with verification and activity logging"""
+    user = request.user
+    verification_step = request.session.get('password_change_verification', False)
+    verification_sent = request.session.get('verification_code_sent', False)
     
-    return render(request, 'registration/password_change_form.html', {
-        'form': form
-    })
+    # STEP 1: Show password change form and send verification code
+    if not verification_step:
+        if request.method == 'POST':
+            form = PasswordChangeForm(user, request.POST)
+            if form.is_valid():
+                # Store form data in session for later use
+                request.session['password_form_data'] = request.POST
+                
+                # Generate and store verification code
+                verification_code = ''.join([str(random.randint(0, 9)) for _ in range(6)])
+                request.session['password_verification_code'] = verification_code
+                request.session['password_change_verification'] = True
+                request.session['verification_code_sent'] = True
+                
+                # Send verification code via email
+                success = EmailNotificationService.send_password_verification_email(user, verification_code)
+                if not success:
+                    messages.error(request, 'Błąd podczas wysyłania emaila z kodem weryfikacyjnym. Spróbuj ponownie.')
+                    return redirect('password_change')
+                
+                messages.info(request, 'Wysłaliśmy kod weryfikacyjny na Twój adres email. Wprowadź go, aby zmienić hasło.')
+                return redirect('password_change')
+        else:
+            form = PasswordChangeForm(user)
+        
+        return render(request, 'registration/password_change_form.html', {
+            'form': form,
+            'verification_step': False
+        })
+    
+    # STEP 2: Verify code and complete password change
+    else:
+        if request.method == 'POST':
+            if 'verify_code' in request.POST:
+                verification_form = PasswordChangeVerificationForm(request.POST)
+                if verification_form.is_valid():
+                    entered_code = verification_form.cleaned_data['verification_code']
+                    stored_code = request.session.get('password_verification_code', None)
+                    
+                    if stored_code and entered_code == stored_code:
+                        # Code is correct - retrieve stored form data and change password
+                        stored_data = request.session.get('password_form_data', None)
+                        if stored_data:
+                            form = PasswordChangeForm(user, stored_data)
+                            if form.is_valid():
+                                # Change password
+                                user = form.save()
+                                update_session_auth_hash(request, user)  # Important to keep user logged in
+                                
+                                # Log the password change
+                                log_activity(request, 'password_changed', description="Użytkownik zmienił hasło")
+                                
+                                # Clear session data
+                                for key in ['password_form_data', 'password_verification_code', 'password_change_verification', 'verification_code_sent']:
+                                    if key in request.session:
+                                        del request.session[key]
+                                
+                                messages.success(request, 'Twoje hasło zostało pomyślnie zmienione!')
+                                return redirect('dashboard')
+                            else:
+                                # Reset verification if form is now invalid
+                                for key in ['password_form_data', 'password_verification_code', 'password_change_verification', 'verification_code_sent']:
+                                    if key in request.session:
+                                        del request.session[key]
+                                messages.error(request, 'Wystąpił błąd z danymi formularza. Spróbuj ponownie.')
+                                return redirect('password_change')
+                    else:
+                        messages.error(request, 'Nieprawidłowy kod weryfikacyjny. Spróbuj ponownie.')
+            
+            elif 'resend_code' in request.POST:
+                # Regenerate and resend verification code
+                verification_code = ''.join([str(random.randint(0, 9)) for _ in range(6)])
+                request.session['password_verification_code'] = verification_code
+                
+                # Send verification code via email
+                success = EmailNotificationService.send_password_verification_email(user, verification_code)
+                if success:
+                    messages.success(request, 'Nowy kod weryfikacyjny został wysłany na Twój email.')
+                else:
+                    messages.error(request, 'Błąd podczas wysyłania emaila. Spróbuj ponownie.')
+            
+            elif 'cancel' in request.POST:
+                # Cancel password change
+                for key in ['password_form_data', 'password_verification_code', 'password_change_verification', 'verification_code_sent']:
+                    if key in request.session:
+                        del request.session[key]
+                messages.info(request, 'Zmiana hasła została anulowana.')
+                return redirect('dashboard')
+        
+        verification_form = PasswordChangeVerificationForm()
+        return render(request, 'registration/password_change_verification.html', {
+            'verification_form': verification_form,
+            'verification_step': True,
+            'user': user
+        })
 
 
 def verify_email(request):
