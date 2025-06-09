@@ -27,6 +27,7 @@ class UserProfile(models.Model):
     organizations = models.ManyToManyField('Organization', blank=True, related_name='members', verbose_name="Organizacje")
     phone = models.CharField(max_length=20, blank=True, verbose_name="Telefon", validators=[phone_regex])
     is_approved = models.BooleanField(default=False, verbose_name="Zatwierdzony")
+    email_verified = models.BooleanField(default=False, verbose_name="Email zweryfikowany")
     
     # Account locking fields
     failed_login_attempts = models.IntegerField(default=0, verbose_name="Nieudane próby logowania")
