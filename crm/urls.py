@@ -18,6 +18,7 @@ from django.contrib.auth import views as auth_views
 from .views.auth_views import custom_password_change_view
 from .views.statistics_views import statistics_dashboard, update_agent_work_log, generate_statistics_report
 from .views.email_test_views import test_email_view
+from .views.custom_auth_views import CustomPasswordResetView
 
 urlpatterns = [
     # Landing and authentication
@@ -69,11 +70,12 @@ urlpatterns = [
     path('password/change/', custom_password_change_view, name='password_change'),
     
     # Password reset
-    path('password/reset/', auth_views.PasswordResetView.as_view(
+    path('password/reset/', CustomPasswordResetView.as_view(
         template_name='registration/password_reset_form.html',
         email_template_name='registration/password_reset_email.html',
         subject_template_name='registration/password_reset_subject.txt',
-        success_url='/password/reset/done/'
+        success_url='/password/reset/done/',
+        html_email_template_name='registration/password_reset_email.html'  # Explicitly set HTML template
     ), name='password_reset'),
     
     path('password/reset/done/', auth_views.PasswordResetDoneView.as_view(
