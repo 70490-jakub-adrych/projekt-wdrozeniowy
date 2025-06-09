@@ -344,3 +344,21 @@ class CustomAuthenticationForm(AuthenticationForm):
                 self.confirm_login_allowed(self.user_cache)
 
         return self.cleaned_data
+
+class GroupSelectionForm(forms.Form):
+    """Form for selecting a group when approving a user"""
+    group = forms.ModelChoiceField(
+        queryset=Group.objects.all(),
+        label="Przypisz do grupy",
+        required=True,
+        help_text="Wybierz grupę, do której użytkownik powinien być przypisany.",
+        widget=forms.Select(attrs={'class': 'form-control'})
+    )
+    
+    def __init__(self, *args, **kwargs):
+        # Get available groups that this approver can assign
+        available_groups = kwargs.pop('available_groups', None)
+        super().__init__(*args, **kwargs)
+        
+        if available_groups is not None:
+            self.fields['group'].queryset = available_groups

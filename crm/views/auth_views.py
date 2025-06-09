@@ -430,21 +430,60 @@ def approve_user(request, user_id):
         if not agent_orgs.intersection(user_orgs):
             return forbidden_access(request, "zatwierdzania tego użytkownika", user_id)
     
-    if request.method == 'POST':
+    # Determine which groups the approver can assign based on their role
+    available_groups = []
+    if user_role == 'admin':
+        # Admin can assign any group
+        available_groups = Group.objects.all()
+    elif user_role == 'superagent':
+        # Superagent can assign agent, client, viewer groups
+        available_groups = Group.objects.filter(name__in=['Agent', 'Klient', 'Viewer'])
+    elif user_role == 'agent':
+        # Agent can only assign client and viewer groups
+        available_groups = Group.objects.filter(name__in=['Klient', 'Viewer'])
+    
+    # Create form with available groups
+    form = GroupSelectionForm(request.POST or None, available_groups=available_groups)
+    
+    if request.method == 'POST' and form.is_valid():
+        selected_group = form.cleaned_data['group']
+        
+        # Approve the user
         profile.is_approved = True
+        profile.save()
+        
+        # Assign the selected group
+        user = profile.user
+        user.groups.clear()  # Remove any existing groups
+        user.groups.add(selected_group)
+        
+        # Update the user's role based on the group
+        if selected_group.name == 'Admin':
+            profile.role = 'admin'
+        elif selected_group.name == 'Superagent':
+            profile.role = 'superagent'
+        elif selected_group.name == 'Agent':
+            profile.role = 'agent'
+        elif selected_group.name == 'Viewer':
+            profile.role = 'viewer'
+        else:
+            profile.role = 'client'
         profile.save()
         
         # Log the approval
         log_activity(
             request,
             'preferences_updated',
-            description=f"Zatwierdzono konto użytkownika {profile.user.username}"
+            description=f"Zatwierdzono konto użytkownika {profile.user.username} jako {profile.get_role_display()}"
         )
         
-        messages.success(request, f"Użytkownik {profile.user.username} został zatwierdzony.")
+        messages.success(request, f"Użytkownik {profile.user.username} został zatwierdzony jako {profile.get_role_display()}.")
         return redirect('pending_approvals')
     
-    return render(request, 'crm/approvals/approve_user.html', {'profile': profile})
+    return render(request, 'crm/approvals/approve_user.html', {
+        'profile': profile,
+        'form': form
+    })
 
 
 @login_required
