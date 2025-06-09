@@ -9,6 +9,7 @@ from django.contrib.auth.forms import PasswordChangeForm
 from django.contrib.auth import update_session_auth_hash
 from django.utils import timezone
 from django.db import transaction, IntegrityError
+from django.db.models import Q
 
 from ..forms import UserRegisterForm, UserProfileForm, CustomAuthenticationForm
 from ..models import UserProfile, User, EmailVerification, EmailNotificationSettings
@@ -126,9 +127,19 @@ def register(request):
             if form.is_valid() and profile_form.is_valid():
                 try:
                     with transaction.atomic():
-                        # First check if there's an orphaned profile with this email
+                        # First check if there's any data that would cause conflicts
                         email = form.cleaned_data.get('email')
                         username = form.cleaned_data.get('username')
+                        
+                        # Extra check for orphaned verification records
+                        existing_verifications = EmailVerification.objects.filter(
+                            user__email=email
+                        )
+                        if existing_verifications.exists():
+                            # Clean up orphaned verification records
+                            for verification in existing_verifications:
+                                verification.delete()
+                                logger.warning(f"Deleted orphaned verification record for email: {email}")
                         
                         # Check for existing users with this email or username
                         if User.objects.filter(email=email).exists():
@@ -215,14 +226,57 @@ def register_pending(request):
 
 
 class CustomLoginView(LoginView):
-    """Custom login view that uses our authentication form which logs failed attempts"""
+    """Custom login view using our form and template"""
     form_class = CustomAuthenticationForm
     template_name = 'crm/login.html'
+    redirect_authenticated_user = True
     
     def form_valid(self, form):
-        """When form is valid (login successful), redirect to custom_login_view"""
-        login(self.request, form.get_user())
-        return redirect('custom_login_success')
+        """Check if user has verified email before proceeding"""
+        user = form.get_user()
+        
+        # If login was successful but email verification pending, redirect to verification
+        if user and hasattr(user, 'profile') and not user.profile.email_verified:
+            try:
+                verification = EmailVerification.objects.get(user=user, is_verified=False)
+                
+                # If verification exists and is not too old, redirect to verification page
+                if not verification.is_expired():
+                    # Store user ID in session for verification
+                    self.request.session['pending_user_id'] = user.id
+                    messages.info(self.request, 'Musisz zweryfikować swój adres email przed kontynuowaniem.')
+                    
+                    # Don't actually log the user in yet
+                    return redirect('verify_email')
+                else:
+                    # If expired, generate new code
+                    new_code = verification.generate_new_code()
+                    EmailNotificationService.send_verification_email(user, new_code)
+                    
+                    # Store user ID in session for verification
+                    self.request.session['pending_user_id'] = user.id
+                    messages.info(self.request, 'Kod weryfikacyjny wygasł. Wysłaliśmy nowy kod na Twój adres email.')
+                    
+                    # Don't actually log the user in yet
+                    return redirect('verify_email')
+            except EmailVerification.DoesNotExist:
+                # If for some reason verification doesn't exist, create one
+                verification_code = ''.join([str(random.randint(0, 9)) for _ in range(6)])
+                EmailVerification.objects.create(
+                    user=user,
+                    verification_code=verification_code
+                )
+                EmailNotificationService.send_verification_email(user, verification_code)
+                
+                # Store user ID in session for verification
+                self.request.session['pending_user_id'] = user.id
+                messages.info(self.request, 'Musisz zweryfikować swój adres email przed kontynuowaniem.')
+                
+                # Don't actually log the user in yet
+                return redirect('verify_email')
+        
+        # Continue with normal login if email is verified
+        return super().form_valid(form)
 
 def custom_login_success(request):
     """Przekierowanie po zalogowaniu w zależności od roli użytkownika"""
