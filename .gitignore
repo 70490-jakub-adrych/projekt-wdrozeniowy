@@ -29,6 +29,7 @@ MANIFEST
 /media/
 /static/
 staticfiles/
+public/
 local_settings.py
 .env
 

@@ -14,7 +14,7 @@ System zarządzania zgłoszeniami IT z funkcjami zarządzania użytkownikami, or
 
 ## Szybkie uruchomienie
 
-!! WYMAGANA WERSJA PYTHON: 3.12
+!! WYMAGANA WERSJA PYTHON: 3.8 lub nowsza
 
 ### Linux/macOS
 ```bash
@@ -22,11 +22,23 @@ System zarządzania zgłoszeniami IT z funkcjami zarządzania użytkownikami, or
 git clone https://github.com/70490-jakub-adrych/projekt-wdrozeniowy.git
 cd projekt-wdrozeniowy
 
-# Instalacja zależności
+# Utworzenie i aktywacja wirtualnego środowiska
+python3 -m venv venv
+source venv/bin/activate
+
+# Sprawdzenie poprawnej aktywacji - powinno pokazać ścieżkę do wirtualnego środowiska
+which python
+which pip
+
+# Instalacja zależności w wirtualnym środowisku
+pip install --upgrade pip setuptools wheel
 pip install -r requirements.txt
 
+# Upewnienie się, że Django jest zainstalowany
+python -c "import django; print(django.__version__)"
+
 # Pobieranie bibliotek statycznych
-./download_static_files.sh
+bash download_static_files.sh
 
 # Konfiguracja bazy danych
 python manage.py makemigrations
@@ -39,13 +51,42 @@ python manage.py setup_demo_data
 python manage.py runserver
 ```
 
+### Rozwiązywanie problemów z wirtualnym środowiskiem na Linux/macOS
+
+Jeśli mimo aktywacji wirtualnego środowiska (`venv`) występują problemy z importowaniem Django, sprawdź:
+
+1. Czy używasz właściwego interpretera Python:
+   ```bash
+   which python
+   # Powinno pokazać ścieżkę do Python w Twoim wirtualnym środowisku
+   # np. /home/username/projekt-wdrozeniowy/venv/bin/python
+   ```
+
+2. Ponowna instalacja Django bezpośrednio:
+   ```bash
+   pip uninstall django
+   pip install django==3.2.25
+   ```
+
+3. Sprawdź zmienną PYTHONPATH:
+   ```bash
+   echo $PYTHONPATH
+   # Jeśli jest ustawiona, może powodować konflikty
+   # Wyczyść ją tymczasowo: export PYTHONPATH=
+   ```
+
 ### Windows (PowerShell)
 ```powershell
 # Klonowanie repozytorium
 git clone https://github.com/70490-jakub-adrych/projekt-wdrozeniowy.git
 cd projekt-wdrozeniowy
 
+# Utworzenie i aktywacja wirtualnego środowiska
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+
 # Instalacja zależności
+pip install --upgrade pip setuptools wheel
 pip install -r requirements.txt
 
 # Pobieranie bibliotek statycznych
@@ -54,9 +95,6 @@ pip install -r requirements.txt
 # Konfiguracja bazy danych
 python manage.py makemigrations
 python manage.py migrate
-
-# Usuwanie danych demonstracyjnych
-python manage.py clear_demo_data
 
 # Tworzenie danych demonstracyjnych
 python manage.py setup_demo_data
@@ -74,8 +112,8 @@ Po uruchomieniu aplikacja będzie dostępna pod adresem: **http://127.0.0.1:8000
 - **Admin**: username=`admin`, password=`admin123`
 - **Agent 1**: username=`agent1`, password=`agent123`
 - **Klient 1**: username=`client1`, password=`client123`
-- **Viewer**: viewer=`viewer`, password=`viewer123`
-- **Superagent**: superagent=`superagent`, password= `superagent123`
+- **Viewer**: username=`viewer`, password=`viewer123`
+- **Superagent**: username=`superagent`, password=`superagent123`
 
 ## Konfiguracja MySQL dla produkcji
 
