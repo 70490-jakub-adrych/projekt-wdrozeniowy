@@ -616,7 +616,7 @@ def custom_password_change_view(request):
         else:
             form = PasswordChangeForm(user)
         
-        return render(request, 'registration/password_change_form.html', {
+        return render(request, 'emails/password_change_form.html', {
             'form': form,
             'verification_step': False
         })
@@ -697,7 +697,7 @@ def custom_password_change_view(request):
                 return redirect('dashboard')
         
         verification_form = PasswordChangeVerificationForm()
-        return render(request, 'registration/password_change_verification.html', {
+        return render(request, 'emails/password_change_verification.html', {
             'verification_form': verification_form,
             'verification_step': True,
             'user': user

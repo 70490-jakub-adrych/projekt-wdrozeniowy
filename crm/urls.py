@@ -68,7 +68,10 @@ urlpatterns = [
 
     # Password change
     path('password/change/', custom_password_change_view, name='password_change'),
-    
+    path('password/change/done/', auth_views.PasswordChangeDoneView.as_view(
+        template_name='emails/password_change_done.html'
+    ), name='password_change_done'),
+
     # Password reset - Updated to use templates from emails directory
     path('password_reset/', HTMLEmailPasswordResetView.as_view(
         template_name='emails/password_reset_form.html',
