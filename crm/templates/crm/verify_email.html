@@ -51,11 +51,14 @@
                 
                 <div class="text-center">
                     <p class="text-muted">Nie otrzymałeś kodu?</p>
-                    <form method="post" class="d-inline">
+                    <form method="post" class="d-inline" id="resendForm">
                         {% csrf_token %}
-                        <button type="submit" name="resend_code" class="btn btn-info">
+                        <button type="submit" id="resendButton" name="resend_code" class="btn btn-info">
                             <i class="fas fa-redo"></i> Wyślij ponownie kod
                         </button>
+                        <div id="cooldownTimer" class="text-warning mt-2" style="display: none;">
+                            <i class="fas fa-hourglass-half"></i> Odczekaj <span id="cooldownSeconds">60</span> sekund przed ponownym wysłaniem
+                        </div>
                     </form>
                 </div>
                 
@@ -70,4 +73,84 @@
         </div>
     </div>
 </div>
+
+<script>
+(function() {
+    // Constants
+    const COOLDOWN_SECONDS = 60;
+    const RESEND_BUTTON_ID = 'resendButton';
+    const COOLDOWN_TIMER_ID = 'cooldownTimer';
+    const COOLDOWN_SECONDS_ID = 'cooldownSeconds';
+    const STORAGE_KEY = 'verificationCodeResendTime';
+    
+    // Elements
+    const resendButton = document.getElementById(RESEND_BUTTON_ID);
+    const cooldownTimer = document.getElementById(COOLDOWN_TIMER_ID);
+    const cooldownSeconds = document.getElementById(COOLDOWN_SECONDS_ID);
+    const resendForm = document.getElementById('resendForm');
+    
+    // Check if we need to apply cooldown (from localStorage)
+    function checkCooldown() {
+        const lastResendTime = localStorage.getItem(STORAGE_KEY);
+        
+        if (!lastResendTime) return;
+        
+        const now = new Date().getTime();
+        const elapsedSeconds = Math.floor((now - parseInt(lastResendTime)) / 1000);
+        
+        if (elapsedSeconds < COOLDOWN_SECONDS) {
+            // Still in cooldown period
+            const remainingSeconds = COOLDOWN_SECONDS - elapsedSeconds;
+            startCooldown(remainingSeconds);
+        } else {
+            // Cooldown period has passed, clear storage
+            localStorage.removeItem(STORAGE_KEY);
+        }
+    }
+    
+    // Start cooldown timer
+    function startCooldown(seconds) {
+        if (!resendButton || !cooldownTimer || !cooldownSeconds) return;
+        
+        // Disable the button and show timer
+        resendButton.disabled = true;
+        cooldownTimer.style.display = 'block';
+        cooldownSeconds.textContent = seconds;
+        
+        let countdown = seconds;
+        
+        // Update timer every second
+        const timer = setInterval(() => {
+            countdown--;
+            
+            if (countdown <= 0) {
+                // Enable the button and hide timer when done
+                clearInterval(timer);
+                resendButton.disabled = false;
+                cooldownTimer.style.display = 'none';
+                localStorage.removeItem(STORAGE_KEY);
+            } else {
+                cooldownSeconds.textContent = countdown;
+            }
+        }, 1000);
+    }
+    
+    // Add event listener to the form
+    if (resendForm) {
+        resendForm.addEventListener('submit', function(e) {
+            // Store the submission time
+            localStorage.setItem(STORAGE_KEY, new Date().getTime().toString());
+            
+            // Allow the form submission to proceed (will reload the page)
+            // When page reloads, checkCooldown will be called
+        });
+    }
+    
+    // Check cooldown on page load
+    document.addEventListener('DOMContentLoaded', checkCooldown);
+    
+    // Run immediately too (in case DOM is already loaded)
+    checkCooldown();
+})();
+</script>
 {% endblock %}
