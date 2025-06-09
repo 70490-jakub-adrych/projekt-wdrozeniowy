@@ -14,7 +14,7 @@ System zarządzania zgłoszeniami IT z funkcjami zarządzania użytkownikami, or
 
 ## Szybkie uruchomienie
 
-!! WYMAGANA WERSJA PYTHON: 3.8 lub nowsza
+!! WYMAGANA WERSJA PYTHON: 3.8 <=> 3.12
 
 ### Linux/macOS
 ```bash
