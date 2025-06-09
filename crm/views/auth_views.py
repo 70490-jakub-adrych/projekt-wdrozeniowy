@@ -279,6 +279,12 @@ def register(request):
 
 def register_pending(request):
     """Widok informujący o oczekiwaniu na zatwierdzenie konta"""
+    # Check if user is authenticated
+    if request.user.is_authenticated:
+        # If user is already approved, redirect to dashboard
+        if hasattr(request.user, 'profile') and request.user.profile.is_approved:
+            return redirect('dashboard')
+    # User is either not authenticated or not approved, show the pending page    
     return render(request, 'crm/register_pending.html')
 
 
