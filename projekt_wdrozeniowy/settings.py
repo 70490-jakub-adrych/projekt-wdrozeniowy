@@ -84,8 +84,8 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'projekt_wdrozeniowy.wsgi.application'  # Uncomment this line
 
-# Site URL for email links - change this for production
-SITE_URL = 'https://betulait.usermd.net'
+# Site URL for email links - get from environment or use default
+SITE_URL = config('SITE_URL', default='https://betulait.usermd.net')
 
 # ASGI_APPLICATION = 'projekt_wdrozeniowy.asgi.application'
 # CHANNEL_LAYERS = {...}
