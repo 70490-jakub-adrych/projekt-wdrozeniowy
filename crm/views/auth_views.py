@@ -291,17 +291,19 @@ class CustomLoginView(LoginView):
     def form_valid(self, form):
         """Check if user has verified email before proceeding"""
         user = form.get_user()
+        logger.info(f"Login successful for user {user.username}, checking verification status")
         
-        # First complete the standard login process
-        # This ensures the user is properly authenticated and the session is set up
-        response = super().form_valid(form)
-        
-        # After login, check if email verification is needed
+        # If login was successful but email verification pending, redirect to verification
         if user and hasattr(user, 'profile'):
-            # Check if profile has email_verified attribute
+            # Check if profile has email_verified attribute (for backwards compatibility)
             email_verified = getattr(user.profile, 'email_verified', True)
+            logger.debug(f"User {user.username} email_verified: {email_verified}")
             
             if not email_verified:
+                # First we need to log the user in to allow access to verification page
+                login(self.request, user)
+                logger.info(f"User {user.username} logged in but redirected to verification")
+                
                 # Store user ID in session for verification (might be needed)
                 self.request.session['pending_user_id'] = user.id
                 
@@ -327,10 +329,18 @@ class CustomLoginView(LoginView):
                     EmailNotificationService.send_verification_email(user, verification_code)
                     messages.info(self.request, 'Musisz zweryfikować swój adres email przed kontynuowaniem.')
                 
-                # Redirect to verification page (middleware will handle restriction of other pages)
+                # Redirect to verification page
                 return redirect('verify_email')
+            elif not user.profile.is_approved:
+                # User has verified email but is not approved yet
+                # Log them in but redirect to pending approval page
+                login(self.request, user)
+                logger.info(f"User {user.username} logged in but redirected to pending approval")
+                messages.info(self.request, 'Twoje konto oczekuje na zatwierdzenie przez administratora.')
+                return redirect('register_pending')
         
-        return response
+        # Continue with normal login if email is verified and approved
+        return super().form_valid(form)
 
 def custom_login_success(request):
     """Przekierowanie po zalogowaniu w zależności od roli użytkownika"""
@@ -523,31 +533,49 @@ def custom_password_change_view(request):
 
 def verify_email(request):
     """Standalone view for email verification"""
+    logger.debug(f"verify_email view accessed by user: {request.user.username if request.user.is_authenticated else 'anonymous'}")
+    
     # If user is not logged in and there's no pending user ID in the session, redirect to login
     if not request.user.is_authenticated and 'pending_user_id' not in request.session:
+        logger.warning("User not authenticated and no pending_user_id in session")
         messages.error(request, 'Musisz się zalogować, aby zweryfikować email.')
         return redirect('login')
     
     # Get the user - either the authenticated user or from the session
     if request.user.is_authenticated:
         user = request.user
-        # If user is already verified, redirect to dashboard
+        logger.debug(f"Using authenticated user: {user.username}")
+        
+        # If user is already verified, redirect appropriately
         if user.profile.email_verified:
+            logger.info(f"User {user.username} already has verified email")
             messages.info(request, 'Twój email jest już zweryfikowany.')
-            return redirect('dashboard')
+            
+            if user.profile.is_approved:
+                logger.debug(f"User {user.username} is approved, redirecting to dashboard")
+                return redirect('dashboard')
+            else:
+                logger.debug(f"User {user.username} is not approved, redirecting to pending page")
+                messages.info(request, 'Twoje konto oczekuje na zatwierdzenie przez administratora.')
+                return redirect('register_pending')
     else:
         # Get user from session (for users who just registered)
         user_id = request.session.get('pending_user_id')
+        logger.debug(f"Using user from session: {user_id}")
         try:
             user = User.objects.get(id=user_id)
+            logger.debug(f"Found user from session: {user.username}")
         except User.DoesNotExist:
+            logger.warning(f"User ID {user_id} from session not found")
             messages.error(request, 'Sesja wygasła. Zaloguj się, aby zweryfikować email.')
             return redirect('login')
     
     # Create or retrieve the verification code
     try:
         verification = EmailVerification.objects.get(user=user)
+        logger.debug(f"Found existing verification for user {user.username}")
     except EmailVerification.DoesNotExist:
+        logger.info(f"No verification record found for {user.username}, creating new one")
         # Create a new verification code
         verification_code = ''.join([str(random.randint(0, 9)) for _ in range(6)])
         verification = EmailVerification.objects.create(
@@ -563,6 +591,8 @@ def verify_email(request):
         if 'verify_email' in request.POST:
             # Process verification code submission
             verification_form = EmailVerificationForm(request.POST)
+            logger.debug(f"Email verification form submission for user {user.username}")
+            
             if verification_form.is_valid():
                 code = verification_form.cleaned_data['verification_code']
                 
@@ -570,6 +600,7 @@ def verify_email(request):
                     verification = EmailVerification.objects.get(user=user)
                     
                     if verification.is_expired():
+                        logger.warning(f"Verification code expired for user {user.username}")
                         messages.error(request, 'Kod weryfikacyjny wygasł. Wygeneruj nowy kod.')
                         return render(request, 'crm/verify_email.html', {
                             'verification_form': verification_form,
@@ -579,6 +610,7 @@ def verify_email(request):
                     
                     if verification.verification_code == code:
                         # Email verified successfully
+                        logger.info(f"Email verification successful for user {user.username}")
                         verification.is_verified = True
                         verification.verified_at = timezone.now()
                         verification.save()
@@ -611,11 +643,14 @@ def verify_email(request):
                             return redirect(next_url)
                         else:
                             # If user is not approved, redirect to pending approval page
+                            messages.info(request, 'Twoje konto oczekuje na zatwierdzenie przez administratora.')
                             return redirect('register_pending')
                     else:
+                        logger.warning(f"Invalid verification code for user {user.username}")
                         messages.error(request, 'Nieprawidłowy kod weryfikacyjny.')
                         
                 except EmailVerification.DoesNotExist:
+                    logger.error(f"Verification record not found for user {user.username}")
                     messages.error(request, 'Błąd weryfikacji. Spróbuj ponownie później.')
                     return redirect('login')
                 
@@ -626,16 +661,20 @@ def verify_email(request):
             
         elif 'resend_code' in request.POST:
             # Resend verification code
+            logger.info(f"Resending verification code for user {user.username}")
             try:
                 verification = EmailVerification.objects.get(user=user)
                 new_code = verification.generate_new_code()
                 
                 if EmailNotificationService.send_verification_email(user, new_code):
+                    logger.info(f"New verification code sent to {user.email}")
                     messages.success(request, 'Nowy kod weryfikacyjny został wysłany na Twój email.')
                 else:
+                    logger.error(f"Failed to send verification email to {user.email}")
                     messages.error(request, 'Błąd podczas wysyłania emaila. Spróbuj ponownie.')
             except EmailVerification.DoesNotExist:
                 # Create new verification if it doesn't exist
+                logger.warning(f"Verification record not found for user {user.username} when resending code")
                 verification_code = ''.join([str(random.randint(0, 9)) for _ in range(6)])
                 verification = EmailVerification.objects.create(
                     user=user,

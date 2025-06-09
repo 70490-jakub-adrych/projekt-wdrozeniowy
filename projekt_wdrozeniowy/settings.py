@@ -136,6 +136,12 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# Authentication settings
+AUTHENTICATION_BACKENDS = [
+    'crm.auth_backends.EmailOrUsernameModelBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]
+
 # Internationalization
 LANGUAGE_CODE = 'pl'
 TIME_ZONE = 'Europe/Warsaw'

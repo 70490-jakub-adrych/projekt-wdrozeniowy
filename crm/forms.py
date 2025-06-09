@@ -213,16 +213,29 @@ class CustomAuthenticationForm(AuthenticationForm):
     
     def confirm_login_allowed(self, user):
         """Override to allow inactive users with pending email verification"""
+        logger.debug(f"confirm_login_allowed check for user {user.username}, active: {user.is_active}")
+        
         # Check if user is inactive because of pending email verification
         if not user.is_active:
+            logger.debug(f"User {user.username} is inactive, checking if due to pending verification")
             try:
-                # Check if there's a pending verification for this user
-                verification = EmailVerification.objects.filter(user=user, is_verified=False).exists()
-                if verification:
-                    # Allow login for users with pending verification
+                # Check if there's a pending verification record
+                has_verification = hasattr(user, 'emailverification')
+                logger.debug(f"User {user.username} has email verification object: {has_verification}")
+                
+                if has_verification:
+                    # User has a verification record, allow authentication
+                    logger.info(f"Allowing inactive user {user.username} to authenticate for email verification")
                     return
-            except:
-                pass
+                    
+                # Otherwise, check if the profile exists but email is not verified
+                elif hasattr(user, 'profile') and not user.profile.email_verified:
+                    logger.info(f"User {user.username} has unverified email, allowing authentication")
+                    return
+            except Exception as e:
+                logger.error(f"Error in confirm_login_allowed for {user.username}: {str(e)}")
+            
+            logger.warning(f"Inactive user {user.username} denied login - not due to pending verification")
                 
         # For all other cases, use the default behavior
         super().confirm_login_allowed(user)
@@ -232,12 +245,18 @@ class CustomAuthenticationForm(AuthenticationForm):
         password = self.cleaned_data.get('password')
 
         if username and password:
+            logger.debug(f"Authenticating user: {username}")
+            
             # Check if user exists and is locked
             try:
                 user = User.objects.get(username=username)
+                logger.debug(f"User {username} found, checking lock status")
+                
                 if hasattr(user, 'profile') and user.profile.is_locked:
                     # Log the attempt on locked account
                     ip_address = get_client_ip(self.request)
+                    logger.warning(f"Login attempt on locked account: {username} from IP: {ip_address}")
+                    
                     ActivityLog.objects.create(
                         user=user,
                         action_type='login_failed',
@@ -249,12 +268,22 @@ class CustomAuthenticationForm(AuthenticationForm):
                         "Skontaktuj się ze swoim agentem, aby odblokować konto.",
                         code='account_locked',
                     )
+                    
+                # Check if the user is inactive but has an EmailVerification record
+                if not user.is_active:
+                    logger.debug(f"User {username} is inactive, checking if due to pending verification")
+                    # Just log here, actual authentication will happen below
+            
             except User.DoesNotExist:
+                logger.debug(f"User does not exist: {username}")
                 pass  # User doesn't exist, continue with normal authentication
             
+            # Try to authenticate the user
             self.user_cache = authenticate(self.request, username=username, password=password)
+            
             if self.user_cache is None:
                 # Handle failed authentication
+                logger.debug(f"Authentication failed for user: {username}")
                 ip_address = get_client_ip(self.request)
                 
                 # Try to get user and increment failed attempts
@@ -303,6 +332,8 @@ class CustomAuthenticationForm(AuthenticationForm):
                 )
             else:
                 # Successful authentication - reset failed attempts if not locked
+                logger.debug(f"Authentication successful for user: {username}")
+                
                 if hasattr(self.user_cache, 'profile') and not self.user_cache.profile.is_locked:
                     self.user_cache.profile.reset_failed_login()
                 
