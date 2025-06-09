@@ -31,6 +31,19 @@
     </div>
     
     <div class="col-md-4">
+        <div class="card mb-3">
+            <div class="card-header bg-primary text-white">
+                <i class="fas fa-plug"></i> Test połączenia SMTP
+            </div>
+            <div class="card-body">
+                <p>Przetestuj bezpośrednie połączenie z serwerem SMTP bez wysyłania maila:</p>
+                <button id="testSmtpBtn" class="btn btn-primary">
+                    <i class="fas fa-network-wired"></i> Test połączenia
+                </button>
+                <div id="smtpTestResult" class="mt-3"></div>
+            </div>
+        </div>
+        
         <div class="card">
             <div class="card-header bg-info text-white">
                 <i class="fas fa-cog"></i> Aktualna konfiguracja
@@ -163,6 +176,61 @@ document.getElementById('emailTestForm').addEventListener('submit', function(e) 
         // Re-enable button
         btn.disabled = false;
         btn.innerHTML = '<i class="fas fa-paper-plane"></i> Wyślij test email';
+    });
+});
+
+document.getElementById('testSmtpBtn').addEventListener('click', function(e) {
+    e.preventDefault();
+    
+    const btn = this;
+    const result = document.getElementById('smtpTestResult');
+    
+    // Disable button and show loading
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Testowanie...';
+    
+    // Clear previous results
+    result.innerHTML = '';
+    
+    fetch('{% url "test_smtp_connection" %}', {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            result.innerHTML = `
+                <div class="alert alert-success">
+                    <i class="fas fa-check-circle"></i> Połączenie SMTP nawiązane pomyślnie!
+                    <hr>
+                    <small>${data.message}</small>
+                    ${data.server_info ? `<br><small>Informacja zwrócona przez serwer: ${data.server_info}</small>` : ''}
+                </div>
+            `;
+        } else {
+            result.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle"></i> Błąd połączenia z serwerem SMTP
+                    <hr>
+                    <small>${data.message}</small>
+                </div>
+            `;
+        }
+    })
+    .catch(error => {
+        result.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle"></i> Błąd podczas testu: ${error.message}
+            </div>
+        `;
+    })
+    .finally(() => {
+        // Re-enable button
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-network-wired"></i> Test połączenia';
     });
 });
 </script>

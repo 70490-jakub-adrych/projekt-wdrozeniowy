@@ -17,7 +17,7 @@ from .views import secure_file_views
 from django.contrib.auth import views as auth_views
 from .views.auth_views import custom_password_change_view
 from .views.statistics_views import statistics_dashboard, update_agent_work_log, generate_statistics_report
-from .views.email_test_views import test_email_view
+from .views.email_test_views import test_email_view, test_smtp_connection
 from .views.auth_views import HTMLEmailPasswordResetView
 
 urlpatterns = [
@@ -106,4 +106,5 @@ urlpatterns = [
 
     # Admin tools
     path('admin/test-email/', test_email_view, name='test_email'),
+    path('admin/test-smtp-connection/', test_smtp_connection, name='test_smtp_connection'),
 ]

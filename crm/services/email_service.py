@@ -5,6 +5,8 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 import logging
 import os
+import socket
+import smtplib
 
 logger = logging.getLogger(__name__)
 
@@ -32,19 +34,51 @@ class EmailNotificationService:
             bool: True if email was sent successfully, False otherwise
         """
         try:
+            logger.debug(f"Preparing to send email '{subject}' to {recipient}")
+            
+            # Set socket timeout to avoid hanging on SMTP connections
+            default_timeout = socket.getdefaulttimeout()
+            socket.setdefaulttimeout(settings.EMAIL_TIMEOUT)
+            
+            # Create more robust email message with headers to improve deliverability
             msg = EmailMultiAlternatives(
                 subject=subject,
                 body=text_content,
                 from_email=settings.DEFAULT_FROM_EMAIL,
                 to=[recipient]
             )
+            
+            # Add helpful headers to reduce chance of being marked as spam
+            msg.extra_headers = {
+                'X-Application': 'System Helpdesk',
+                'X-Priority': '3',  # Normal priority
+                'X-Auto-Response-Suppress': 'OOF, DR, RN, NRN, AutoReply',
+            }
+            
             msg.attach_alternative(html_content, "text/html")
-            msg.send()
+            
+            # Debug connection info before sending
+            backend_info = f"Using backend: {settings.EMAIL_BACKEND}"
+            if 'smtp' in settings.EMAIL_BACKEND.lower():
+                backend_info += f" (host: {settings.EMAIL_HOST}:{settings.EMAIL_PORT})"
+            logger.debug(backend_info)
+            
+            # Attempt to send with detailed error logging
+            msg.send(fail_silently=False)
+            
+            # Reset socket timeout
+            socket.setdefaulttimeout(default_timeout)
             
             logger.info(f"Email '{subject}' sent to {recipient}")
             return True
+        except smtplib.SMTPException as smtp_error:
+            logger.error(f"SMTP Error sending '{subject}' to {recipient}: {str(smtp_error)}", exc_info=True)
+            return False
+        except socket.timeout:
+            logger.error(f"Timeout sending email '{subject}' to {recipient} - check SMTP server connectivity")
+            return False
         except Exception as e:
-            logger.error(f"Failed to send email '{subject}' to {recipient}: {str(e)}")
+            logger.error(f"Failed to send email '{subject}' to {recipient}: {str(e)}", exc_info=True)
             return False
     
     @staticmethod
@@ -466,3 +500,62 @@ class EmailNotificationService:
         except Exception as e:
             logger.error(f"Failed to send password change success notification to {user.email}: {str(e)}")
             return False
+    
+    @staticmethod
+    def test_smtp_connection():
+        """
+        Test SMTP server connectivity directly
+        
+        Returns:
+            dict: Dictionary with connection test results
+        """
+        if 'smtp' not in settings.EMAIL_BACKEND.lower():
+            return {
+                'success': False, 
+                'message': f"Not using SMTP backend: {settings.EMAIL_BACKEND}"
+            }
+            
+        result = {
+            'success': False,
+            'host': settings.EMAIL_HOST,
+            'port': settings.EMAIL_PORT,
+            'use_tls': settings.EMAIL_USE_TLS,
+            'use_ssl': settings.EMAIL_USE_SSL,
+            'username': settings.EMAIL_HOST_USER,
+        }
+        
+        try:
+            logger.info(f"Testing SMTP connection to {settings.EMAIL_HOST}:{settings.EMAIL_PORT}")
+            
+            # Choose the appropriate SMTP class based on SSL setting
+            smtp_class = smtplib.SMTP_SSL if settings.EMAIL_USE_SSL else smtplib.SMTP
+            
+            # Set timeout to avoid hanging
+            with smtp_class(settings.EMAIL_HOST, settings.EMAIL_PORT, timeout=10) as server:
+                if settings.EMAIL_USE_TLS and not settings.EMAIL_USE_SSL:
+                    server.starttls()
+                
+                if settings.EMAIL_HOST_USER and settings.EMAIL_HOST_PASSWORD:
+                    server.login(settings.EMAIL_HOST_USER, settings.EMAIL_HOST_PASSWORD)
+                    result['auth_success'] = True
+                    logger.debug("SMTP authentication successful")
+                
+                # Get server info
+                server_info = server.ehlo()
+                result['server_info'] = str(server_info[0]) + " - " + str(server_info[1].decode())
+                
+                result['success'] = True
+                result['message'] = "SMTP connection successful"
+                logger.info("SMTP connection test successful")
+                
+        except smtplib.SMTPAuthenticationError:
+            logger.error("SMTP authentication failed - check username and password")
+            result['message'] = "Authentication failed - check username and password"
+        except socket.timeout:
+            logger.error(f"Connection to {settings.EMAIL_HOST}:{settings.EMAIL_PORT} timed out")
+            result['message'] = f"Connection timed out after {settings.EMAIL_TIMEOUT}s"
+        except Exception as e:
+            logger.error(f"SMTP connection test failed: {str(e)}", exc_info=True)
+            result['message'] = f"Connection failed: {str(e)}"
+            
+        return result

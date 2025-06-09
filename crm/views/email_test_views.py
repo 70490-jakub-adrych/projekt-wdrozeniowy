@@ -8,6 +8,8 @@ from django.http import JsonResponse
 from django import forms
 import logging
 
+from ..services.email_service import EmailNotificationService
+
 logger = logging.getLogger(__name__)
 
 class TestEmailForm(forms.Form):
@@ -145,3 +147,19 @@ Wysłane przez: {request.user.username} ({request.user.email})
         'form': form,
         'email_config': email_config
     })
+
+@login_required
+def test_smtp_connection(request):
+    """View to test SMTP connectivity directly (admin only)"""
+    if request.user.profile.role != 'admin':
+        messages.error(request, 'Tylko administratorzy mogą testować konfigurację email.')
+        return JsonResponse({'success': False, 'error': 'Brak uprawnień'}, status=403)
+    
+    result = EmailNotificationService.test_smtp_connection()
+    
+    if result['success']:
+        logger.info(f"SMTP connection test successful: {result['message']}")
+    else:
+        logger.error(f"SMTP connection test failed: {result['message']}")
+    
+    return JsonResponse(result)
