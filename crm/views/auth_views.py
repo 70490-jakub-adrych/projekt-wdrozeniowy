@@ -25,9 +25,12 @@ def landing_page(request):
     return render(request, 'crm/landing_page.html')
 
 
-@login_required
 def register(request):
     """Widok rejestracji użytkownika z weryfikacją email"""
+    # If user is already logged in, redirect to dashboard
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+        
     if request.method == 'POST':
         if 'verify_email' in request.POST:
             # Email verification step
