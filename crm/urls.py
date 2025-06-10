@@ -23,7 +23,6 @@ from .views.statistics_views import statistics_dashboard, update_agent_work_log,
 from .views.email_test_views import test_email_view, test_smtp_connection
 from .views.tickets.unassignment_views import ticket_unassign
 from .views.tickets.assignment_views import ticket_assign_to_other
-from .views.debug_views import test_password_reset_email, test_account_templates
 
 urlpatterns = [
     # Landing and authentication
