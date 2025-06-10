@@ -87,10 +87,13 @@ def approve_user(request, user_id):
                     request=request
                 )
                 
-                # Update all approval-related fields
-                profile.is_approved = True
+                # Make sure to set these fields BEFORE setting is_approved
+                # so the signal can use them
                 profile.approved_by = request.user
                 profile.approved_at = timezone.now()
+                
+                # Set approved flag - this will trigger the signal
+                profile.is_approved = True
                 profile.save()
                 
                 logger.info(f"User {user.username} approved by {request.user.username}")
