@@ -1,0 +1,58 @@
+{% extends 'crm/base.html' %}
+
+{% block title %}Przydziel zgłoszenie | System Helpdesk{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header text-white bg-warning">
+                <i class="fas fa-user-plus"></i> Przydziel zgłoszenie do agenta
+            </div>
+            <div class="card-body">
+                <h5 class="card-title">Przydzielanie zgłoszenia #{{ ticket.id }}: {{ ticket.title }}</h5>
+                
+                <div class="alert alert-info">
+                    <p><strong>Informacje o zgłoszeniu:</strong></p>
+                    <p>
+                        <strong>Organizacja:</strong> {{ ticket.organization.name }}<br>
+                        <strong>Status:</strong> {{ ticket.get_status_display }}<br>
+                        <strong>Priorytet:</strong> {{ ticket.get_priority_display }}<br>
+                        <strong>Obecne przypisanie:</strong> {% if ticket.assigned_to %}{{ ticket.assigned_to.username }}{% else %}<em>Nieprzypisane</em>{% endif %}
+                    </p>
+                </div>
+                
+                {% if possible_agents %}
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label for="agent_id">Wybierz agenta:</label>
+                        <select name="agent_id" id="agent_id" class="form-control" required>
+                            <option value="">-- Wybierz agenta --</option>
+                            {% for agent in possible_agents %}
+                            <option value="{{ agent.id }}">{{ agent.username }} ({{ agent.first_name }} {{ agent.last_name }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary">Przydziel zgłoszenie</button>
+                        <button type="button" class="btn btn-outline-secondary" onclick="goBack()">Anuluj</button>
+                    </div>
+                </form>
+                {% else %}
+                <div class="alert alert-warning">
+                    <p>Brak agentów, którzy mogą obsłużyć to zgłoszenie. Agenci muszą należeć do organizacji: {{ ticket.organization.name }}</p>
+                </div>
+                <button type="button" class="btn btn-outline-secondary" onclick="goBack()">Powrót</button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function goBack() {
+        window.history.back();
+    }
+</script>
+{% endblock %}

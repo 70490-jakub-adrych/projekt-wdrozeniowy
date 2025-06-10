@@ -29,8 +29,8 @@
     {% with user_groups=user.groups.all %}
         {% if user_groups.exists %}
             {% with group_settings=user_groups.first.settings %}
-                <!-- Edit button - only for admins, superagents, or users with the permission -->
-                {% if user.profile.role == 'admin' or user.profile.role == 'superagent' or group_settings.can_see_edit_button %}
+                <!-- Edit button - only for admins, superagents with permission, or users who created the ticket with edit permission -->
+                {% if group_settings.can_see_edit_button or user.profile.role == 'admin' or user.profile.role == 'superagent' or group_settings.can_edit_own_tickets and ticket.created_by == user %}
                 <a href="{% url 'ticket_update' ticket.pk %}" class="btn btn-primary">
                     <i class="fas fa-edit"></i> Edytuj
                 </a>
@@ -38,7 +38,7 @@
                 
                 <!-- Accept (assign) button - only show if not assigned AND user has permission -->
                 {% if not ticket.assigned_to and not is_closed %}
-                    {% if user.profile.role == 'admin' or user.profile.role == 'superagent' or group_settings.can_assign_unassigned_tickets %}
+                    {% if group_settings.can_assign_unassigned_tickets %}
                     <a href="{% url 'ticket_assign_to_me' ticket.pk %}" class="btn btn-info">
                         <i class="fas fa-user-check"></i> Zaakceptuj
                     </a>
@@ -47,25 +47,34 @@
                 
                 <!-- Unassign button - only show if assigned to current user AND user has permission -->
                 {% if ticket.assigned_to == user and not is_closed %}
-                    {% if user.profile.role == 'admin' or user.profile.role == 'superagent' or group_settings.can_unassign_own_tickets %}
+                    {% if group_settings.can_unassign_own_tickets %}
                     <a href="{% url 'ticket_unassign' ticket.pk %}" class="btn btn-danger">
                         <i class="fas fa-user-minus"></i> Cofnij przypisanie
                     </a>
                     {% endif %}
                 {% endif %}
                 
-                <!-- Close button - show if user is admin/superagent OR it's assigned to current user OR user has special permission -->
-                {% if not is_closed %}
-                    {% if user.profile.role == 'admin' or user.profile.role == 'superagent' or group_settings.can_close_any_ticket or ticket.assigned_to == user %}
-                        {% if ticket.assigned_to %}  <!-- Only show if ticket is assigned -->
-                        <a href="{% url 'ticket_close' ticket.pk %}" class="btn btn-secondary">
-                            <i class="fas fa-lock"></i> Zamknij
-                        </a>
-                        {% endif %}
+                <!-- Assign to others button - only show for superagents with permission -->
+                {% if group_settings.can_assign_tickets_to_others and not is_closed %}
+                    <a href="{% url 'ticket_assign_to_other' ticket.pk %}" class="btn btn-warning">
+                        <i class="fas fa-user-plus"></i> Przydziel
+                    </a>
+                {% endif %}
+                
+                <!-- Close button - show if:
+                     1. It's assigned to current user AND user has permission to close assigned tickets, OR
+                     2. User has permission to close any ticket -->
+                {% if not is_closed and ticket.assigned_to %}
+                    {% if ticket.assigned_to == user and group_settings.can_close_assigned_tickets or group_settings.can_close_any_ticket %}
+                    <a href="{% url 'ticket_close' ticket.pk %}" class="btn btn-secondary">
+                        <i class="fas fa-lock"></i> Zamknij
+                    </a>
                     {% endif %}
                 {% endif %}
                 
-                <!-- Reopen button - show if user is admin/superagent OR it was assigned to current user -->
+                <!-- Reopen button - show for:
+                     1. Admins and superagents
+                     2. The user who was assigned to the ticket when it was closed -->
                 {% if is_closed %}
                     {% if user.profile.role == 'admin' or user.profile.role == 'superagent' or ticket.assigned_to == user %}
                     <a href="{% url 'ticket_reopen' ticket.pk %}" class="btn btn-success">

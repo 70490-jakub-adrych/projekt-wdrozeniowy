@@ -92,14 +92,23 @@ class GroupSettingsInline(admin.StackedInline):
             'fields': ('attachments_access_level',),
             'description': 'Określ poziom dostępu do załączników dla tej grupy użytkowników.'
         }),
-        ('Ustawienia akcji zgłoszeń', {
+        ('Ustawienia przypisywania zgłoszeń', {
             'fields': (
-                'can_assign_unassigned_tickets', 
-                'can_unassign_own_tickets', 
-                'can_see_edit_button',
-                'can_close_any_ticket'
+                'can_assign_unassigned_tickets',
+                'can_assign_tickets_to_others',
+                'can_reassign_assigned_tickets',
+                'can_unassign_own_tickets',
             ),
-            'description': 'Określ, jakie akcje mogą wykonywać użytkownicy na zgłoszeniach.'
+            'description': 'Określ, jakie akcje przypisywania zgłoszeń mogą wykonywać użytkownicy.'
+        }),
+        ('Ustawienia zarządzania zgłoszeniami', {
+            'fields': (
+                'can_see_edit_button',
+                'can_edit_own_tickets',
+                'can_close_assigned_tickets',
+                'can_close_any_ticket',
+            ),
+            'description': 'Określ, jakie akcje zarządzania zgłoszeniami mogą wykonywać użytkownicy.'
         }),
     )
 

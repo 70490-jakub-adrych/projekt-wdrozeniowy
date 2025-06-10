@@ -73,11 +73,16 @@ class Command(BaseCommand):
             defaults={
                 'allow_multiple_organizations': True,
                 'show_statistics': True,
-                'attachments_access_level': 'all',  # Admins can see all attachments
-                'can_assign_unassigned_tickets': True,
-                'can_unassign_own_tickets': True,
+                'attachments_access_level': 'all',
+                # Admin - only edit, no assigning or reverting no closing
+                'can_assign_unassigned_tickets': False,
+                'can_assign_tickets_to_others': False,
+                'can_reassign_assigned_tickets': False,
+                'can_unassign_own_tickets': False,
                 'can_see_edit_button': True,
-                'can_close_any_ticket': True
+                'can_edit_own_tickets': True,
+                'can_close_assigned_tickets': False,
+                'can_close_any_ticket': False
             }
         )
         
@@ -86,10 +91,15 @@ class Command(BaseCommand):
             defaults={
                 'allow_multiple_organizations': True,
                 'show_statistics': True,
-                'attachments_access_level': 'all',  # Superagents can see all attachments
-                'can_assign_unassigned_tickets': True,
-                'can_unassign_own_tickets': True,
+                'attachments_access_level': 'all',
+                # Superagent - can edit, assign to workers, can't assign to self, can reassign already assigned
+                'can_assign_unassigned_tickets': False,
+                'can_assign_tickets_to_others': True,
+                'can_reassign_assigned_tickets': True,
+                'can_unassign_own_tickets': False,
                 'can_see_edit_button': True,
+                'can_edit_own_tickets': True,
+                'can_close_assigned_tickets': True,
                 'can_close_any_ticket': True
             }
         )
@@ -99,10 +109,15 @@ class Command(BaseCommand):
             defaults={
                 'allow_multiple_organizations': True,
                 'show_statistics': False,
-                'attachments_access_level': 'organization',  # Agents can see attachments in their organizations
+                'attachments_access_level': 'organization',
+                # Agent - can assign to self, can't assign to others, can revert own tickets, can close own tickets
                 'can_assign_unassigned_tickets': True,
+                'can_assign_tickets_to_others': False,
+                'can_reassign_assigned_tickets': False,
                 'can_unassign_own_tickets': True,
                 'can_see_edit_button': False,
+                'can_edit_own_tickets': False,
+                'can_close_assigned_tickets': True,
                 'can_close_any_ticket': False
             }
         )
@@ -112,7 +127,16 @@ class Command(BaseCommand):
             defaults={
                 'allow_multiple_organizations': False,
                 'show_statistics': False,
-                'attachments_access_level': 'own'  # Clients can only see own attachments
+                'attachments_access_level': 'own',
+                # Client - no permissions
+                'can_assign_unassigned_tickets': False,
+                'can_assign_tickets_to_others': False,
+                'can_reassign_assigned_tickets': False,
+                'can_unassign_own_tickets': False,
+                'can_see_edit_button': False,
+                'can_edit_own_tickets': False,
+                'can_close_assigned_tickets': False,
+                'can_close_any_ticket': False
             }
         )
         
@@ -121,7 +145,16 @@ class Command(BaseCommand):
             defaults={
                 'allow_multiple_organizations': False,
                 'show_statistics': False,
-                'attachments_access_level': 'own'  # Viewers can only see own attachments
+                'attachments_access_level': 'own',
+                # Viewer - no permissions (same as client)
+                'can_assign_unassigned_tickets': False,
+                'can_assign_tickets_to_others': False,
+                'can_reassign_assigned_tickets': False,
+                'can_unassign_own_tickets': False,
+                'can_see_edit_button': False,
+                'can_edit_own_tickets': False,
+                'can_close_assigned_tickets': False,
+                'can_close_any_ticket': False
             }
         )
         

@@ -9,7 +9,7 @@ from .detail_views import ticket_detail
 from .create_views import ticket_create
 from .update_views import ticket_update
 from .action_views import ticket_close, ticket_reopen
-from .assignment_views import ticket_assign_to_me
+from .assignment_views import ticket_assign_to_me, ticket_assign_to_other
 from .unassignment_views import ticket_unassign
 
 # Export all functions to maintain backward compatibility
@@ -22,5 +22,6 @@ __all__ = [
     'ticket_close',
     'ticket_reopen',
     'ticket_assign_to_me',
+    'ticket_assign_to_other',
     'ticket_unassign',
 ]

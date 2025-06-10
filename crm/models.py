@@ -428,21 +428,44 @@ class GroupSettings(models.Model):
         verbose_name="Poziom dostępu do załączników",
         help_text="Określa, które załączniki użytkownicy w tej grupie mogą przeglądać."
     )
-    # Add new ticket action permissions
+    
+    # Ticket assignment permissions
     can_assign_unassigned_tickets = models.BooleanField(
         default=True,
-        verbose_name="Może przypisywać nieprzydzielone zgłoszenia",
+        verbose_name="Może przypisywać nieprzydzielone zgłoszenia do siebie",
         help_text="Jeśli zaznaczone, użytkownicy w tej grupie mogą przypisywać do siebie nieprzydzielone zgłoszenia."
+    )
+    can_assign_tickets_to_others = models.BooleanField(
+        default=False,
+        verbose_name="Może przypisywać zgłoszenia innym użytkownikom",
+        help_text="Jeśli zaznaczone, użytkownicy w tej grupie mogą przypisywać zgłoszenia innym użytkownikom w ich organizacji."
+    )
+    can_reassign_assigned_tickets = models.BooleanField(
+        default=False,
+        verbose_name="Może zmieniać przypisanie już przypisanych zgłoszeń",
+        help_text="Jeśli zaznaczone, użytkownicy w tej grupie mogą zmieniać przypisanie zgłoszeń, które są już do kogoś przypisane."
     )
     can_unassign_own_tickets = models.BooleanField(
         default=False,
         verbose_name="Może cofać przypisanie własnych zgłoszeń",
         help_text="Jeśli zaznaczone, użytkownicy w tej grupie mogą cofać przypisanie zgłoszeń, które są do nich przypisane."
     )
+    
+    # Ticket management permissions
     can_see_edit_button = models.BooleanField(
         default=False,
         verbose_name="Może widzieć przycisk edycji dla wszystkich zgłoszeń",
         help_text="Jeśli zaznaczone, użytkownicy w tej grupie widzą przycisk edycji dla wszystkich zgłoszeń."
+    )
+    can_edit_own_tickets = models.BooleanField(
+        default=False,
+        verbose_name="Może edytować swoje zgłoszenia",
+        help_text="Jeśli zaznaczone, użytkownicy w tej grupie mogą edytować zgłoszenia, które sami utworzyli."
+    )
+    can_close_assigned_tickets = models.BooleanField(
+        default=False,
+        verbose_name="Może zamykać zgłoszenia do siebie przypisane",
+        help_text="Jeśli zaznaczone, użytkownicy w tej grupie mogą zamykać zgłoszenia, które są do nich przypisane."
     )
     can_close_any_ticket = models.BooleanField(
         default=False,
@@ -473,36 +496,61 @@ def create_group_settings(sender, instance, created, **kwargs):
         else:
             attachments_access = 'own'
         
-        # Set default ticket action permissions based on role
+        # Set default ticket management permissions based on role
         if instance.name == 'Admin':
-            can_assign = True
-            can_unassign = True
-            can_see_edit = True
-            can_close_any = True
+            # Admin - only edit, no assigning or reverting no closing
+            settings = {
+                'can_assign_unassigned_tickets': False,
+                'can_assign_tickets_to_others': False,
+                'can_reassign_assigned_tickets': False,
+                'can_unassign_own_tickets': False,
+                'can_see_edit_button': True,
+                'can_edit_own_tickets': True,
+                'can_close_assigned_tickets': False,
+                'can_close_any_ticket': False
+            }
         elif instance.name == 'Superagent':
-            can_assign = True
-            can_unassign = True
-            can_see_edit = True
-            can_close_any = True
+            # Superagent - can edit, assign to workers, can't assign to self, can reassign already assigned
+            settings = {
+                'can_assign_unassigned_tickets': False,
+                'can_assign_tickets_to_others': True,
+                'can_reassign_assigned_tickets': True,
+                'can_unassign_own_tickets': False,
+                'can_see_edit_button': True,
+                'can_edit_own_tickets': True,
+                'can_close_assigned_tickets': True,
+                'can_close_any_ticket': True
+            }
         elif instance.name == 'Agent':
-            can_assign = True
-            can_unassign = True
-            can_see_edit = False
-            can_close_any = False
+            # Agent - can assign to self, can't assign to others, can revert own tickets, can close own tickets
+            settings = {
+                'can_assign_unassigned_tickets': True,
+                'can_assign_tickets_to_others': False,
+                'can_reassign_assigned_tickets': False,
+                'can_unassign_own_tickets': True,
+                'can_see_edit_button': False,
+                'can_edit_own_tickets': False,
+                'can_close_assigned_tickets': True,
+                'can_close_any_ticket': False
+            }
         else:
-            can_assign = False
-            can_unassign = False
-            can_see_edit = False
-            can_close_any = False
+            # Client/Viewer - no permissions
+            settings = {
+                'can_assign_unassigned_tickets': False,
+                'can_assign_tickets_to_others': False,
+                'can_reassign_assigned_tickets': False,
+                'can_unassign_own_tickets': False,
+                'can_see_edit_button': False,
+                'can_edit_own_tickets': False,
+                'can_close_assigned_tickets': False,
+                'can_close_any_ticket': False
+            }
             
         GroupSettings.objects.create(
             group=instance, 
             allow_multiple_organizations=allow_multiple,
             attachments_access_level=attachments_access,
-            can_assign_unassigned_tickets=can_assign,
-            can_unassign_own_tickets=can_unassign,
-            can_see_edit_button=can_see_edit,
-            can_close_any_ticket=can_close_any
+            **settings
         )
             
         # Setup default view permissions based on group name

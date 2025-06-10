@@ -22,6 +22,7 @@ from django.contrib.auth import views as auth_views
 from .views.statistics_views import statistics_dashboard, update_agent_work_log, generate_statistics_report
 from .views.email_test_views import test_email_view, test_smtp_connection
 from .views.tickets.unassignment_views import ticket_unassign
+from .views.tickets.assignment_views import ticket_assign_to_other
 
 urlpatterns = [
     # Landing and authentication
@@ -50,6 +51,7 @@ urlpatterns = [
     
     # Ticket actions
     path('tickets/<int:pk>/assign/', ticket_assign_to_me, name='ticket_assign_to_me'),
+    path('tickets/<int:pk>/assign-to-other/', ticket_assign_to_other, name='ticket_assign_to_other'),
     path('tickets/<int:pk>/unassign/', ticket_unassign, name='ticket_unassign'),
     path('tickets/<int:pk>/close/', ticket_close, name='ticket_close'),
     path('tickets/<int:pk>/reopen/', ticket_reopen, name='ticket_reopen'),
