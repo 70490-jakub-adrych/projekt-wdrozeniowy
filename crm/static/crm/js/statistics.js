@@ -14,21 +14,20 @@ document.addEventListener('DOMContentLoaded', function() {
     const colorSchemes = {
         status: {
             backgroundColor: [
-                '#007bff', // New - primary
-                '#17a2b8', // In Progress - info
-                '#ffc107', // Waiting - warning
-                '#28a745', // Resolved - success
-                '#6c757d'  // Closed - secondary
+                '#007bff', // New - primary - light blue
+                '#17a2b8', // In Progress - info - teal
+                '#28a745', // Resolved - success - green
+                '#6c757d'  // Closed - secondary - gray
             ],
             borderColor: '#fff',
             borderWidth: 1
         },
         priority: {
             backgroundColor: [
-                '#6c757d', // Low - secondary
-                '#17a2b8', // Medium - info
-                '#ffc107', // High - warning
-                '#dc3545'  // Critical - danger
+                '#6c757d', // Low - secondary - gray
+                '#17a2b8', // Medium - info -   teal
+                '#ffc107', // High - warning -  yellow
+                '#dc3545'  // Critical - danger - red
             ],
             borderColor: '#fff',
             borderWidth: 1
@@ -177,12 +176,11 @@ document.addEventListener('DOMContentLoaded', function() {
     const initStatusChart = (chartData) => {
         const statusCtx = document.getElementById('statusChart').getContext('2d');
         const statusData = {
-            labels: ['Nowe', 'W trakcie', 'Rozwiązane', 'Zamknięte'], // Removed 'Oczekujące'
+            labels: ['Nowe', 'W trakcie', 'Rozwiązane', 'Zamknięte'],
             datasets: [{
                 data: [
                     chartData.tickets.new,
                     chartData.tickets.inProgress,
-                    // Removed chartData.tickets.waiting
                     chartData.tickets.resolved,
                     chartData.tickets.closed
                 ],
