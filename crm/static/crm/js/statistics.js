@@ -227,20 +227,33 @@ document.addEventListener('DOMContentLoaded', function() {
     const initPriorityChart = (chartData) => {
         const priorityCtx = document.getElementById('priorityChart').getContext('2d');
         
-        // Transform data for the chart
+        // Define priority order to match the color scheme
+        const priorityOrder = ['low', 'medium', 'high', 'critical'];
+        
+        // Group and sort data according to priority order
+        let priorityMap = {};
+        chartData.priorityDistribution.forEach(item => {
+            priorityMap[item.priority] = item.count;
+        });
+        
+        // Transform data for the chart (in correct order)
         const priorityLabels = [];
         const priorityValues = [];
+        const priorityColors = [];
         
-        chartData.priorityDistribution.forEach(item => {
-            priorityLabels.push(getPriorityLabel(item.priority));
-            priorityValues.push(item.count);
+        priorityOrder.forEach((priority, index) => {
+            if (priorityMap[priority] !== undefined) {
+                priorityLabels.push(getPriorityLabel(priority));
+                priorityValues.push(priorityMap[priority]);
+                priorityColors.push(colorSchemes.priority.backgroundColor[index]);
+            }
         });
 
         const priorityData = {
             labels: priorityLabels,
             datasets: [{
                 data: priorityValues,
-                backgroundColor: colorSchemes.priority.backgroundColor.slice(0, priorityLabels.length),
+                backgroundColor: priorityColors,
                 borderColor: colorSchemes.priority.borderColor,
                 borderWidth: colorSchemes.priority.borderWidth
             }]
