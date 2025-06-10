@@ -107,8 +107,4 @@ urlpatterns = [
 
     path('get_tickets_update/', get_tickets_update, name='get_tickets_update'),
 
-    # Admin tools
-    path('admin/test-email/', test_email_view, name='test_email'),
-    path('admin/test-smtp-connection/', test_smtp_connection, name='test_smtp_connection'),
-    path('admin/test-account-templates/', test_account_templates, name='test_account_templates'),
 ]
