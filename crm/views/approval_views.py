@@ -103,26 +103,21 @@ def approve_user(request, user_id):
             # IMPORTANT: Send email notification OUTSIDE the transaction block
             # This ensures the email is sent even if there's a later error
             try:
-                logger.info(f"🔵 Starting approval email process to {approved_user.email}")
+                logger.info(f"Attempting to send approval notification to {approved_user.email}")
+                from ..services.email_service import EmailNotificationService
                 
-                # Import directly at the point of use to avoid circular imports
-                from ..services.email.account import send_account_approved_email
-                
-                # Direct call to the function
-                email_sent = send_account_approved_email(
+                # Call with explicit success check
+                email_sent = EmailNotificationService.send_account_approved_email(
                     approved_user, 
                     approved_by=approver
                 )
                 
                 if email_sent:
                     logger.info(f"✅ Approval notification successfully sent to {approved_user.email}")
-                    messages.success(request, f"Email powiadomienia o zatwierdzeniu został wysłany do {approved_user.email}")
                 else:
                     logger.error(f"❌ Failed to send approval notification to {approved_user.email}")
-                    messages.warning(request, f"Konto zostało zatwierdzone, ale nie udało się wysłać powiadomienia email.")
             except Exception as email_error:
                 logger.error(f"❌ Error sending approval notification: {str(email_error)}", exc_info=True)
-                messages.warning(request, f"Konto zostało zatwierdzone, ale wystąpił błąd podczas wysyłania powiadomienia: {str(email_error)}")
                 # Don't raise the exception - we still want to redirect to success page
             
             return redirect('approved_users')
