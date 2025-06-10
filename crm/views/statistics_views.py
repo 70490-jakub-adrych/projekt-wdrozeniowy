@@ -311,6 +311,18 @@ def statistics_dashboard(request):
         'agent_work_time_stats': agent_work_time_stats,
     }
     
+    # Format data for JSON serialization in charts
+    priority_data = list(priority_distribution)
+    category_data = list(category_distribution)
+    
+    # Format tickets_by_date for JSON serialization
+    tickets_by_date_data = []
+    for entry in tickets_by_date:
+        tickets_by_date_data.append({
+            'date': entry['date'].isoformat() if hasattr(entry['date'], 'isoformat') else str(entry['date']),
+            'count': entry['count']
+        })
+    
     # Process agent performance data with work time stats
     for ap in agent_performance:
         agent_id = ap.get('agent_id')
@@ -319,7 +331,27 @@ def statistics_dashboard(request):
         else:
             ap['work_time_stats'] = None
     
-    context['agent_performance'] = agent_work_time_processed
+    context = {
+        'period': period,
+        'date_from': date_from,
+        'date_to': date_to,
+        'total_tickets': total_tickets,
+        'new_tickets': new_tickets,
+        'in_progress_tickets': in_progress_tickets,
+        'waiting_tickets': waiting_tickets,
+        'resolved_tickets': resolved_tickets,
+        'closed_tickets': closed_tickets,
+        'avg_resolution_hours': avg_resolution_hours,
+        'priority_distribution': priority_data,
+        'category_distribution': category_data,
+        'tickets_by_date': tickets_by_date_data,
+        'agent_performance': agent_work_time_processed,
+        'organizations': organizations,
+        'agents': agents,
+        'org_filter': org_filter,
+        'agent_filter': agent_filter,
+        'agent_work_time_stats': agent_work_time_stats,
+    }
     
     return render(request, 'crm/statistics/statistics_dashboard.html', context)
 

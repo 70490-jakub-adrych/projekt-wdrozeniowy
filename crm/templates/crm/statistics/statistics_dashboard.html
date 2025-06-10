@@ -58,9 +58,9 @@
     <div data-waiting-tickets="{{ waiting_tickets }}"></div>
     <div data-resolved-tickets="{{ resolved_tickets }}"></div>
     <div data-closed-tickets="{{ closed_tickets }}"></div>
-    <div data-priority-distribution="{{ priority_distribution }}"></div>
-    <div data-category-distribution="{{ category_distribution }}"></div>
-    <div data-tickets-by-date="{{ tickets_by_date }}"></div>
+    <div data-priority-distribution="{{ priority_distribution|safe }}"></div>
+    <div data-category-distribution="{{ category_distribution|safe }}"></div>
+    <div data-tickets-by-date="{{ tickets_by_date|safe }}"></div>
     <div data-period="{{ period }}"></div>
 </div>
 
@@ -364,7 +364,10 @@
     </div>
 </div>
 
-<!-- Chart.js -->
+<!-- Ensure CSRF token is available for AJAX requests -->
+{% csrf_token %}
+
+<!-- Chart.js and our custom script -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 {% endblock %}
 
