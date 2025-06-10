@@ -22,6 +22,14 @@ def user_profile_post_save(sender, instance, created, **kwargs):
             # Get the approval timestamp, default to current time if not set
             approval_time = instance.approved_at or timezone.now()
             
+            # Get the approver
+            approver = getattr(instance, 'approved_by', None)
+            
+            # Skip if the user is the same as the approver (self-approval or agent login)
+            if approver and instance.user.id == approver.id:
+                logger.info(f"WATCHER: Skipping notification for self-approval for {instance.user.email}")
+                return
+            
             # Only process recent approvals (within the last minute)
             # This prevents duplicate notifications on subsequent saves
             if timezone.now() - approval_time < timezone.timedelta(minutes=1):
@@ -41,7 +49,7 @@ def user_profile_post_save(sender, instance, created, **kwargs):
                 # Send email notification
                 email_sent = EmailNotificationService.send_account_approved_email(
                     instance.user,
-                    approved_by=getattr(instance, 'approved_by', None)  # Safely get approved_by
+                    approved_by=approver
                 )
                 
                 if email_sent:
