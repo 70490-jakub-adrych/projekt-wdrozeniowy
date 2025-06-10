@@ -101,11 +101,10 @@ def approve_user(request, user_id):
                 messages.success(request, f'Użytkownik {user.username} został pomyślnie zatwierdzony.')
             
             # IMPORTANT: Send email notification OUTSIDE the transaction block
-            # Fix: Use absolute import instead of relative import
             try:
-                logger.info(f"Attempting to send approval notification to {approved_user.email}")
+                logger.info(f"🔵 APPROVAL EMAIL: Starting notification for {approved_user.email}")
                 
-                # Use absolute import path to avoid relative import issues
+                # Import using absolute path to avoid relative import issues
                 from crm.services.email_service import EmailNotificationService
                 
                 # Call with explicit success check
@@ -115,13 +114,13 @@ def approve_user(request, user_id):
                 )
                 
                 if email_sent:
-                    logger.info(f"✅ Approval notification successfully sent to {approved_user.email}")
+                    logger.info(f"✅ Approval notification SUCCESSFULLY sent to {approved_user.email}")
                 else:
                     logger.error(f"❌ Failed to send approval notification to {approved_user.email}")
             except Exception as email_error:
-                logger.error(f"❌ Error sending approval notification: {str(email_error)}", exc_info=True)
+                logger.error(f"❌ CRITICAL ERROR sending approval notification: {str(email_error)}", exc_info=True)
             
-            # Fix: Check if 'approved_users' URL exists, if not fall back to 'pending_approvals'
+            # Check if 'approved_users' URL exists, if not fall back to 'pending_approvals'
             try:
                 from django.urls import reverse
                 reverse('approved_users')
