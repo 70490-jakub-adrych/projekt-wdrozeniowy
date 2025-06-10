@@ -65,3 +65,47 @@ def reject_user(request, user_id):
     
     # Display confirmation page
     return render(request, 'crm/approvals/reject_user.html', {'profile': profile})
+
+@login_required
+def approve_user(request, user_id):
+    """View for approving a pending user."""
+    # Check permissions
+    if not check_permissions(request.user, ['admin', 'superagent']):
+        return forbidden_access(request)
+    
+    profile = get_object_or_404(UserProfile, user_id=user_id)
+    user = profile.user
+    
+    if request.method == 'POST':
+        try:
+            with transaction.atomic():
+                # Log this action
+                log_activity(
+                    user=request.user,
+                    action_type='user_approved',
+                    description=f"Approved account for user: {user.username} ({user.email})",
+                    request=request
+                )
+                
+                # Update the user's profile status to approved
+                profile.is_approved = True
+                profile.approved_by = request.user
+                profile.approved_at = timezone.now()
+                profile.save()
+                
+                logger.info(f"User {user.username} approved by {request.user.username}")
+                messages.success(request, f'Użytkownik {user.username} został pomyślnie zatwierdzony.')
+                
+                # Send account approved email notification
+                from ..services.email_service import EmailNotificationService
+                EmailNotificationService.send_account_approved_email(user, approved_by=request.user)
+                logger.info(f"Approval notification sent to user {user.username}")
+            
+            return redirect('approved_users')
+        except Exception as e:
+            logger.error(f"Error approving user {user_id}: {str(e)}")
+            messages.error(request, f'Wystąpił błąd podczas zatwierdzania użytkownika: {str(e)}')
+            return redirect('pending_approvals')
+    
+    # Display approval confirmation page
+    return render(request, 'crm/approvals/approve_user.html', {'profile': profile})
