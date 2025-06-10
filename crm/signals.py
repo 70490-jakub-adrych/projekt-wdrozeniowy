@@ -30,10 +30,10 @@ def user_profile_post_save(sender, instance, created, **kwargs):
                 
                 # Check if we've already sent a notification for this approval
                 if cache.get(cache_key):
-                    logger.info(f"⚠️ WATCHER: Skipping duplicate notification for {instance.user.email}")
+                    logger.info(f"WATCHER: Skipping duplicate notification for {instance.user.email}")
                     return
                 
-                logger.info(f"🔍 WATCHER: Detected user approval for {instance.user.email}")
+                logger.info(f"WATCHER: Detected user approval for {instance.user.email}")
                 
                 # Import here to avoid circular imports
                 from .services.email_service import EmailNotificationService
@@ -49,8 +49,8 @@ def user_profile_post_save(sender, instance, created, **kwargs):
                     # Keep this flag for 5 minutes, which should be more than enough
                     # to prevent duplicates during the transaction
                     cache.set(cache_key, True, 300)  # 300 seconds = 5 minutes
-                    logger.info(f"✅ WATCHER: Approval notification successfully sent to {instance.user.email}")
+                    logger.info(f"WATCHER: Approval notification successfully sent to {instance.user.email}")
                 else:
-                    logger.error(f"❌ WATCHER: Failed to send approval notification to {instance.user.email}")
+                    logger.error(f"WATCHER: Failed to send approval notification to {instance.user.email}")
         except Exception as e:
-            logger.error(f"❌ WATCHER: Error sending approval notification: {str(e)}", exc_info=True)
+            logger.error(f"WATCHER: Error sending approval notification: {str(e)}", exc_info=True)
