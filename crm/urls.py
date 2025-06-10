@@ -20,7 +20,7 @@ from . import views
 from .views import secure_file_views
 from django.contrib.auth import views as auth_views
 from .views.statistics_views import statistics_dashboard, update_agent_work_log, generate_statistics_report
-from .views.email_test_views import test_email_view, test_smtp_connection
+from .views.email_test_views import test_email_view, test_smtp_connection, test_account_approval_email
 from .views.tickets.unassignment_views import ticket_unassign
 from .views.tickets.assignment_views import ticket_assign_to_other
 
@@ -112,5 +112,5 @@ urlpatterns = [
     path('admin/test-smtp-connection/', test_smtp_connection, name='test_smtp_connection'),
 
     # Add this URL pattern for testing account approval emails
-    path('test-approval-email/<int:user_id>/', views.test_account_approval_email, name='test_account_approval_email'),
+    path('test-approval-email/<int:user_id>/', test_account_approval_email, name='test_account_approval_email'),
 ]
