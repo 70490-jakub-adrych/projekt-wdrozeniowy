@@ -40,9 +40,6 @@ from . import error_views
 # Import new ticket display views
 from .ticket_display_views import ticket_display_view, get_tickets_update
 
-# Import email test views
-from .email_test_views import test_account_approval_email
-
 # Define all exported symbols
 __all__ = [
     'get_client_ip',
@@ -74,6 +71,5 @@ __all__ = [
     'unlock_user',
     'custom_password_change_view',
     'ticket_display_view',
-    'get_tickets_update',
-    'test_account_approval_email'
+    'get_tickets_update'
 ]
