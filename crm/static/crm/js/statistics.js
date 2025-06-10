@@ -138,7 +138,6 @@ document.addEventListener('DOMContentLoaded', function() {
         const labels = {
             'new': 'Nowe',
             'in_progress': 'W trakcie',
-            'waiting': 'Oczekujące',
             'resolved': 'Rozwiązane',
             'closed': 'Zamknięte'
         };
@@ -178,12 +177,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const initStatusChart = (chartData) => {
         const statusCtx = document.getElementById('statusChart').getContext('2d');
         const statusData = {
-            labels: ['Nowe', 'W trakcie', 'Oczekujące', 'Rozwiązane', 'Zamknięte'],
+            labels: ['Nowe', 'W trakcie', 'Rozwiązane', 'Zamknięte'], // Removed 'Oczekujące'
             datasets: [{
                 data: [
                     chartData.tickets.new,
                     chartData.tickets.inProgress,
-                    chartData.tickets.waiting,
+                    // Removed chartData.tickets.waiting
                     chartData.tickets.resolved,
                     chartData.tickets.closed
                 ],

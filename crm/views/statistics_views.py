@@ -109,7 +109,6 @@ def statistics_dashboard(request):
     total_tickets = tickets.count()
     new_tickets = tickets.filter(status='new').count()
     in_progress_tickets = tickets.filter(status='in_progress').count()
-    waiting_tickets = tickets.filter(status='waiting').count()
     resolved_tickets = tickets.filter(status='resolved').count()
     closed_tickets = tickets.filter(status='closed').count()
     
@@ -296,7 +295,6 @@ def statistics_dashboard(request):
         'total_tickets': total_tickets,
         'new_tickets': new_tickets,
         'in_progress_tickets': in_progress_tickets,
-        'waiting_tickets': waiting_tickets,
         'resolved_tickets': resolved_tickets,
         'closed_tickets': closed_tickets,
         'avg_resolution_hours': avg_resolution_hours,
@@ -338,7 +336,6 @@ def statistics_dashboard(request):
         'total_tickets': total_tickets,
         'new_tickets': new_tickets,
         'in_progress_tickets': in_progress_tickets,
-        'waiting_tickets': waiting_tickets,
         'resolved_tickets': resolved_tickets,
         'closed_tickets': closed_tickets,
         'avg_resolution_hours': avg_resolution_hours,

@@ -121,6 +121,18 @@ class ModeratorTicketForm(forms.ModelForm):
         required=False
     )
     
+    STATUS_CHOICES_WITHOUT_WAITING = (
+        ('new', 'Nowe'),
+        ('in_progress', 'W trakcie'),
+        ('resolved', 'Rozwiązane'),
+        ('closed', 'Zamknięte'),
+    )
+    
+    status = forms.ChoiceField(
+        choices=STATUS_CHOICES_WITHOUT_WAITING,
+        label="Status"
+    )
+    
     class Meta:
         model = Ticket
         fields = ['title', 'description', 'category', 'priority', 'status', 'assigned_to', 'suggested_category']
