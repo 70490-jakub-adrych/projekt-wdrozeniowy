@@ -768,7 +768,8 @@ def verify_email(request):
         )
         # Send the verification email
         EmailNotificationService.send_verification_email(user, verification_code)
-        messages.info(request, 'Wysłaliśmy nowy kod weryfikacyjny na Twój adres email.')
+        messages.info(request, 'Wysłaliśmy nowy kod weryfikacyjny na Twój adres email. Poprzedni kod nie będzie już ważny.')
+        logger.info(f"New verification code sent to {user.email} for user {user.username}")
     
     # Process verification
     if request.method == 'POST':

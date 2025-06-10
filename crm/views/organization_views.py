@@ -102,6 +102,7 @@ def organization_update(request, pk):
             form.save()
             messages.success(request, 'Organizacja została zaktualizowana!')
             return redirect('organization_detail', pk=organization.pk)
+        
     else:
         form = OrganizationForm(instance=organization)
     
