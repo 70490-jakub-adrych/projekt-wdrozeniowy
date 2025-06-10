@@ -77,6 +77,10 @@ def approve_user(request, user_id):
     user = profile.user
     
     if request.method == 'POST':
+        # Store these variables outside the transaction block to use for email later
+        approved_user = user
+        approver = request.user
+        
         try:
             with transaction.atomic():
                 # Log this action
@@ -95,11 +99,26 @@ def approve_user(request, user_id):
                 
                 logger.info(f"User {user.username} approved by {request.user.username}")
                 messages.success(request, f'Użytkownik {user.username} został pomyślnie zatwierdzony.')
-                
-                # Send account approved email notification
+            
+            # IMPORTANT: Send email notification OUTSIDE the transaction block
+            # This ensures the email is sent even if there's a later error
+            try:
+                logger.info(f"Attempting to send approval notification to {approved_user.email}")
                 from ..services.email_service import EmailNotificationService
-                EmailNotificationService.send_account_approved_email(user, approved_by=request.user)
-                logger.info(f"Approval notification sent to user {user.username}")
+                
+                # Call with explicit success check
+                email_sent = EmailNotificationService.send_account_approved_email(
+                    approved_user, 
+                    approved_by=approver
+                )
+                
+                if email_sent:
+                    logger.info(f"✅ Approval notification successfully sent to {approved_user.email}")
+                else:
+                    logger.error(f"❌ Failed to send approval notification to {approved_user.email}")
+            except Exception as email_error:
+                logger.error(f"❌ Error sending approval notification: {str(email_error)}", exc_info=True)
+                # Don't raise the exception - we still want to redirect to success page
             
             return redirect('approved_users')
         except Exception as e:
