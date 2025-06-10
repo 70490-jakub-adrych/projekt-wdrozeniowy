@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import HttpResponseForbidden, Http404
+from django.contrib.auth.models import User  # Add this import
 
 from ...models import Ticket
 from ..helpers import log_activity
