@@ -30,6 +30,11 @@ class UserProfile(models.Model):
     is_approved = models.BooleanField(default=False, verbose_name="Zatwierdzony")
     email_verified = models.BooleanField(default=False, verbose_name="Email zweryfikowany")
     
+    # Add approval tracking fields
+    approved_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, 
+                                   related_name='approved_users', verbose_name="Zatwierdzony przez")
+    approved_at = models.DateTimeField(null=True, blank=True, verbose_name="Data zatwierdzenia")
+    
     # Account locking fields
     failed_login_attempts = models.IntegerField(default=0, verbose_name="Nieudane próby logowania")
     is_locked = models.BooleanField(default=False, verbose_name="Konto zablokowane")

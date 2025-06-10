@@ -15,12 +15,15 @@ def user_profile_post_save(sender, instance, created, **kwargs):
     if created:
         return
     
-    # Check if this is an approval action by checking if approved status changed and is now True
-    if instance.is_approved and instance.approved_at and instance.approved_by:
+    # Check if this is an approval action
+    if instance.is_approved:
         try:
-            # Skip if the instance was just created and approved at the same time
-            # or if the approval happened more than a minute ago (to avoid double notifications)
-            if timezone.now() - instance.approved_at < timezone.timedelta(minutes=1):
+            # Get the approval timestamp, default to current time if not set
+            approval_time = instance.approved_at or timezone.now()
+            
+            # Only process recent approvals (within the last minute)
+            # This prevents duplicate notifications on subsequent saves
+            if timezone.now() - approval_time < timezone.timedelta(minutes=1):
                 logger.info(f"🔍 WATCHER: Detected user approval for {instance.user.email}")
                 
                 # Import here to avoid circular imports
@@ -29,7 +32,7 @@ def user_profile_post_save(sender, instance, created, **kwargs):
                 # Send email notification
                 email_sent = EmailNotificationService.send_account_approved_email(
                     instance.user,
-                    approved_by=instance.approved_by
+                    approved_by=getattr(instance, 'approved_by', None)  # Safely get approved_by
                 )
                 
                 if email_sent:

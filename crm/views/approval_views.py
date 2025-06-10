@@ -87,8 +87,7 @@ def approve_user(request, user_id):
                     request=request
                 )
                 
-                # Update the user's profile status to approved
-                # The signal will detect this change and send the email
+                # Update all approval-related fields
                 profile.is_approved = True
                 profile.approved_by = request.user
                 profile.approved_at = timezone.now()
@@ -97,14 +96,8 @@ def approve_user(request, user_id):
                 logger.info(f"User {user.username} approved by {request.user.username}")
                 messages.success(request, f'Użytkownik {user.username} został pomyślnie zatwierdzony.')
             
-            # Check if 'approved_users' URL exists, if not fall back to 'pending_approvals'
-            try:
-                from django.urls import reverse
-                reverse('approved_users')
-                return redirect('approved_users')
-            except:
-                logger.warning("URL 'approved_users' not found, redirecting to 'pending_approvals'")
-                return redirect('pending_approvals')
+            # Redirect to appropriate page
+            return redirect('pending_approvals')
         except Exception as e:
             logger.error(f"Error approving user {user_id}: {str(e)}")
             messages.error(request, f'Wystąpił błąd podczas zatwierdzania użytkownika: {str(e)}')
