@@ -84,6 +84,15 @@ class GroupSettingsInline(admin.StackedInline):
     model = GroupSettings
     can_delete = False
     verbose_name_plural = 'Ustawienia'
+    fieldsets = (
+        (None, {
+            'fields': ('allow_multiple_organizations', 'show_statistics')
+        }),
+        ('Ustawienia dostępu do załączników', {
+            'fields': ('attachments_access_level',),
+            'description': 'Określ poziom dostępu do załączników dla tej grupy użytkowników.'
+        }),
+    )
 
 class GroupViewPermissionInline(admin.TabularInline):
     model = GroupViewPermission

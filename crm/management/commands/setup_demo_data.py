@@ -72,7 +72,8 @@ class Command(BaseCommand):
             group=admin_group,
             defaults={
                 'allow_multiple_organizations': True,
-                'show_statistics': True  # Admin can see statistics
+                'show_statistics': True,
+                'attachments_access_level': 'all'  # Admins can see all attachments
             }
         )
         
@@ -80,7 +81,8 @@ class Command(BaseCommand):
             group=superagent_group,
             defaults={
                 'allow_multiple_organizations': True,
-                'show_statistics': True  # Superagent can see statistics
+                'show_statistics': True,
+                'attachments_access_level': 'all'  # Superagents can see all attachments
             }
         )
         
@@ -88,10 +90,29 @@ class Command(BaseCommand):
             group=agent_group,
             defaults={
                 'allow_multiple_organizations': True,
-                'show_statistics': False  # Regular agents cannot see statistics by default
+                'show_statistics': False,
+                'attachments_access_level': 'organization'  # Agents can see attachments in their organizations
             }
         )
-
+        
+        GroupSettings.objects.update_or_create(
+            group=client_group,
+            defaults={
+                'allow_multiple_organizations': False,
+                'show_statistics': False,
+                'attachments_access_level': 'own'  # Clients can only see own attachments
+            }
+        )
+        
+        GroupSettings.objects.update_or_create(
+            group=viewer_group,
+            defaults={
+                'allow_multiple_organizations': False,
+                'show_statistics': False,
+                'attachments_access_level': 'own'  # Viewers can only see own attachments
+            }
+        )
+        
         # Get content types
         ticket_ct = ContentType.objects.get_for_model(Ticket)
         comment_ct = ContentType.objects.get_for_model(TicketComment)

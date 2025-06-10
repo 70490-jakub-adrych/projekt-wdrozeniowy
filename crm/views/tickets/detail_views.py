@@ -96,8 +96,8 @@ def ticket_detail(request, pk):
     
     # Process forms if this is a POST request and ticket is not closed
     if request.method == 'POST' and not is_closed:
-        # Handle attachment upload
-        if 'add_attachment' in request.POST:
+        # Handle attachment upload - check for both possible button names
+        if 'add_attachment' in request.POST or 'submit_attachment' in request.POST:
             attachment_form = TicketAttachmentForm(request.POST, request.FILES)
             
             # Check if a file was uploaded

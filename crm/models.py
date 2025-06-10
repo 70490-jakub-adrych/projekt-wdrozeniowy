@@ -417,6 +417,17 @@ class GroupSettings(models.Model):
         verbose_name="Pokaż statystyki",
         help_text="Jeśli zaznaczone, użytkownicy w tej grupie mają dostęp do panelu statystyk."
     )
+    attachments_access_level = models.CharField(
+        max_length=20,
+        choices=[
+            ('own', 'Tylko własne załączniki'),
+            ('organization', 'Załączniki organizacji'),
+            ('all', 'Wszystkie załączniki'),
+        ],
+        default='own',
+        verbose_name="Poziom dostępu do załączników",
+        help_text="Określa, które załączniki użytkownicy w tej grupie mogą przeglądać."
+    )
 
     def __str__(self):
         return f"Ustawienia grupy: {self.group.name}"
@@ -431,12 +442,21 @@ def create_group_settings(sender, instance, created, **kwargs):
     """Automatically create settings when a group is created"""
     if created:
         # Set default permissions based on group name
-        if instance.name == 'Admin' or instance.name == 'Superagent' or instance.name == 'Agent':
-            # Admins, Superagents and Agents can have multiple organizations by default
-            GroupSettings.objects.create(group=instance, allow_multiple_organizations=True)
+        allow_multiple = instance.name in ['Admin', 'Superagent', 'Agent']
+        
+        # Set default attachment access level based on group name
+        if instance.name in ['Admin', 'Superagent']:
+            attachments_access = 'all'
+        elif instance.name == 'Agent':
+            attachments_access = 'organization'
         else:
-            # Other roles (clients, viewers) can't have multiple organizations by default
-            GroupSettings.objects.create(group=instance, allow_multiple_organizations=False)
+            attachments_access = 'own'
+        
+        GroupSettings.objects.create(
+            group=instance, 
+            allow_multiple_organizations=allow_multiple,
+            attachments_access_level=attachments_access
+        )
             
         # Setup default view permissions based on group name
         _setup_default_view_permissions(instance)
