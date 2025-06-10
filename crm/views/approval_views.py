@@ -77,10 +77,6 @@ def approve_user(request, user_id):
     user = profile.user
     
     if request.method == 'POST':
-        # Store these variables outside the transaction block to use for email later
-        approved_user = user
-        approver = request.user
-        
         try:
             with transaction.atomic():
                 # Log this action
@@ -92,6 +88,7 @@ def approve_user(request, user_id):
                 )
                 
                 # Update the user's profile status to approved
+                # The signal will detect this change and send the email
                 profile.is_approved = True
                 profile.approved_by = request.user
                 profile.approved_at = timezone.now()
@@ -99,26 +96,6 @@ def approve_user(request, user_id):
                 
                 logger.info(f"User {user.username} approved by {request.user.username}")
                 messages.success(request, f'Użytkownik {user.username} został pomyślnie zatwierdzony.')
-            
-            # IMPORTANT: Send email notification OUTSIDE the transaction block
-            try:
-                logger.info(f"🔵 APPROVAL EMAIL: Starting notification for {approved_user.email}")
-                
-                # Import using absolute path to avoid relative import issues
-                from crm.services.email_service import EmailNotificationService
-                
-                # Call with explicit success check
-                email_sent = EmailNotificationService.send_account_approved_email(
-                    approved_user, 
-                    approved_by=approver
-                )
-                
-                if email_sent:
-                    logger.info(f"✅ Approval notification SUCCESSFULLY sent to {approved_user.email}")
-                else:
-                    logger.error(f"❌ Failed to send approval notification to {approved_user.email}")
-            except Exception as email_error:
-                logger.error(f"❌ CRITICAL ERROR sending approval notification: {str(email_error)}", exc_info=True)
             
             # Check if 'approved_users' URL exists, if not fall back to 'pending_approvals'
             try:
