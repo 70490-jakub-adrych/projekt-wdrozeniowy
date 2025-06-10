@@ -14,6 +14,7 @@ from .models import (
 
 class UserProfileInline(admin.StackedInline):
     model = UserProfile
+    fk_name = 'user'  # Add this line to specify which foreign key to use
     can_delete = False
     verbose_name_plural = 'Profile'
     filter_horizontal = ('organizations',)
