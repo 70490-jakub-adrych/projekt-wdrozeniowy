@@ -120,32 +120,32 @@
         <div class="card border-0 shadow-sm">
             <div class="card-body">
                 <h5 class="card-title">Podsumowanie za okres: {{ date_from|date:"d.m.Y" }} - {{ date_to|date:"d.m.Y" }}</h5>
-                <div class="row text-center">
-                    <div class="col-md-2 mb-3">
+                <div class="row text-center justify-content-between">
+                    <div class="col mb-3">
                         <div class="stats-card bg-light p-3 rounded h-100">
                             <h3 class="text-primary">{{ total_tickets }}</h3>
                             <p class="mb-0 text-muted">Wszystkich zgłoszeń</p>
                         </div>
                     </div>
-                    <div class="col-md-2 mb-3">
+                    <div class="col mb-3">
                         <div class="stats-card bg-light p-3 rounded h-100">
                             <h3 class="text-primary">{{ new_tickets }}</h3>
                             <p class="mb-0 text-muted">Nowych</p>
                         </div>
                     </div>
-                    <div class="col-md-2 mb-3">
+                    <div class="col mb-3">
                         <div class="stats-card bg-light p-3 rounded h-100">
                             <h3 class="text-info">{{ in_progress_tickets }}</h3>
                             <p class="mb-0 text-muted">W trakcie</p>
                         </div>
                     </div>
-                    <div class="col-md-2 mb-3">
+                    <div class="col mb-3">
                         <div class="stats-card bg-light p-3 rounded h-100">
                             <h3 class="text-success">{{ resolved_tickets }}</h3>
                             <p class="mb-0 text-muted">Rozwiązanych</p>
                         </div>
                     </div>
-                    <div class="col-md-2 mb-3">
+                    <div class="col mb-3">
                         <div class="stats-card bg-light p-3 rounded h-100">
                             <h3 class="text-secondary">{{ closed_tickets }}</h3>
                             <p class="mb-0 text-muted">Zamkniętych</p>
