@@ -29,8 +29,12 @@
     {% with user_groups=user.groups.all %}
         {% if user_groups.exists %}
             {% with group_settings=user_groups.first.settings %}
-                <!-- Edit button - only show if user has explicit permission -->
-                {% if group_settings.can_see_edit_button or (group_settings.can_edit_own_tickets and ticket.created_by == user) %}
+                <!-- Edit button - using simpler template syntax -->
+                {% if group_settings.can_see_edit_button %}
+                <a href="{% url 'ticket_update' ticket.pk %}" class="btn btn-primary">
+                    <i class="fas fa-edit"></i> Edytuj
+                </a>
+                {% elif group_settings.can_edit_own_tickets and ticket.created_by == user %}
                 <a href="{% url 'ticket_update' ticket.pk %}" class="btn btn-primary">
                     <i class="fas fa-edit"></i> Edytuj
                 </a>
