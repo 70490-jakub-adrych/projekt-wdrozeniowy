@@ -112,7 +112,7 @@ def register(request):
                     new_code = verification.generate_new_code()
                     
                     if EmailNotificationService.send_verification_email(user, new_code):
-                        messages.success(request, 'Nowy kod weryfikacyjny został wysłany na Twój email.')
+                        messages.success(request, 'Nowy kod weryfikacyjny został wysłany na Twój email. Poprzedni kod nie będzie już ważny.')
                     else:
                         messages.error(request, 'Błąd podczas wysyłania emaila. Spróbuj ponownie.')
                 except:
@@ -695,7 +695,7 @@ def custom_password_change_view(request):
                 # Send verification code via email
                 success = EmailNotificationService.send_password_verification_email(user, verification_code)
                 if success:
-                    messages.success(request, 'Nowy kod weryfikacyjny został wysłany na Twój email.')
+                    messages.success(request, 'Nowy kod weryfikacyjny został wysłany na Twój email. Poprzedni kod nie będzie już ważny.')
                 else:
                     messages.error(request, 'Błąd podczas wysyłania emaila. Spróbuj ponownie.')
             
@@ -853,7 +853,7 @@ def verify_email(request):
                 
                 if EmailNotificationService.send_verification_email(user, new_code):
                     logger.info(f"New verification code sent to {user.email}")
-                    messages.success(request, 'Nowy kod weryfikacyjny został wysłany na Twój email.')
+                    messages.success(request, 'Nowy kod weryfikacyjny został wysłany na Twój email. Poprzedni kod nie będzie już ważny.')
                 else:
                     logger.error(f"Failed to send verification email to {user.email}")
                     messages.error(request, 'Błąd podczas wysyłania emaila. Spróbuj ponownie.')
