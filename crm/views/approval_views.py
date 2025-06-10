@@ -91,7 +91,10 @@ def approve_user(request, user_id):
                 profile.is_approved = True
                 profile.approved_by = request.user
                 profile.approved_at = timezone.now()
-                profile.save()
+                
+                # Use update_fields to explicitly indicate which fields are being updated
+                # This ensures the signal handler knows this is a legitimate approval
+                profile.save(update_fields=['is_approved', 'approved_by', 'approved_at'])
                 
                 logger.info(f"User {user.username} approved by {request.user.username}")
                 messages.success(request, f'Użytkownik {user.username} został pomyślnie zatwierdzony.')
