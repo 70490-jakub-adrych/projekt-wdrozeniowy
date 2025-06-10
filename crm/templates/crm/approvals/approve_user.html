@@ -47,40 +47,17 @@
                     </div>
                 </div>
                 
+                <div class="alert alert-success">
+                    <strong>Uwaga:</strong> Po zatwierdzeniu użytkownik będzie mógł logować się do systemu i otrzyma powiadomienie email.
+                </div>
+                
                 <form method="post" id="approveForm">
                     {% csrf_token %}
-                    
-                    <div class="form-group">
-                        <label for="{{ form.group.id_for_label }}">{{ form.group.label }}</label>
-                        {{ form.group }}
-                        <small class="form-text text-muted">{{ form.group.help_text }}</small>
-                        {% if form.group.errors %}
-                            <div class="alert alert-danger mt-2">
-                                {{ form.group.errors }}
-                            </div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="{{ form.organizations.id_for_label }}">{{ form.organizations.label }}</label>
-                        {{ form.organizations }}
-                        <small class="form-text text-muted">{{ form.organizations.help_text }}</small>
-                        {% if form.organizations.errors %}
-                            <div class="alert alert-danger mt-2">
-                                {{ form.organizations.errors }}
-                            </div>
-                        {% endif %}
-                    </div>
-                    
-                    <div class="alert alert-success">
-                        <strong>Uwaga:</strong> Po zatwierdzeniu użytkownik będzie mógł logować się do systemu z wybraną rolą i dostępem do wybranych organizacji.
-                    </div>
-                    
                     <div class="text-center">
-                        <button type="submit" class="btn btn-success" onclick="return confirmApproval()">
+                        <button type="submit" class="btn btn-success btn-lg" onclick="return confirmApproval()">
                             <i class="fas fa-check"></i> Zatwierdź użytkownika
                         </button>
-                        <a href="{% url 'pending_approvals' %}" class="btn btn-secondary">
+                        <a href="{% url 'pending_approvals' %}" class="btn btn-secondary btn-lg">
                             <i class="fas fa-arrow-left"></i> Powrót
                         </a>
                     </div>
@@ -92,44 +69,59 @@
 
 <script>
 function confirmApproval() {
-    const selectedGroup = document.getElementById('id_group');
-    const groupText = selectedGroup.options[selectedGroup.selectedIndex].text;
     const username = "{{ profile.user.username }}";
     
-    // Get selected organizations
-    const selectedOrgs = document.getElementById('id_organizations');
-    const selectedOrgNames = Array.from(selectedOrgs.selectedOptions).map(option => option.text).join(", ");
+    console.log("🔵 JS: Confirmation dialog starting for user:", username);
     
     // Show confirmation dialog
-    if (confirm(`Czy na pewno chcesz zatwierdzić użytkownika ${username} i przypisać go do grupy "${groupText}" oraz organizacji: ${selectedOrgNames}?`)) {
+    if (confirm(`Czy na pewno chcesz zatwierdzić użytkownika ${username}?`)) {
+        console.log("🔵 JS: User confirmed approval");
+        
         // Add a hidden field to indicate this was confirmed properly
         const form = document.getElementById('approveForm');
+        
+        // Remove any existing confirmed field
+        const existingConfirm = form.querySelector('input[name="confirmed"]');
+        if (existingConfirm) {
+            existingConfirm.remove();
+        }
+        
         const confirmField = document.createElement('input');
         confirmField.type = 'hidden';
         confirmField.name = 'confirmed';
         confirmField.value = 'true';
         form.appendChild(confirmField);
         
-        console.log("Form submission confirmed, proceeding with approval and email notification");
+        console.log("🔵 JS: Added confirmation field to form");
+        console.log("🔵 JS: Form will now submit to:", form.action || window.location.pathname);
+        console.log("🔵 JS: Form method:", form.method);
+        
         return true;
+    } else {
+        console.log("🔵 JS: User cancelled approval");
+        return false;
     }
-    return false;
 }
 
-// Add event listener to handle group change
-document.getElementById('id_group').addEventListener('change', function() {
-    const groupValue = this.value;
-    const orgSelector = document.getElementById('id_organizations');
-    
-    // Find the group name from selected option
-    const groupName = this.options[this.selectedIndex].text;
-    
-    // If the selected group is not Admin/Superagent/Agent, limit to single selection
-    if (!['Admin', 'Superagent', 'Agent'].includes(groupName)) {
-        // Show warning
-        if (orgSelector.selectedOptions.length > 1) {
-            alert('Uwaga: Klienci i użytkownicy przeglądający mogą być przypisani tylko do jednej organizacji. Zostanie zachowana tylko pierwsza wybrana organizacja.');
-        }
+// Add event listener to form submission for debugging
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('approveForm');
+    if (form) {
+        form.addEventListener('submit', function(e) {
+            console.log("🔵 JS: Form submission event triggered");
+            console.log("🔵 JS: Form action:", this.action || window.location.pathname);
+            console.log("🔵 JS: Form method:", this.method);
+            
+            // Log all form data
+            const formData = new FormData(this);
+            console.log("🔵 JS: Form data:");
+            for (let pair of formData.entries()) {
+                console.log(`  ${pair[0]}: ${pair[1]}`);
+            }
+            
+            // Allow the form to submit normally
+            return true;
+        });
     }
 });
 </script>

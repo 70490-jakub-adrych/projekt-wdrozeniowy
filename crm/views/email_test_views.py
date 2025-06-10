@@ -163,3 +163,72 @@ def test_smtp_connection(request):
         logger.error(f"SMTP connection test failed: {result['message']}")
     
     return JsonResponse(result)
+
+@login_required
+def test_account_approval_email(request, user_id):
+    """Test sending account approval email directly (admin only)"""
+    if request.user.profile.role != 'admin':
+        messages.error(request, 'Tylko administratorzy mogą testować emaile.')
+        return JsonResponse({'success': False, 'error': 'Brak uprawnień'}, status=403)
+    
+    try:
+        from django.contrib.auth.models import User
+        target_user = User.objects.get(pk=user_id)
+        
+        logger.info(f"🔵 TESTING: Account approval email for {target_user.username}")
+        logger.info(f"🔵 Target user email: {target_user.email}")
+        logger.info(f"🔵 Target user is_active: {target_user.is_active}")
+        
+        # Test multiple import methods
+        email_function = None
+        import_method = None
+        
+        try:
+            from ..services.email.account import send_account_approved_email
+            email_function = send_account_approved_email
+            import_method = "specialized_module"
+            logger.info("✅ TEST: Successfully imported from specialized module")
+        except ImportError as e:
+            logger.warning(f"⚠️ TEST: Specialized module import failed: {e}")
+            try:
+                from ..services.email_service import EmailNotificationService
+                email_function = EmailNotificationService.send_account_approved_email
+                import_method = "email_service"
+                logger.info("✅ TEST: Using EmailNotificationService fallback")
+            except ImportError as e2:
+                logger.error(f"❌ TEST: Both import methods failed: {e2}")
+                return JsonResponse({
+                    'success': False,
+                    'error': f'Import failed: {str(e2)}'
+                })
+        
+        # Call the function with detailed logging
+        logger.info(f"🔵 TEST: Calling email function via {import_method}")
+        result = email_function(target_user, approved_by=request.user)
+        logger.info(f"🔵 TEST: Email function returned: {result} (type: {type(result)})")
+        
+        if result is True:
+            logger.info(f"✅ TEST: Account approval email sent successfully")
+            return JsonResponse({
+                'success': True,
+                'message': f'Test approval email sent to {target_user.email} via {import_method}'
+            })
+        else:
+            logger.error(f"❌ TEST: Account approval email failed - returned {result}")
+            return JsonResponse({
+                'success': False,
+                'error': f'Email sending returned {result} (expected True)'
+            })
+    
+    except User.DoesNotExist:
+        logger.error(f"❌ TEST: User {user_id} not found")
+        return JsonResponse({
+            'success': False,
+            'error': f'User {user_id} not found'
+        })
+    except Exception as e:
+        logger.error(f"❌ TEST: Error sending account approval email: {str(e)}", exc_info=True)
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        })

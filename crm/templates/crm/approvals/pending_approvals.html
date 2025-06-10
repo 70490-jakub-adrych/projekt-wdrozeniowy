@@ -160,6 +160,11 @@
                             <a href="{% url 'reject_user' profile.user.id %}" class="btn btn-sm btn-danger">
                                 <i class="fas fa-times"></i> Odrzuć
                             </a>
+                            {% if user.profile.role == 'admin' %}
+                            <button class="btn btn-sm btn-info" onclick="testApprovalEmail({{ profile.user.id }})">
+                                <i class="fas fa-envelope"></i> Test Email
+                            </button>
+                            {% endif %}
                         </td>
                     </tr>
                     {% endfor %}
@@ -176,3 +181,30 @@
 </div>
 {% endif %}
 {% endblock %}
+
+<script>
+function testApprovalEmail(userId) {
+    if (!confirm('Czy chcesz wysłać testowy email zatwierdzenia do tego użytkownika?')) {
+        return;
+    }
+    
+    fetch(`/test-approval-email/${userId}/`, {
+        method: 'GET',
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRFToken': '{{ csrf_token }}'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(`✅ ${data.message}`);
+        } else {
+            alert(`❌ Błąd: ${data.error}`);
+        }
+    })
+    .catch(error => {
+        alert(`❌ Błąd: ${error.message}`);
+    });
+}
+</script>

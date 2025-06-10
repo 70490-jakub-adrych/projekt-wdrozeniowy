@@ -110,4 +110,7 @@ urlpatterns = [
     # Admin tools
     path('admin/test-email/', test_email_view, name='test_email'),
     path('admin/test-smtp-connection/', test_smtp_connection, name='test_smtp_connection'),
+
+    # Add this URL pattern for testing account approval emails
+    path('test-approval-email/<int:user_id>/', views.test_account_approval_email, name='test_account_approval_email'),
 ]
