@@ -34,6 +34,32 @@
                             {% endfor %}
                         </select>
                     </div>
+                    
+                    <!-- Priority selection -->
+                    <div class="form-group mt-4">
+                        <label for="priority">Ustal priorytet zgłoszenia:</label>
+                        <div class="mt-2">
+                            <div class="btn-group btn-group-toggle" data-toggle="buttons">
+                                <label class="btn btn-outline-secondary">
+                                    <input type="radio" name="priority" value="low" {% if ticket.priority == 'low' %}checked{% endif %}> 
+                                    <span class="badge badge-secondary">Niski</span>
+                                </label>
+                                <label class="btn btn-outline-info active">
+                                    <input type="radio" name="priority" value="medium" {% if ticket.priority == 'medium' or not ticket.priority %}checked{% endif %}> 
+                                    <span class="badge badge-info">Średni</span>
+                                </label>
+                                <label class="btn btn-outline-warning">
+                                    <input type="radio" name="priority" value="high" {% if ticket.priority == 'high' %}checked{% endif %}> 
+                                    <span class="badge badge-warning">Wysoki</span>
+                                </label>
+                                <label class="btn btn-outline-danger">
+                                    <input type="radio" name="priority" value="critical" {% if ticket.priority == 'critical' %}checked{% endif %}> 
+                                    <span class="badge badge-danger">Krytyczny</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <div class="mt-4">
                         <button type="submit" class="btn btn-primary">Przydziel zgłoszenie</button>
                         <button type="button" class="btn btn-outline-secondary" onclick="goBack()">Anuluj</button>

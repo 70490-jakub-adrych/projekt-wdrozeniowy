@@ -2,12 +2,12 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import HttpResponseForbidden, Http404
-from django.contrib.auth.models import User  # Add this import
+from django.contrib.auth.models import User
 
 from ...models import Ticket
 from ..helpers import log_activity
 from ..error_views import ticket_not_found
-from ...services.email_service import EmailNotificationService  # Add this import if missing
+from ...services.email_service import EmailNotificationService
 
 @login_required
 def ticket_assign_to_me(request, pk):
@@ -37,6 +37,14 @@ def ticket_assign_to_me(request, pk):
             return HttpResponseForbidden("To zgłoszenie jest już przypisane do innego agenta")
     
     if request.method == 'POST':
+        # Get the priority from the form
+        priority = request.POST.get('priority')
+        if priority and priority in [p[0] for p in Ticket.PRIORITY_CHOICES]:
+            old_priority = ticket.priority
+            # Update priority if it has changed
+            if old_priority != priority:
+                ticket.priority = priority
+        
         # Przypisz zgłoszenie do aktualnego użytkownika
         old_status = ticket.status
         ticket.assigned_to = user
@@ -47,21 +55,21 @@ def ticket_assign_to_me(request, pk):
         
         ticket.save()
         
-        # Create activity log with status change information if status changed
+        # Create activity log with status and priority change information
+        log_description = f"Przypisano zgłoszenie '{ticket.title}' do {user.username}"
+        
         if old_status != ticket.status:
-            log_activity(
-                request,
-                'ticket_updated',
-                ticket,
-                f"Przypisano zgłoszenie '{ticket.title}' do {user.username} i zmieniono status z '{old_status}' na '{ticket.status}'"
-            )
-        else:
-            log_activity(
-                request,
-                'ticket_updated',
-                ticket,
-                f"Przypisano zgłoszenie '{ticket.title}' do {user.username}"
-            )
+            log_description += f" i zmieniono status z '{old_status}' na '{ticket.status}'"
+            
+        if old_priority != ticket.priority:
+            log_description += f". Priorytet zmieniony z '{old_priority}' na '{ticket.priority}'"
+        
+        log_activity(
+            request,
+            'ticket_updated',
+            ticket,
+            log_description
+        )
         
         # Send email notification about the assignment
         EmailNotificationService.notify_ticket_stakeholders('assigned', ticket, triggered_by=user)
@@ -103,6 +111,10 @@ def ticket_assign_to_other(request, pk):
     
     if request.method == 'POST':
         agent_id = request.POST.get('agent_id')
+        
+        # Get the priority from the form
+        priority = request.POST.get('priority')
+        
         if agent_id:
             try:
                 agent = User.objects.get(id=agent_id)
@@ -115,6 +127,11 @@ def ticket_assign_to_other(request, pk):
                 # Update ticket assignment
                 old_status = ticket.status
                 old_assigned = ticket.assigned_to
+                old_priority = ticket.priority
+                
+                # Update priority if provided and valid
+                if priority and priority in [p[0] for p in Ticket.PRIORITY_CHOICES]:
+                    ticket.priority = priority
                 
                 ticket.assigned_to = agent
                 
@@ -132,6 +149,9 @@ def ticket_assign_to_other(request, pk):
                 
                 if old_status != ticket.status:
                     action_desc += f" i zmieniono status z '{old_status}' na '{ticket.status}'"
+                
+                if old_priority != ticket.priority:
+                    action_desc += f". Priorytet zmieniony z '{old_priority}' na '{ticket.priority}'"
                 
                 log_activity(
                     request,
