@@ -54,9 +54,12 @@ def dashboard(request):
         resolved_tickets = Ticket.objects.filter(status='resolved').count()
         closed_tickets = Ticket.objects.filter(status='closed').count()
         
-        # Fix: Show only tickets assigned to current admin user
+        # Show only tickets assigned to current admin user
         assigned_tickets = Ticket.objects.filter(assigned_to=user).exclude(status='closed').order_by('-updated_at')[:5]
+        # All tickets with no assigned user
         unassigned_tickets = Ticket.objects.filter(assigned_to__isnull=True).exclude(status='closed').order_by('-created_at')[:5]
+        # In-progress tickets list for the admin panel
+        in_progress_tickets_list = Ticket.objects.filter(status='in_progress').order_by('-updated_at')[:5]
         
         # Add recently closed tickets section
         recently_closed_tickets = Ticket.objects.filter(status='closed').order_by('-closed_at')[:5]
@@ -67,8 +70,8 @@ def dashboard(request):
         # Check for pending approvals
         pending_approvals = UserProfile.objects.filter(is_approved=False).count()
         
-    elif role == 'agent':
-        # Agent sees tickets from their organizations
+    elif role in ['superagent', 'agent']:  # Handle both superagent and agent in similar way
+        # Get user organizations
         user_orgs = user.profile.organizations.all()
         org_tickets = Ticket.objects.filter(organization__in=user_orgs)
         
@@ -78,10 +81,16 @@ def dashboard(request):
         resolved_tickets = org_tickets.filter(status='resolved').count()
         closed_tickets = org_tickets.filter(status='closed').count()
         
-        # Fix: Use org_tickets as base query to ensure we only show tickets from agent's organizations
-        # and filter to show tickets assigned to this agent - exclude closed ones
+        # For both agent and superagent - show tickets assigned to them
         assigned_tickets = org_tickets.filter(assigned_to=user).exclude(status='closed').order_by('-updated_at')[:5]
+        # Show unassigned tickets from their organizations
         unassigned_tickets = org_tickets.filter(assigned_to__isnull=True).exclude(status='closed').order_by('-created_at')[:5]
+        
+        # For superagent, add in-progress tickets list
+        if role == 'superagent':
+            in_progress_tickets_list = org_tickets.filter(status='in_progress').order_by('-updated_at')[:5]
+        else:
+            in_progress_tickets_list = None
         
         # Add recently closed tickets section
         recently_closed_tickets = org_tickets.filter(status='closed').order_by('-closed_at')[:5]
@@ -91,12 +100,11 @@ def dashboard(request):
             Q(user=user) | Q(ticket__organization__in=user_orgs)
         ).distinct().order_by('-created_at')[:10]
         
-        # Check for pending approvals in agent's organizations
+        # Check for pending approvals in user's organizations
         pending_approvals = UserProfile.objects.filter(
             is_approved=False,
             organizations__in=user_orgs
         ).distinct().count()
-        
     else:  # client
         # Client sees tickets from their organizations or created by them
         user_orgs = user.profile.organizations.all()
@@ -113,10 +121,10 @@ def dashboard(request):
         resolved_tickets = org_tickets.filter(status='resolved').count()
         closed_tickets = org_tickets.filter(status='closed').count()
         
-        # Client sees their tickets - exclude closed
+        # Client's own tickets - exclude closed
         user_tickets = Ticket.objects.filter(created_by=user).exclude(status='closed').order_by('-created_at')[:5]
         
-        # Client sees other tickets from their organization - exclude closed
+        # Client sees other tickets from their organization - exclude closed and exclude own tickets
         if user_orgs.exists():
             org_recent_tickets = org_tickets.exclude(created_by=user).exclude(status='closed').order_by('-created_at')[:5]
         else:
@@ -130,6 +138,7 @@ def dashboard(request):
         unassigned_tickets = None
         recent_activities = None
         pending_approvals = None
+        in_progress_tickets_list = None
     
     # Common context
     context = {
@@ -148,6 +157,7 @@ def dashboard(request):
             'recently_closed_tickets': recently_closed_tickets,
         })
     else:
+        # For all staff roles
         context.update({
             'assigned_tickets': assigned_tickets,
             'unassigned_tickets': unassigned_tickets,
@@ -155,5 +165,11 @@ def dashboard(request):
             'pending_approvals': pending_approvals,
             'recently_closed_tickets': recently_closed_tickets,
         })
+        
+        # Add in-progress tickets list for admins and superagents
+        if role in ['admin', 'superagent']:
+            context.update({
+                'in_progress_tickets_list': in_progress_tickets_list,
+            })
     
     return render(request, 'crm/dashboard.html', context)

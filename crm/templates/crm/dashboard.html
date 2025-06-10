@@ -10,7 +10,8 @@
     </div>
 </div>
 
-{% if user.profile.role == 'admin' or user.profile.role == 'agent' %}
+<!-- Quick Action buttons -->
+{% if user.profile.role != 'client' %}
 <div class="row mb-4">
     <div class="col-md-12">
         <div class="card">
@@ -22,7 +23,7 @@
                     <a href="{% url 'ticket_create' %}" class="btn btn-primary mr-2">
                         <i class="fas fa-plus"></i> Nowe zgłoszenie
                     </a>
-                    {% if pending_approvals > 0 %}
+                    {% if pending_approvals > 0 and user.profile.role in 'admin,superagent,agent' %}
                     <a href="{% url 'pending_approvals' %}" class="btn btn-warning mr-2">
                         <i class="fas fa-user-clock"></i> Oczekujące zatwierdzenia ({{ pending_approvals }})
                     </a>
@@ -39,6 +40,7 @@
 </div>
 {% endif %}
 
+<!-- Statistics summary for all roles -->
 <div class="row">
     <div class="col-md-12">
         <div class="card mb-4">
@@ -84,66 +86,10 @@
     </div>
 </div>
 
-{% if user.profile.role == 'admin' or user.profile.role == 'agent' %}
+<!-- ADMIN PANELS -->
+{% if user.profile.role == 'admin' %}
 <div class="row">
-    <div class="col-md-6">
-        <div class="card mb-4">
-            <div class="card-header">
-                <i class="fas fa-tasks mr-1"></i>
-                Zgłoszenia w trakcie realizacji
-            </div>
-            <div class="card-body">
-                {% if assigned_tickets %}
-                <div class="table-responsive">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Tytuł</th>
-                                <th>Priorytet</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for ticket in assigned_tickets %}
-                            <tr>
-                                <td>#{{ ticket.id }}</td>
-                                <td><a href="{% url 'ticket_detail' ticket.pk %}">{{ ticket.title }}</a></td>
-                                <td>
-                                    <span class="badge 
-                                        {% if ticket.priority == 'low' %}badge-secondary
-                                        {% elif ticket.priority == 'medium' %}badge-info
-                                        {% elif ticket.priority == 'high' %}badge-warning
-                                        {% elif ticket.priority == 'critical' %}badge-danger
-                                        {% endif %}">
-                                        {{ ticket.get_priority_display }}
-                                    </span>
-                                </td>
-                                <td>
-                                    <span class="badge 
-                                        {% if ticket.status == 'new' %}badge-primary
-                                        {% elif ticket.status == 'in_progress' %}badge-info
-                                        {% elif ticket.status == 'waiting' %}badge-warning
-                                        {% elif ticket.status == 'resolved' %}badge-success
-                                        {% elif ticket.status == 'closed' %}badge-secondary
-                                        {% endif %}">
-                                        {{ ticket.get_status_display }}
-                                    </span>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                {% else %}
-                <p>Brak przypisanych zgłoszeń.</p>
-                {% endif %}
-            </div>
-            <div class="card-footer">
-                <a href="{% url 'ticket_list' %}?assigned=me&exclude_closed=true" class="btn btn-sm btn-primary">Zobacz wszystkie</a>
-            </div>
-        </div>
-    </div>
+    <!-- Admin Panel 1: Tickets awaiting approval -->
     <div class="col-md-6">
         <div class="card mb-4">
             <div class="card-header">
@@ -173,8 +119,283 @@
                                         {% if ticket.priority == 'low' %}badge-secondary
                                         {% elif ticket.priority == 'medium' %}badge-info
                                         {% elif ticket.priority == 'high' %}badge-warning
-                                        {% elif ticket.priority == 'critical' %}badge-danger
-                                        {% endif %}">
+                                        {% elif ticket.priority == 'critical' %}badge-danger{% endif %}">
+                                        {{ ticket.get_priority_display }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p>Brak nieprzypisanych zgłoszeń.</p>
+                {% endif %}
+            </div>
+            <div class="card-footer">
+                <a href="{% url 'ticket_list' %}?assigned=unassigned&exclude_closed=true" class="btn btn-sm btn-primary">Zobacz wszystkie</a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Admin Panel 2: Tickets in progress -->
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-tasks mr-1"></i>
+                Zgłoszenia w trakcie
+            </div>
+            <div class="card-body">
+                {% if in_progress_tickets_list %}
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Tytuł</th>
+                                <th>Przypisane do</th>
+                                <th>Priorytet</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ticket in in_progress_tickets_list %}
+                            <tr>
+                                <td>#{{ ticket.id }}</td>
+                                <td><a href="{% url 'ticket_detail' ticket.pk %}">{{ ticket.title }}</a></td>
+                                <td>
+                                    {% if ticket.assigned_to %}
+                                    {{ ticket.assigned_to.username }}
+                                    {% else %}
+                                    <span class="text-muted">Nieprzypisane</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge 
+                                        {% if ticket.priority == 'low' %}badge-secondary
+                                        {% elif ticket.priority == 'medium' %}badge-info
+                                        {% elif ticket.priority == 'high' %}badge-warning
+                                        {% elif ticket.priority == 'critical' %}badge-danger{% endif %}">
+                                        {{ ticket.get_priority_display }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p>Brak zgłoszeń w trakcie realizacji.</p>
+                {% endif %}
+            </div>
+            <div class="card-footer">
+                <a href="{% url 'ticket_list' %}?status=in_progress" class="btn btn-sm btn-primary">Zobacz wszystkie</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- SUPERAGENT PANELS -->
+{% if user.profile.role == 'superagent' %}
+<div class="row">
+    <!-- Superagent Panel 1: Tickets awaiting approval -->
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-bell mr-1"></i>
+                Zgłoszenia oczekujące na akceptację
+            </div>
+            <div class="card-body">
+                {% if unassigned_tickets %}
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Tytuł</th>
+                                <th>Organizacja</th>
+                                <th>Priorytet</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ticket in unassigned_tickets %}
+                            <tr>
+                                <td>#{{ ticket.id }}</td>
+                                <td><a href="{% url 'ticket_detail' ticket.pk %}">{{ ticket.title }}</a></td>
+                                <td>{{ ticket.organization.name }}</td>
+                                <td>
+                                    <span class="badge 
+                                        {% if ticket.priority == 'low' %}badge-secondary
+                                        {% elif ticket.priority == 'medium' %}badge-info
+                                        {% elif ticket.priority == 'high' %}badge-warning
+                                        {% elif ticket.priority == 'critical' %}badge-danger{% endif %}">
+                                        {{ ticket.get_priority_display }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p>Brak nieprzypisanych zgłoszeń.</p>
+                {% endif %}
+            </div>
+            <div class="card-footer">
+                <a href="{% url 'ticket_list' %}?assigned=unassigned&exclude_closed=true" class="btn btn-sm btn-primary">Zobacz wszystkie</a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Superagent Panel 2: Tickets in progress -->
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-tasks mr-1"></i>
+                Zgłoszenia w trakcie
+            </div>
+            <div class="card-body">
+                {% if in_progress_tickets_list %}
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Tytuł</th>
+                                <th>Przypisane do</th>
+                                <th>Priorytet</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ticket in in_progress_tickets_list %}
+                            <tr>
+                                <td>#{{ ticket.id }}</td>
+                                <td><a href="{% url 'ticket_detail' ticket.pk %}">{{ ticket.title }}</a></td>
+                                <td>
+                                    {% if ticket.assigned_to %}
+                                    {{ ticket.assigned_to.username }}
+                                    {% else %}
+                                    <span class="text-muted">Nieprzypisane</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge 
+                                        {% if ticket.priority == 'low' %}badge-secondary
+                                        {% elif ticket.priority == 'medium' %}badge-info
+                                        {% elif ticket.priority == 'high' %}badge-warning
+                                        {% elif ticket.priority == 'critical' %}badge-danger{% endif %}">
+                                        {{ ticket.get_priority_display }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p>Brak zgłoszeń w trakcie realizacji.</p>
+                {% endif %}
+            </div>
+            <div class="card-footer">
+                <a href="{% url 'ticket_list' %}?status=in_progress" class="btn btn-sm btn-primary">Zobacz wszystkie</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- AGENT PANELS -->
+{% if user.profile.role == 'agent' %}
+<div class="row">
+    <!-- Agent Panel 1: Assigned to me -->
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-tasks mr-1"></i>
+                Zgłoszenia przypisane do mnie
+            </div>
+            <div class="card-body">
+                {% if assigned_tickets %}
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Tytuł</th>
+                                <th>Priorytet</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ticket in assigned_tickets %}
+                            <tr>
+                                <td>#{{ ticket.id }}</td>
+                                <td><a href="{% url 'ticket_detail' ticket.pk %}">{{ ticket.title }}</a></td>
+                                <td>
+                                    <span class="badge 
+                                        {% if ticket.priority == 'low' %}badge-secondary
+                                        {% elif ticket.priority == 'medium' %}badge-info
+                                        {% elif ticket.priority == 'high' %}badge-warning
+                                        {% elif ticket.priority == 'critical' %}badge-danger{% endif %}">
+                                        {{ ticket.get_priority_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge 
+                                        {% if ticket.status == 'new' %}badge-primary
+                                        {% elif ticket.status == 'in_progress' %}badge-info
+                                        {% elif ticket.status == 'waiting' %}badge-warning
+                                        {% elif ticket.status == 'resolved' %}badge-success
+                                        {% else %}badge-secondary{% endif %}">
+                                        {{ ticket.get_status_display }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p>Brak przypisanych zgłoszeń.</p>
+                {% endif %}
+            </div>
+            <div class="card-footer">
+                <a href="{% url 'ticket_list' %}?assigned=me&exclude_closed=true" class="btn btn-sm btn-primary">Zobacz wszystkie</a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Agent Panel 2: Awaiting approval -->
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="fas fa-bell mr-1"></i>
+                Zgłoszenia oczekujące na akceptację
+            </div>
+            <div class="card-body">
+                {% if unassigned_tickets %}
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Tytuł</th>
+                                <th>Organizacja</th>
+                                <th>Priorytet</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for ticket in unassigned_tickets %}
+                            <tr>
+                                <td>#{{ ticket.id }}</td>
+                                <td><a href="{% url 'ticket_detail' ticket.pk %}">{{ ticket.title }}</a></td>
+                                <td>{{ ticket.organization.name }}</td>
+                                <td>
+                                    <span class="badge 
+                                        {% if ticket.priority == 'low' %}badge-secondary
+                                        {% elif ticket.priority == 'medium' %}badge-info
+                                        {% elif ticket.priority == 'high' %}badge-warning
+                                        {% elif ticket.priority == 'critical' %}badge-danger{% endif %}">
                                         {{ ticket.get_priority_display }}
                                     </span>
                                 </td>
@@ -193,105 +414,12 @@
         </div>
     </div>
 </div>
-
-<!-- Recently Closed Tickets Section -->
-<div class="row mt-4">
-    <div class="col-md-12">
-        <div class="card mb-4">
-            <div class="card-header">
-                <i class="fas fa-check-circle mr-1"></i>
-                Ostatnio zamknięte zgłoszenia
-            </div>
-            <div class="card-body">
-                {% if recently_closed_tickets %}
-                <div class="table-responsive">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Tytuł</th>
-                                <th>Organizacja</th>
-                                <th>Data zamknięcia</th>
-                                <th>Zamknięte przez</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for ticket in recently_closed_tickets %}
-                            <tr>
-                                <td>#{{ ticket.id }}</td>
-                                <td><a href="{% url 'ticket_detail' ticket.pk %}">{{ ticket.title }}</a></td>
-                                <td>{{ ticket.organization.name }}</td>
-                                <td>{{ ticket.closed_at|date:"d.m.Y H:i" }}</td>
-                                <td>{% if ticket.assigned_to %}{{ ticket.assigned_to.username }}{% else %}<span class="text-muted">---</span>{% endif %}</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                {% else %}
-                <p>Brak ostatnio zamkniętych zgłoszeń.</p>
-                {% endif %}
-            </div>
-            <div class="card-footer">
-                <a href="{% url 'ticket_list' %}?status=closed&exclude_closed=false" class="btn btn-sm btn-primary">Zobacz wszystkie</a>
-            </div>
-        </div>
-    </div>
-</div>
-
-{% if user.profile.role == 'admin' %}
-<div class="row">
-    <div class="col-md-12">
-        <div class="card mb-4">
-            <div class="card-header">
-                <i class="fas fa-history mr-1"></i>
-                Ostatnie aktywności
-            </div>
-            <div class="card-body">
-                {% if recent_activities %}
-                <div class="table-responsive">
-                    <table class="table">
-                        <thead>
-                            <tr>
-                                <th>Data</th>
-                                <th>Użytkownik</th>
-                                <th>Akcja</th>
-                                <th>Szczegóły</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for activity in recent_activities %}
-                            <tr>
-                                <td>{{ activity.created_at|date:"d.m.Y H:i" }}</td>
-                                <td>{{ activity.user.username }}</td>
-                                <td>{{ activity.get_action_type_display }}</td>
-                                <td>
-                                    {% if activity.ticket %}
-                                    <a href="{% url 'ticket_detail' activity.ticket.pk %}">{{ activity.description|default:activity.ticket.title }}</a>
-                                    {% else %}
-                                    {{ activity.description }}
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-                {% else %}
-                <p>Brak aktywności.</p>
-                {% endif %}
-            </div>
-            <div class="card-footer">
-                <a href="{% url 'activity_logs' %}" class="btn btn-sm btn-primary">Zobacz wszystkie logi</a>
-            </div>
-        </div>
-    </div>
-</div>
 {% endif %}
 
-{% else %}
-<!-- Dla klientów -->
+<!-- CLIENT PANELS -->
+{% if user.profile.role == 'client' %}
 <div class="row">
+    <!-- Client Panel 1: Your recent tickets -->
     <div class="col-md-6">
         <div class="card mb-4">
             <div class="card-header">
@@ -321,8 +449,7 @@
                                         {% elif ticket.status == 'in_progress' %}badge-info
                                         {% elif ticket.status == 'waiting' %}badge-warning
                                         {% elif ticket.status == 'resolved' %}badge-success
-                                        {% elif ticket.status == 'closed' %}badge-secondary
-                                        {% endif %}">
+                                        {% else %}badge-secondary{% endif %}">
                                         {{ ticket.get_status_display }}
                                     </span>
                                 </td>
@@ -333,15 +460,16 @@
                     </table>
                 </div>
                 {% else %}
-                <p>Nie utworzyłeś jeszcze żadnych zgłoszeń.</p>
+                <p>Brak zgłoszeń utworzonych przez Ciebie.</p>
                 {% endif %}
             </div>
             <div class="card-footer">
-                <a href="{% url 'ticket_create' %}" class="btn btn-sm btn-primary">Utwórz zgłoszenie</a>
-                <a href="{% url 'ticket_list' %}?created_by=me&exclude_closed=true" class="btn btn-sm btn-outline-secondary">Zobacz wszystkie</a>
+                <a href="{% url 'ticket_list' %}?created_by=me&exclude_closed=true" class="btn btn-sm btn-primary">Zobacz wszystkie</a>
             </div>
         </div>
     </div>
+    
+    <!-- Client Panel 2: Organization's tickets -->
     <div class="col-md-6">
         <div class="card mb-4">
             <div class="card-header">
@@ -371,8 +499,7 @@
                                         {% elif ticket.status == 'in_progress' %}badge-info
                                         {% elif ticket.status == 'waiting' %}badge-warning
                                         {% elif ticket.status == 'resolved' %}badge-success
-                                        {% elif ticket.status == 'closed' %}badge-secondary
-                                        {% endif %}">
+                                        {% else %}badge-secondary{% endif %}">
                                         {{ ticket.get_status_display }}
                                     </span>
                                 </td>
@@ -392,14 +519,14 @@
         </div>
     </div>
 </div>
+{% endif %}
 
-<!-- Recently Closed Tickets Section for Clients -->
+<!-- Recently Closed Tickets Section - common for all roles -->
 <div class="row mt-4">
     <div class="col-md-12">
         <div class="card mb-4">
             <div class="card-header">
-                <i class="fas fa-check-circle mr-1"></i>
-                Ostatnio zamknięte twoje zgłoszenia
+                <i class="fas fa-check-circle mr-1"></i> Ostatnio zamknięte zgłoszenia
             </div>
             <div class="card-body">
                 {% if recently_closed_tickets %}
@@ -409,9 +536,8 @@
                             <tr>
                                 <th>ID</th>
                                 <th>Tytuł</th>
-                                <th>Data zamknięcia</th>
-                                <th>Status</th>
-                                <th>Utworzone przez</th>
+                                <th>Organizacja</th>
+                                <th>Zamknięte</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -419,26 +545,21 @@
                             <tr>
                                 <td>#{{ ticket.id }}</td>
                                 <td><a href="{% url 'ticket_detail' ticket.pk %}">{{ ticket.title }}</a></td>
+                                <td>{{ ticket.organization.name }}</td>
                                 <td>{{ ticket.closed_at|date:"d.m.Y H:i" }}</td>
-                                <td>
-                                    <span class="badge badge-secondary">Zamknięte</span>
-                                </td>
-                                <td>{{ ticket.created_by.username }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
                 {% else %}
-                <p>Brak ostatnio zamkniętych zgłoszeń.</p>
+                <p>Brak zamkniętych zgłoszeń.</p>
                 {% endif %}
             </div>
             <div class="card-footer">
-                <a href="{% url 'ticket_list' %}?status=closed&exclude_closed=false&created_by=me" class="btn btn-sm btn-primary">Zobacz wszystkie</a>
+                <a href="{% url 'ticket_list' %}?status=closed" class="btn btn-sm btn-primary">Zobacz wszystkie</a>
             </div>
         </div>
     </div>
 </div>
-{% endif %}
-
 {% endblock %}
