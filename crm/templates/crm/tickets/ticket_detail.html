@@ -29,8 +29,8 @@
     {% with user_groups=user.groups.all %}
         {% if user_groups.exists %}
             {% with group_settings=user_groups.first.settings %}
-                <!-- Edit button - only for admins, superagents with permission, or users who created the ticket with edit permission -->
-                {% if group_settings.can_see_edit_button or user.profile.role == 'admin' or user.profile.role == 'superagent' or group_settings.can_edit_own_tickets and ticket.created_by == user %}
+                <!-- Edit button - only show if user has explicit permission -->
+                {% if group_settings.can_see_edit_button or (group_settings.can_edit_own_tickets and ticket.created_by == user) %}
                 <a href="{% url 'ticket_update' ticket.pk %}" class="btn btn-primary">
                     <i class="fas fa-edit"></i> Edytuj
                 </a>
