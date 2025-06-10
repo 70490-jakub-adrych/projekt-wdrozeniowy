@@ -101,10 +101,12 @@ def approve_user(request, user_id):
                 messages.success(request, f'Użytkownik {user.username} został pomyślnie zatwierdzony.')
             
             # IMPORTANT: Send email notification OUTSIDE the transaction block
-            # This ensures the email is sent even if there's a later error
+            # Fix: Use absolute import instead of relative import
             try:
                 logger.info(f"Attempting to send approval notification to {approved_user.email}")
-                from ..services.email_service import EmailNotificationService
+                
+                # Use absolute import path to avoid relative import issues
+                from crm.services.email_service import EmailNotificationService
                 
                 # Call with explicit success check
                 email_sent = EmailNotificationService.send_account_approved_email(
@@ -118,9 +120,15 @@ def approve_user(request, user_id):
                     logger.error(f"❌ Failed to send approval notification to {approved_user.email}")
             except Exception as email_error:
                 logger.error(f"❌ Error sending approval notification: {str(email_error)}", exc_info=True)
-                # Don't raise the exception - we still want to redirect to success page
             
-            return redirect('approved_users')
+            # Fix: Check if 'approved_users' URL exists, if not fall back to 'pending_approvals'
+            try:
+                from django.urls import reverse
+                reverse('approved_users')
+                return redirect('approved_users')
+            except:
+                logger.warning("URL 'approved_users' not found, redirecting to 'pending_approvals'")
+                return redirect('pending_approvals')
         except Exception as e:
             logger.error(f"Error approving user {user_id}: {str(e)}")
             messages.error(request, f'Wystąpił błąd podczas zatwierdzania użytkownika: {str(e)}')
