@@ -214,8 +214,12 @@
                             {{ comment.author.username }}
                             {% if comment.author.profile.role == 'admin' %}
                                 <span class="badge badge-danger">Admin</span>
+                            {% elif comment.author.profile.role == 'superagent' %}
+                                <span class="badge badge-warning">Superagent</span>
                             {% elif comment.author.profile.role == 'agent' %}
                                 <span class="badge badge-info">Agent</span>
+                            {% elif comment.author.profile.role == 'viewer' %}
+                                <span class="badge badge-dark">Viewer</span>
                             {% else %}
                                 <span class="badge badge-secondary">Klient</span>
                             {% endif %}
@@ -465,8 +469,16 @@
         border-left: 3px solid #dc3545;
     }
     
+    .border-left-user-role-superagent {
+        border-left: 3px solid #ffc107;
+    }
+    
     .border-left-user-role-agent {
         border-left: 3px solid #17a2b8;
+    }
+    
+    .border-left-user-role-viewer {
+        border-left: 3px solid #343a40;
     }
     
     .border-left-user-role-client {
