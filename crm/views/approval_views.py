@@ -81,6 +81,10 @@ def approve_user(request, user_id):
         approved_user = user
         approver = request.user
         
+        # Check if the form was properly confirmed via JavaScript
+        is_confirmed = 'confirmed' in request.POST
+        logger.info(f"Approval form submission for user {user_id} - confirmed via JS: {is_confirmed}")
+        
         try:
             with transaction.atomic():
                 # Log this action
@@ -105,8 +109,16 @@ def approve_user(request, user_id):
             try:
                 logger.info(f"🔵 Starting approval email process to {approved_user.email}")
                 
-                # Import directly at the point of use to avoid circular imports
-                from ..services.email.account import send_account_approved_email
+                # Try both import methods for robustness
+                try:
+                    # First try direct import from specialized module
+                    from ..services.email.account import send_account_approved_email
+                    logger.info("✅ Successfully imported send_account_approved_email from specialized module")
+                except ImportError:
+                    # Fall back to EmailNotificationService if specialized module import fails
+                    from ..services.email_service import EmailNotificationService
+                    send_account_approved_email = EmailNotificationService.send_account_approved_email
+                    logger.info("⚠️ Using EmailNotificationService fallback for send_account_approved_email")
                 
                 # Direct call to the function
                 email_sent = send_account_approved_email(

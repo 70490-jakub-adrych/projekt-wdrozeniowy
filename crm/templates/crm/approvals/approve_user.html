@@ -100,7 +100,20 @@ function confirmApproval() {
     const selectedOrgs = document.getElementById('id_organizations');
     const selectedOrgNames = Array.from(selectedOrgs.selectedOptions).map(option => option.text).join(", ");
     
-    return confirm(`Czy na pewno chcesz zatwierdzić użytkownika ${username} i przypisać go do grupy "${groupText}" oraz organizacji: ${selectedOrgNames}?`);
+    // Show confirmation dialog
+    if (confirm(`Czy na pewno chcesz zatwierdzić użytkownika ${username} i przypisać go do grupy "${groupText}" oraz organizacji: ${selectedOrgNames}?`)) {
+        // Add a hidden field to indicate this was confirmed properly
+        const form = document.getElementById('approveForm');
+        const confirmField = document.createElement('input');
+        confirmField.type = 'hidden';
+        confirmField.name = 'confirmed';
+        confirmField.value = 'true';
+        form.appendChild(confirmField);
+        
+        console.log("Form submission confirmed, proceeding with approval and email notification");
+        return true;
+    }
+    return false;
 }
 
 // Add event listener to handle group change
