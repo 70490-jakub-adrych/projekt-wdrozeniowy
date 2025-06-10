@@ -4,6 +4,7 @@ from .models import UserProfile
 from django.utils import timezone
 import logging
 from django.core.cache import cache
+from django.db.models import F
 
 logger = logging.getLogger(__name__)
 
@@ -16,35 +17,43 @@ def user_profile_post_save(sender, instance, created, **kwargs):
     if created:
         return
     
-    # Check if this is an approval action:
+    # Get the 'update_fields' argument which tells us which fields were updated
+    # This is set when you call obj.save(update_fields=[...])
+    update_fields = kwargs.get('update_fields')
+    
+    # Check if this is a genuine approval action:
     # 1. Profile is approved
-    # 2. Has approval metadata
+    # 2. It has approval metadata
+    # 3. The approval is recent
     if instance.is_approved and instance.approved_by and instance.approved_at:
         try:
             # Only consider recent approvals (within the last minute)
             approval_time = instance.approved_at
-            recent_approval = timezone.now() - approval_time < timezone.timedelta(minutes=1)
             
-            # Skip if user and approver are the same person
-            self_approval = instance.user.id == instance.approved_by.id
-            
-            # Only proceed if it's a recent approval and not self-approval
-            if recent_approval and not self_approval:
-                # Create a unique key for this approval to prevent duplicates
-                cache_key = f"approval_notification_{instance.user.id}_{approval_time.strftime('%Y%m%d%H%M%S')}"
+            # Only process if the approval happened very recently
+            if timezone.now() - approval_time < timezone.timedelta(minutes=1):
+                # Skip if user and approver are the same person
+                if instance.user.id == instance.approved_by.id:
+                    logger.info(f"WATCHER: Skipping notification for self-approval for {instance.user.email}")
+                    return
                 
-                # Check if we've already sent a notification for this approval
+                # Create a unique key for this approval to prevent duplicates
+                cache_key = f"approval_notification_sent_{instance.user.id}_{approval_time.strftime('%Y%m%d%H%M%S')}"
+                
+                # Check if we've already sent a notification for this approval in this session
                 if cache.get(cache_key):
                     logger.info(f"WATCHER: Skipping duplicate notification for {instance.user.email}")
                     return
                 
-                logger.info(f"WATCHER: Detected user approval for {instance.user.email}")
-                
-                # Import here to avoid circular imports
-                from .services.email_service import EmailNotificationService
-                
-                # Send email notification with a simple retry mechanism
-                try:
+                # Only log as a detection if we know it's a new approval
+                # This is less noisy and more accurate
+                if update_fields and 'is_approved' in update_fields:
+                    logger.info(f"WATCHER: Detected user approval for {instance.user.email}")
+                    
+                    # Import here to avoid circular imports
+                    from .services.email_service import EmailNotificationService
+                    
+                    # Send email notification 
                     email_sent = EmailNotificationService.send_account_approved_email(
                         instance.user,
                         approved_by=instance.approved_by
@@ -56,8 +65,5 @@ def user_profile_post_save(sender, instance, created, **kwargs):
                         logger.info(f"WATCHER: Approval notification successfully sent to {instance.user.email}")
                     else:
                         logger.error(f"WATCHER: Failed to send approval notification to {instance.user.email}")
-                except Exception as email_error:
-                    logger.error(f"WATCHER: Email service error: {str(email_error)}")
-                    
         except Exception as e:
-            logger.error(f"WATCHER: Error in approval notification process: {str(e)}", exc_info=True)
+            logger.error(f"WATCHER: Error sending approval notification: {str(e)}", exc_info=True)
