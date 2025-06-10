@@ -92,6 +92,15 @@ class GroupSettingsInline(admin.StackedInline):
             'fields': ('attachments_access_level',),
             'description': 'Określ poziom dostępu do załączników dla tej grupy użytkowników.'
         }),
+        ('Ustawienia akcji zgłoszeń', {
+            'fields': (
+                'can_assign_unassigned_tickets', 
+                'can_unassign_own_tickets', 
+                'can_see_edit_button',
+                'can_close_any_ticket'
+            ),
+            'description': 'Określ, jakie akcje mogą wykonywać użytkownicy na zgłoszeniach.'
+        }),
     )
 
 class GroupViewPermissionInline(admin.TabularInline):

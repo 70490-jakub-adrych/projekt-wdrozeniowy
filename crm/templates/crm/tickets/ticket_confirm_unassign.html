@@ -1,0 +1,36 @@
+{% extends 'crm/base.html' %}
+
+{% block title %}Cofnij przypisanie zgłoszenia | System Helpdesk{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header text-white bg-danger">
+                <i class="fas fa-user-minus"></i> Cofnij przypisanie zgłoszenia
+            </div>
+            <div class="card-body">
+                <h5 class="card-title">Czy na pewno chcesz cofnąć przypisanie tego zgłoszenia?</h5>
+                <p>
+                    <strong>{{ ticket.title }}</strong><br>
+                    ID: #{{ ticket.id }}<br>
+                    Status: {{ ticket.get_status_display }}<br>
+                    Obecne przypisanie: {{ ticket.assigned_to.username }}
+                </p>
+                <p class="text-muted">Cofnięcie przypisania zgłoszenia spowoduje, że będzie ono ponownie dostępne dla innych agentów. Jeśli zgłoszenie jest w trakcie realizacji, jego status zmieni się na "Nowe".</p>
+                <form method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Cofnij przypisanie</button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="goBack()">Anuluj</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function goBack() {
+        window.history.back();
+    }
+</script>
+{% endblock %}

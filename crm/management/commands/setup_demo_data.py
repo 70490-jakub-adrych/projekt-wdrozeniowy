@@ -73,7 +73,11 @@ class Command(BaseCommand):
             defaults={
                 'allow_multiple_organizations': True,
                 'show_statistics': True,
-                'attachments_access_level': 'all'  # Admins can see all attachments
+                'attachments_access_level': 'all',  # Admins can see all attachments
+                'can_assign_unassigned_tickets': True,
+                'can_unassign_own_tickets': True,
+                'can_see_edit_button': True,
+                'can_close_any_ticket': True
             }
         )
         
@@ -82,7 +86,11 @@ class Command(BaseCommand):
             defaults={
                 'allow_multiple_organizations': True,
                 'show_statistics': True,
-                'attachments_access_level': 'all'  # Superagents can see all attachments
+                'attachments_access_level': 'all',  # Superagents can see all attachments
+                'can_assign_unassigned_tickets': True,
+                'can_unassign_own_tickets': True,
+                'can_see_edit_button': True,
+                'can_close_any_ticket': True
             }
         )
         
@@ -91,7 +99,11 @@ class Command(BaseCommand):
             defaults={
                 'allow_multiple_organizations': True,
                 'show_statistics': False,
-                'attachments_access_level': 'organization'  # Agents can see attachments in their organizations
+                'attachments_access_level': 'organization',  # Agents can see attachments in their organizations
+                'can_assign_unassigned_tickets': True,
+                'can_unassign_own_tickets': True,
+                'can_see_edit_button': False,
+                'can_close_any_ticket': False
             }
         )
         

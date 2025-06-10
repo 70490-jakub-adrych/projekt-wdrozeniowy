@@ -428,6 +428,27 @@ class GroupSettings(models.Model):
         verbose_name="Poziom dostępu do załączników",
         help_text="Określa, które załączniki użytkownicy w tej grupie mogą przeglądać."
     )
+    # Add new ticket action permissions
+    can_assign_unassigned_tickets = models.BooleanField(
+        default=True,
+        verbose_name="Może przypisywać nieprzydzielone zgłoszenia",
+        help_text="Jeśli zaznaczone, użytkownicy w tej grupie mogą przypisywać do siebie nieprzydzielone zgłoszenia."
+    )
+    can_unassign_own_tickets = models.BooleanField(
+        default=False,
+        verbose_name="Może cofać przypisanie własnych zgłoszeń",
+        help_text="Jeśli zaznaczone, użytkownicy w tej grupie mogą cofać przypisanie zgłoszeń, które są do nich przypisane."
+    )
+    can_see_edit_button = models.BooleanField(
+        default=False,
+        verbose_name="Może widzieć przycisk edycji dla wszystkich zgłoszeń",
+        help_text="Jeśli zaznaczone, użytkownicy w tej grupie widzą przycisk edycji dla wszystkich zgłoszeń."
+    )
+    can_close_any_ticket = models.BooleanField(
+        default=False,
+        verbose_name="Może zamykać dowolne zgłoszenie",
+        help_text="Jeśli zaznaczone, użytkownicy w tej grupie mogą zamykać dowolne zgłoszenia (nawet jeśli nie są do nich przypisane)."
+    )
 
     def __str__(self):
         return f"Ustawienia grupy: {self.group.name}"
@@ -452,10 +473,36 @@ def create_group_settings(sender, instance, created, **kwargs):
         else:
             attachments_access = 'own'
         
+        # Set default ticket action permissions based on role
+        if instance.name == 'Admin':
+            can_assign = True
+            can_unassign = True
+            can_see_edit = True
+            can_close_any = True
+        elif instance.name == 'Superagent':
+            can_assign = True
+            can_unassign = True
+            can_see_edit = True
+            can_close_any = True
+        elif instance.name == 'Agent':
+            can_assign = True
+            can_unassign = True
+            can_see_edit = False
+            can_close_any = False
+        else:
+            can_assign = False
+            can_unassign = False
+            can_see_edit = False
+            can_close_any = False
+            
         GroupSettings.objects.create(
             group=instance, 
             allow_multiple_organizations=allow_multiple,
-            attachments_access_level=attachments_access
+            attachments_access_level=attachments_access,
+            can_assign_unassigned_tickets=can_assign,
+            can_unassign_own_tickets=can_unassign,
+            can_see_edit_button=can_see_edit,
+            can_close_any_ticket=can_close_any
         )
             
         # Setup default view permissions based on group name
