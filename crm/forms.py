@@ -57,11 +57,23 @@ class UserProfileForm(forms.ModelForm):
                           widget=forms.TextInput(attrs={'placeholder': '+48 123 456 789'}))
     class Meta:
         model = UserProfile
-        fields = ['phone', 'organizations']
+        fields = ['phone']  # Remove 'organizations' from this list
         labels = {
             'phone': 'Telefon',
-            'organizations': 'Organizacje',
         }
+
+    def __init__(self, *args, **kwargs):
+        # Add option to include organizations field for admin/approval context
+        include_organizations = kwargs.pop('include_organizations', False)
+        super().__init__(*args, **kwargs)
+        
+        if include_organizations:
+            self.fields['organizations'] = forms.ModelMultipleChoiceField(
+                queryset=Organization.objects.all(),
+                required=False,
+                label='Organizacje',
+            )
+            self.Meta.fields.append('organizations')
 
 
 class OrganizationForm(forms.ModelForm):
