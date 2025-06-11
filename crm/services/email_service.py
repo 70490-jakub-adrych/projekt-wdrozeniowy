@@ -7,7 +7,7 @@ ensuring backward compatibility with existing code.
 
 import logging
 from django.conf import settings
-from .models import Ticket
+from ..models import Ticket  # Fix import path to look in parent directory
 
 # Import from specialized modules
 from .email.core import send_email
@@ -65,14 +65,23 @@ class EmailNotificationService:
             # Convert old_status from code to display name
             old_status_display = dict(Ticket.STATUS_CHOICES).get(old_status, old_status)
             
+        # Get base URL from settings
+        base_url = getattr(settings, 'SITE_URL', 'https://betulait.usermd.net')
+        
+        # Generate ticket URL
+        ticket_url = f"/tickets/{ticket.id}/"
+        if base_url.endswith('/'):
+            ticket_url = ticket_url.lstrip('/')
+            
         # Build basic context shared by all notifications
         context = {
             'ticket': ticket,
             'ticket_url': f"{base_url}{ticket_url}",
-            'site_name': settings.SITE_NAME,
+            'site_name': getattr(settings, 'SITE_NAME', 'System Helpdesk'),
             'notification_type': notification_type,
             'old_status': old_status_display if old_status else None,
-            # ...existing code...
+            **kwargs  # Include any additional context variables
         }
         
-        # ...existing code...
+        # Call the actual implementation
+        return notify_ticket_stakeholders(notification_type, ticket, triggered_by, **context)
