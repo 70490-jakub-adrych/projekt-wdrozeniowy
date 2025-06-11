@@ -57,14 +57,16 @@ document.addEventListener('DOMContentLoaded', function() {
      * Get and parse data from hidden elements in the HTML
      */
     const getChartData = () => {
-        // Extract ticket count data
+        // Extract ticket count data with better error handling for missing elements
         const tickets = {
-            new: parseInt(document.querySelector('[data-new-tickets]').getAttribute('data-new-tickets')) || 0,
-            inProgress: parseInt(document.querySelector('[data-in-progress-tickets]').getAttribute('data-in-progress-tickets')) || 0,
-            unresolved: parseInt(document.querySelector('[data-unresolved-tickets]').getAttribute('data-unresolved-tickets')) || 0,
-            resolved: parseInt(document.querySelector('[data-resolved-tickets]').getAttribute('data-resolved-tickets')) || 0,
-            closed: parseInt(document.querySelector('[data-closed-tickets]').getAttribute('data-closed-tickets')) || 0
+            new: parseInt(document.querySelector('[data-new-tickets]')?.getAttribute('data-new-tickets')) || 0,
+            inProgress: parseInt(document.querySelector('[data-in-progress-tickets]')?.getAttribute('data-in-progress-tickets')) || 0,
+            unresolved: parseInt(document.querySelector('[data-unresolved-tickets]')?.getAttribute('data-unresolved-tickets')) || 0,
+            resolved: parseInt(document.querySelector('[data-resolved-tickets]')?.getAttribute('data-resolved-tickets')) || 0,
+            closed: parseInt(document.querySelector('[data-closed-tickets]')?.getAttribute('data-closed-tickets')) || 0
         };
+
+        console.log("Ticket data parsed from HTML:", tickets); // Debug output
 
         // Parse JSON data for distributions
         let priorityDistribution = [];

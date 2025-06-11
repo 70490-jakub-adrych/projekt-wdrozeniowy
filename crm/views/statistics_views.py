@@ -105,12 +105,13 @@ def statistics_dashboard(request):
     if agent_filter:
         tickets = tickets.filter(assigned_to_id=agent_filter)
     
-    # Calculate general statistics
-    total_tickets = tickets.count()
+    # Count tickets by status
     new_tickets = tickets.filter(status='new').count()
     in_progress_tickets = tickets.filter(status='in_progress').count()
+    unresolved_tickets = tickets.filter(status='unresolved').count()  # Make sure this line exists
     resolved_tickets = tickets.filter(status='resolved').count()
     closed_tickets = tickets.filter(status='closed').count()
+    total_tickets = tickets.count()
     
     # Calculate ticket resolution metrics
     avg_resolution_time = tickets.exclude(
