@@ -445,11 +445,11 @@
                             </a>
                             {% endif %}
                             
-                            {% if user.profile.role in 'admin,superagent,agent' %}
+                            {% if user.profile.role == 'admin' or user.profile.role == 'superagent' or user.profile.role == 'agent' %}
                                 {% if ticket.status != 'closed' and ticket.assigned_to %}
                                     {% if ticket.status == 'resolved' %}
                                         <!-- Only show close button to admins and superagents -->
-                                        {% if user.profile.role in 'admin,superagent' %}
+                                        {% if user.profile.role == 'admin' or user.profile.role == 'superagent' %}
                                             <a href="{% url 'ticket_close' ticket.pk %}" class="btn btn-sm btn-secondary action-btn" title="Zamknij">
                                                 <i class="fas fa-lock"></i>
                                             </a>
