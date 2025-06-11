@@ -2,6 +2,49 @@
 
 {% block title %}Panel Główny | System Helpdesk{% endblock %}
 
+{% block extra_css %}
+<style>
+    /* Consistent table styling with ticket_list */
+    .table-sm td, .table-sm th {
+        padding: 0.5rem 0.3rem;
+    }
+    
+    .table {
+        table-layout: fixed;
+        width: 100%;
+    }
+    
+    .table td {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    /* Column width settings */
+    .col-id {
+        width: 60px;
+    }
+    
+    .col-title {
+        width: 45%;
+    }
+    
+    .col-priority, .col-status {
+        width: 110px;
+        text-align: center;
+    }
+    
+    .col-date, .col-org, .col-user {
+        width: 120px;
+    }
+    
+    /* Make badge text slightly smaller to save space */
+    .badge {
+        font-size: 85%;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row mb-3">
     <div class="col-md-12">
@@ -99,24 +142,24 @@
                 <i class="fas fa-bell mr-1"></i>
                 Zgłoszenia oczekujące na akceptację
             </div>
-            <div class="card-body">
+            <div class="card-body p-2">
                 {% if unassigned_tickets %}
                 <div class="table-responsive">
-                    <table class="table">
+                    <table class="table table-hover table-sm">
                         <thead>
                             <tr>
-                                <th>ID</th>
-                                <th>Tytuł</th>
-                                <th>Organizacja</th>
-                                <th>Priorytet</th>
+                                <th class="col-id">ID</th>
+                                <th class="col-title">Tytuł</th>
+                                <th class="col-org">Organizacja</th>
+                                <th class="col-priority">Priorytet</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for ticket in unassigned_tickets %}
                             <tr>
                                 <td>#{{ ticket.id }}</td>
-                                <td><a href="{% url 'ticket_detail' ticket.pk %}">{{ ticket.title }}</a></td>
-                                <td>{{ ticket.organization.name }}</td>
+                                <td title="{{ ticket.title }}"><a href="{% url 'ticket_detail' ticket.pk %}">{{ ticket.title }}</a></td>
+                                <td title="{{ ticket.organization.name }}">{{ ticket.organization.name }}</td>
                                 <td>
                                     <span class="badge 
                                         {% if ticket.priority == 'low' %}badge-secondary
@@ -148,24 +191,24 @@
                 <i class="fas fa-tasks mr-1"></i>
                 Zgłoszenia w trakcie
             </div>
-            <div class="card-body">
+            <div class="card-body p-2">
                 {% if in_progress_tickets_list %}
                 <div class="table-responsive">
-                    <table class="table">
+                    <table class="table table-hover table-sm">
                         <thead>
                             <tr>
-                                <th>ID</th>
-                                <th>Tytuł</th>
-                                <th>Przypisane do</th>
-                                <th>Priorytet</th>
+                                <th class="col-id">ID</th>
+                                <th class="col-title">Tytuł</th>
+                                <th class="col-user">Przypisane do</th>
+                                <th class="col-priority">Priorytet</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for ticket in in_progress_tickets_list %}
                             <tr>
                                 <td>#{{ ticket.id }}</td>
-                                <td><a href="{% url 'ticket_detail' ticket.pk %}">{{ ticket.title }}</a></td>
-                                <td>
+                                <td title="{{ ticket.title }}"><a href="{% url 'ticket_detail' ticket.pk %}">{{ ticket.title }}</a></td>
+                                <td title="{% if ticket.assigned_to %}{{ ticket.assigned_to.username }}{% else %}Nieprzypisane{% endif %}">
                                     {% if ticket.assigned_to %}
                                     {{ ticket.assigned_to.username }}
                                     {% else %}
@@ -208,24 +251,24 @@
                 <i class="fas fa-bell mr-1"></i>
                 Zgłoszenia oczekujące na akceptację
             </div>
-            <div class="card-body">
+            <div class="card-body p-2">
                 {% if unassigned_tickets %}
                 <div class="table-responsive">
-                    <table class="table">
+                    <table class="table table-hover table-sm">
                         <thead>
                             <tr>
-                                <th>ID</th>
-                                <th>Tytuł</th>
-                                <th>Organizacja</th>
-                                <th>Priorytet</th>
+                                <th class="col-id">ID</th>
+                                <th class="col-title">Tytuł</th>
+                                <th class="col-org">Organizacja</th>
+                                <th class="col-priority">Priorytet</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for ticket in unassigned_tickets %}
                             <tr>
                                 <td>#{{ ticket.id }}</td>
-                                <td><a href="{% url 'ticket_detail' ticket.pk %}">{{ ticket.title }}</a></td>
-                                <td>{{ ticket.organization.name }}</td>
+                                <td title="{{ ticket.title }}"><a href="{% url 'ticket_detail' ticket.pk %}">{{ ticket.title }}</a></td>
+                                <td title="{{ ticket.organization.name }}">{{ ticket.organization.name }}</td>
                                 <td>
                                     <span class="badge 
                                         {% if ticket.priority == 'low' %}badge-secondary
@@ -257,24 +300,24 @@
                 <i class="fas fa-tasks mr-1"></i>
                 Zgłoszenia w trakcie
             </div>
-            <div class="card-body">
+            <div class="card-body p-2">
                 {% if in_progress_tickets_list %}
                 <div class="table-responsive">
-                    <table class="table">
+                    <table class="table table-hover table-sm">
                         <thead>
                             <tr>
-                                <th>ID</th>
-                                <th>Tytuł</th>
-                                <th>Przypisane do</th>
-                                <th>Priorytet</th>
+                                <th class="col-id">ID</th>
+                                <th class="col-title">Tytuł</th>
+                                <th class="col-user">Przypisane do</th>
+                                <th class="col-priority">Priorytet</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for ticket in in_progress_tickets_list %}
                             <tr>
                                 <td>#{{ ticket.id }}</td>
-                                <td><a href="{% url 'ticket_detail' ticket.pk %}">{{ ticket.title }}</a></td>
-                                <td>
+                                <td title="{{ ticket.title }}"><a href="{% url 'ticket_detail' ticket.pk %}">{{ ticket.title }}</a></td>
+                                <td title="{% if ticket.assigned_to %}{{ ticket.assigned_to.username }}{% else %}Nieprzypisane{% endif %}">
                                     {% if ticket.assigned_to %}
                                     {{ ticket.assigned_to.username }}
                                     {% else %}
@@ -317,23 +360,23 @@
                 <i class="fas fa-tasks mr-1"></i>
                 Zgłoszenia przypisane do mnie
             </div>
-            <div class="card-body">
+            <div class="card-body p-2">
                 {% if assigned_tickets %}
                 <div class="table-responsive">
-                    <table class="table">
+                    <table class="table table-hover table-sm">
                         <thead>
                             <tr>
-                                <th>ID</th>
-                                <th>Tytuł</th>
-                                <th>Priorytet</th>
-                                <th>Status</th>
+                                <th class="col-id">ID</th>
+                                <th class="col-title">Tytuł</th>
+                                <th class="col-priority">Priorytet</th>
+                                <th class="col-status">Status</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for ticket in assigned_tickets %}
                             <tr>
                                 <td>#{{ ticket.id }}</td>
-                                <td><a href="{% url 'ticket_detail' ticket.pk %}">{{ ticket.title }}</a></td>
+                                <td title="{{ ticket.title }}"><a href="{% url 'ticket_detail' ticket.pk %}">{{ ticket.title }}</a></td>
                                 <td>
                                     <span class="badge 
                                         {% if ticket.priority == 'low' %}badge-secondary
@@ -376,24 +419,24 @@
                 <i class="fas fa-bell mr-1"></i>
                 Zgłoszenia oczekujące na akceptację
             </div>
-            <div class="card-body">
+            <div class="card-body p-2">
                 {% if unassigned_tickets %}
                 <div class="table-responsive">
-                    <table class="table">
+                    <table class="table table-hover table-sm">
                         <thead>
                             <tr>
-                                <th>ID</th>
-                                <th>Tytuł</th>
-                                <th>Organizacja</th>
-                                <th>Priorytet</th>
+                                <th class="col-id">ID</th>
+                                <th class="col-title">Tytuł</th>
+                                <th class="col-org">Organizacja</th>
+                                <th class="col-priority">Priorytet</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for ticket in unassigned_tickets %}
                             <tr>
                                 <td>#{{ ticket.id }}</td>
-                                <td><a href="{% url 'ticket_detail' ticket.pk %}">{{ ticket.title }}</a></td>
-                                <td>{{ ticket.organization.name }}</td>
+                                <td title="{{ ticket.title }}"><a href="{% url 'ticket_detail' ticket.pk %}">{{ ticket.title }}</a></td>
+                                <td title="{{ ticket.organization.name }}">{{ ticket.organization.name }}</td>
                                 <td>
                                     <span class="badge 
                                         {% if ticket.priority == 'low' %}badge-secondary
@@ -430,23 +473,23 @@
                 <i class="fas fa-ticket-alt mr-1"></i>
                 Twoje ostatnie zgłoszenia
             </div>
-            <div class="card-body">
+            <div class="card-body p-2">
                 {% if user_tickets %}
                 <div class="table-responsive">
-                    <table class="table">
+                    <table class="table table-hover table-sm">
                         <thead>
                             <tr>
-                                <th>ID</th>
-                                <th>Tytuł</th>
-                                <th>Status</th>
-                                <th>Data</th>
+                                <th class="col-id">ID</th>
+                                <th class="col-title">Tytuł</th>
+                                <th class="col-status">Status</th>
+                                <th class="col-date">Data</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for ticket in user_tickets %}
                             <tr>
                                 <td>#{{ ticket.id }}</td>
-                                <td><a href="{% url 'ticket_detail' ticket.pk %}">{{ ticket.title }}</a></td>
+                                <td title="{{ ticket.title }}"><a href="{% url 'ticket_detail' ticket.pk %}">{{ ticket.title }}</a></td>
                                 <td>
                                     <span class="badge 
                                         {% if ticket.status == 'new' %}badge-primary
@@ -481,23 +524,23 @@
                 <i class="fas fa-building mr-1"></i>
                 Zgłoszenia Twojej organizacji
             </div>
-            <div class="card-body">
+            <div class="card-body p-2">
                 {% if org_recent_tickets %}
                 <div class="table-responsive">
-                    <table class="table">
+                    <table class="table table-hover table-sm">
                         <thead>
                             <tr>
-                                <th>ID</th>
-                                <th>Tytuł</th>
-                                <th>Status</th>
-                                <th>Utworzone przez</th>
+                                <th class="col-id">ID</th>
+                                <th class="col-title">Tytuł</th>
+                                <th class="col-status">Status</th>
+                                <th class="col-user">Utworzone przez</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for ticket in org_recent_tickets %}
                             <tr>
                                 <td>#{{ ticket.id }}</td>
-                                <td><a href="{% url 'ticket_detail' ticket.pk %}">{{ ticket.title }}</a></td>
+                                <td title="{{ ticket.title }}"><a href="{% url 'ticket_detail' ticket.pk %}">{{ ticket.title }}</a></td>
                                 <td>
                                     <span class="badge 
                                         {% if ticket.status == 'new' %}badge-primary
@@ -534,25 +577,25 @@
             <div class="card-header">
                 <i class="fas fa-check-circle mr-1"></i> Ostatnio zamknięte zgłoszenia
             </div>
-            <div class="card-body">
+            <div class="card-body p-2">
                 {% if recently_closed_tickets %}
                 <div class="table-responsive">
-                    <table class="table">
+                    <table class="table table-hover table-sm">
                         <thead>
                             <tr>
-                                <th>ID</th>
-                                <th>Tytuł</th>
-                                <th>Organizacja</th>
-                                <th>Zamknięte</th>
+                                <th class="col-id">ID</th>
+                                <th class="col-title">Tytuł</th>
+                                <th class="col-org">Organizacja</th>
+                                <th class="col-date">Zamknięte</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for ticket in recently_closed_tickets %}
                             <tr>
                                 <td>#{{ ticket.id }}</td>
-                                <td><a href="{% url 'ticket_detail' ticket.pk %}">{{ ticket.title }}</a></td>
-                                <td>{{ ticket.organization.name }}</td>
-                                <td>{{ ticket.closed_at|date:"d.m.Y H:i" }}</td>
+                                <td title="{{ ticket.title }}"><a href="{% url 'ticket_detail' ticket.pk %}">{{ ticket.title }}</a></td>
+                                <td title="{{ ticket.organization.name }}">{{ ticket.organization.name }}</td>
+                                <td>{{ ticket.closed_at|date:"d.m.Y" }}</td>
                             </tr>
                             {% endfor %}
                         </tbody>
