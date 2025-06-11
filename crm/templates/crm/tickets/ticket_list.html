@@ -5,11 +5,11 @@
 {% block extra_css %}
 <style>
     .action-btn {
-        width: 36px;
-        height: 36px;
-        padding: 6px 0;
+        width: 32px;  /* Slightly smaller action buttons */
+        height: 32px;
+        padding: 4px 0;
         text-align: center;
-        margin-right: 2px;
+        margin-right: 1px;  /* Smaller margins */
     }
     
     .btn-group .action-btn:last-child {
@@ -67,35 +67,40 @@
     
     .table th {
         white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        padding: 0.5rem 0.3rem;  /* Smaller padding for headers */
+        font-size: 0.9rem;  /* Slightly smaller font for headers */
     }
     
     .table td {
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+        padding: 0.5rem 0.3rem;  /* Smaller padding for cells */
     }
     
-    /* Column width settings */
+    /* Column width settings, adjusted for content */
     .col-id {
-        width: 50px;
+        width: 60px;  /* Slightly wider for full IDs */
     }
     
     .col-title {
-        width: 25%;  /* Title gets more space */
+        width: 22%;  /* Slightly less space for title to accommodate other columns */
     }
     
     .col-org {
-        width: 12%;
+        width: 10%;
     }
     
     .col-category {
         width: 10%;
     }
     
-    .col-priority, .col-status {
-        width: 90px;
+    .col-priority {
+        width: 9%;  /* Enough for full priority names */
+    }
+    
+    .col-status {
+        width: 11%;  /* Wider to fit full status names */
     }
     
     .col-assigned {
@@ -107,12 +112,18 @@
     }
     
     .col-actions {
-        width: 120px;  /* Fixed width for action buttons */
+        width: 112px;  /* Fixed width for action buttons */
     }
     
     /* Ensure action buttons wraps properly if needed */
     .btn-group {
         flex-wrap: wrap;
+        gap: 1px;  /* Use gap instead of margins for more compact layout */
+    }
+    
+    /* Make badge text slightly smaller to save space */
+    .badge {
+        font-size: 85%;
     }
 </style>
 {% endblock %}
@@ -368,8 +379,8 @@
     <div class="card-header">
         <i class="fas fa-ticket-alt"></i> Lista zgłoszeń
     </div>
-    <div class="card-body">
-        <table class="table table-hover">
+    <div class="card-body p-2">  <!-- Reduced padding in card body -->
+        <table class="table table-hover table-sm">  <!-- Added table-sm for more compact layout -->
             <thead>
                 <tr>
                     <th class="col-id">ID</th>
@@ -386,7 +397,7 @@
             <tbody>
                 {% for ticket in tickets %}
                 <tr>
-                    <td title="#{{ ticket.id }}">#{{ ticket.id }}</td>
+                    <td>#{{ ticket.id }}</td>  <!-- No truncation for ID -->
                     <td title="{{ ticket.title }}">
                         <a href="{% url 'ticket_detail' ticket.pk %}">{{ ticket.title }}</a>
                     </td>
@@ -402,7 +413,7 @@
                             {{ ticket.get_priority_display }}
                         </span>
                     </td>
-                    <td>
+                    <td>  <!-- No truncation for status -->
                         <span class="badge 
                             {% if ticket.status == 'new' %}badge-primary
                             {% elif ticket.status == 'in_progress' %}badge-info
