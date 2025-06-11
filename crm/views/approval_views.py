@@ -7,6 +7,7 @@ from django.db import transaction
 
 from ..models import UserProfile, EmailVerification, EmailNotificationSettings
 from .helpers import log_activity, check_permissions
+from ..forms import GroupSelectionForm
 import logging
 
 # Configure logger
@@ -76,35 +77,64 @@ def approve_user(request, user_id):
     profile = get_object_or_404(UserProfile, user_id=user_id)
     user = profile.user
     
+    # Get available groups and organizations for selection
+    available_groups = request.user.groups.all()
+    available_organizations = request.user.userprofile.organizations.all()
+    
     if request.method == 'POST':
-        try:
-            with transaction.atomic():
-                # Log this action
-                log_activity(
-                    user=request.user,
-                    action_type='user_approved',
-                    description=f"Approved account for user: {user.username} ({user.email})",
-                    request=request
-                )
+        # Create form with organizations included
+        form = GroupSelectionForm(request.POST, 
+                                 available_groups=available_groups, 
+                                 available_organizations=available_organizations)
+        
+        if form.is_valid():
+            try:
+                with transaction.atomic():
+                    # Log this action
+                    log_activity(
+                        user=request.user,
+                        action_type='user_approved',
+                        description=f"Approved account for user: {user.username} ({user.email})",
+                        request=request
+                    )
+                    
+                    # Set approved flag and approver/timestamp
+                    profile.approved_by = request.user
+                    profile.approved_at = timezone.now()
+                    profile.is_approved = True
+                    
+                    # Assign user to selected group
+                    selected_group = form.cleaned_data['group']
+                    user.groups.clear()
+                    user.groups.add(selected_group)
+                    
+                    # Assign selected organizations
+                    selected_organizations = form.cleaned_data['organizations']
+                    profile.organizations.clear()
+                    for org in selected_organizations:
+                        profile.organizations.add(org)
+                    
+                    profile.save()
+                    
+                    logger.info(f"User {user.username} approved by {request.user.username}")
+                    messages.success(request, f'Użytkownik {user.username} został pomyślnie zatwierdzony.')
                 
-                # Make sure to set these fields BEFORE setting is_approved
-                # so the signal can use them
-                profile.approved_by = request.user
-                profile.approved_at = timezone.now()
-                
-                # Set approved flag - this will trigger the signal
-                profile.is_approved = True
-                profile.save()
-                
-                logger.info(f"User {user.username} approved by {request.user.username}")
-                messages.success(request, f'Użytkownik {user.username} został pomyślnie zatwierdzony.')
-            
-            # Redirect to appropriate page
+                # Redirect to appropriate page
+                return redirect('pending_approvals')
+            except Exception as e:
+                logger.error(f"Error approving user {user_id}: {str(e)}")
+                messages.error(request, f'Wystąpił błąd podczas zatwierdzania użytkownika: {str(e)}')
+                return redirect('pending_approvals')
+        else:
+            messages.error(request, 'Wystąpił błąd w przesłanym formularzu. Proszę spróbować ponownie.')
             return redirect('pending_approvals')
-        except Exception as e:
-            logger.error(f"Error approving user {user_id}: {str(e)}")
-            messages.error(request, f'Wystąpił błąd podczas zatwierdzania użytkownika: {str(e)}')
-            return redirect('pending_approvals')
+    else:
+        # For GET requests, include organizations in the form
+        form = GroupSelectionForm(
+            available_groups=available_groups,
+            available_organizations=available_organizations,
+            initial_organizations=profile.organizations.all()
+        )
     
     # Display approval confirmation page
-    return render(request, 'crm/approvals/approve_user.html', {'profile': profile})
+    return render(request, 'crm/approvals/approve_user.html', {'profile': profile, 'form': form})

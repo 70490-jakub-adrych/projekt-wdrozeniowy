@@ -16,6 +16,7 @@ from .views.auth_views import (
     unlock_user, HTMLEmailPasswordResetView, EnhancedPasswordResetConfirmView, 
     custom_password_reset_complete, custom_password_change_view
 )
+from .views.tickets.action_views import ticket_confirm_solution  # Add this import
 from . import views
 from .views import secure_file_views
 from django.contrib.auth import views as auth_views

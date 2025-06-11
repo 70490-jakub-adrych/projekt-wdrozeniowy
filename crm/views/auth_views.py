@@ -125,15 +125,15 @@ def register(request):
         
         else:
             # Initial registration step
-            form = UserRegisterForm(request.POST)
+            registration_form = UserRegisterForm(request.POST)
             profile_form = UserProfileForm(request.POST)
             
-            if form.is_valid() and profile_form.is_valid():
+            if registration_form.is_valid() and profile_form.is_valid():
                 try:
                     with transaction.atomic():
                         # First check if there's any data that would cause conflicts
-                        email = form.cleaned_data.get('email')
-                        username = form.cleaned_data.get('username')
+                        email = registration_form.cleaned_data.get('email')
+                        username = registration_form.cleaned_data.get('username')
                         
                         # Log current state before any changes
                         logger.info(f"Registration attempt for username={username}, email={email}")
@@ -141,12 +141,12 @@ def register(request):
                         # Check for existing users with this email or username
                         if User.objects.filter(email=email).exists():
                             logger.info(f"Email {email} already exists - rejecting")
-                            form.add_error('email', 'Użytkownik z tym adresem email już istnieje.')
+                            registration_form.add_error('email', 'Użytkownik z tym adresem email już istnieje.')
                             raise IntegrityError("User with this email already exists")
                             
                         if User.objects.filter(username=username).exists():
                             logger.info(f"Username {username} already exists - rejecting")
-                            form.add_error('username', 'Użytkownik z tą nazwą użytkownika już istnieje.')
+                            registration_form.add_error('username', 'Użytkownik z tą nazwą użytkownika już istnieje.')
                             raise IntegrityError("User with this username already exists")
                         
                         # Create a savepoint before user creation
@@ -161,7 +161,7 @@ def register(request):
                             logger.info(f"Before creation: max user_id={max_user_id}, max profile_id={max_profile_id}")
                         
                         # Create user (inactive until email verification)
-                        user = form.save(commit=False)
+                        user = registration_form.save(commit=False)
                         user.is_active = False  # Deactivate until email verification
                         user.save()
                         logger.info(f"Created user with ID={user.id}, username={user.username}, email={user.email}")
@@ -196,10 +196,6 @@ def register(request):
                             transaction.savepoint_rollback(sid)
                             logger.error(f"Profile creation failed: {str(e)}")
                             raise
-                            
-                        # Handle organizations
-                        if profile_form.cleaned_data.get('organizations'):
-                            profile.organizations.set(profile_form.cleaned_data['organizations'])
                         
                         # Create a new savepoint before verification
                         sid2 = transaction.savepoint()
@@ -261,7 +257,7 @@ def register(request):
                             f'Wystąpił problem z bazą danych podczas tworzenia konta (ID konfliktu: {conflict_id}). '
                             'Prosimy o kontakt z administratorem.'
                         )
-                    elif not form.errors and not profile_form.errors:
+                    elif not registration_form.errors and not profile_form.errors:
                         messages.error(request, 'Błąd podczas tworzenia konta. Spróbuj ponownie.')
                 
                 except Exception as e:
@@ -272,11 +268,11 @@ def register(request):
                     else:
                         messages.error(request, f'Wystąpił nieoczekiwany błąd. Spróbuj ponownie później.')
     else:
-        form = UserRegisterForm()
-        profile_form = UserProfileForm()
+        registration_form = UserRegisterForm()
+        profile_form = UserProfileForm()  # No organizations in registration form
     
     return render(request, 'crm/register.html', {
-        'form': form,
+        'form': registration_form,
         'profile_form': profile_form
     })
 

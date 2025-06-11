@@ -57,7 +57,7 @@ class UserProfileForm(forms.ModelForm):
                           widget=forms.TextInput(attrs={'placeholder': '+48 123 456 789'}))
     class Meta:
         model = UserProfile
-        fields = ['phone']  # Remove 'organizations' from this list
+        fields = ['phone']  # Remove 'organizations' field from registration
         labels = {
             'phone': 'Telefon',
         }
