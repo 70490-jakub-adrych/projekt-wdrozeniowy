@@ -18,7 +18,7 @@ from .views.auth_views import (
 )
 from .views.tickets.action_views import (ticket_confirm_solution, ticket_close, ticket_reopen, ticket_mark_resolved)  # Add this import
 from . import views
-from .views import secure_file_views
+from .views import secure_file_views, log_views  # Add log_views import here
 from django.contrib.auth import views as auth_views
 from .views.statistics_views import statistics_dashboard, update_agent_work_log, generate_statistics_report
 from .views.tickets.unassignment_views import ticket_unassign
@@ -62,7 +62,7 @@ urlpatterns = [
     # Activity logs (for admins)
     path('logs/', activity_logs, name='activity_logs'),
     path('logs/<int:log_id>/', activity_log_detail, name='activity_log_detail'),
-    path('logs/wipe/', log_views.activity_logs_wipe, name='activity_logs_wipe'),  # Add this new URL
+    path('logs/wipe/', log_views.activity_logs_wipe, name='activity_logs_wipe'),  # This line is now properly imported
     
     # User approvals
     path('approvals/', pending_approvals, name='pending_approvals'),
