@@ -448,20 +448,22 @@
                             {% if user.profile.role in 'admin,superagent,agent' %}
                                 {% if ticket.status != 'closed' and ticket.assigned_to %}
                                     {% if ticket.status == 'resolved' %}
+                                        <!-- Only show close button to admins and superagents -->
                                         {% if user.profile.role in 'admin,superagent' %}
-                                        <a href="{% url 'ticket_close' ticket.pk %}" class="btn btn-sm btn-secondary action-btn" title="Zamknij">
-                                            <i class="fas fa-lock"></i>
-                                        </a>
+                                            <a href="{% url 'ticket_close' ticket.pk %}" class="btn btn-sm btn-secondary action-btn" title="Zamknij">
+                                                <i class="fas fa-lock"></i>
+                                            </a>
                                         {% endif %}
                                     {% else %}
-                                    <a href="{% url 'ticket_mark_resolved' ticket.pk %}" class="btn btn-sm btn-success action-btn" title="Oznacz jako rozwiązane">
-                                        <i class="fas fa-check-circle"></i>
-                                    </a>
+                                        <!-- Show mark as resolved button to all staff roles -->
+                                        <a href="{% url 'ticket_mark_resolved' ticket.pk %}" class="btn btn-sm btn-success action-btn" title="Oznacz jako rozwiązane">
+                                            <i class="fas fa-check-circle"></i>
+                                        </a>
                                     {% endif %}
                                 {% elif ticket.status == 'closed' %}
-                                <a href="{% url 'ticket_reopen' ticket.pk %}" class="btn btn-sm btn-success action-btn" title="Otwórz ponownie">
-                                    <i class="fas fa-lock-open"></i>
-                                </a>
+                                    <a href="{% url 'ticket_reopen' ticket.pk %}" class="btn btn-sm btn-success action-btn" title="Otwórz ponownie">
+                                        <i class="fas fa-lock-open"></i>
+                                    </a>
                                 {% endif %}
                             {% endif %}
                         </div>
