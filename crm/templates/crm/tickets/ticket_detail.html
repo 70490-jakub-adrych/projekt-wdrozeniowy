@@ -24,6 +24,28 @@
 </div>
 {% endif %}
 
+<!-- Client confirmation panel for resolved tickets -->
+{% if ticket.status == 'resolved' and ticket.created_by == user %}
+<div class="alert alert-success mb-4">
+    <h5 class="mb-3"><i class="fas fa-check-circle"></i> Zgłoszenie zostało rozwiązane!</h5>
+    <p>Czy problem został rozwiązany prawidłowo?</p>
+    <div class="d-flex justify-content-end mt-3">
+        <form method="post" action="{% url 'ticket_confirm_solution' ticket.pk %}" class="mr-2">
+            {% csrf_token %}
+            <button type="submit" name="action" value="accept" class="btn btn-success">
+                <i class="fas fa-thumbs-up"></i> Tak, rozwiązany
+            </button>
+        </form>
+        <form method="post" action="{% url 'ticket_confirm_solution' ticket.pk %}">
+            {% csrf_token %}
+            <button type="submit" name="action" value="deny" class="btn btn-warning">
+                <i class="fas fa-thumbs-down"></i> Nie, wciąż występuje
+            </button>
+        </form>
+    </div>
+</div>
+{% endif %}
+
 <!-- Action buttons in their own row -->
 <div class="mb-4">
     {% with user_groups=user.groups.all %}

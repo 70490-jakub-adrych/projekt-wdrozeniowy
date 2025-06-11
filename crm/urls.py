@@ -107,4 +107,6 @@ urlpatterns = [
 
     path('get_tickets_update/', get_tickets_update, name='get_tickets_update'),
 
+    # Ticket solution confirmation
+    path('tickets/<int:pk>/confirm-solution/', ticket_confirm_solution, name='ticket_confirm_solution'),
 ]

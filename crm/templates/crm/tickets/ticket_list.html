@@ -56,6 +56,7 @@
                             <option value="" {% if not status_filter %}selected{% endif %}>Wszystkie</option>
                             <option value="new" {% if status_filter == 'new' %}selected{% endif %}>Nowe</option>
                             <option value="in_progress" {% if status_filter == 'in_progress' %}selected{% endif %}>W trakcie</option>
+                            <option value="unresolved" {% if status_filter == 'unresolved' %}selected{% endif %}>Nierozwiązany</option>
                             <option value="resolved" {% if status_filter == 'resolved' %}selected{% endif %}>Rozwiązane</option>
                             <option value="closed" {% if status_filter == 'closed' %}selected{% endif %}>Zamknięte</option>
                         </select>

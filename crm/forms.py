@@ -136,6 +136,7 @@ class ModeratorTicketForm(forms.ModelForm):
     STATUS_CHOICES_WITHOUT_WAITING = (
         ('new', 'Nowe'),
         ('in_progress', 'W trakcie'),
+        ('unresolved', 'Nierozwiązany'),
         ('resolved', 'Rozwiązane'),
         ('closed', 'Zamknięte'),
     )

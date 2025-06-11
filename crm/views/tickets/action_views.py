@@ -85,22 +85,93 @@ def ticket_reopen(request, pk):
         return HttpResponseForbidden("Nie możesz ponownie otworzyć zgłoszenia")
     
     if request.method == 'POST':
+        # Store the old status for the log
         old_status = ticket.status
-        ticket.status = 'new'
+        
+        # Change to unresolved instead of in_progress
+        ticket.status = 'unresolved'  # Changed from 'in_progress' to 'unresolved'
         ticket.closed_at = None
         ticket.save()
         
+        # Log reopening
         log_activity(
             request, 
             'ticket_reopened', 
             ticket, 
-            f"Ponownie otwarto zgłoszenie '{ticket.title}' (zmiana statusu z '{old_status}' na '{ticket.status}')"
+            f"Ponownie otwarto zgłoszenie '{ticket.title}' (zmiana statusu z '{old_status}' na 'Nierozwiązany')"
         )
         
-        # Send email notification about the ticket reopening
+        # Send email notification
         EmailNotificationService.notify_ticket_stakeholders('reopened', ticket, triggered_by=user, old_status=old_status)
         
         messages.success(request, 'Zgłoszenie zostało ponownie otwarte!')
         return redirect('ticket_detail', pk=ticket.pk)
     
     return render(request, 'crm/tickets/ticket_confirm_reopen.html', {'ticket': ticket})
+
+@login_required
+def ticket_confirm_solution(request, pk):
+    """Widok dla klientów do potwierdzania lub odrzucania rozwiązania zgłoszenia"""
+    try:
+        ticket = get_object_or_404(Ticket, pk=pk)
+    except Http404:
+        return ticket_not_found(request, pk)
+    
+    # Tylko autor zgłoszenia może potwierdzić/odrzucić rozwiązanie
+    if ticket.created_by != request.user:
+        return HttpResponseForbidden("Tylko autor zgłoszenia może potwierdzić rozwiązanie")
+    
+    # Tylko rozwiązane zgłoszenia mogą być potwierdzane
+    if ticket.status != 'resolved':
+        messages.error(request, "Tylko rozwiązane zgłoszenia mogą być potwierdzane.")
+        return redirect('ticket_detail', pk=ticket.pk)
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        old_status = ticket.status
+        
+        if action == 'accept':
+            # Klient akceptuje rozwiązanie, zamknij zgłoszenie
+            ticket.status = 'closed'
+            ticket.closed_at = timezone.now()
+            ticket.save()
+            
+            log_activity(
+                request,
+                'ticket_closed',
+                ticket,
+                f"Klient potwierdził rozwiązanie zgłoszenia '{ticket.title}'"
+            )
+            
+            # Wyślij powiadomienie e-mail o akceptacji przez klienta
+            EmailNotificationService.notify_ticket_stakeholders(
+                'closed', ticket, triggered_by=request.user, 
+                old_status=old_status, client_confirmed=True
+            )
+            
+            messages.success(request, 'Dziękujemy za potwierdzenie! Zgłoszenie zostało zamknięte.')
+            
+        elif action == 'deny':
+            # Klient odrzuca rozwiązanie, otwórz ponownie jako nierozwiązane
+            ticket.status = 'unresolved'  # Zmieniono na status 'nierozwiązany'
+            ticket.save()
+            
+            log_activity(
+                request,
+                'ticket_reopened',
+                ticket,
+                f"Klient oznaczył zgłoszenie '{ticket.title}' jako nierozwiązane"
+            )
+            
+            # Wyślij powiadomienie e-mail o odrzuceniu przez klienta
+            EmailNotificationService.notify_ticket_stakeholders(
+                'reopened', ticket, triggered_by=request.user, 
+                old_status=old_status, client_confirmed=False
+            )
+            
+            messages.warning(request, 'Zgłoszenie zostało ponownie otwarte jako nierozwiązane.')
+        
+        return redirect('ticket_detail', pk=ticket.pk)
+    
+    # Jeśli osiągnięto metodą GET, przekieruj na stronę szczegółów
+    return redirect('ticket_detail', pk=ticket.pk)

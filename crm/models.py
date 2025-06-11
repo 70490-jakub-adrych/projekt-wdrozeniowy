@@ -162,8 +162,7 @@ class Ticket(models.Model):
     STATUS_CHOICES = (
         ('new', 'Nowe'),
         ('in_progress', 'W trakcie'),
-        # Keeping 'waiting' in the model for database compatibility, but it won't be shown in UI
-        ('waiting', 'Oczekujące'),  # This will remain in the DB but won't be shown in UI
+        ('unresolved', 'Nierozwiązany'),  # Renamed from 'waiting' to 'unresolved'
         ('resolved', 'Rozwiązane'),
         ('closed', 'Zamknięte'),
     )

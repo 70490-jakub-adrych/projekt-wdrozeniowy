@@ -22,6 +22,11 @@
                     <a href="{% url 'ticket_create' %}" class="btn btn-primary mr-2">
                         <i class="fas fa-plus"></i> Nowe zgłoszenie
                     </a>
+                    {% if resolved_tickets_count > 0 and user.profile.role == 'client' %}
+                    <a href="{% url 'ticket_list' %}?status=resolved&created_by=me" class="btn btn-warning mr-2">
+                        <i class="fas fa-exclamation-circle"></i> Zgłoszenia oczekujące na potwierdzenie ({{ resolved_tickets_count }})
+                    </a>
+                    {% endif %}
                     {% if pending_approvals > 0 and user.profile.role in 'admin,superagent,agent' %}
                     <a href="{% url 'pending_approvals' %}" class="btn btn-warning mr-2">
                         <i class="fas fa-user-clock"></i> Oczekujące zatwierdzenia ({{ pending_approvals }})
