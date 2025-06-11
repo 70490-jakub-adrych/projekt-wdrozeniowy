@@ -317,6 +317,7 @@ def statistics_dashboard(request):
         'total_tickets': total_tickets,
         'new_tickets': new_tickets,
         'in_progress_tickets': in_progress_tickets,
+        'unresolved_tickets': unresolved_tickets,  # Add this missing key
         'resolved_tickets': resolved_tickets,
         'closed_tickets': closed_tickets,
         'avg_resolution_hours': avg_resolution_hours,
@@ -329,6 +330,7 @@ def statistics_dashboard(request):
         'org_filter': org_filter,
         'agent_filter': agent_filter,
         'agent_work_time_stats': agent_work_time_stats,
+        'debug_unresolved_count': unresolved_count,  # Keep this for debugging
     }
     
     # Format data for JSON serialization in charts
@@ -358,6 +360,7 @@ def statistics_dashboard(request):
         'total_tickets': total_tickets,
         'new_tickets': new_tickets,
         'in_progress_tickets': in_progress_tickets,
+        'unresolved_tickets': unresolved_tickets,  # Add this missing key
         'resolved_tickets': resolved_tickets,
         'closed_tickets': closed_tickets,
         'avg_resolution_hours': avg_resolution_hours,
@@ -370,7 +373,7 @@ def statistics_dashboard(request):
         'org_filter': org_filter,
         'agent_filter': agent_filter,
         'agent_work_time_stats': agent_work_time_stats,
-        'debug_unresolved_count': unresolved_count,  # Add unresolved count to context for debugging
+        'debug_unresolved_count': unresolved_count,  # Keep this for debugging
     }
     
     return render(request, 'crm/statistics/statistics_dashboard.html', context)
