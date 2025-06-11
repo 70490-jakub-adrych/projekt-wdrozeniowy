@@ -15,7 +15,7 @@
                 <p>Status: <span class="badge 
                     {% if ticket.status == 'new' %}badge-primary
                     {% elif ticket.status == 'in_progress' %}badge-info
-                    {% elif ticket.status == 'waiting' %}badge-warning
+                    {% elif ticket.status == 'unresolved' %}badge-warning text-dark
                     {% elif ticket.status == 'resolved' %}badge-success
                     {% elif ticket.status == 'closed' %}badge-secondary
                     {% endif %}">
