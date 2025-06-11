@@ -5,9 +5,14 @@ from django.contrib import messages
 from django.conf import settings
 from django.contrib.admin.views.decorators import staff_member_required
 from django.views.decorators.http import require_POST
+import logging
 
 from ..models import ActivityLog
 from .error_views import log_not_found, logs_access_forbidden
+from .helpers import log_activity  # Import the log_activity function
+
+# Configure logger
+logger = logging.getLogger(__name__)
 
 
 @login_required

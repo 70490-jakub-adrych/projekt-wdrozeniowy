@@ -307,4 +307,4 @@ ADMINS = [
 MANAGERS = ADMINS
 
 # Secret code for wiping activity logs - load from environment variables with fallback
-LOG_WIPE_SECRET_CODE = os.environ.get('LOG_WIPE_SECRET_CODE', 'default-secret-code-change-me')
+LOG_WIPE_SECRET_CODE = config('LOG_WIPE_SECRET_CODE', default='default-secret-code-change-me')
