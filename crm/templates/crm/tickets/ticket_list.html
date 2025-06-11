@@ -58,6 +58,23 @@
     .filter-card {
         transition: all 0.3s ease;
     }
+    
+    /* Additional styles for table layout */
+    .table th {
+        white-space: nowrap;
+    }
+    
+    .table td {
+        max-width: 250px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    /* Make title column wider but still truncate if needed */
+    .table td:nth-child(2) {
+        max-width: 300px;
+    }
 </style>
 {% endblock %}
 
@@ -120,7 +137,13 @@
                 {% endif %}
                 
                 {% if organization_filter %}
-                <span class="active-filter"><strong>Organizacja:</strong> {{ all_organizations|dictsort:"id"|dictkey:organization_filter }}</span>
+                <span class="active-filter"><strong>Organizacja:</strong> 
+                    {% for org in all_organizations %}
+                        {% if org.id|stringformat:"i" == organization_filter %}
+                            {{ org.name }}
+                        {% endif %}
+                    {% endfor %}
+                </span>
                 {% endif %}
                 
                 {% if exclude_closed %}
@@ -188,7 +211,7 @@
                         </div>
                     </div>
                     
-                    <div class="row"></div>
+                    <div class="row">
                         <!-- Secondary filters in second row -->
                         {% if user.profile.role in 'admin,superagent,agent' and all_organizations %}
                         <div class="col-md-3 col-sm-6 mb-2">
@@ -326,7 +349,7 @@
                     {% for ticket in tickets %}
                     <tr>
                         <td>#{{ ticket.id }}</td>
-                        <td><a href="{% url 'ticket_detail' ticket.pk %}">{{ ticket.title }}</a></td>
+                        <td><a href="{% url 'ticket_detail' ticket.pk %}" title="{{ ticket.title }}">{{ ticket.title|truncatechars:50 }}</a></td>
                         <td>{{ ticket.organization.name }}</td>
                         <td>{{ ticket.get_category_display }}</td>
                         <td>
@@ -362,32 +385,32 @@
                                 <a href="{% url 'ticket_update' ticket.pk %}" class="btn btn-sm btn-primary action-btn" title="Edytuj">
                                     <i class="fas fa-edit"></i>
                                 </a>
-                                {% endif %}
+                                {% endif %}          {% endfor %}
                                 
                                 <!-- Only show close/reopen buttons for admins, superagents and agents -->
-                                {% if user.profile.role in 'admin,superagent,agent' %}
+                                {% if user.profile.role in 'admin,superagent,agent' %}  </div>
                                     {% if ticket.status != 'closed' and ticket.assigned_to %}
-                                    <a href="{% url 'ticket_close' ticket.pk %}" class="btn btn-sm btn-secondary action-btn" title="Zamknij">
+                                    <a href="{% url 'ticket_close' ticket.pk %}" class="btn btn-sm btn-secondary action-btn" title="Zamknij"></div>
                                         <i class="fas fa-lock"></i>
-                                    </a>
-                                    {% elif ticket.status == 'closed' %}
-                                    <a href="{% url 'ticket_reopen' ticket.pk %}" class="btn btn-sm btn-success action-btn" title="Otwórz ponownie">
-                                        <i class="fas fa-lock-open"></i>
-                                    </a>
-                                    {% endif %}
-                                {% endif %}
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
+                                    </a><div class="alert alert-info">
+
+
+
+
+
+
+
+
+
+
+{% else %}                    </tr>                        </td>                            </div>                                {% endif %}                                    {% endif %}                                    </a>                                        <i class="fas fa-lock-open"></i>                                    <a href="{% url 'ticket_reopen' ticket.pk %}" class="btn btn-sm btn-success action-btn" title="Otwórz ponownie">                                    {% elif ticket.status == 'closed' %}    <p>Nie znaleziono zgłoszeń spełniających wybrane kryteria.</p>
 </div>
-{% else %}
-<div class="alert alert-info">
-    <p>Nie znaleziono zgłoszeń spełniających wybrane kryteria.</p>
+{% endif %}
+
+{% endblock %}
+
+
+{% endblock %}{% endif %}</div>    <p>Nie znaleziono zgłoszeń spełniających wybrane kryteria.</p><div class="alert alert-info">{% else %}                    </tr>                        </td>                            </div>                                {% endif %}                                    {% endif %}                                    </a>                                        <i class="fas fa-lock-open"></i>                                    <a href="{% url 'ticket_reopen' ticket.pk %}" class="btn btn-sm btn-success action-btn" title="Otwórz ponownie">                                    {% elif ticket.status == 'closed' %}    <p>Nie znaleziono zgłoszeń spełniających wybrane kryteria.</p>
 </div>
 {% endif %}
 
