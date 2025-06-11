@@ -7,12 +7,16 @@ from django.utils import timezone
 import datetime
 from datetime import timedelta
 import json
+import logging
 
 from ..models import (
     Ticket, ActivityLog, UserProfile, 
     Organization, TicketStatistics, AgentWorkLog, WorkHours
 )
 from ..views.error_views import forbidden_access
+
+# Configure logger
+logger = logging.getLogger(__name__)
 
 @login_required
 def statistics_dashboard(request):
@@ -108,10 +112,27 @@ def statistics_dashboard(request):
     # Count tickets by status
     new_tickets = tickets.filter(status='new').count()
     in_progress_tickets = tickets.filter(status='in_progress').count()
-    unresolved_tickets = tickets.filter(status='unresolved').count()  # Make sure this line exists
+    
+    # Verify the filter value for unresolved tickets - first check if we need to use a different key
+    # Some systems might use 'waiting' or 'reopened' as status names
+    unresolved_count = tickets.filter(status='unresolved').count()
+    
+    # Debug logging for troubleshooting
+    logger.info(f"Statistics: Found {unresolved_count} unresolved tickets")
+    if unresolved_count == 0:
+        # Check for tickets with similar statuses to see if we're missing something
+        for status_check in ['waiting', 'reopened', 'problem', 'stuck']:
+            alt_count = tickets.filter(status=status_check).count()
+            if alt_count > 0:
+                logger.info(f"Statistics: Found {alt_count} tickets with status '{status_check}'")
+
+    unresolved_tickets = unresolved_count
     resolved_tickets = tickets.filter(status='resolved').count()
     closed_tickets = tickets.filter(status='closed').count()
     total_tickets = tickets.count()
+    
+    # Debug logging to verify totals
+    logger.info(f"Statistics: Total tickets: {total_tickets}, Sum of statuses: {new_tickets + in_progress_tickets + unresolved_tickets + resolved_tickets + closed_tickets}")
     
     # Calculate ticket resolution metrics
     avg_resolution_time = tickets.exclude(
@@ -349,6 +370,7 @@ def statistics_dashboard(request):
         'org_filter': org_filter,
         'agent_filter': agent_filter,
         'agent_work_time_stats': agent_work_time_stats,
+        'debug_unresolved_count': unresolved_count,  # Add unresolved count to context for debugging
     }
     
     return render(request, 'crm/statistics/statistics_dashboard.html', context)

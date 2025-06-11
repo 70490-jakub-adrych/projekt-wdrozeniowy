@@ -51,13 +51,22 @@
     </div>
 </div>
 
-<!-- Hidden data elements for JavaScript - ensure the unresolved tickets value is added -->
+<!-- Hidden data elements for JavaScript - add diagnostic information -->
 <div style="display: none;">
     <div data-new-tickets="{{ new_tickets }}"></div>
     <div data-in-progress-tickets="{{ in_progress_tickets }}"></div>
     <div data-unresolved-tickets="{{ unresolved_tickets|default:0 }}"></div>
     <div data-resolved-tickets="{{ resolved_tickets }}"></div>
     <div data-closed-tickets="{{ closed_tickets }}"></div>
+    <!-- Add debug data to help troubleshoot -->
+    <div id="debug-ticket-counts">
+        New: {{ new_tickets }}, 
+        In Progress: {{ in_progress_tickets }}, 
+        Unresolved: {{ unresolved_tickets|default:0 }} (debug: {{ debug_unresolved_count|default:0 }}),
+        Resolved: {{ resolved_tickets }}, 
+        Closed: {{ closed_tickets }}, 
+        Total: {{ total_tickets }}
+    </div>
     <div data-priority-distribution="{{ priority_distribution|safe }}"></div>
     <div data-category-distribution="{{ category_distribution|safe }}"></div>
     <div data-tickets-by-date="{{ tickets_by_date|safe }}"></div>
@@ -114,7 +123,7 @@
     </form>
 </div>
 
-<!-- Summary Row - adjust to ensure the unresolved tickets card is visible and shows the count -->
+<!-- Summary Row - Match the dashboard's color coding for consistency -->
 <div class="row mb-4">
     <div class="col-md-12">
         <div class="card border-0 shadow-sm">
@@ -128,33 +137,33 @@
                         </div>
                     </div>
                     <div class="col mb-3">
-                        <div class="stats-card bg-light p-3 rounded h-100">
-                            <h3 class="text-primary">{{ new_tickets }}</h3>
-                            <p class="mb-0 text-muted">Nowych</p>
+                        <div class="stats-card bg-primary text-white p-3 rounded h-100">
+                            <h3>{{ new_tickets }}</h3>
+                            <p class="mb-0">Nowych</p>
                         </div>
                     </div>
                     <div class="col mb-3">
-                        <div class="stats-card bg-light p-3 rounded h-100">
-                            <h3 class="text-info">{{ in_progress_tickets }}</h3>
-                            <p class="mb-0 text-muted">W trakcie</p>
+                        <div class="stats-card bg-info text-white p-3 rounded h-100">
+                            <h3>{{ in_progress_tickets }}</h3>
+                            <p class="mb-0">W trakcie</p>
                         </div>
                     </div>
                     <div class="col mb-3">
-                        <div class="stats-card bg-light p-3 rounded h-100">
-                            <h3 class="text-warning">{{ unresolved_tickets|default:"0" }}</h3>
-                            <p class="mb-0 text-muted">Nierozwiązane</p>
+                        <div class="stats-card bg-warning text-dark p-3 rounded h-100">
+                            <h3>{{ unresolved_tickets|default:"0" }}</h3>
+                            <p class="mb-0">Nierozwiązane</p>
                         </div>
                     </div>
                     <div class="col mb-3">
-                        <div class="stats-card bg-light p-3 rounded h-100">
-                            <h3 class="text-success">{{ resolved_tickets }}</h3>
-                            <p class="mb-0 text-muted">Rozwiązanych</p>
+                        <div class="stats-card bg-success text-white p-3 rounded h-100">
+                            <h3>{{ resolved_tickets }}</h3>
+                            <p class="mb-0">Rozwiązanych</p>
                         </div>
                     </div>
                     <div class="col mb-3">
-                        <div class="stats-card bg-light p-3 rounded h-100">
-                            <h3 class="text-secondary">{{ closed_tickets }}</h3>
-                            <p class="mb-0 text-muted">Zamkniętych</p>
+                        <div class="stats-card bg-secondary text-white p-3 rounded h-100">
+                            <h3>{{ closed_tickets }}</h3>
+                            <p class="mb-0">Zamkniętych</p>
                         </div>
                     </div>
                 </div>

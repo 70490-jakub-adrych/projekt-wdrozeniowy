@@ -10,7 +10,7 @@ document.addEventListener('DOMContentLoaded', function() {
     Chart.defaults.responsive = true;
     Chart.defaults.maintainAspectRatio = false;
 
-    // Color schemes for consistent visualization
+    // Update color schemes for consistency with dashboard
     const colorSchemes = {
         status: {
             backgroundColor: [
@@ -66,8 +66,10 @@ document.addEventListener('DOMContentLoaded', function() {
             closed: parseInt(document.querySelector('[data-closed-tickets]')?.getAttribute('data-closed-tickets')) || 0
         };
 
-        console.log("Ticket data parsed from HTML:", tickets); // Debug output
-
+        // Enhanced debug output to help troubleshoot
+        console.log("Ticket data parsed from HTML:", tickets);
+        console.log("Debug ticket counts from HTML:", document.getElementById('debug-ticket-counts')?.textContent);
+        
         // Parse JSON data for distributions
         let priorityDistribution = [];
         let categoryDistribution = [];
@@ -134,7 +136,7 @@ document.addEventListener('DOMContentLoaded', function() {
     };
 
     /**
-     * Translate status codes to readable Polish labels
+     * Translate status codes to readable Polish labels with correct pluralization
      */
     const getStatusLabel = (status) => {
         const labels = {
@@ -180,7 +182,9 @@ document.addEventListener('DOMContentLoaded', function() {
     const initStatusChart = (chartData) => {
         const statusCtx = document.getElementById('statusChart').getContext('2d');
         
-        console.log("Chart data for status:", chartData.tickets); // Debug output
+        // Extra detailed debug output for troubleshooting
+        console.log("Chart data for status:", chartData.tickets);
+        console.log("Unresolved tickets count:", chartData.tickets.unresolved);
         
         const statusData = {
             labels: ['Nowe', 'W trakcie', 'Nierozwiązane', 'Rozwiązane', 'Zamknięte'],
@@ -197,6 +201,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 borderWidth: colorSchemes.status.borderWidth
             }]
         };
+        
+        // Debug the final data that goes into the chart
+        console.log("Final chart data:", statusData);
         
         return new Chart(statusCtx, {
             type: 'doughnut',
