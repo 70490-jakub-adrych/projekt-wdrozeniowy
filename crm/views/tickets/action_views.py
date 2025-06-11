@@ -8,6 +8,7 @@ from ...models import Ticket
 from ..helpers import log_activity
 from ..error_views import ticket_not_found
 from ...services.email_service import EmailNotificationService  # Add this import
+from ...services.email.ticket import notify_ticket_stakeholders  # Import the function directly
 
 @login_required
 def ticket_close(request, pk):
@@ -219,7 +220,7 @@ def ticket_mark_resolved(request, pk):
         )
         
         # Send email notification about the ticket being resolved
-        EmailNotificationService.notify_ticket_stakeholders('resolved', ticket, triggered_by=user, old_status=old_status)
+        notify_ticket_stakeholders('resolved', ticket, triggered_by=user, old_status=old_status)
         
         messages.success(request, 'Zgłoszenie zostało oznaczone jako rozwiązane!')
         return redirect('ticket_detail', pk=ticket.pk)
