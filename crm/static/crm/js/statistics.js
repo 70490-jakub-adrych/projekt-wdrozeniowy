@@ -17,6 +17,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 '#007bff', // New - primary - light blue
                 '#17a2b8', // In Progress - info - teal
                 '#ffc107', // Unresolved - warning - yellow
+                '#6f42c1', // Waiting - purple
                 '#28a745', // Resolved - success - green
                 '#6c757d'  // Closed - secondary - gray
             ],
@@ -62,6 +63,7 @@ document.addEventListener('DOMContentLoaded', function() {
             new: parseInt(document.querySelector('[data-new-tickets]').getAttribute('data-new-tickets')) || 0,
             inProgress: parseInt(document.querySelector('[data-in-progress-tickets]').getAttribute('data-in-progress-tickets')) || 0,
             unresolved: parseInt(document.querySelector('[data-unresolved-tickets]').getAttribute('data-unresolved-tickets')) || 0,
+            waiting: parseInt(document.querySelector('[data-waiting-tickets]').getAttribute('data-waiting-tickets')) || 0,
             resolved: parseInt(document.querySelector('[data-resolved-tickets]').getAttribute('data-resolved-tickets')) || 0,
             closed: parseInt(document.querySelector('[data-closed-tickets]').getAttribute('data-closed-tickets')) || 0
         };
@@ -138,7 +140,8 @@ document.addEventListener('DOMContentLoaded', function() {
         const labels = {
             'new': 'Nowe',
             'in_progress': 'W trakcie',
-            'unresolved': 'Nierozwiązany',
+            'unresolved': 'Nierozwiązane',
+            'waiting': 'Oczekujące',
             'resolved': 'Rozwiązane',
             'closed': 'Zamknięte'
         };
@@ -181,12 +184,13 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log("Chart data for status:", chartData.tickets); // Debug output
         
         const statusData = {
-            labels: ['Nowe', 'W trakcie', 'Nierozwiązany', 'Rozwiązane', 'Zamknięte'],
+            labels: ['Nowe', 'W trakcie', 'Nierozwiązany', 'Oczekujące', 'Rozwiązane', 'Zamknięte'],
             datasets: [{
                 data: [
                     chartData.tickets.new,
                     chartData.tickets.inProgress,
                     chartData.tickets.unresolved,
+                    chartData.tickets.waiting,
                     chartData.tickets.resolved,
                     chartData.tickets.closed
                 ],
