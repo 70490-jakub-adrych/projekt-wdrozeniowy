@@ -1,0 +1,50 @@
+{% extends 'crm/base.html' %}
+
+{% block title %}Wipe Activity Logs | System Helpdesk{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Wipe Activity Logs</h2>
+    <a href="{% url 'activity_logs' %}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left"></i> Back to Logs
+    </a>
+</div>
+
+<div class="card border-danger">
+    <div class="card-header bg-danger text-white">
+        <i class="fas fa-exclamation-triangle"></i> WARNING: Destructive Action
+    </div>
+    <div class="card-body">
+        <div class="alert alert-danger">
+            <h4 class="alert-heading">DANGER ZONE!</h4>
+            <p><strong>This action will permanently delete ALL activity logs from the system.</strong></p>
+            <p>This operation cannot be undone. Only proceed if you are absolutely sure.</p>
+        </div>
+
+        <form method="post" class="mt-4">
+            {% csrf_token %}
+            
+            <div class="form-group">
+                <label for="secret_code"><strong>Secret Code:</strong></label>
+                <input type="password" id="secret_code" name="secret_code" class="form-control" required>
+                <small class="form-text text-muted">Enter the secret code from environment settings to confirm this action.</small>
+            </div>
+            
+            <div class="form-group">
+                <label for="confirmation"><strong>Confirmation:</strong></label>
+                <input type="text" id="confirmation" name="confirmation" class="form-control" required placeholder="Type WIPE_LOGS to confirm">
+                <small class="form-text text-muted">Type WIPE_LOGS in all caps to confirm.</small>
+            </div>
+            
+            <div class="d-flex justify-content-between mt-4">
+                <a href="{% url 'activity_logs' %}" class="btn btn-secondary">
+                    <i class="fas fa-times"></i> Cancel
+                </a>
+                <button type="submit" class="btn btn-danger">
+                    <i class="fas fa-trash-alt"></i> Permanently Wipe All Logs
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

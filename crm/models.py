@@ -318,6 +318,7 @@ class ActivityLog(models.Model):
         ('404_error', 'Błąd 404 - Strona nie znaleziona'),
         ('403_error', 'Błąd 403 - Brak dostępu'),
         ('ticket_attachment_added', 'Dodano załącznik'),
+        ('logs_wiped', 'Wyczyszczono logi'),  # Add new action type for log wiping
     )
     
     user = models.ForeignKey(User, related_name='activities', on_delete=models.SET_NULL, 

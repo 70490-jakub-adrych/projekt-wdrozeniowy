@@ -62,6 +62,7 @@ urlpatterns = [
     # Activity logs (for admins)
     path('logs/', activity_logs, name='activity_logs'),
     path('logs/<int:log_id>/', activity_log_detail, name='activity_log_detail'),
+    path('logs/wipe/', log_views.activity_logs_wipe, name='activity_logs_wipe'),  # Add this new URL
     
     # User approvals
     path('approvals/', pending_approvals, name='pending_approvals'),
