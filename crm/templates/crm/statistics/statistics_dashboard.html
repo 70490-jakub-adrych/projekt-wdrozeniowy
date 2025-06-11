@@ -56,7 +56,6 @@
     <div data-new-tickets="{{ new_tickets }}"></div>
     <div data-in-progress-tickets="{{ in_progress_tickets }}"></div>
     <div data-unresolved-tickets="{{ unresolved_tickets }}"></div>
-    <div data-waiting-tickets="{{ waiting_tickets|default:'0' }}"></div>
     <div data-resolved-tickets="{{ resolved_tickets }}"></div>
     <div data-closed-tickets="{{ closed_tickets }}"></div>
     <div data-priority-distribution="{{ priority_distribution|safe }}"></div>
@@ -144,12 +143,6 @@
                         <div class="stats-card bg-light p-3 rounded h-100">
                             <h3 class="text-warning">{{ unresolved_tickets }}</h3>
                             <p class="mb-0 text-muted">Nierozwiązane</p>
-                        </div>
-                    </div>
-                    <div class="col mb-3">
-                        <div class="stats-card bg-light p-3 rounded h-100">
-                            <h3 style="color: #6f42c1;">{{ waiting_tickets|default:"0" }}</h3>
-                            <p class="mb-0 text-muted">Oczekujące</p>
                         </div>
                     </div>
                     <div class="col mb-3">
