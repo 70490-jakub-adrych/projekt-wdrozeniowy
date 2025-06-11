@@ -6,6 +6,8 @@ ensuring backward compatibility with existing code.
 """
 
 import logging
+from django.conf import settings
+from .models import Ticket
 
 # Import from specialized modules
 from .email.core import send_email
@@ -54,3 +56,23 @@ class EmailNotificationService:
     
     # Test utilities
     test_smtp_connection = staticmethod(test_smtp_connection)
+    
+    @classmethod
+    def notify_ticket_stakeholders(cls, notification_type, ticket, triggered_by=None, old_status=None, **kwargs):
+        """Notify all stakeholders of a ticket about an update"""
+        # Convert status codes to display names for better readability in emails
+        if old_status:
+            # Convert old_status from code to display name
+            old_status_display = dict(Ticket.STATUS_CHOICES).get(old_status, old_status)
+            
+        # Build basic context shared by all notifications
+        context = {
+            'ticket': ticket,
+            'ticket_url': f"{base_url}{ticket_url}",
+            'site_name': settings.SITE_NAME,
+            'notification_type': notification_type,
+            'old_status': old_status_display if old_status else None,
+            # ...existing code...
+        }
+        
+        # ...existing code...
