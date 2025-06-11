@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import Http404
+from django.db.models import Count
 
 from ..models import UserProfile, Organization, Ticket
 from ..forms import OrganizationForm
@@ -21,6 +22,9 @@ def organization_list(request):
     else:
         # Agent can only see their organizations
         organizations = request.user.profile.organizations.all()
+    
+    # Annotate organizations with ticket counts
+    organizations = organizations.annotate(ticket_count=Count('ticket'))
     
     return render(request, 'crm/organizations/organization_list.html', {'organizations': organizations})
 
