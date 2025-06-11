@@ -57,31 +57,68 @@ class EmailNotificationService:
     # Test utilities
     test_smtp_connection = staticmethod(test_smtp_connection)
     
-    @classmethod
-    def notify_ticket_stakeholders(cls, notification_type, ticket, triggered_by=None, old_status=None, **kwargs):
-        """Notify all stakeholders of a ticket about an update"""
-        # Convert status codes to display names for better readability in emails
-        if old_status:
-            # Convert old_status from code to display name
-            old_status_display = dict(Ticket.STATUS_CHOICES).get(old_status, old_status)
-            
-        # Get base URL from settings
-        base_url = getattr(settings, 'SITE_URL', 'https://betulait.usermd.net')
+    @staticmethod
+    def notify_ticket_stakeholders(notification_type, ticket, triggered_by=None, **context):
+        """Send email notifications to all stakeholders of a ticket based on notification type"""
+        # Get notification settings and templates
+        subject, template = EmailNotificationService._get_ticket_notification_templates(notification_type)
         
-        # Generate ticket URL
-        ticket_url = f"/tickets/{ticket.id}/"
-        if base_url.endswith('/'):
-            ticket_url = ticket_url.lstrip('/')
-            
-        # Build basic context shared by all notifications
-        context = {
-            'ticket': ticket,
-            'ticket_url': f"{base_url}{ticket_url}",
-            'site_name': getattr(settings, 'SITE_NAME', 'System Helpdesk'),
-            'notification_type': notification_type,
-            'old_status': old_status_display if old_status else None,
-            **kwargs  # Include any additional context variables
-        }
+        # Add the ticket to the context
+        context['ticket'] = ticket
+        context['triggered_by'] = triggered_by
         
-        # Call the actual implementation
-        return notify_ticket_stakeholders(notification_type, ticket, triggered_by, **context)
+        # Common URLs
+        site_url = settings.SITE_URL
+        ticket_url = f"{site_url}/tickets/{ticket.id}/"
+        context['ticket_url'] = ticket_url
+        context['site_name'] = EmailNotificationService._get_site_name()
+        
+        # List of recipients
+        recipients = []
+        
+        # Always notify the ticket creator, but not if they triggered the action
+        if ticket.created_by != triggered_by:
+            recipients.append(ticket.created_by)
+        
+        # Notify assigned agent if exists and not the one who triggered the action
+        if ticket.assigned_to and ticket.assigned_to != triggered_by:
+            recipients.append(ticket.assigned_to)
+            
+        # Find superagents of the ticket's organization and notify them
+        from django.contrib.auth.models import Group
+        from django.db.models import Q
+        
+        try:
+            # Find users in Superagent group who belong to the ticket's organization
+            superagent_group = Group.objects.get(name='Superagent')
+            superagents = superagent_group.user_set.filter(
+                Q(profile__organizations=ticket.organization) & 
+                ~Q(id=triggered_by.id if triggered_by else 0)
+            ).distinct()
+            
+            # Add all superagents to recipients
+            recipients.extend(superagents)
+        except Group.DoesNotExist:
+            pass  # Superagent group doesn't exist
+            
+        # Send email to each recipient based on their notification preferences
+        for recipient in recipients:
+            # Skip if user has no email
+            if not recipient.email:
+                continue
+                
+            # Check if user wants to receive this type of notification
+            if not EmailNotificationService._should_send_notification(recipient, notification_type):
+                continue
+                
+            # Send the actual email
+            EmailNotificationService._send_ticket_notification_email(
+                recipient, subject, template, ticket, context
+            )
+        
+        return len(recipients) > 0
+    
+    @staticmethod
+    def _send_ticket_notification_email(user, subject, template, ticket, context):
+        """Send notification email about ticket to a specific user"""
+        # ...existing code...
