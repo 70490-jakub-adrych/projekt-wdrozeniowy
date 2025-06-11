@@ -59,21 +59,60 @@
         transition: all 0.3s ease;
     }
     
-    /* Additional styles for table layout */
+    /* Enhanced table layout styles */
+    .table {
+        table-layout: fixed;
+        width: 100%;
+    }
+    
     .table th {
         white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
     
     .table td {
-        max-width: 250px;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
     }
     
-    /* Make title column wider but still truncate if needed */
-    .table td:nth-child(2) {
-        max-width: 300px;
+    /* Column width settings */
+    .col-id {
+        width: 50px;
+    }
+    
+    .col-title {
+        width: 25%;  /* Title gets more space */
+    }
+    
+    .col-org {
+        width: 12%;
+    }
+    
+    .col-category {
+        width: 10%;
+    }
+    
+    .col-priority, .col-status {
+        width: 90px;
+    }
+    
+    .col-assigned {
+        width: 12%;
+    }
+    
+    .col-date {
+        width: 110px;
+    }
+    
+    .col-actions {
+        width: 120px;  /* Fixed width for action buttons */
+    }
+    
+    /* Ensure action buttons wraps properly if needed */
+    .btn-group {
+        flex-wrap: wrap;
     }
 </style>
 {% endblock %}
@@ -330,82 +369,83 @@
         <i class="fas fa-ticket-alt"></i> Lista zgłoszeń
     </div>
     <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead>
-                    <tr>
-                        <th>ID</th>
-                        <th>Tytuł</th>
-                        <th>Organizacja</th>
-                        <th>Kategoria</th>
-                        <th>Priorytet</th>
-                        <th>Status</th>
-                        <th>Przypisane do</th>
-                        <th>Data utworzenia</th>
-                        <th>Akcje</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for ticket in tickets %}
-                    <tr>
-                        <td>#{{ ticket.id }}</td>
-                        <td><a href="{% url 'ticket_detail' ticket.pk %}" title="{{ ticket.title }}">{{ ticket.title|truncatechars:50 }}</a></td>
-                        <td>{{ ticket.organization.name }}</td>
-                        <td>{{ ticket.get_category_display }}</td>
-                        <td>
-                            <span class="badge 
-                                {% if ticket.priority == 'low' %}badge-secondary
-                                {% elif ticket.priority == 'medium' %}badge-info
-                                {% elif ticket.priority == 'high' %}badge-warning
-                                {% elif ticket.priority == 'critical' %}badge-danger
-                                {% endif %}">
-                                {{ ticket.get_priority_display }}
-                            </span>
-                        </td>
-                        <td>
-                            <span class="badge 
-                                {% if ticket.status == 'new' %}badge-primary
-                                {% elif ticket.status == 'in_progress' %}badge-info
-                                {% elif ticket.status == 'unresolved' %}badge-warning text-dark
-                                {% elif ticket.status == 'resolved' %}badge-success
-                                {% elif ticket.status == 'closed' %}badge-secondary
-                                {% endif %}">
-                                {{ ticket.get_status_display }}
-                            </span>
-                        </td>
-                        <td>{% if ticket.assigned_to %}{{ ticket.assigned_to.username }}{% else %}<span class="text-muted">Oczekuje na akceptację</span>{% endif %}</td>
-                        <td>{{ ticket.created_at|date:"d.m.Y H:i" }}</td>
-                        <td>
-                            <div class="btn-group">
-                                <a href="{% url 'ticket_detail' ticket.pk %}" class="btn btn-sm btn-info action-btn" title="Szczegóły">
-                                    <i class="fas fa-eye"></i>
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th class="col-id">ID</th>
+                    <th class="col-title">Tytuł</th>
+                    <th class="col-org">Organizacja</th>
+                    <th class="col-category">Kategoria</th>
+                    <th class="col-priority">Priorytet</th>
+                    <th class="col-status">Status</th>
+                    <th class="col-assigned">Przypisane do</th>
+                    <th class="col-date">Data utworzenia</th>
+                    <th class="col-actions">Akcje</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ticket in tickets %}
+                <tr>
+                    <td title="#{{ ticket.id }}">#{{ ticket.id }}</td>
+                    <td title="{{ ticket.title }}">
+                        <a href="{% url 'ticket_detail' ticket.pk %}">{{ ticket.title }}</a>
+                    </td>
+                    <td title="{{ ticket.organization.name }}">{{ ticket.organization.name }}</td>
+                    <td title="{{ ticket.get_category_display }}">{{ ticket.get_category_display }}</td>
+                    <td>
+                        <span class="badge 
+                            {% if ticket.priority == 'low' %}badge-secondary
+                            {% elif ticket.priority == 'medium' %}badge-info
+                            {% elif ticket.priority == 'high' %}badge-warning
+                            {% elif ticket.priority == 'critical' %}badge-danger
+                            {% endif %}">
+                            {{ ticket.get_priority_display }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge 
+                            {% if ticket.status == 'new' %}badge-primary
+                            {% elif ticket.status == 'in_progress' %}badge-info
+                            {% elif ticket.status == 'unresolved' %}badge-warning text-dark
+                            {% elif ticket.status == 'resolved' %}badge-success
+                            {% elif ticket.status == 'closed' %}badge-secondary
+                            {% endif %}">
+                            {{ ticket.get_status_display }}
+                        </span>
+                    </td>
+                    <td title="{% if ticket.assigned_to %}{{ ticket.assigned_to.username }}{% else %}Oczekuje na akceptację{% endif %}">
+                        {% if ticket.assigned_to %}{{ ticket.assigned_to.username }}{% else %}<span class="text-muted">Oczekuje na akceptację</span>{% endif %}
+                    </td>
+                    <td>{{ ticket.created_at|date:"d.m.Y H:i" }}</td>
+                    <td>
+                        <div class="btn-group">
+                            <a href="{% url 'ticket_detail' ticket.pk %}" class="btn btn-sm btn-info action-btn" title="Szczegóły">
+                                <i class="fas fa-eye"></i>
+                            </a>
+                            
+                            {% if user.profile.role == 'admin' %}
+                            <a href="{% url 'ticket_update' ticket.pk %}" class="btn btn-sm btn-primary action-btn" title="Edytuj">
+                                <i class="fas fa-edit"></i>
+                            </a>
+                            {% endif %}
+                            
+                            {% if user.profile.role in 'admin,superagent,agent' %}
+                                {% if ticket.status != 'closed' and ticket.assigned_to %}
+                                <a href="{% url 'ticket_close' ticket.pk %}" class="btn btn-sm btn-secondary action-btn" title="Zamknij">
+                                    <i class="fas fa-lock"></i>
                                 </a>
-                                
-                                {% if user.profile.role == 'admin' %}
-                                <a href="{% url 'ticket_update' ticket.pk %}" class="btn btn-sm btn-primary action-btn" title="Edytuj">
-                                    <i class="fas fa-edit"></i>
+                                {% elif ticket.status == 'closed' %}
+                                <a href="{% url 'ticket_reopen' ticket.pk %}" class="btn btn-sm btn-success action-btn" title="Otwórz ponownie">
+                                    <i class="fas fa-lock-open"></i>
                                 </a>
                                 {% endif %}
-                                
-                                <!-- Only show close/reopen buttons for admins, superagents and agents -->
-                                {% if user.profile.role in 'admin,superagent,agent' %}
-                                    {% if ticket.status != 'closed' and ticket.assigned_to %}
-                                    <a href="{% url 'ticket_close' ticket.pk %}" class="btn btn-sm btn-secondary action-btn" title="Zamknij">
-                                        <i class="fas fa-lock"></i>
-                                    </a>
-                                    {% elif ticket.status == 'closed' %}
-                                    <a href="{% url 'ticket_reopen' ticket.pk %}" class="btn btn-sm btn-success action-btn" title="Otwórz ponownie">
-                                        <i class="fas fa-lock-open"></i>
-                                    </a>
-                                    {% endif %}
-                                {% endif %}
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
+                            {% endif %}
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 </div>
 {% else %}
