@@ -18,6 +18,60 @@
             /* Ensure no change in spacing */
             margin-bottom: -2px;
         }
+        
+        /* Cookie Consent Banner Styles */
+        #cookie-consent-banner {
+            display: none;
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            max-width: 375px;
+            background-color: #343a40;
+            color: #fff;
+            padding: 15px 20px;
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+            z-index: 9999;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        
+        #cookie-consent-banner p {
+            margin-bottom: 10px;
+        }
+        
+        #cookie-consent-banner button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.2s;
+        }
+        
+        #cookie-consent-banner button:hover {
+            background-color: #0069d9;
+        }
+        
+        .cookie-banner-show {
+            animation: fadeIn 0.5s;
+        }
+        
+        .cookie-banner-hide {
+            animation: fadeOut 0.5s;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        @keyframes fadeOut {
+            from { opacity: 1; transform: translateY(0); }
+            to { opacity: 0; transform: translateY(20px); }
+        }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
@@ -153,9 +207,23 @@
         </div>
     </footer>
 
+    <!-- Cookie Consent Banner -->
+    <div id="cookie-consent-banner">
+        <p><strong>Informacja o plikach cookie</strong></p>
+        <p>Ta strona korzysta z plików cookie w celu zapewnienia najlepszych doświadczeń. Używamy cookies do:</p>
+        <ul>
+            <li>Uwierzytelniania i bezpiecznego logowania</li>
+            <li>Zapamiętywania ustawień i preferencji użytkownika</li>
+            <li>Zbierania anonimowych statystyk użytkowania</li>
+        </ul>
+        <p>Korzystając ze strony, wyrażasz zgodę na używanie plików cookie zgodnie z naszą polityką prywatności.</p>
+        <button id="cookie-consent-accept">Akceptuję</button>
+    </div>
+
     <script src="{% static 'crm/js/jquery-3.5.1.slim.min.js' %}"></script>
     <script src="{% static 'crm/js/popper.min.js' %}"></script>
     <script src="{% static 'crm/js/bootstrap.min.js' %}"></script>
+    <script src="{% static 'crm/js/cookie-consent.js' %}"></script>
     {% block extra_js %}{% endblock %}
 </body>
 </html>
