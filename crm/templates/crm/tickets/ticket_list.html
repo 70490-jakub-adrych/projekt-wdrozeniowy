@@ -71,6 +71,11 @@
         font-size: 0.9rem;  /* Slightly smaller font for headers */
     }
     
+    /* Center the Actions column header */
+    .col-actions-header {
+        text-align: center;
+    }
+    
     .table td {
         overflow: hidden;
         text-overflow: ellipsis;
@@ -391,7 +396,7 @@
                     <th class="col-status">Status</th>
                     <th class="col-assigned">Przypisane do</th>
                     <th class="col-date">Data utworzenia</th>
-                    <th class="col-actions">Akcje</th>
+                    <th class="col-actions col-actions-header">Akcje</th>
                 </tr>
             </thead>
             <tbody>
@@ -427,7 +432,7 @@
                     <td title="{% if ticket.assigned_to %}{{ ticket.assigned_to.username }}{% else %}Oczekuje na akceptację{% endif %}">
                         {% if ticket.assigned_to %}{{ ticket.assigned_to.username }}{% else %}<span class="text-muted">Oczekuje na akceptację</span>{% endif %}
                     </td>
-                    <td>{{ ticket.created_at|date:"d.m.Y H:i" }}</td>
+                    <td>{{ ticket.created_at|date:"d-m-Y" }}</td>
                     <td>
                         <div class="btn-group">
                             <a href="{% url 'ticket_detail' ticket.pk %}" class="btn btn-sm btn-info action-btn" title="Szczegóły">
