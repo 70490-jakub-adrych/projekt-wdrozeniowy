@@ -142,10 +142,9 @@
                         <span class="badge 
                             {% if ticket.status == 'new' %}badge-primary
                             {% elif ticket.status == 'in_progress' %}badge-info
-                            {% elif ticket.status == 'waiting' %}badge-warning
+                            {% elif ticket.status == 'unresolved' %}badge-warning
                             {% elif ticket.status == 'resolved' %}badge-success
-                            {% elif ticket.status == 'closed' %}badge-secondary
-                            {% endif %} p-2">
+                            {% else %}badge-secondary{% endif %} p-2">
                             {{ ticket.get_status_display }}
                         </span>
                     </div>

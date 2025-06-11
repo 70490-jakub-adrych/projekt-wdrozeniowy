@@ -20,7 +20,7 @@
                 <td>
                     <span class="badge {% if ticket.status == 'new' %}badge-primary
                                      {% elif ticket.status == 'in_progress' %}badge-info
-                                     {% elif ticket.status == 'waiting' %}badge-warning
+                                     {% elif ticket.status == 'unresolved' %}badge-warning
                                      {% elif ticket.status == 'resolved' %}badge-success
                                      {% else %}badge-secondary{% endif %}">
                         {{ ticket.get_status_display }}
@@ -46,4 +46,4 @@
 <div class="alert alert-info">
     Brak zgłoszeń do wyświetlenia.
 </div>
-{% endif %} 
+{% endif %}
