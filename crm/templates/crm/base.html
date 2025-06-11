@@ -208,7 +208,7 @@
     </footer>
 
     <!-- Cookie Consent Banner -->
-    <div id="cookie-consent-banner">
+    <div id="cookie-consent-banner" style="display: none;">
         <p><strong>Informacja o plikach cookie</strong></p>
         <p>Ta strona korzysta z plików cookie w celu zapewnienia najlepszych doświadczeń. Używamy cookies do:</p>
         <ul>
@@ -223,7 +223,37 @@
     <script src="{% static 'crm/js/jquery-3.5.1.slim.min.js' %}"></script>
     <script src="{% static 'crm/js/popper.min.js' %}"></script>
     <script src="{% static 'crm/js/bootstrap.min.js' %}"></script>
+    
+    <!-- Make sure the cookie consent JS loads last -->
     <script src="{% static 'crm/js/cookie-consent.js' %}"></script>
+    
+    <!-- Simple inline fallback if the external script fails -->
+    <script>
+        // Check if the cookie consent banner has been initialized
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                if (document.cookie.indexOf('helpdesk_cookie_consent=true') === -1) {
+                    var banner = document.getElementById('cookie-consent-banner');
+                    if (banner && window.getComputedStyle(banner).display === 'none') {
+                        console.log('Inline fallback: Showing cookie banner');
+                        banner.style.display = 'block';
+                        
+                        // Add click handler for accept button if needed
+                        var acceptBtn = document.getElementById('cookie-consent-accept');
+                        if (acceptBtn && !acceptBtn.onclick) {
+                            acceptBtn.onclick = function() {
+                                var expiryDate = new Date();
+                                expiryDate.setDate(expiryDate.getDate() + 180);
+                                document.cookie = 'helpdesk_cookie_consent=true; expires=' + expiryDate.toUTCString() + '; path=/; SameSite=Lax';
+                                banner.style.display = 'none';
+                            };
+                        }
+                    }
+                }
+            }, 2000); // Check after 2 seconds
+        });
+    </script>
+    
     {% block extra_js %}{% endblock %}
 </body>
 </html>
