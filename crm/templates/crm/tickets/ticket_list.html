@@ -385,23 +385,32 @@
                                 <a href="{% url 'ticket_update' ticket.pk %}" class="btn btn-sm btn-primary action-btn" title="Edytuj">
                                     <i class="fas fa-edit"></i>
                                 </a>
-                                {% endif %}          {% endfor %}
+                                {% endif %}
                                 
                                 <!-- Only show close/reopen buttons for admins, superagents and agents -->
-                                {% if user.profile.role in 'admin,superagent,agent' %}  </div>
+                                {% if user.profile.role in 'admin,superagent,agent' %}
                                     {% if ticket.status != 'closed' and ticket.assigned_to %}
-                                    <a href="{% url 'ticket_close' ticket.pk %}" class="btn btn-sm btn-secondary action-btn" title="Zamknij"></div>
+                                    <a href="{% url 'ticket_close' ticket.pk %}" class="btn btn-sm btn-secondary action-btn" title="Zamknij">
                                         <i class="fas fa-lock"></i>
-                                    </a><div class="alert alert-info">
-
-
-
-
-
-
-
-
-
-
-{% else %}                    </tr>                        </td>                            </div>                                {% endif %}                                    {% endif %}                                    </a>                                        <i class="fas fa-lock-open"></i>                                    <a href="{% url 'ticket_reopen' ticket.pk %}" class="btn btn-sm btn-success action-btn" title="Otwórz ponownie">                                    {% elif ticket.status == 'closed' %}    <p>Nie znaleziono zgłoszeń spełniających wybrane kryteria.</p>
+                                    </a>
+                                    {% elif ticket.status == 'closed' %}
+                                    <a href="{% url 'ticket_reopen' ticket.pk %}" class="btn btn-sm btn-success action-btn" title="Otwórz ponownie">
+                                        <i class="fas fa-lock-open"></i>
+                                    </a>
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
+{% else %}
+<div class="alert alert-info">
+    <p>Nie znaleziono zgłoszeń spełniających wybrane kryteria.</p>
+</div>
+{% endif %}
+{% endblock %}
