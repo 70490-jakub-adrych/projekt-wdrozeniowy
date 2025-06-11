@@ -448,9 +448,11 @@
                             {% if user.profile.role in 'admin,superagent,agent' %}
                                 {% if ticket.status != 'closed' and ticket.assigned_to %}
                                     {% if ticket.status == 'resolved' %}
-                                    <a href="{% url 'ticket_close' ticket.pk %}" class="btn btn-sm btn-secondary action-btn" title="Zamknij">
-                                        <i class="fas fa-lock"></i>
-                                    </a>
+                                        {% if user.profile.role in 'admin,superagent' %}
+                                        <a href="{% url 'ticket_close' ticket.pk %}" class="btn btn-sm btn-secondary action-btn" title="Zamknij">
+                                            <i class="fas fa-lock"></i>
+                                        </a>
+                                        {% endif %}
                                     {% else %}
                                     <a href="{% url 'ticket_mark_resolved' ticket.pk %}" class="btn btn-sm btn-success action-btn" title="Oznacz jako rozwiązane">
                                         <i class="fas fa-check-circle"></i>
