@@ -1,0 +1,35 @@
+{% extends 'crm/base.html' %}
+
+{% block title %}Oznacz jako rozwiązane | System Helpdesk{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header text-white bg-success">
+                <i class="fas fa-check-circle"></i> Oznacz zgłoszenie jako rozwiązane
+            </div>
+            <div class="card-body">
+                <h5 class="card-title">Czy na pewno chcesz oznaczyć to zgłoszenie jako rozwiązane?</h5>
+                <p>
+                    <strong>{{ ticket.title }}</strong><br>
+                    Status: {{ ticket.get_status_display }}<br>
+                    Priorytet: {{ ticket.get_priority_display }}
+                </p>
+                <p class="text-muted">Oznaczenie zgłoszenia jako rozwiązanego wymaga potwierdzenia przez klienta. Klient będzie mógł zamknąć zgłoszenie lub oznaczyć je jako nierozwiązane.</p>
+                <form method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-success">Oznacz jako rozwiązane</button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="goBack()">Anuluj</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function goBack() {
+        window.history.back();
+    }
+</script>
+{% endblock %}

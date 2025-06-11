@@ -16,12 +16,11 @@ from .views.auth_views import (
     unlock_user, HTMLEmailPasswordResetView, EnhancedPasswordResetConfirmView, 
     custom_password_reset_complete, custom_password_change_view
 )
-from .views.tickets.action_views import ticket_confirm_solution  # Add this import
+from .views.tickets.action_views import (ticket_confirm_solution, ticket_close, ticket_reopen, ticket_mark_resolved)  # Add this import
 from . import views
 from .views import secure_file_views
 from django.contrib.auth import views as auth_views
 from .views.statistics_views import statistics_dashboard, update_agent_work_log, generate_statistics_report
-from .views.email_test_views import test_email_view, test_smtp_connection
 from .views.tickets.unassignment_views import ticket_unassign
 from .views.tickets.assignment_views import ticket_assign_to_other
 
@@ -56,6 +55,7 @@ urlpatterns = [
     path('tickets/<int:pk>/unassign/', ticket_unassign, name='ticket_unassign'),
     path('tickets/<int:pk>/close/', ticket_close, name='ticket_close'),
     path('tickets/<int:pk>/reopen/', ticket_reopen, name='ticket_reopen'),
+    path('tickets/<int:pk>/mark-resolved/', ticket_mark_resolved, name='ticket_mark_resolved'),
     
     path('tickets/display/', ticket_display_view, name='ticket_display'),
     

@@ -56,7 +56,7 @@ def ticket_close(request, pk):
         # Send email notification about the ticket closure
         EmailNotificationService.notify_ticket_stakeholders('closed', ticket, triggered_by=user, old_status=old_status)
         
-        messages.success(request, 'Zgłoszenie zostało zamknięte!')
+        messages.success(request, 'Zgłosenie zostało zamknięte!')
         return redirect('ticket_detail', pk=ticket.pk)
     
     return render(request, 'crm/tickets/ticket_confirm_close.html', {'ticket': ticket})
@@ -175,3 +175,53 @@ def ticket_confirm_solution(request, pk):
     
     # Jeśli osiągnięto metodą GET, przekieruj na stronę szczegółów
     return redirect('ticket_detail', pk=ticket.pk)
+
+@login_required
+def ticket_mark_resolved(request, pk):
+    """View for marking a ticket as resolved"""
+    user = request.user
+    role = user.profile.role
+    
+    try:
+        ticket = get_object_or_404(Ticket, pk=pk)
+    except Http404:
+        return ticket_not_found(request, pk)
+    
+    # Check permissions
+    if role == 'client':
+        return HttpResponseForbidden("Nie możesz oznaczyć tego zgłoszenia jako rozwiązane")
+    elif role == 'agent':
+        # Agent can only mark tickets assigned to them
+        if ticket.assigned_to != user:
+            return HttpResponseForbidden("Możesz oznaczyć jako rozwiązane tylko zgłoszenia przypisane do Ciebie")
+    elif role == 'admin':
+        # Admin needs to have a ticket assigned
+        if ticket.assigned_to is None:
+            return HttpResponseForbidden("Nie można oznaczyć jako rozwiązane nieprzypisanego zgłoszenia")
+    elif role == 'superagent':
+        if ticket.assigned_to is None:
+            return HttpResponseForbidden("Nie można oznaczyć jako rozwiązane nieprzypisanego zgłoszenia")
+    
+    if request.method == 'POST':
+        # Store the old status for the log
+        old_status = ticket.status
+        
+        ticket.status = 'resolved'
+        ticket.resolved_at = timezone.now()
+        ticket.save()
+        
+        # Log the status change
+        log_activity(
+            request, 
+            'ticket_resolved', 
+            ticket, 
+            f"Oznaczono zgłoszenie '{ticket.title}' jako rozwiązane (zmiana statusu z '{old_status}' na 'resolved')"
+        )
+        
+        # Send email notification about the ticket being resolved
+        EmailNotificationService.notify_ticket_stakeholders('resolved', ticket, triggered_by=user, old_status=old_status)
+        
+        messages.success(request, 'Zgłoszenie zostało oznaczone jako rozwiązane!')
+        return redirect('ticket_detail', pk=ticket.pk)
+    
+    return render(request, 'crm/tickets/ticket_confirm_resolve.html', {'ticket': ticket})

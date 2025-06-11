@@ -468,8 +468,8 @@ class GroupSettings(models.Model):
     )
     can_close_assigned_tickets = models.BooleanField(
         default=False,
-        verbose_name="Może zamykać zgłoszenia do siebie przypisane",
-        help_text="Jeśli zaznaczone, użytkownicy w tej grupie mogą zamykać zgłoszenia, które są do nich przypisane."
+        verbose_name="Może oznaczać zgłoszenia jako rozwiązane",
+        help_text="Jeśli zaznaczone, użytkownicy w tej grupie mogą oznaczać jako rozwiązane zgłoszenia, które są do nich przypisane."
     )
     can_close_any_ticket = models.BooleanField(
         default=False,

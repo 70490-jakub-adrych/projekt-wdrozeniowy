@@ -50,6 +50,7 @@ def dashboard(request):
         # Admin sees all tickets for statistics
         new_tickets = Ticket.objects.filter(status='new').count()
         in_progress_tickets = Ticket.objects.filter(status='in_progress').count()
+        unresolved_tickets = Ticket.objects.filter(status='unresolved').count()  # Added unresolved tickets count
         resolved_tickets = Ticket.objects.filter(status='resolved').count()
         closed_tickets = Ticket.objects.filter(status='closed').count()
         
@@ -76,6 +77,7 @@ def dashboard(request):
         
         new_tickets = org_tickets.filter(status='new').count()
         in_progress_tickets = org_tickets.filter(status='in_progress').count()
+        unresolved_tickets = org_tickets.filter(status='unresolved').count()  # Added unresolved tickets count
         resolved_tickets = org_tickets.filter(status='resolved').count()
         closed_tickets = org_tickets.filter(status='closed').count()
         
@@ -115,6 +117,7 @@ def dashboard(request):
         
         new_tickets = org_tickets.filter(status='new').count()
         in_progress_tickets = org_tickets.filter(status='in_progress').count()
+        unresolved_tickets = org_tickets.filter(status='unresolved').count()  # Added unresolved tickets count
         resolved_tickets = org_tickets.filter(status='resolved').count()
         closed_tickets = org_tickets.filter(status='closed').count()
         
@@ -141,6 +144,7 @@ def dashboard(request):
     context = {
         'new_tickets': new_tickets,
         'in_progress_tickets': in_progress_tickets,
+        'unresolved_tickets': unresolved_tickets,  # Added to context
         'resolved_tickets': resolved_tickets,
         'closed_tickets': closed_tickets,
     }
