@@ -177,6 +177,9 @@ document.addEventListener('DOMContentLoaded', function() {
      */
     const initStatusChart = (chartData) => {
         const statusCtx = document.getElementById('statusChart').getContext('2d');
+        
+        console.log("Chart data for status:", chartData.tickets); // Debug output
+        
         const statusData = {
             labels: ['Nowe', 'W trakcie', 'Nierozwiązany', 'Rozwiązane', 'Zamknięte'],
             datasets: [{

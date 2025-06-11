@@ -55,7 +55,8 @@
 <div style="display: none;">
     <div data-new-tickets="{{ new_tickets }}"></div>
     <div data-in-progress-tickets="{{ in_progress_tickets }}"></div>
-    <div data-waiting-tickets="{{ waiting_tickets }}"></div>
+    <div data-unresolved-tickets="{{ unresolved_tickets }}"></div>
+    <div data-waiting-tickets="{{ waiting_tickets|default:'0' }}"></div>
     <div data-resolved-tickets="{{ resolved_tickets }}"></div>
     <div data-closed-tickets="{{ closed_tickets }}"></div>
     <div data-priority-distribution="{{ priority_distribution|safe }}"></div>

@@ -16,7 +16,7 @@ from ..views.error_views import forbidden_access
 
 @login_required
 def statistics_dashboard(request):
-    """Main statistics dashboard view"""
+    """View for displaying statistics dashboard"""
     user = request.user
     role = user.profile.role
     
