@@ -1,4 +1,4 @@
-Django>=3.2,<4.0
+Django==4.2.22
 django-crispy-forms>=1.14.0
 crispy-bootstrap4>=2022.1
 pillow>=9.0.0
