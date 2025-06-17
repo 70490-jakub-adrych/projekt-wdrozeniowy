@@ -4,7 +4,7 @@ import io
 import base64
 from django.utils import timezone
 from django.conf import settings
-from crm.models import TwoFactorAuth, TrustedDevice
+from ..models import TwoFactorAuth, TrustedDevice  # Update imports to use relative path
 
 def generate_totp_secret():
     """Generate a new TOTP secret"""
