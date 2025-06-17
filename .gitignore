@@ -41,3 +41,8 @@ crm/migrations/0002_alter_userprofile_role.py
 crm/migrations/0003_groupsettings.py
 crm/migrations/0004_groupviewpermission_userviewpermission_viewpermission.py
 crm/migrations/0005_auto_20250605_1245.py
+crm/migrations/0002_add_2fa_fields.py
+crm/migrations/0003_set_ga_enabled_default.py
+crm/migrations/0003_set_ga_enabled_default.py
+crm/migrations/0002_add_2fa_fields.py
+crm/migrations/0003_set_ga_enabled_default.py
