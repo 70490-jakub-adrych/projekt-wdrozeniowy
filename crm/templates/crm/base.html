@@ -213,7 +213,7 @@
                                 {% endif %}
                             </div>
                             <div class="dropdown-divider"></div>
-                            <a class="dropdown-item" href="{% if user.profile.ga_enabled %}{% url 'profile' %}{% else %}{% url 'setup_2fa' %}{% endif %}">
+                            <a class="dropdown-item" href="{% if user.profile.ga_enabled %}{% url 'dashboard' %}{% else %}{% url 'setup_2fa' %}{% endif %}">
                                 <i class="fas fa-shield-alt"></i> 
                                 {% if user.profile.ga_enabled %}
                                 2FA (Włączone) <span class="text-success"><i class="fas fa-check-circle"></i></span>
