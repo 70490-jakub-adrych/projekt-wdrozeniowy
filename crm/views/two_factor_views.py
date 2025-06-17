@@ -69,6 +69,8 @@ def setup_2fa(request):
                 # Clean up session
                 if 'ga_secret_key' in request.session:
                     del request.session['ga_secret_key']
+                if 'last_2fa_key_generation' in request.session:
+                    del request.session['last_2fa_key_generation']
                 
                 messages.success(request, 'Uwierzytelnianie dwuskładnikowe zostało pomyślnie włączone!')
                 return redirect('setup_2fa_success')
@@ -91,9 +93,30 @@ def setup_2fa(request):
         }
         return render(request, 'crm/2fa/setup.html', context)
     
-    # Initial setup - generate new secret key
-    secret_key = pyotp.random_base32()
-    request.session['ga_secret_key'] = secret_key
+    # Initial setup - check if we should generate a new secret key or reuse existing one
+    current_time = timezone.now().timestamp()
+    last_generation_time = request.session.get('last_2fa_key_generation', 0)
+    time_elapsed = current_time - last_generation_time
+    rate_limit_seconds = 60  # Limit to one generation per minute
+    
+    if 'ga_secret_key' in request.session and time_elapsed < rate_limit_seconds:
+        # Reuse existing secret key if we're within the rate limit period
+        secret_key = request.session['ga_secret_key']
+        logger.info(f"Rate limiting 2FA setup for user {user.username}: reusing existing key")
+        
+        # Optionally add a message to inform the user
+        time_remaining = int(rate_limit_seconds - time_elapsed)
+        messages.info(
+            request, 
+            f'Ze względów bezpieczeństwa nowy kod może być wygenerowany po upływie {time_remaining} sekund. ' 
+            'Prosimy korzystać z obecnie wyświetlonego kodu.'
+        )
+    else:
+        # Generate new secret key if we're outside the rate limit period
+        secret_key = pyotp.random_base32()
+        request.session['ga_secret_key'] = secret_key
+        request.session['last_2fa_key_generation'] = current_time
+        logger.debug(f"Generated new 2FA setup code for user {user.username}")
     
     # Generate QR code
     qr_uri = pyotp.totp.TOTP(secret_key).provisioning_uri(
@@ -107,7 +130,9 @@ def setup_2fa(request):
         'secret_key': secret_key,
         'form': TOTPVerificationForm(),
         'verification_step': False,
-        'setup_required': setup_required  # Add this to the context
+        'setup_required': setup_required,  # Add this to the context
+        'rate_limited': time_elapsed < rate_limit_seconds,
+        'time_remaining': int(rate_limit_seconds - time_elapsed) if time_elapsed < rate_limit_seconds else 0
     }
     
     return render(request, 'crm/2fa/setup.html', context)

@@ -52,6 +52,13 @@
                         
                         <h6 class="font-weight-bold mt-4">Krok 2: Zeskanuj kod QR</h6>
                         <p>Otwórz aplikację Google Authenticator i zeskanuj poniższy kod QR:</p>
+                        
+                        {% if rate_limited and time_remaining > 0 %}
+                        <div class="alert alert-warning">
+                            <i class="fas fa-clock"></i> 
+                            <span>Nowy kod QR może być wygenerowany za <span id="countdown">{{ time_remaining }}</span> sekund.</span>
+                        </div>
+                        {% endif %}
                     </div>
                 </div>
                 {% endif %}
@@ -146,5 +153,28 @@ function copyToClipboard() {
         copyMessage.style.display = "none";
     }, 2000);
 }
+
+// Add countdown functionality if rate limited
+{% if rate_limited and time_remaining > 0 %}
+document.addEventListener('DOMContentLoaded', function() {
+    var countdownEl = document.getElementById('countdown');
+    var timeRemaining = {{ time_remaining }};
+    
+    function updateCountdown() {
+        if (timeRemaining <= 0) {
+            countdownEl.textContent = '0';
+            document.querySelector('.alert-warning').innerHTML = 
+                '<i class="fas fa-check-circle"></i> Możesz teraz odświeżyć stronę, aby wygenerować nowy kod.';
+            return;
+        }
+        
+        countdownEl.textContent = timeRemaining;
+        timeRemaining--;
+        setTimeout(updateCountdown, 1000);
+    }
+    
+    updateCountdown();
+});
+{% endif %}
 </script>
 {% endblock %}
