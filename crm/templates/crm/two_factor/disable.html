@@ -1,0 +1,47 @@
+{% extends 'crm/base.html' %}
+
+{% block title %}Wyłącz uwierzytelnianie dwuskładnikowe{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0"><i class="fas fa-shield-alt"></i> Wyłącz uwierzytelnianie dwuskładnikowe</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i> <strong>Uwaga!</strong> 
+                        Wyłączenie uwierzytelniania dwuskładnikowego zmniejszy bezpieczeństwo Twojego konta.
+                    </div>
+                    
+                    <form method="post" class="mt-4">
+                        {% csrf_token %}
+                        
+                        <div class="form-group text-center">
+                            <p>Aby potwierdzić wyłączenie uwierzytelniania dwuskładnikowego, wprowadź aktualny kod z aplikacji Google Authenticator:</p>
+                            
+                            <div class="row justify-content-center">
+                                <div class="col-md-8">
+                                    <input type="text" name="verification_code" class="form-control form-control-lg text-center" 
+                                        placeholder="000000" maxlength="6" autocomplete="off" required>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="text-center mt-4">
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-power-off"></i> Wyłącz uwierzytelnianie dwuskładnikowe
+                            </button>
+                            <a href="{% url 'dashboard' %}" class="btn btn-secondary ml-2">
+                                <i class="fas fa-times"></i> Anuluj
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

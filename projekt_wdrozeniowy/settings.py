@@ -47,9 +47,11 @@ INSTALLED_APPS = [
     'crispy_forms',
     'crispy_bootstrap4',
     'cryptography',  # Add cryptography package
+    'django_user_agents',  # Add user agent detection
     
     # Local apps
     'crm.apps.CrmConfig',  # Use the app config class instead of just the app name
+    'two_factor',  # Add the two factor authentication app
 ]
 
 MIDDLEWARE = [
@@ -60,6 +62,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'crm.middleware.ViewerRestrictMiddleware',
     'crm.middleware.EmailVerificationMiddleware',  # Add this line
+    'two_factor.middleware.TwoFactorMiddleware',   # Add 2FA middleware
+    'django_user_agents.middleware.UserAgentMiddleware',  # Add user agent middleware
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -308,3 +312,20 @@ MANAGERS = ADMINS
 
 # Secret code for wiping activity logs - load from environment variables with fallback
 LOG_WIPE_SECRET_CODE = config('LOG_WIPE_SECRET_CODE', default='default-secret-code-change-me')
+
+# Two-Factor Authentication settings
+SITE_NAME = 'Helpdesk CRM'
+SITE_URL = 'https://betulait.usermd.net'  # Change to your actual domain in production
+
+# 2FA Settings
+TWO_FACTOR_AUTH = {
+    'RECOVERY_CODE_LENGTH': 16,  # Length of recovery code
+    'TOTP_DIGITS': 6,            # Number of digits in TOTP code (default for Google Auth is 6)
+    'TRUST_DEVICE_DAYS': 30,     # Number of days to trust a device
+    'LOGIN_REDIRECT_URL': 'dashboard',  # Where to redirect after successful 2FA
+    'VERIFICATION_PATH': '/two-factor/verify/',  # Path to verification page
+    'SETUP_PATH': '/two-factor/setup/',          # Path to setup page
+}
+
+# Set user agent detection cache backend
+USER_AGENTS_CACHE = 'default'

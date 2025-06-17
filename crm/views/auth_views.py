@@ -23,6 +23,8 @@ from .error_views import forbidden_access
 import random
 import logging
 from django.conf import settings
+from two_factor.models import TwoFactorAuth
+from two_factor.utils import is_trusted_device
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -1105,3 +1107,46 @@ def custom_password_reset_complete(request):
     
     # Always show the success template
     return render(request, 'emails/password_reset_complete.html')
+
+
+def login_view(request):
+    """Widok logowania z obsługą 2FA"""
+    if request.method == 'POST':
+        form = CustomAuthenticationForm(request, data=request.POST)
+        if form.is_valid():
+            # Logika logowania
+            username = form.cleaned_data.get('username')
+            password = form.cleaned_data.get('password')
+            
+            user = authenticate(request, username=username, password=password)
+            
+            if user is not None:
+                # User authenticated with username and password
+                login(request, user)
+                
+                # Check if the user has 2FA enabled
+                try:
+                    two_factor = TwoFactorAuth.objects.get(user=user)
+                    if two_factor.ga_enabled:
+                        # If 2FA is enabled, check if device is already trusted
+                        if not is_trusted_device(request):
+                            # Device not trusted, redirect to 2FA verification
+                            request.session['next_url'] = request.GET.get('next', 'dashboard')
+                            return redirect('two_factor_verify')
+                except TwoFactorAuth.DoesNotExist:
+                    # No 2FA set up, continue with normal flow
+                    pass
+                
+                # Continue with normal login flow
+                next_url = request.GET.get('next', 'dashboard')
+                return redirect(next_url)
+            else:
+                messages.error(request, 'Nieprawidłowa nazwa użytkownika lub hasło.')
+                logger.warning(f"Failed login attempt for username: {username}")
+        else:
+            messages.error(request, 'Błąd w formularzu logowania. Sprawdź swoje dane.')
+    
+    else:
+        form = CustomAuthenticationForm()
+    
+    return render(request, 'crm/login.html', {'form': form})

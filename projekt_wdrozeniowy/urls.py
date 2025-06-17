@@ -6,6 +6,7 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('crm.urls')),
+    path('two-factor/', include('two_factor.urls')),
 ]
 
 if settings.DEBUG:

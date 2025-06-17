@@ -23,6 +23,10 @@ from django.contrib.auth import views as auth_views
 from .views.statistics_views import statistics_dashboard, update_agent_work_log, generate_statistics_report
 from .views.tickets.unassignment_views import ticket_unassign
 from .views.tickets.assignment_views import ticket_assign_to_other
+from .views.two_factor_views import (
+    setup_2fa, verify_2fa, recovery_2fa, 
+    regenerate_recovery_code, disable_2fa
+)
 
 urlpatterns = [
     # Landing and authentication
@@ -111,4 +115,11 @@ urlpatterns = [
 
     # Ticket solution confirmation
     path('tickets/<int:pk>/confirm-solution/', ticket_confirm_solution, name='ticket_confirm_solution'),
+
+    # Two-factor authentication URLs
+    path('two-factor/setup/', setup_2fa, name='two_factor_setup'),
+    path('two-factor/verify/', verify_2fa, name='two_factor_verify'),
+    path('two-factor/recovery/', recovery_2fa, name='two_factor_recovery'),
+    path('two-factor/regenerate-recovery-code/', regenerate_recovery_code, name='two_factor_regenerate_recovery'),
+    path('two-factor/disable/', disable_2fa, name='two_factor_disable'),
 ]

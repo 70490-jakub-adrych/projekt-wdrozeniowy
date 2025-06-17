@@ -1,0 +1,79 @@
+{% extends 'crm/base.html' %}
+
+{% block title %}Weryfikacja dwuskładnikowa{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-lock"></i> Wymagana weryfikacja</h4>
+                </div>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <i class="fas fa-shield-alt fa-3x text-primary"></i>
+                        <h5 class="mt-3">Wprowadź kod weryfikacyjny</h5>
+                        <p class="text-muted">Otwórz aplikację Google Authenticator, aby zobaczyć swój kod</p>
+                    </div>
+                    
+                    <form method="post" id="verifyForm">
+                        {% csrf_token %}
+                        <input type="hidden" name="recovery_mode" value="false" id="recoveryMode">
+                        
+                        <div class="form-group text-center">
+                            <div class="mb-4">
+                                <input type="text" name="verification_code" class="form-control form-control-lg text-center" 
+                                       placeholder="000000" maxlength="6" autocomplete="off" required id="verificationCode">
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary btn-lg btn-block mt-3">
+                                <i class="fas fa-check-circle"></i> Weryfikuj
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <div class="text-center mt-4">
+                        <a href="#" id="toggleRecovery">Nie masz dostępu do aplikacji uwierzytelniającej?</a>
+                        
+                        <div id="recoverySection" class="mt-3" style="display:none;">
+                            <p class="text-muted">Wprowadź swój kod odzyskiwania:</p>
+                            <p class="small text-danger">Uwaga: Użycie kodu odzyskiwania wyłączy 2FA i będziesz musiał skonfigurować je ponownie.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const toggleBtn = document.getElementById('toggleRecovery');
+    const recoverySection = document.getElementById('recoverySection');
+    const recoveryModeInput = document.getElementById('recoveryMode');
+    const verificationInput = document.getElementById('verificationCode');
+    const form = document.getElementById('verifyForm');
+    
+    toggleBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        
+        if (recoverySection.style.display === 'none') {
+            // Switch to recovery mode
+            recoverySection.style.display = 'block';
+            toggleBtn.textContent = 'Wróć do kodu weryfikacyjnego';
+            recoveryModeInput.value = 'true';
+            verificationInput.placeholder = 'Wprowadź kod odzyskiwania';
+            verificationInput.maxLength = 16;
+        } else {
+            // Switch back to verification mode
+            recoverySection.style.display = 'none';
+            toggleBtn.textContent = 'Nie masz dostępu do aplikacji uwierzytelniającej?';
+            recoveryModeInput.value = 'false';
+            verificationInput.placeholder = '000000';
+            verificationInput.maxLength = 6;
+        }
+    });
+});
+</script>
+{% endblock %}
