@@ -6,6 +6,7 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('crm.urls')),
+    path('two-factor/', include('two_factor.urls')),
 ]
 
 if settings.DEBUG:
@@ -14,5 +15,4 @@ if settings.DEBUG:
 
 # Custom error handlers
 handler404 = 'crm.views.error_views.handle_custom_404'
-handler403 = 'crm.views.error_views.handle_custom_403'
 handler403 = 'crm.views.error_views.handle_custom_403'

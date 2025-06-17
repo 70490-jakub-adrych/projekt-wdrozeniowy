@@ -47,9 +47,11 @@ INSTALLED_APPS = [
     'crispy_forms',
     'crispy_bootstrap4',
     'cryptography',  # Add cryptography package
+    'django_user_agents',  # Add user agent detection
     
     # Local apps
     'crm.apps.CrmConfig',  # Use the app config class instead of just the app name
+    'two_factor',  # Add the two factor authentication app
 ]
 
 MIDDLEWARE = [
@@ -60,7 +62,8 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'crm.middleware.ViewerRestrictMiddleware',
     'crm.middleware.EmailVerificationMiddleware',  # Add this line
-    'crm.middleware.two_factor.TwoFactorMiddleware',  # Add the 2FA middleware
+    'two_factor.middleware.TwoFactorMiddleware',   # Add 2FA middleware
+    'django_user_agents.middleware.UserAgentMiddleware',  # Add user agent middleware
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]

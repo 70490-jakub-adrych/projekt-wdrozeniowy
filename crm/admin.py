@@ -2,16 +2,14 @@ from django.contrib import admin
 from django.contrib.auth.models import User, Group
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.admin import GroupAdmin as BaseGroupAdmin
-from django.contrib import messages
+from django.contrib import messages  # Add this import
 from django import forms
 from .models import (
     UserProfile, Organization, Ticket, TicketComment,
     TicketAttachment, ActivityLog, GroupSettings, 
     ViewPermission, GroupViewPermission, UserViewPermission,
-    WorkHours, TicketStatistics, AgentWorkLog,
-    TwoFactorAuth, TrustedDevice  # Add the 2FA models
+    WorkHours, TicketStatistics, AgentWorkLog  # Add the new models
 )
-from .admin.two_factor import TwoFactorAuthInline, TrustedDeviceAdmin  # Import from admin module
 
 
 class UserProfileInline(admin.StackedInline):
@@ -29,7 +27,7 @@ class UserProfileInline(admin.StackedInline):
 
 
 class UserAdmin(BaseUserAdmin):
-    inlines = (UserProfileInline, TwoFactorAuthInline)  # Add TwoFactorAuthInline
+    inlines = (UserProfileInline,)
     
     def save_model(self, request, obj, form, change):
         """Override save_model to enforce one group per user"""
@@ -193,9 +191,6 @@ admin.site.register(User, UserAdmin)
 
 admin.site.unregister(Group)
 admin.site.register(Group, GroupAdmin)
-
-# Register TrustedDevice model
-admin.site.register(TrustedDevice, TrustedDeviceAdmin)
 
 
 class TicketCommentInline(admin.TabularInline):

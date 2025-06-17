@@ -2,7 +2,7 @@ from django.shortcuts import redirect
 from django.urls import reverse, resolve
 from django.contrib import messages
 import logging
-from ..utils.two_factor import requires_2fa_setup, is_trusted_device, is_admin_from_known_ip
+from crm.utils.two_factor import requires_2fa_setup, is_trusted_device, is_admin_from_known_ip
 
 logger = logging.getLogger(__name__)
 
@@ -49,14 +49,14 @@ class TwoFactorMiddleware:
             # Only redirect if not already going to setup page
             if current_path != '/two-factor/setup/':
                 messages.info(request, "Wymagane skonfigurowanie uwierzytelniania dwuskładnikowego.")
-                return redirect('two_factor_setup')  # Use named URL pattern
+                return redirect('/two-factor/setup/')
         
         # If 2FA is enabled, check if device is trusted
         try:
             if request.user.two_factor.ga_enabled and not is_trusted_device(request):
                 # Store the intended URL in the session for redirection after 2FA verification
                 request.session['next_url'] = current_path
-                return redirect('two_factor_verify')  # Use named URL pattern
+                return redirect('/two-factor/verify/')
         except Exception as e:
             logger.error(f"Error checking 2FA status: {str(e)}")
         

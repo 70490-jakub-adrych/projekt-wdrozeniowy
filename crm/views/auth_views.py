@@ -17,13 +17,14 @@ from ..services.email_service import EmailNotificationService
 import importlib
 
 from ..forms import UserRegisterForm, UserProfileForm, CustomAuthenticationForm, GroupSelectionForm, PasswordChangeVerificationForm, EmailVerificationForm
-from ..models import UserProfile, User, EmailVerification, EmailNotificationSettings, Organization, TwoFactorAuth
-from ..utils.two_factor import is_trusted_device
+from ..models import UserProfile, User, EmailVerification, EmailNotificationSettings, Organization
 from .helpers import log_activity
 from .error_views import forbidden_access
 import random
 import logging
 from django.conf import settings
+from two_factor.models import TwoFactorAuth
+from two_factor.utils import is_trusted_device
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -1148,5 +1149,4 @@ def login_view(request):
     else:
         form = CustomAuthenticationForm()
     
-    return render(request, 'crm/login.html', {'form': form})
     return render(request, 'crm/login.html', {'form': form})

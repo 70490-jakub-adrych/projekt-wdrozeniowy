@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.models import User
 from django.utils.html import format_html
-from ..models import TwoFactorAuth, TrustedDevice  # Update imports to use relative path
+from ..models import TwoFactorAuth, TrustedDevice
 from ..utils.two_factor import get_recovery_url
 
 class TwoFactorAuthInline(admin.StackedInline):

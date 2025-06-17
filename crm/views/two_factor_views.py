@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.utils import timezone
 import logging
 
-from ..models import TwoFactorAuth, TrustedDevice  # Update imports to use relative path
+from ..models import TwoFactorAuth, TrustedDevice
 from ..utils.two_factor import (
     generate_totp_secret, generate_totp_uri, generate_qr_code,
     verify_totp_code, get_or_create_2fa, requires_2fa_setup
