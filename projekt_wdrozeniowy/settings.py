@@ -58,10 +58,10 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',  # Moved up - must be before our custom middleware
     'crm.middleware.ViewerRestrictMiddleware',
     'crm.middleware.EmailVerificationMiddleware',
     'crm.middleware.TwoFactorMiddleware',  # Add the new 2FA middleware
-    'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
