@@ -174,7 +174,13 @@ def create_user_profile(sender, instance, created, **kwargs):
         role = 'admin' if instance.is_superuser else 'client'
         # Set approved status based on role (admins and superagents are auto-approved)
         is_approved = True if instance.is_superuser else False
-        UserProfile.objects.create(user=instance, role=role, is_approved=is_approved)
+        UserProfile.objects.create(
+            user=instance, 
+            role=role, 
+            is_approved=is_approved,
+            ga_enabled=False,  # Explicitly set ga_enabled to False for new users
+            email_verified=False  # Also ensure email_verified is explicitly set
+        )
         
         # Add user to appropriate group based on role
         if role == 'admin':
