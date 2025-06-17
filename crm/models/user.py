@@ -5,9 +5,6 @@ from django.db.models.signals import post_save, m2m_changed
 from django.dispatch import receiver
 from ..validators import phone_regex
 
-def get_verification_expiry():
-    return timezone.now() + timezone.timedelta(hours=24)
-
 class UserProfile(models.Model):
     """Model rozszerzający standardowego użytkownika o dodatkowe pola"""
     USER_ROLES = (
@@ -185,7 +182,7 @@ class EmailVerification(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     verification_code = models.CharField(max_length=6)
     created_at = models.DateTimeField(auto_now_add=True)
-    expires_at = models.DateTimeField(default=get_verification_expiry)
+    expires_at = models.DateTimeField(default=lambda: timezone.now() + timezone.timedelta(hours=24))
     is_verified = models.BooleanField(default=False)
     verification_attempts = models.IntegerField(default=0)
     
