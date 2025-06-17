@@ -119,4 +119,8 @@ urlpatterns = [
     path('2fa/disable/', disable_2fa, name='disable_2fa'),
     path('2fa/verify/', verify_2fa, name='verify_2fa'),
     path('2fa/recovery/', recovery_code, name='recovery_code'),
+
+    # Profile
+    path('profile/', views.profile_views.user_profile_view, name='profile'),
+    path('profile/edit/', views.profile_views.user_profile_edit, name='profile_edit'),
 ]

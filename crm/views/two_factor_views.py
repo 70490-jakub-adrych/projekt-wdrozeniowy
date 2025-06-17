@@ -25,7 +25,7 @@ def setup_2fa(request):
     # Check if the user is already using 2FA
     if profile and profile.ga_enabled:
         messages.info(request, 'Uwierzytelnianie dwuskładnikowe jest już włączone dla Twojego konta.')
-        return redirect('profile')
+        return redirect('dashboard')  # Changed from 'profile' to 'dashboard'
     
     # Check if the user is approved (only approved users can set up 2FA)
     if not profile or not profile.is_approved:
@@ -135,7 +135,7 @@ def disable_2fa(request):
     
     if not profile or not profile.ga_enabled:
         messages.info(request, 'Uwierzytelnianie dwuskładnikowe nie jest włączone dla Twojego konta.')
-        return redirect('profile')
+        return redirect('dashboard')  # Changed from 'profile' to 'dashboard'
     
     # Disable 2FA
     profile.ga_enabled = False
@@ -147,7 +147,7 @@ def disable_2fa(request):
     profile.save()
     
     messages.success(request, 'Uwierzytelnianie dwuskładnikowe zostało wyłączone.')
-    return redirect('profile')
+    return redirect('dashboard')  # Changed from 'profile' to 'dashboard'
 
 @login_required
 def verify_2fa(request):
