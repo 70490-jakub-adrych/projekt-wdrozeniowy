@@ -4,6 +4,3 @@ crispy-bootstrap4>=2022.1
 pillow>=9.0.0
 python-decouple>=3.6
 cryptography>=41.0.0
-# 2FA requirements
-pyotp>=2.9.0
-qrcode>=7.4.2
