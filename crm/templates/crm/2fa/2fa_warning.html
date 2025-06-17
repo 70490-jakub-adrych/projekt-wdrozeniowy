@@ -1,0 +1,18 @@
+{% if request.session.2fa_setup_exempt_until and not user.profile.ga_enabled %}
+<div class="alert alert-warning alert-dismissible fade show" role="alert">
+    <div class="d-flex align-items-center">
+        <div class="mr-3">
+            <i class="fas fa-shield-alt fa-2x"></i>
+        </div>
+        <div>
+            <h5 class="alert-heading">Zabezpiecz swoje konto!</h5>
+            <p class="mb-0">Dla bezpieczeństwa Twojego konta, skonfiguruj uwierzytelnianie dwuskładnikowe. 
+                <a href="{% url 'setup_2fa' %}" class="alert-link">Kliknij tutaj, aby zrobić to teraz</a>.
+            </p>
+        </div>
+    </div>
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+{% endif %}

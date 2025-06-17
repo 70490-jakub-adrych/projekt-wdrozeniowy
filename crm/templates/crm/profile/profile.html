@@ -9,12 +9,41 @@
                 <i class="fas fa-check-circle"></i> Uwierzytelnianie dwuskładnikowe jest <strong>włączone</strong>.
                 <p class="mb-0">Ostatnie uwierzytelnienie: {% if user.profile.ga_last_authenticated %}{{ user.profile.ga_last_authenticated|date:"d.m.Y H:i" }}{% else %}Nigdy{% endif %}</p>
             </div>
-            <form method="post" action="{% url 'disable_2fa' %}" onsubmit="return confirm('Czy na pewno chcesz wyłączyć uwierzytelnianie dwuskładnikowe? To zmniejszy bezpieczeństwo Twojego konta.')">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-danger">
-                    <i class="fas fa-times-circle"></i> Wyłącz 2FA
-                </button>
-            </form>
+            
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h6 class="card-title"><i class="fas fa-mobile-alt"></i> Straciłeś dostęp do urządzenia?</h6>
+                            <p class="small">Jeśli nie masz dostępu do swojego urządzenia z aplikacją Google Authenticator, możesz użyć kodu odzyskiwania.</p>
+                            <a href="{% url 'recovery_code' %}" class="btn btn-sm btn-warning">
+                                <i class="fas fa-key"></i> Użyj kodu odzyskiwania
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card bg-light">
+                        <div class="card-body">
+                            <h6 class="card-title"><i class="fas fa-cog"></i> Zarządzanie 2FA</h6>
+                            <p class="small">Możesz wyłączyć 2FA, ale pamiętaj, że zmniejszy to bezpieczeństwo Twojego konta.</p>
+                            <form method="post" action="{% url 'disable_2fa' %}" onsubmit="return confirm('Czy na pewno chcesz wyłączyć uwierzytelnianie dwuskładnikowe? To zmniejszy bezpieczeństwo Twojego konta.')">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-danger">
+                                    <i class="fas fa-times-circle"></i> Wyłącz 2FA
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> <strong>Wskazówka:</strong> 
+                Twoje 2FA jest aktywne na tym urządzeniu. Pamiętaj, że po zalogowaniu się na nowym urządzeniu będziesz musiał podać kod z aplikacji Google Authenticator.
+            </div>
+            
         {% else %}
             <div class="alert alert-warning">
                 <i class="fas fa-exclamation-triangle"></i> Uwierzytelnianie dwuskładnikowe jest <strong>wyłączone</strong>.
@@ -24,6 +53,10 @@
                 <a href="{% url 'setup_2fa' %}" class="btn btn-primary">
                     <i class="fas fa-shield-alt"></i> Włącz 2FA
                 </a>
+                <p class="text-muted mt-2 small">
+                    <i class="fas fa-info-circle"></i> Uwierzytelnianie dwuskładnikowe wymaga aplikacji Google Authenticator na telefonie.
+                    Po włączeniu, otrzymasz również kod odzyskiwania, który powinieneś zachować w bezpiecznym miejscu.
+                </p>
             {% else %}
                 <button class="btn btn-primary" disabled title="Twoje konto musi zostać zatwierdzone przed włączeniem 2FA">
                     <i class="fas fa-shield-alt"></i> Włącz 2FA
