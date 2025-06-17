@@ -237,7 +237,7 @@ class AgentWorkLog(models.Model):
     start_time = models.DateTimeField(verbose_name="Czas rozpoczęcia")
     end_time = models.DateTimeField(verbose_name="Czas zakończenia")
     notes = models.TextField(blank=True, null=True, verbose_name="Notatki")
-    created_at = models.DateTimeField(default=timezone.now, verbose_name="Data utworzenia")  # Changed auto_now_add to default
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Data utworzenia")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Data aktualizacji")
     
     @property

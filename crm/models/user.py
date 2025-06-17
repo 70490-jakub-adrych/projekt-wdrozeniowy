@@ -182,7 +182,7 @@ class EmailVerification(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     verification_code = models.CharField(max_length=6)
     created_at = models.DateTimeField(auto_now_add=True)
-    expires_at = models.DateTimeField(default=lambda: timezone.now() + timezone.timedelta(hours=24))
+    expires_at = models.DateTimeField()
     is_verified = models.BooleanField(default=False)
     verification_attempts = models.IntegerField(default=0)
     
