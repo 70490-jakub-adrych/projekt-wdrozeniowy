@@ -59,7 +59,8 @@ MIDDLEWARE = [
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'crm.middleware.ViewerRestrictMiddleware',
-    'crm.middleware.EmailVerificationMiddleware',  # Add this line
+    'crm.middleware.EmailVerificationMiddleware',
+    'crm.middleware.TwoFactorMiddleware',  # Add the new 2FA middleware
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
@@ -308,3 +309,10 @@ MANAGERS = ADMINS
 
 # Secret code for wiping activity logs - load from environment variables with fallback
 LOG_WIPE_SECRET_CODE = config('LOG_WIPE_SECRET_CODE', default='default-secret-code-change-me')
+
+# Google Authenticator settings
+GOOGLE_AUTHENTICATOR = {
+    'ISSUER_NAME': 'System Helpdesk',
+    'TRUSTED_DEVICE_DAYS': 30,  # Number of days to trust a device
+    'RECOVERY_CODE_LENGTH': 20,  # Length of recovery code
+}

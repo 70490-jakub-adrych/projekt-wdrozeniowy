@@ -1,0 +1,70 @@
+{% extends 'crm/base.html' %}
+
+{% block title %}Weryfikacja dwuskładnikowa | System Helpdesk{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <i class="fas fa-shield-alt mr-2"></i> Weryfikacja dwuskładnikowa
+            </div>
+            <div class="card-body text-center">
+                <div class="mb-4">
+                    <i class="fas fa-mobile-alt fa-5x text-primary mb-3"></i>
+                    <h5>Wprowadź kod z aplikacji Google Authenticator</h5>
+                    <p class="text-muted">Twoje konto jest zabezpieczone uwierzytelnianiem dwuskładnikowym</p>
+                </div>
+                
+                {% if require_fresh %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> Ta strona wymaga dodatkowej weryfikacji ze względów bezpieczeństwa, nawet jeśli używasz zaufanego urządzenia.
+                </div>
+                {% endif %}
+                
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        {{ form.verification_code }}
+                        {% if form.verification_code.errors %}
+                            <div class="alert alert-danger mt-2">
+                                {{ form.verification_code.errors }}
+                            </div>
+                        {% endif %}
+                        <small class="form-text text-muted">
+                            Otwórz aplikację Google Authenticator i wprowadź 6-cyfrowy kod dla "System Helpdesk"
+                        </small>
+                    </div>
+                    
+                    {% if not require_fresh %}
+                    <div class="form-check mb-3 text-left">
+                        <input type="checkbox" class="form-check-input" id="trust_device" name="trust_device" checked>
+                        <label class="form-check-label" for="trust_device">
+                            Zaufaj temu urządzeniu na 30 dni
+                        </label>
+                        <small class="form-text text-muted">
+                            Na zaufanych urządzeniach nie będziesz musiał ponownie podawać kodu przez 30 dni.
+                        </small>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="fas fa-check-circle"></i> Weryfikuj
+                        </button>
+                    </div>
+                </form>
+                
+                <hr>
+                
+                <div class="mt-3">
+                    <p class="text-muted">Nie masz dostępu do aplikacji?</p>
+                    <a href="{% url 'recovery_code' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-key"></i> Użyj kodu odzyskiwania
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

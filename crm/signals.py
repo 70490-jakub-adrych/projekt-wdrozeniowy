@@ -4,6 +4,8 @@ from .models import UserProfile
 from django.utils import timezone
 import logging
 from django.core.cache import cache
+from django.contrib.auth.signals import user_logged_in, user_logged_out
+from .models import ActivityLog
 
 logger = logging.getLogger(__name__)
 
@@ -49,4 +51,29 @@ def detect_user_approval(sender, instance, **kwargs):
     except Exception as e:
         logger.error(f"Error in approval notification signal: {str(e)}", exc_info=True)
 
-# Keep other signals like post_save if you have them
+@receiver(user_logged_in)
+def user_logged_in_handler(sender, request, user, **kwargs):
+    """Handle user login - log activity and check 2FA"""
+    # Get client IP
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    
+    # Log the login
+    ActivityLog.objects.create(
+        user=user,
+        action_type='login',
+        description=f"User {user.username} logged in",
+        ip_address=ip
+    )
+    
+    # If user is a superuser or admin, add IP to trusted session IPs
+    if hasattr(user, 'profile') and (user.is_superuser or user.profile.role == 'admin'):
+        # Add IP to trusted session IPs
+        trusted_ips = request.session.get('trusted_admin_ips', [])
+        if ip not in trusted_ips:
+            trusted_ips.append(ip)
+            request.session['trusted_admin_ips'] = trusted_ips
+            logger.debug(f"Added IP {ip} to trusted admin IPs for this session")

@@ -1,0 +1,87 @@
+{% extends 'crm/base.html' %}
+
+{% block title %}Uwierzytelnianie dwuskładnikowe włączone | System Helpdesk{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <i class="fas fa-check-circle mr-2"></i> Uwierzytelnianie dwuskładnikowe zostało włączone!
+            </div>
+            <div class="card-body text-center">
+                <div class="mb-4">
+                    <i class="fas fa-shield-alt fa-5x text-success mb-3"></i>
+                    <h4>Gratulacje! Twoje konto jest teraz zabezpieczone uwierzytelnianiem dwuskładnikowym.</h4>
+                </div>
+                
+                <div class="alert alert-warning">
+                    <h5 class="alert-heading"><i class="fas fa-exclamation-triangle"></i> WAŻNE - KOD ODZYSKIWANIA</h5>
+                    <p>Zapisz poniższy kod odzyskiwania w bezpiecznym miejscu. Będzie on potrzebny, jeśli kiedykolwiek utracisz dostęp do swojego urządzenia z aplikacją Google Authenticator.</p>
+                    <hr>
+                    <div class="recovery-code p-3 bg-light rounded border mb-3">
+                        <h3 class="text-monospace">{{ recovery_code }}</h3>
+                    </div>
+                    <button class="btn btn-sm btn-outline-dark" onclick="copyRecoveryCode()">
+                        <i class="fas fa-copy"></i> Kopiuj kod
+                    </button>
+                    <div id="copyMessage" class="text-success mt-1" style="display:none;">
+                        Skopiowano!
+                    </div>
+                </div>
+                
+                <div class="text-left mb-4">
+                    <h5>Co to oznacza dla Ciebie:</h5>
+                    <ul>
+                        <li>Od teraz przy każdym logowaniu z nowego urządzenia, będziesz musiał podać kod z aplikacji Google Authenticator</li>
+                        <li>Urządzenie będzie "zaufane" przez 30 dni</li>
+                        <li>Kod odzyskiwania jest jednorazowy - użyj go tylko w awaryjnej sytuacji</li>
+                        <li>Jeśli zgubisz telefon i kod odzyskiwania, skontaktuj się z administratorem</li>
+                    </ul>
+                </div>
+                
+                <div class="form-check text-left mb-4">
+                    <input class="form-check-input" type="checkbox" id="recoveryConfirmation" required>
+                    <label class="form-check-label" for="recoveryConfirmation">
+                        Potwierdzam, że zapisałem kod odzyskiwania w bezpiecznym miejscu.
+                    </label>
+                </div>
+                
+                <div class="mt-4">
+                    <button id="continueBtn" class="btn btn-primary btn-lg" disabled onclick="window.location='{% url 'dashboard' %}'">
+                        <i class="fas fa-arrow-right"></i> Kontynuuj do systemu
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function copyRecoveryCode() {
+    var recoveryCode = "{{ recovery_code }}";
+    
+    // Create a temporary textarea to copy from
+    var textarea = document.createElement('textarea');
+    textarea.value = recoveryCode;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+    
+    // Show the copied message
+    var copyMessage = document.getElementById("copyMessage");
+    copyMessage.style.display = "block";
+    
+    // Hide the message after 2 seconds
+    setTimeout(function() {
+        copyMessage.style.display = "none";
+    }, 2000);
+}
+
+// Enable continue button only after checking the confirmation box
+document.getElementById('recoveryConfirmation').addEventListener('change', function() {
+    document.getElementById('continueBtn').disabled = !this.checked;
+});
+</script>
+{% endblock %}

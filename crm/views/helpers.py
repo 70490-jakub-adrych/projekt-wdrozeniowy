@@ -2,7 +2,7 @@ from django.contrib.auth.decorators import login_required
 from ..models import ActivityLog
 
 def get_client_ip(request):
-    """Funkcja pomocnicza do pobrania adresu IP klienta"""
+    """Get client IP address from request"""
     x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
     if x_forwarded_for:
         ip = x_forwarded_for.split(',')[0]

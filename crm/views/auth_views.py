@@ -344,6 +344,22 @@ class CustomLoginView(LoginView):
                 logger.info(f"User {user.username} logged in but redirected to pending approval")
                 messages.info(self.request, 'Twoje konto oczekuje na zatwierdzenie przez administratora.')
                 return redirect('register_pending')
+            elif user.profile.ga_enabled:
+                # User has 2FA enabled - log them in but check verification needs
+                login(self.request, user)
+                
+                # Check if they need 2FA verification
+                x_forwarded_for = self.request.META.get('HTTP_X_FORWARDED_FOR')
+                ip = x_forwarded_for.split(',')[0] if x_forwarded_for else self.request.META.get('REMOTE_ADDR')
+                
+                if user.profile.needs_2fa_verification(request_ip=ip):
+                    logger.info(f"User {user.username} needs 2FA verification, redirecting")
+                    # Store intended destination
+                    next_param = self.request.GET.get('next', '')
+                    if next_param:
+                        self.request.session['2fa_next'] = next_param
+                    # Redirect to 2FA verification
+                    return redirect('verify_2fa')
         
         # Continue with normal login if email is verified and approved
         return super().form_valid(form)

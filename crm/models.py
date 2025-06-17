@@ -40,6 +40,17 @@ class UserProfile(models.Model):
     is_locked = models.BooleanField(default=False, verbose_name="Konto zablokowane")
     locked_at = models.DateTimeField(null=True, blank=True, verbose_name="Data blokady")
     
+    # Google Authenticator (2FA) fields
+    ga_enabled = models.BooleanField(default=False, verbose_name="2FA włączone")
+    ga_enabled_on = models.DateTimeField(null=True, blank=True, verbose_name="Data włączenia 2FA")
+    ga_last_authenticated = models.DateTimeField(null=True, blank=True, verbose_name="Ostatnie uwierzytelnienie 2FA")
+    ga_recovery_hash = models.CharField(max_length=128, blank=True, null=True, verbose_name="Hash kodu odzyskiwania")
+    ga_recovery_last_generated = models.DateTimeField(null=True, blank=True, verbose_name="Ostatnia generacja kodu odzyskiwania")
+    ga_secret_key = models.CharField(max_length=64, blank=True, null=True, verbose_name="Klucz tajny 2FA")
+    device_fingerprint = models.CharField(max_length=255, blank=True, null=True, verbose_name="Odcisk urządzenia")
+    trusted_ip = models.GenericIPAddressField(null=True, blank=True, verbose_name="Zaufany adres IP")
+    trusted_until = models.DateTimeField(null=True, blank=True, verbose_name="Zaufany do")
+    
     def lock_account(self):
         """Lock the user account"""
         self.is_locked = True
@@ -65,6 +76,83 @@ class UserProfile(models.Model):
         """Reset failed login attempts after successful login"""
         self.failed_login_attempts = 0
         self.save()
+        
+    def generate_recovery_code(self):
+        """Generate a new recovery code for 2FA"""
+        import secrets
+        import string
+        import hashlib
+        from django.utils import timezone
+        
+        # Check if code was generated in the last 24 hours
+        if (self.ga_recovery_last_generated and 
+            timezone.now() < self.ga_recovery_last_generated + timedelta(hours=24)):
+            return False, "Kod odzyskiwania można wygenerować tylko raz na 24 godziny."
+        
+        # Generate a strong recovery code (20 characters, alphanumeric)
+        alphabet = string.ascii_letters + string.digits
+        recovery_code = ''.join(secrets.choice(alphabet) for _ in range(20))
+        
+        # Hash the recovery code for storage
+        hashed_code = hashlib.sha256(recovery_code.encode()).hexdigest()
+        
+        # Store the hash and update timestamp
+        self.ga_recovery_hash = hashed_code
+        self.ga_recovery_last_generated = timezone.now()
+        self.save(update_fields=['ga_recovery_hash', 'ga_recovery_last_generated'])
+        
+        return True, recovery_code
+        
+    def verify_recovery_code(self, code):
+        """Verify a recovery code and disable 2FA if valid"""
+        import hashlib
+        
+        if not self.ga_recovery_hash:
+            return False
+        
+        # Hash the provided code
+        hashed_code = hashlib.sha256(code.encode()).hexdigest()
+        
+        # Compare with stored hash
+        if hashed_code == self.ga_recovery_hash:
+            # Disable 2FA upon successful recovery
+            self.ga_enabled = False
+            self.ga_recovery_hash = None
+            self.ga_secret_key = None
+            self.trusted_ip = None
+            self.trusted_until = None
+            self.device_fingerprint = None
+            self.save(update_fields=[
+                'ga_enabled', 'ga_recovery_hash', 'ga_secret_key',
+                'trusted_ip', 'trusted_until', 'device_fingerprint'
+            ])
+            return True
+        
+        return False
+        
+    def needs_2fa_verification(self, request_ip=None):
+        """Check if user needs to verify with 2FA based on IP, device and time"""
+        if not self.ga_enabled:
+            return False
+        
+        # If no trusted_until or it's expired
+        if not self.trusted_until or timezone.now() > self.trusted_until:
+            return True
+            
+        # If IP changed and it's not exempt
+        if request_ip and self.trusted_ip and request_ip != self.trusted_ip:
+            return True
+            
+        return False
+        
+    def set_device_trusted(self, request_ip, fingerprint):
+        """Set a device as trusted for 30 days"""
+        self.trusted_ip = request_ip
+        self.device_fingerprint = fingerprint
+        self.trusted_until = timezone.now() + timedelta(days=30)
+        self.ga_last_authenticated = timezone.now()
+        self.save(update_fields=['trusted_ip', 'device_fingerprint', 
+                                'trusted_until', 'ga_last_authenticated'])
     
     def __str__(self):
         return f"{self.user.username} - {self.get_role_display()}"
@@ -72,6 +160,10 @@ class UserProfile(models.Model):
     class Meta:
         verbose_name = "Profil użytkownika"
         verbose_name_plural = "Profile użytkowników"
+        indexes = [
+            models.Index(fields=['trusted_until'], name='idx_trusted_until'),
+            models.Index(fields=['ga_enabled'], name='idx_ga_enabled'),
+        ]
 
 
 @receiver(post_save, sender=User)

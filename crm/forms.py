@@ -423,3 +423,26 @@ class PasswordChangeVerificationForm(forms.Form):
         if not code.isdigit():
             raise ValidationError("Kod weryfikacyjny musi składać się z cyfr.")
         return code
+
+class TOTPVerificationForm(forms.Form):
+    """Form for verifying TOTP code during 2FA setup or login"""
+    verification_code = forms.CharField(
+        max_length=6,
+        min_length=6,
+        label="Kod weryfikacyjny",
+        help_text="Wprowadź 6-cyfrowy kod z aplikacji Google Authenticator",
+        widget=forms.TextInput(attrs={
+            'class': 'form-control text-center',
+            'placeholder': '123456',
+            'autocomplete': 'off',
+            'inputmode': 'numeric',
+            'pattern': '[0-9]*',
+            'style': 'font-size: 1.2em; letter-spacing: 0.2em;'
+        })
+    )
+    
+    def clean_verification_code(self):
+        code = self.cleaned_data.get('verification_code')
+        if not code.isdigit():
+            raise ValidationError("Kod weryfikacyjny musi składać się tylko z cyfr.")
+        return code

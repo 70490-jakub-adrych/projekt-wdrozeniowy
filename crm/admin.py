@@ -19,15 +19,76 @@ class UserProfileInline(admin.StackedInline):
     verbose_name_plural = 'Profile'
     filter_horizontal = ('organizations',)
     
+    # Add 2FA fields to fieldsets
+    fieldsets = (
+        ('Podstawowe informacje', {
+            'fields': ('role', 'phone', 'email_verified', 'is_approved')
+        }),
+        ('Organizacje', {
+            'fields': ('organizations',),
+        }),
+        ('Zatwierdzenie', {
+            'fields': ('approved_by', 'approved_at'),
+            'classes': ('collapse',),
+        }),
+        ('Blokada konta', {
+            'fields': ('is_locked', 'locked_at', 'failed_login_attempts'),
+            'classes': ('collapse',),
+        }),
+        ('Uwierzytelnianie dwuskładnikowe (2FA)', {
+            'fields': ('ga_enabled', 'ga_enabled_on', 'ga_last_authenticated', 'ga_recovery_last_generated'),
+            'description': 'Informacje o uwierzytelnianiu dwuskładnikowym użytkownika.'
+        }),
+    )
+    
     def get_readonly_fields(self, request, obj=None):
         """Make role field read-only since it's synchronized with groups"""
         readonly_fields = list(self.readonly_fields)
-        readonly_fields.append('role')
+        readonly_fields.extend([
+            'role', 'approved_by', 'approved_at', 'is_locked', 
+            'locked_at', 'failed_login_attempts', 'ga_enabled_on',
+            'ga_last_authenticated', 'ga_recovery_last_generated'
+        ])
         return readonly_fields
 
 
 class UserAdmin(BaseUserAdmin):
     inlines = (UserProfileInline,)
+    actions = ['regenerate_recovery_code']
+    
+    def regenerate_recovery_code(self, request, queryset):
+        """Action to regenerate recovery code for selected users"""
+        success_count = 0
+        blocked_count = 0
+        
+        for user in queryset:
+            if hasattr(user, 'profile'):
+                # Check if user has 2FA enabled
+                if not user.profile.ga_enabled:
+                    blocked_count += 1
+                    continue
+                    
+                # Try to generate new recovery code
+                success, result = user.profile.generate_recovery_code()
+                
+                if success:
+                    success_count += 1
+                    self.message_user(
+                        request,
+                        f"Kod odzyskiwania dla {user.username}: {result}. Przekaż ten kod użytkownikowi bezpiecznym kanałem!",
+                        messages.SUCCESS
+                    )
+                else:
+                    blocked_count += 1
+                    
+        if blocked_count:
+            self.message_user(
+                request,
+                f"{blocked_count} użytkowników nie otrzymało nowego kodu (2FA nie włączone lub wygenerowano kod w ciągu ostatnich 24h).",
+                messages.WARNING
+            )
+    
+    regenerate_recovery_code.short_description = "Wygeneruj nowy kod odzyskiwania 2FA"
     
     def save_model(self, request, obj, form, change):
         """Override save_model to enforce one group per user"""

@@ -6,7 +6,11 @@ class CrmConfig(AppConfig):
     name = 'crm'
     
     def ready(self):
-        """
-        Import signals when Django is ready to ensure they're registered
-        """
-        import crm.signals  # This ensures signals are connected
+        """Run when the app is ready"""
+        # Import signals
+        import crm.signals
+        
+        # Set up logging
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.debug("CRM app is ready")

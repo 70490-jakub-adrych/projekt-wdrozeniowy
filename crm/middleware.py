@@ -69,3 +69,62 @@ class EmailVerificationMiddleware:
             '/admin/',
         ]
         return any(path.startswith(exempt) for exempt in exempt_paths)
+
+class TwoFactorMiddleware:
+    """Middleware to enforce 2FA verification when needed"""
+    
+    def __init__(self, get_response):
+        self.get_response = get_response
+        
+    def __call__(self, request):
+        if request.user.is_authenticated:
+            # Check if user has 2FA enabled and needs verification
+            if hasattr(request.user, 'profile') and request.user.profile.ga_enabled:
+                profile = request.user.profile
+                
+                # Get the IP address
+                x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+                if x_forwarded_for:
+                    ip = x_forwarded_for.split(',')[0]
+                else:
+                    ip = request.META.get('REMOTE_ADDR')
+                
+                # Get browser/device fingerprint
+                user_agent = request.META.get('HTTP_USER_AGENT', '')
+                
+                # Check for trusted session marker (for superusers/admins)
+                trusted_session = False
+                if request.user.is_superuser or profile.role == 'admin':
+                    trusted_ips = request.session.get('trusted_admin_ips', [])
+                    if ip in trusted_ips:
+                        trusted_session = True
+                        logger.debug(f"Admin/superuser {request.user.username} has already verified from IP {ip} this session")
+                
+                # Check if verification is needed
+                if not trusted_session and profile.needs_2fa_verification(request_ip=ip):
+                    # Check if current path is already the 2FA verification path or other exempt path
+                    if not self._is_exempt_path(request.path):
+                        # Store the original destination if it's not already in session
+                        if '2fa_next' not in request.session:
+                            request.session['2fa_next'] = request.path
+                            
+                        logger.info(f"Redirecting user {request.user.username} to 2FA verification")
+                        return redirect('verify_2fa')
+        
+        return self.get_response(request)
+    
+    def _is_exempt_path(self, path):
+        """Check if path is exempt from 2FA verification"""
+        exempt_paths = [
+            reverse('verify_2fa'),
+            reverse('recovery_code'),
+            reverse('logout'),
+            '/static/',
+            '/media/',
+            '/admin/',
+            '/verify-email/',  # Don't interfere with email verification
+            '/register/',       # Don't interfere with registration flow
+            '/password_reset/', # Don't interfere with password resets
+            '/reset/',          # Don't interfere with password reset confirmations
+        ]
+        return any(path.startswith(exempt) for exempt in exempt_paths)
