@@ -1,7 +1,7 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout, authenticate
 from django.contrib import messages
-from django.contrib.auth.models import Group
+from django.contrib.auth.models import Group, User
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
 from django.contrib.auth.views import LoginView, PasswordResetView, PasswordResetConfirmView
@@ -17,7 +17,7 @@ from ..services.email_service import EmailNotificationService
 import importlib
 
 from ..forms import UserRegisterForm, UserProfileForm, CustomAuthenticationForm, GroupSelectionForm, PasswordChangeVerificationForm, EmailVerificationForm
-from ..models import UserProfile, User, EmailVerification, EmailNotificationSettings, Organization, TwoFactorAuth
+from ..models import UserProfile, EmailVerification, EmailNotificationSettings, Organization, TwoFactorAuth
 from ..utils.two_factor import is_trusted_device
 from .helpers import log_activity
 from .error_views import forbidden_access
