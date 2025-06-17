@@ -13,6 +13,7 @@ from django.db.models import Q
 from django.core.mail import EmailMultiAlternatives
 from django.template import loader
 from django.urls import reverse
+from datetime import timedelta  # Add this import
 from ..services.email_service import EmailNotificationService
 import importlib
 
