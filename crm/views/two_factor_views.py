@@ -32,6 +32,9 @@ def setup_2fa(request):
         messages.error(request, 'Twoje konto musi być zatwierdzone przed włączeniem uwierzytelniania dwuskładnikowego.')
         return redirect('dashboard')
     
+    # Check if setup is required (vs optional)
+    setup_required = not request.session.get('2fa_setup_exempt_until', False)
+    
     # Check if we're in the verification step
     if 'ga_secret_key' in request.session and request.method == 'POST':
         form = TOTPVerificationForm(request.POST)
@@ -103,7 +106,8 @@ def setup_2fa(request):
         'qr_code': qr_code_img,
         'secret_key': secret_key,
         'form': TOTPVerificationForm(),
-        'verification_step': False
+        'verification_step': False,
+        'setup_required': setup_required  # Add this to the context
     }
     
     return render(request, 'crm/2fa/setup.html', context)

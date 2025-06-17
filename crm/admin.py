@@ -54,7 +54,7 @@ class UserProfileInline(admin.StackedInline):
 
 class UserAdmin(BaseUserAdmin):
     inlines = (UserProfileInline,)
-    actions = ['regenerate_recovery_code']
+    actions = ['regenerate_recovery_code', 'disable_2fa_action']
     
     def regenerate_recovery_code(self, request, queryset):
         """Action to regenerate recovery code for selected users"""
@@ -89,6 +89,58 @@ class UserAdmin(BaseUserAdmin):
             )
     
     regenerate_recovery_code.short_description = "Wygeneruj nowy kod odzyskiwania 2FA"
+    
+    def disable_2fa_action(self, request, queryset):
+        """Action to disable 2FA for selected users"""
+        # Count how many users had 2FA enabled before disabling
+        enabled_count = 0
+        already_disabled_count = 0
+        
+        # Confirmation should be handled via JavaScript confirmation in the admin UI
+        for user in queryset:
+            if hasattr(user, 'profile'):
+                if user.profile.ga_enabled:
+                    # Disable 2FA
+                    user.profile.ga_enabled = False
+                    user.profile.ga_secret_key = None
+                    user.profile.ga_recovery_hash = None
+                    user.profile.trusted_ip = None
+                    user.profile.trusted_until = None
+                    user.profile.device_fingerprint = None
+                    user.profile.save(update_fields=[
+                        'ga_enabled', 'ga_secret_key', 'ga_recovery_hash',
+                        'trusted_ip', 'trusted_until', 'device_fingerprint'
+                    ])
+                    
+                    enabled_count += 1
+                    
+                    # Log this action
+                    ActivityLog.objects.create(
+                        user=user,
+                        action_type='preferences_updated',
+                        description=f"Uwierzytelnianie dwuskładnikowe zostało wyłączone przez administratora: {request.user.username}",
+                        ip_address=get_client_ip(request)
+                    )
+                else:
+                    already_disabled_count += 1
+        
+        # Show success message
+        if enabled_count > 0:
+            self.message_user(
+                request,
+                f"Wyłączono uwierzytelnianie dwuskładnikowe dla {enabled_count} użytkowników.",
+                messages.SUCCESS
+            )
+        
+        # Show info message if some users already had 2FA disabled
+        if already_disabled_count > 0:
+            self.message_user(
+                request,
+                f"{already_disabled_count} użytkowników już miało wyłączone uwierzytelnianie dwuskładnikowe.",
+                messages.INFO
+            )
+    
+    disable_2fa_action.short_description = "Wyłącz uwierzytelnianie dwuskładnikowe (2FA)"
     
     def save_model(self, request, obj, form, change):
         """Override save_model to enforce one group per user"""

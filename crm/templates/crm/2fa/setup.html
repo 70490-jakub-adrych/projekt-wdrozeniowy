@@ -19,6 +19,14 @@
                     {% endif %}
                 </h5>
                 
+                {% if setup_required and not verification_step %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle"></i> 
+                    <strong>Wymagane!</strong>
+                    <p class="mb-0">Aktywacja uwierzytelniania dwuskładnikowego jest wymagana, aby kontynuować korzystanie z systemu. Jest to środek bezpieczeństwa chroniący Twoje konto i dane.</p>
+                </div>
+                {% endif %}
+                
                 {% if not verification_step %}
                 <div class="alert alert-info">
                     <i class="fas fa-info-circle"></i> 
@@ -104,9 +112,15 @@
                                 <button type="submit" class="btn btn-primary">
                                     <i class="fas fa-check-circle"></i> Weryfikuj i aktywuj 2FA
                                 </button>
+                                {% if not setup_required %}
                                 <a href="{% url 'profile' %}" class="btn btn-secondary ml-2">
                                     <i class="fas fa-times"></i> Anuluj
                                 </a>
+                                {% else %}
+                                <a href="{% url 'logout' %}" class="btn btn-outline-danger ml-2">
+                                    <i class="fas fa-sign-out-alt"></i> Wyloguj się
+                                </a>
+                                {% endif %}
                             </div>
                         </form>
                     </div>

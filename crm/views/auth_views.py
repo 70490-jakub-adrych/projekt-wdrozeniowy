@@ -360,8 +360,23 @@ class CustomLoginView(LoginView):
                         self.request.session['2fa_next'] = next_param
                     # Redirect to 2FA verification
                     return redirect('verify_2fa')
+            else:
+                # User is verified and approved but doesn't have 2FA set up
+                # Set a grace period (10 minutes) for first login after approval
+                # This allows the user to see the interface briefly before being forced to set up 2FA
+                login(self.request, user)
+                
+                exemption_end = timezone.now() + timedelta(minutes=10)
+                self.request.session['2fa_setup_exempt_until'] = exemption_end.isoformat()
+                logger.info(f"User {user.username} logged in with 2FA setup grace period until {exemption_end}")
+                
+                # Set a message informing the user about 2FA setup requirement
+                messages.warning(
+                    self.request,
+                    'Dla bezpieczeństwa Twojego konta, skonfiguruj uwierzytelnianie dwuskładnikowe w ciągu 10 minut.'
+                )
         
-        # Continue with normal login if email is verified and approved
+        # Continue with normal login
         return super().form_valid(form)
 
 def custom_login_success(request):

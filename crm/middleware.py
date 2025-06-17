@@ -3,6 +3,9 @@ from django.urls import reverse
 from django.contrib import messages
 import re
 import logging
+from django.conf import settings
+from datetime import datetime
+from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
@@ -78,38 +81,58 @@ class TwoFactorMiddleware:
         
     def __call__(self, request):
         if request.user.is_authenticated:
-            # Check if user has 2FA enabled and needs verification
-            if hasattr(request.user, 'profile') and request.user.profile.ga_enabled:
-                profile = request.user.profile
+            # Check if user is exempt from 2FA enforcement (like superuser during initial setup)
+            is_exempt = request.user.is_superuser and getattr(settings, 'EXEMPT_SUPERUSER_FROM_2FA', False)
+            
+            # Check if user has profile and is already approved
+            if hasattr(request.user, 'profile') and request.user.profile.is_approved and not is_exempt:
+                # First case: User has 2FA enabled and needs verification
+                if request.user.profile.ga_enabled:
+                    profile = request.user.profile
+                    
+                    # Get the IP address
+                    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+                    if x_forwarded_for:
+                        ip = x_forwarded_for.split(',')[0]
+                    else:
+                        ip = request.META.get('REMOTE_ADDR')
+                    
+                    # Get browser/device fingerprint
+                    user_agent = request.META.get('HTTP_USER_AGENT', '')
+                    
+                    # Check for trusted session marker (for superusers/admins)
+                    trusted_session = False
+                    if request.user.is_superuser or profile.role == 'admin':
+                        trusted_ips = request.session.get('trusted_admin_ips', [])
+                        if ip in trusted_ips:
+                            trusted_session = True
+                            logger.debug(f"Admin/superuser {request.user.username} has already verified from IP {ip} this session")
+                    
+                    # Check if verification is needed
+                    if not trusted_session and profile.needs_2fa_verification(request_ip=ip):
+                        # Check if current path is already the 2FA verification path or other exempt path
+                        if not self._is_exempt_path(request.path):
+                            # Store the original destination if it's not already in session
+                            if '2fa_next' not in request.session:
+                                request.session['2fa_next'] = request.path
+                                
+                            logger.info(f"Redirecting user {request.user.username} to 2FA verification")
+                            return redirect('verify_2fa')
                 
-                # Get the IP address
-                x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-                if x_forwarded_for:
-                    ip = x_forwarded_for.split(',')[0]
-                else:
-                    ip = request.META.get('REMOTE_ADDR')
-                
-                # Get browser/device fingerprint
-                user_agent = request.META.get('HTTP_USER_AGENT', '')
-                
-                # Check for trusted session marker (for superusers/admins)
-                trusted_session = False
-                if request.user.is_superuser or profile.role == 'admin':
-                    trusted_ips = request.session.get('trusted_admin_ips', [])
-                    if ip in trusted_ips:
-                        trusted_session = True
-                        logger.debug(f"Admin/superuser {request.user.username} has already verified from IP {ip} this session")
-                
-                # Check if verification is needed
-                if not trusted_session and profile.needs_2fa_verification(request_ip=ip):
-                    # Check if current path is already the 2FA verification path or other exempt path
-                    if not self._is_exempt_path(request.path):
-                        # Store the original destination if it's not already in session
-                        if '2fa_next' not in request.session:
+                # Second case: Approved user doesn't have 2FA enabled yet - redirect to setup
+                elif not request.user.profile.ga_enabled:
+                    # Check if current path is already an exempt path (like 2FA setup itself)
+                    if not self._is_exempt_path(request.path) and request.path != reverse('setup_2fa'):
+                        # If not in a grace period (first login)
+                        setup_exempt_until = request.session.get('2fa_setup_exempt_until')
+                        if not setup_exempt_until or timezone.now() > datetime.fromisoformat(setup_exempt_until):
+                            messages.warning(request, 'Dla bezpieczeństwa Twojego konta, musisz skonfigurować uwierzytelnianie dwuskładnikowe.')
+                            
+                            # Store the original destination
                             request.session['2fa_next'] = request.path
                             
-                        logger.info(f"Redirecting user {request.user.username} to 2FA verification")
-                        return redirect('verify_2fa')
+                            logger.info(f"Redirecting user {request.user.username} to 2FA setup (required)")
+                            return redirect('setup_2fa')
         
         return self.get_response(request)
     
@@ -117,6 +140,8 @@ class TwoFactorMiddleware:
         """Check if path is exempt from 2FA verification"""
         exempt_paths = [
             reverse('verify_2fa'),
+            reverse('setup_2fa'),
+            reverse('setup_2fa_success'),
             reverse('recovery_code'),
             reverse('logout'),
             '/static/',
