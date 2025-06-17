@@ -13,6 +13,10 @@ from datetime import timedelta  # Make sure this import is present and not comme
 from .validators import phone_regex
 
 
+def get_verification_expiry():
+    return timezone.now() + timezone.timedelta(hours=24)
+
+
 class UserProfile(models.Model):
     """Model rozszerzający standardowego użytkownika o dodatkowe pola"""
     USER_ROLES = (
@@ -709,6 +713,7 @@ class EmailVerification(models.Model):
     is_verified = models.BooleanField(default=False, verbose_name="Zweryfikowany")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Data utworzenia")
     verified_at = models.DateTimeField(null=True, blank=True, verbose_name="Data weryfikacji")
+    expires_at = models.DateTimeField(default=get_verification_expiry)
     
     def __str__(self):
         return f"Weryfikacja dla {self.user.username}"
