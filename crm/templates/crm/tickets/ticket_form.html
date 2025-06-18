@@ -187,6 +187,7 @@
         </div>
     </div>
 </div>
+{% endblock %}
 
 {% block extra_js %}
 <script>
@@ -196,14 +197,8 @@
         if (myModalEl) {
             new bootstrap.Modal(myModalEl);
         }
-    });
-</script>
-{% endblock %}
-{% endblock %}
-    }
-    
-    // Category suggestion functionality
-    document.addEventListener('DOMContentLoaded', function() {
+        
+        // Category suggestion functionality
         const form = document.getElementById('ticketForm');
         const titleInput = document.querySelector('#id_title');
         const descInput = document.querySelector('#id_description');
@@ -371,6 +366,11 @@
                         this.classList.remove('is-invalid');
                     }
                 }
+            });
+        }
+    });
+</script>
+{% endblock %}
             });
         }
     });
