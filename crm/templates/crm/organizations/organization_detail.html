@@ -7,16 +7,16 @@
     <h2>{{ organization.name }}</h2>
     <div>
         {% if user.profile.role == 'admin' %}
-        <a href="{% url 'organization_update' organization.pk %}" class="btn btn-primary">
+        <a href="{% url 'organization_update' organization.pk %}" class="btn btn-primary btn-ripple">
             <i class="fas fa-edit"></i> Edytuj
         </a>
         {% endif %}
         {% if user.profile.role == 'admin' or user.profile.role == 'agent' %}
-        <a href="{% url 'organization_list' %}" class="btn btn-outline-secondary">
+        <a href="{% url 'organization_list' %}" class="btn btn-outline-secondary btn-ripple">
             <i class="fas fa-arrow-left"></i> Powrót do listy organizacji
         </a>
         {% else %}
-        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">
+        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary btn-ripple">
             <i class="fas fa-arrow-left"></i> Powrót do panelu
         </a>
         {% endif %}
@@ -108,10 +108,10 @@
                 <hr>
                 <p class="text-center">Całkowita liczba zgłoszeń: <strong>{{ tickets|length }}</strong></p>
                 <div class="text-center">
-                    <a href="{% url 'ticket_create' %}" class="btn btn-primary btn-sm">
+                    <a href="{% url 'ticket_create' %}" class="btn btn-primary btn-sm btn-ripple">
                         <i class="fas fa-plus"></i> Nowe zgłoszenie
                     </a>
-                    <a href="{% url 'ticket_list' %}?organization={{ organization.id }}&exclude_closed=true" class="btn btn-outline-secondary btn-sm">
+                    <a href="{% url 'ticket_list' %}?organization={{ organization.id }}&exclude_closed=true" class="btn btn-outline-secondary btn-sm btn-ripple">
                         <i class="fas fa-list"></i> Lista zgłoszeń
                     </a>
                 </div>

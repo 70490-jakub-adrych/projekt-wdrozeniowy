@@ -136,7 +136,7 @@
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3">
     <h2>Zgłoszenia</h2>
-    <a href="{% url 'ticket_create' %}" class="btn btn-primary">
+    <a href="{% url 'ticket_create' %}" class="btn btn-primary btn-ripple">
         <i class="fas fa-plus"></i> Nowe zgłoszenie
     </a>
 </div>
@@ -150,7 +150,7 @@
             <span class="badge badge-info ml-2">Aktywne</span>
             {% endif %}
         </div>
-        <button class="btn btn-sm btn-outline-secondary" type="button" data-toggle="collapse" data-target="#filterContainer">
+        <button class="btn btn-sm btn-outline-secondary btn-ripple" type="button" data-bs-toggle="collapse" data-bs-target="#filterContainer">
             <i class="fas fa-caret-down filter-toggle-icon"></i> <span class="filter-toggle-text">Pokaż filtry</span>
         </button>
     </div>
@@ -206,7 +206,7 @@
                 {% endif %}
             </div>
             <div class="text-right">
-                <a href="{% url 'ticket_list' %}" class="btn btn-sm btn-outline-secondary">
+                <a href="{% url 'ticket_list' %}" class="btn btn-sm btn-outline-secondary btn-ripple">
                     <i class="fas fa-times"></i> Wyczyść filtry
                 </a>
             </div>
@@ -357,8 +357,8 @@
                     this.appendChild(input);
                 });
                 
-                // Toggle button text
-                document.querySelector('[data-toggle="collapse"]').addEventListener('click', function() {
+                // Toggle button text - updated for Bootstrap 5
+                document.querySelector('[data-bs-toggle="collapse"]').addEventListener('click', function() {
                     var isCollapsed = document.getElementById('filterContainer').classList.contains('show');
                     var icon = document.querySelector('.filter-toggle-icon');
                     var text = document.querySelector('.filter-toggle-text');
@@ -372,6 +372,24 @@
                         icon.classList.add('fa-caret-up');
                         text.textContent = 'Ukryj filtry';
                     }
+                });
+                
+                // Add Bootstrap 5 collapse event listeners
+                const filterContainer = document.getElementById('filterContainer');
+                filterContainer.addEventListener('shown.bs.collapse', function() {
+                    const icon = document.querySelector('.filter-toggle-icon');
+                    const text = document.querySelector('.filter-toggle-text');
+                    icon.classList.remove('fa-caret-down');
+                    icon.classList.add('fa-caret-up');
+                    text.textContent = 'Ukryj filtry';
+                });
+                
+                filterContainer.addEventListener('hidden.bs.collapse', function() {
+                    const icon = document.querySelector('.filter-toggle-icon');
+                    const text = document.querySelector('.filter-toggle-text');
+                    icon.classList.remove('fa-caret-up');
+                    icon.classList.add('fa-caret-down');
+                    text.textContent = 'Pokaż filtry';
                 });
             </script>
         </div>

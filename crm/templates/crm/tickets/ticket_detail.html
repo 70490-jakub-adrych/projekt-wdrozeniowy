@@ -8,7 +8,7 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Zgłoszenie #{{ ticket.id }}: {{ ticket.title }}</h2>
     <div class="text-right">
-        <a href="{% url 'ticket_list' %}" class="btn btn-outline-secondary">
+        <a href="{% url 'ticket_list' %}" class="btn btn-outline-secondary btn-ripple">
             <i class="fas fa-arrow-left"></i> Powrót
         </a>
     </div>
@@ -53,11 +53,11 @@
             {% with group_settings=user_groups.first.settings %}
                 <!-- Edit button - using simpler template syntax -->
                 {% if group_settings.can_see_edit_button %}
-                <a href="{% url 'ticket_update' ticket.pk %}" class="btn btn-primary">
+                <a href="{% url 'ticket_update' ticket.pk %}" class="btn btn-primary btn-ripple">
                     <i class="fas fa-edit"></i> Edytuj
                 </a>
                 {% elif group_settings.can_edit_own_tickets and ticket.created_by == user %}
-                <a href="{% url 'ticket_update' ticket.pk %}" class="btn btn-primary">
+                <a href="{% url 'ticket_update' ticket.pk %}" class="btn btn-primary btn-ripple">
                     <i class="fas fa-edit"></i> Edytuj
                 </a>
                 {% endif %}

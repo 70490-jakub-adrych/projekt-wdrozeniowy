@@ -7,11 +7,11 @@
     <h2>Logi aktywności</h2>
     <div>
         {% if user.profile.role == 'admin' %}
-        <a href="{% url 'activity_logs_wipe' %}" class="btn btn-danger mr-2">
+        <a href="{% url 'activity_logs_wipe' %}" class="btn btn-danger btn-ripple mr-2">
             <i class="fas fa-trash-alt"></i> Wyczyść wszystkie logi
         </a>
         {% endif %}
-        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">
+        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary btn-ripple">
             <i class="fas fa-arrow-left"></i> Powrót
         </a>
     </div>
@@ -48,8 +48,8 @@
                 <label for="user" class="mr-2">Użytkownik:</label>
                 <input type="text" name="user" id="user" class="form-control form-control-sm" value="{{ user_filter|default:'' }}" placeholder="Nazwa użytkownika">
             </div>
-            <button type="submit" class="btn btn-sm btn-primary">Zastosuj filtry</button>
-            <a href="{% url 'activity_logs' %}" class="btn btn-sm btn-outline-secondary ml-2">Resetuj</a>
+            <button type="submit" class="btn btn-sm btn-primary btn-ripple">Zastosuj filtry</button>
+            <a href="{% url 'activity_logs' %}" class="btn btn-sm btn-outline-secondary btn-ripple ml-2">Resetuj</a>
         </form>
     </div>
 </div>
@@ -138,7 +138,7 @@
                         </td>
                         <td>{{ log.ip_address|default:"-" }}</td>
                         <td>
-                            <a href="{% url 'activity_log_detail' log.id %}" class="btn btn-sm btn-info">
+                            <a href="{% url 'activity_log_detail' log.id %}" class="btn btn-sm btn-info btn-ripple">
                                 <i class="fas fa-search"></i> Szczegóły
                             </a>
                         </td>
