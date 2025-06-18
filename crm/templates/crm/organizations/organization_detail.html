@@ -149,15 +149,15 @@
                                 <td>{{ member.phone|default:"Brak" }}</td>
                                 <td>
                                     {% if member.role == 'admin' %}
-                                    <span class="badge badge-danger">Administrator</span>
+                                    <span class="badge bg-danger">Administrator</span>
                                     {% elif member.role == 'superagent' %}
-                                    <span class="badge badge-warning">Superagent</span>
+                                    <span class="badge bg-warning text-dark">Superagent</span>
                                     {% elif member.role == 'agent' %}
-                                    <span class="badge badge-info">Agent</span>
+                                    <span class="badge bg-info">Agent</span>
                                     {% elif member.role == 'viewer' %}
-                                    <span class="badge badge-dark">Viewer</span>
+                                    <span class="badge bg-dark">Viewer</span>
                                     {% else %}
-                                    <span class="badge badge-secondary">Klient</span>
+                                    <span class="badge bg-secondary">Klient</span>
                                     {% endif %}
                                 </td>
                             </tr>
@@ -201,21 +201,21 @@
                                 <td><a href="{% url 'ticket_detail' ticket.pk %}">{{ ticket.title }}</a></td>
                                 <td>
                                     <span class="badge 
-                                        {% if ticket.status == 'new' %}badge-primary
-                                        {% elif ticket.status == 'in_progress' %}badge-info
-                                        {% elif ticket.status == 'unresolved' %}badge-warning text-dark
-                                        {% elif ticket.status == 'resolved' %}badge-success
-                                        {% elif ticket.status == 'closed' %}badge-secondary
+                                        {% if ticket.status == 'new' %}bg-primary
+                                        {% elif ticket.status == 'in_progress' %}bg-info
+                                        {% elif ticket.status == 'unresolved' %}bg-warning text-dark
+                                        {% elif ticket.status == 'resolved' %}bg-success
+                                        {% elif ticket.status == 'closed' %}bg-secondary
                                         {% endif %}">
                                         {{ ticket.get_status_display }}
                                     </span>
                                 </td>
                                 <td>
                                     <span class="badge 
-                                        {% if ticket.priority == 'low' %}badge-secondary
-                                        {% elif ticket.priority == 'medium' %}badge-info
-                                        {% elif ticket.priority == 'high' %}badge-warning
-                                        {% elif ticket.priority == 'critical' %}badge-danger
+                                        {% if ticket.priority == 'low' %}bg-secondary
+                                        {% elif ticket.priority == 'medium' %}bg-info
+                                        {% elif ticket.priority == 'high' %}bg-warning
+                                        {% elif ticket.priority == 'critical' %}bg-danger
                                         {% endif %}">
                                         {{ ticket.get_priority_display }}
                                     </span>

@@ -18,19 +18,19 @@
                 <td>{{ ticket.id }}</td>
                 <td>{{ ticket.title }}</td>
                 <td>
-                    <span class="badge {% if ticket.status == 'new' %}badge-primary
-                                     {% elif ticket.status == 'in_progress' %}badge-info
-                                     {% elif ticket.status == 'unresolved' %}badge-warning text-dark
-                                     {% elif ticket.status == 'resolved' %}badge-success
-                                     {% else %}badge-secondary{% endif %}">
+                    <span class="badge {% if ticket.status == 'new' %}bg-primary
+                                     {% elif ticket.status == 'in_progress' %}bg-info
+                                     {% elif ticket.status == 'unresolved' %}bg-warning text-dark
+                                     {% elif ticket.status == 'resolved' %}bg-success
+                                     {% else %}bg-secondary{% endif %}">
                         {{ ticket.get_status_display }}
                     </span>
                 </td>
                 <td>
-                    <span class="badge {% if ticket.priority == 'low' %}badge-info
-                                     {% elif ticket.priority == 'medium' %}badge-warning
-                                     {% elif ticket.priority == 'high' %}badge-danger
-                                     {% else %}badge-dark{% endif %}">
+                    <span class="badge {% if ticket.priority == 'low' %}bg-info
+                                     {% elif ticket.priority == 'medium' %}bg-warning
+                                     {% elif ticket.priority == 'high' %}bg-danger
+                                     {% else %}bg-dark{% endif %}">
                         {{ ticket.get_priority_display }}
                     </span>
                 </td>
