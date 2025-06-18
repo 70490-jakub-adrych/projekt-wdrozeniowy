@@ -175,6 +175,48 @@
             transform: translateY(0);
         }
     }
+
+    /* Cool Icon Animations */
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    @keyframes pulse {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+        100% { transform: scale(1); }
+    }
+
+    @keyframes shake {
+        0% { transform: translate(0); }
+        25% { transform: translate(-2px, 2px); }
+        50% { transform: translate(2px, -2px); }
+        75% { transform: translate(-2px, -2px); }
+        100% { transform: translate(2px, 2px); }
+    }
+
+    @keyframes float {
+        0% { transform: translateY(0); }
+        50% { transform: translateY(-10px); }
+        100% { transform: translateY(0); }
+    }
+
+    .animate-spin {
+        animation: spin 2s linear infinite;
+    }
+
+    .animate-pulse {
+        animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    .animate-shake {
+        animation: shake 0.5s ease-in-out infinite;
+    }
+
+    .animate-float {
+        animation: float 3s ease-in-out infinite;
+    }
 </style>
 {% endblock %}
 
@@ -254,7 +296,7 @@
                         <div class="stat-card card bg-primary text-white">
                             <a href="{% url 'ticket_list' %}?status=new" class="stat-card-link text-white">
                                 <div class="card-body text-center py-4">
-                                    <div class="stat-card-icon"><i class="fas fa-file-alt"></i></div>
+                                    <div class="stat-card-icon"><i class="fas fa-file-alt animate-float"></i></div>
                                     <div class="stat-card-count animate-counter" data-count="{{ new_tickets }}">{{ new_tickets }}</div>
                                     <div class="stat-card-label">Nowe</div>
                                 </div>
@@ -265,7 +307,7 @@
                         <div class="stat-card card bg-info text-white">
                             <a href="{% url 'ticket_list' %}?status=in_progress" class="stat-card-link text-white">
                                 <div class="card-body text-center py-4">
-                                    <div class="stat-card-icon"><i class="fas fa-spinner"></i></div>
+                                    <div class="stat-card-icon"><i class="fas fa-spinner fa-spin"></i></div>
                                     <div class="stat-card-count animate-counter" data-count="{{ in_progress_tickets }}">{{ in_progress_tickets }}</div>
                                     <div class="stat-card-label">W trakcie</div>
                                 </div>
@@ -276,7 +318,7 @@
                         <div class="stat-card card bg-warning">
                             <a href="{% url 'ticket_list' %}?status=unresolved" class="stat-card-link">
                                 <div class="card-body text-center py-4">
-                                    <div class="stat-card-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                                    <div class="stat-card-icon"><i class="fas fa-exclamation-triangle animate-shake"></i></div>
                                     <div class="stat-card-count animate-counter" data-count="{{ unresolved_tickets }}">{{ unresolved_tickets }}</div>
                                     <div class="stat-card-label">Nierozwiązane</div>
                                 </div>
@@ -287,7 +329,7 @@
                         <div class="stat-card card bg-success text-white">
                             <a href="{% url 'ticket_list' %}?status=resolved" class="stat-card-link text-white">
                                 <div class="card-body text-center py-4">
-                                    <div class="stat-card-icon"><i class="fas fa-check-circle"></i></div>
+                                    <div class="stat-card-icon"><i class="fas fa-check-circle animate-pulse"></i></div>
                                     <div class="stat-card-count animate-counter" data-count="{{ resolved_tickets }}">{{ resolved_tickets }}</div>
                                     <div class="stat-card-label">Rozwiązane</div>
                                 </div>
@@ -298,7 +340,7 @@
                         <div class="stat-card card bg-secondary text-white">
                             <a href="{% url 'ticket_list' %}?status=closed" class="stat-card-link text-white">
                                 <div class="card-body text-center py-4">
-                                    <div class="stat-card-icon"><i class="fas fa-lock"></i></div>
+                                    <div class="stat-card-icon"><i class="fas fa-lock animate-bounce"></i></div>
                                     <div class="stat-card-count animate-counter" data-count="{{ closed_tickets }}">{{ closed_tickets }}</div>
                                     <div class="stat-card-label">Zamknięte</div>
                                 </div>

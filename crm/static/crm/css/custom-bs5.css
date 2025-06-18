@@ -389,6 +389,25 @@ h1, h2, h3, h4, h5, h6 {
     background: #aaa;
 }
 
+/* Icon animations for dashboard */
+.animate-float {
+    animation: floating 3s ease-in-out infinite;
+}
+
+.animate-bounce {
+    animation: bouncing 2s ease-in-out infinite;
+}
+
+.animate-shake {
+    animation: shaking 2s ease-in-out infinite;
+}
+
+.animate-pulse {
+    animation: pulsing 2s ease-in-out infinite;
+}
+
+/* Font Awesome already has fa-spin class for spinning animations */
+
 /* Animation keyframes */
 @keyframes fadeInDown {
     from {
@@ -404,4 +423,64 @@ h1, h2, h3, h4, h5, h6 {
 @keyframes fadeIn {
     from { opacity: 0; }
     to { opacity: 1; }
+}
+
+@keyframes floating {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
+
+@keyframes bouncing {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(5px);
+    }
+}
+
+@keyframes shaking {
+    0%, 100% {
+        transform: translateX(0);
+    }
+    10%, 30%, 50%, 70%, 90% {
+        transform: translateX(-2px);
+    }
+    20%, 40%, 60%, 80% {
+        transform: translateX(2px);
+    }
+}
+
+@keyframes pulsing {
+    0%, 100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+    50% {
+        transform: scale(1.1);
+        opacity: 0.8;
+    }
+}
+
+/* Enhanced stat card icons */
+.stat-card-icon {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    height: 2.5rem; /* Fixed height to prevent layout shifts during animation */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Make animations pause on hover for accessibility */
+.stat-card:hover .animate-float,
+.stat-card:hover .animate-bounce,
+.stat-card:hover .animate-shake,
+.stat-card:hover .animate-pulse,
+.stat-card:hover .fa-spin {
+    animation-play-state: paused;
 }
