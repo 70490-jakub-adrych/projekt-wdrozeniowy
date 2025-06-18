@@ -65,17 +65,25 @@ def ticket_update(request, pk):
                 if original_status != updated_ticket.status:
                     changes.append(f"status: {original_status} → {updated_ticket.status}")
                 if original_priority != updated_ticket.priority:
-                    changes.append(f"priorytet: {original_priority} → {updated_ticket.priority}")
+                    original_priority_display = dict(Ticket.PRIORITY_CHOICES).get(original_priority, original_priority)
+                    updated_priority_display = dict(Ticket.PRIORITY_CHOICES).get(updated_ticket.priority, updated_ticket.priority)
+                    changes.append(f"priorytet: {original_priority_display} → {updated_priority_display}")
+                
                 if original_category != updated_ticket.category:
-                    changes.append(f"kategoria: {original_category} → {updated_ticket.category}")
+                    original_category_display = dict(Ticket.CATEGORY_CHOICES).get(original_category, original_category)
+                    updated_category_display = dict(Ticket.CATEGORY_CHOICES).get(updated_ticket.category, updated_ticket.category)
+                    changes.append(f"kategoria: {original_category_display} → {updated_category_display}")
+                
                 if original_assigned_to != updated_ticket.assigned_to:
                     old_assignee = original_assigned_to.username if original_assigned_to else 'nieprzypisane'
                     new_assignee = updated_ticket.assigned_to.username if updated_ticket.assigned_to else 'nieprzypisane'
                     changes.append(f"przypisanie: {old_assignee} → {new_assignee}")
+                
                 if original_title != updated_ticket.title:
                     changes.append(f"tytuł: '{original_title}' → '{updated_ticket.title}'")
+                
                 if original_description != updated_ticket.description:
-                    changes.append("zawartość zgłoszenia została zmodyfikowana")
+                    changes.append("zmieniona treść zgłoszenia")
                 
                 changes_text = ", ".join(changes)
                 log_activity(

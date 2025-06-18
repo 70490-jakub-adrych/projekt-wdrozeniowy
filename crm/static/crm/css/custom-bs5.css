@@ -1,0 +1,368 @@
+/**
+ * Custom Bootstrap 5 enhancements for BetulaIT Helpdesk
+ * Adds modern UI components, shadows, transitions and enhanced visuals
+ */
+
+:root {
+    /* Core color palette */
+    --primary-color: #2c3e50;
+    --secondary-color: #34495e;
+    --accent-color: #3498db;
+    --light-color: #ecf0f1;
+    --dark-color: #1a1a24;
+    --success-color: #2ecc71;
+    --warning-color: #f39c12;
+    --danger-color: #e74c3c;
+    --info-color: #3498db;
+    
+    /* Semantic colors map to Bootstrap */
+    --bs-primary: var(--accent-color);
+    --bs-secondary: var(--secondary-color);
+    --bs-success: var(--success-color);
+    --bs-warning: var(--warning-color);
+    --bs-danger: var(--danger-color);
+    --bs-info: var(--info-color);
+    
+    /* UI properties */
+    --transition-speed: 0.3s;
+    --shadow-sm: 0 .125rem .25rem rgba(0,0,0,.075);
+    --shadow-md: 0 .5rem 1rem rgba(0,0,0,.15);
+    --shadow-lg: 0 1rem 3rem rgba(0,0,0,.175);
+    
+    /* Border radius */
+    --border-radius-sm: 0.25rem;
+    --border-radius-md: 0.375rem;
+    --border-radius-lg: 0.5rem;
+    --border-radius-xl: 0.75rem;
+    --border-radius-pill: 50rem;
+}
+
+/* General layout & typography */
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: #f8f9fa;
+    color: #333;
+    line-height: 1.6;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 600;
+}
+
+/* Card enhancements */
+.card {
+    transition: all var(--transition-speed);
+    border: none;
+    box-shadow: var(--shadow-sm);
+    border-radius: var(--border-radius-lg);
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+}
+
+.card:hover {
+    box-shadow: var(--shadow-md);
+}
+
+.card-header {
+    border-bottom: none;
+    font-weight: 500;
+    padding: 1rem 1.25rem;
+}
+
+.card-header-tabs .nav-link,
+.card-header-pills .nav-link {
+    transition: all var(--transition-speed);
+}
+
+.card-img-overlay {
+    background-color: rgba(0,0,0,0.6);
+    transition: background-color var(--transition-speed);
+}
+
+.card-img-overlay:hover {
+    background-color: rgba(0,0,0,0.75);
+}
+
+/* Button enhancements */
+.btn {
+    transition: all var(--transition-speed) ease;
+    border-radius: var(--border-radius-md);
+    box-shadow: var(--shadow-sm);
+    position: relative;
+    overflow: hidden;
+    font-weight: 500;
+}
+
+.btn:hover {
+    transform: translateY(-3px);
+    box-shadow: var(--shadow-md);
+}
+
+.btn:active {
+    transform: translateY(0);
+}
+
+.btn-primary {
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
+}
+
+.btn-primary:hover {
+    background-color: var(--secondary-color);
+    border-color: var(--secondary-color);
+}
+
+/* Add ripple effect to buttons */
+.btn-ripple {
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-ripple::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 5px;
+    height: 5px;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 100%;
+    transform: scale(0);
+    transition: 0s;
+}
+
+.btn-ripple:active::after {
+    transform: scale(20);
+    opacity: 0;
+    transition: all 0.6s;
+}
+
+/* Form controls */
+.form-control, 
+.form-select {
+    border-radius: var(--border-radius-md);
+    border: 1px solid #ced4da;
+    padding: 0.5rem 0.75rem;
+    transition: all var(--transition-speed);
+}
+
+.form-control:focus,
+.form-select:focus {
+    box-shadow: 0 0 0 0.25rem rgba(52, 152, 219, 0.25);
+    border-color: var(--accent-color);
+}
+
+/* Enhanced form labels */
+.form-label {
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+    color: var(--secondary-color);
+}
+
+/* Form feedback */
+.invalid-feedback, 
+.valid-feedback {
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+/* Badge enhancements */
+.badge {
+    padding: 0.35em 0.65em;
+    transition: all var(--transition-speed);
+    border-radius: var(--border-radius-pill);
+    font-weight: 500;
+}
+
+.badge:hover {
+    transform: scale(1.1);
+}
+
+/* Table enhancements */
+.table {
+    border-radius: var(--border-radius-md);
+    overflow: hidden;
+}
+
+.table.table-hover tbody tr {
+    transition: all var(--transition-speed);
+}
+
+.table thead th {
+    font-weight: 600;
+    border-top: none;
+    background-color: rgba(0,0,0,0.03);
+}
+
+.table-hover tbody tr:hover {
+    transform: translateX(3px);
+}
+
+/* Fixed modal backdrop */
+.modal-backdrop {
+    background-color: var(--dark-color);
+}
+
+.modal-content {
+    border: none;
+    box-shadow: var(--shadow-lg);
+    border-radius: var(--border-radius-lg);
+    overflow: hidden;
+}
+
+.modal-header {
+    border-bottom: none;
+    padding: 1.5rem;
+}
+
+.modal-body {
+    padding: 1.5rem;
+}
+
+.modal-footer {
+    border-top: none;
+    padding: 1.5rem;
+}
+
+/* Enhanced navs and tabs */
+.nav-link {
+    transition: all var(--transition-speed);
+}
+
+.nav-tabs .nav-link {
+    position: relative;
+    border: none;
+}
+
+.nav-tabs .nav-link.active {
+    color: var(--accent-color);
+    background-color: transparent;
+    border-bottom: 2px solid var(--accent-color);
+}
+
+.nav-tabs .nav-link::after {
+    content: '';
+    position: absolute;
+    width: 100%;
+    height: 2px;
+    background-color: var(--accent-color);
+    bottom: 0;
+    left: 0;
+    transform: scaleX(0);
+    transition: transform var(--transition-speed);
+}
+
+.nav-tabs .nav-link:hover::after {
+    transform: scaleX(1);
+}
+
+/* Enhanced alerts */
+.alert {
+    border: none;
+    border-radius: var(--border-radius-md);
+    box-shadow: var(--shadow-sm);
+    padding: 1rem 1.25rem;
+}
+
+.alert-dismissible .btn-close {
+    padding: 1.25rem 1.25rem;
+}
+
+/* Enhanced dropdowns */
+.dropdown-menu {
+    border: none;
+    box-shadow: var(--shadow-md);
+    border-radius: var(--border-radius-md);
+    padding: 0.5rem;
+    min-width: 12rem;
+    animation: fadeInDown 0.3s ease forwards;
+}
+
+.dropdown-item {
+    border-radius: var(--border-radius-sm);
+    padding: 0.5rem 1rem;
+    transition: all var(--transition-speed);
+}
+
+.dropdown-item:hover {
+    background-color: rgba(52, 152, 219, 0.1);
+    transform: translateX(5px);
+}
+
+.dropdown-item.active, 
+.dropdown-item:active {
+    background-color: var(--accent-color);
+}
+
+/* Enhanced tooltip and popover */
+.tooltip .tooltip-inner {
+    box-shadow: var(--shadow-sm);
+}
+
+.popover {
+    box-shadow: var(--shadow-md);
+    border: none;
+}
+
+/* List group enhancements */
+.list-group-item {
+    border: none;
+    transition: all var(--transition-speed);
+    background-color: transparent;
+    border-radius: var(--border-radius-md);
+    margin-bottom: 0.25rem;
+}
+
+.list-group-item:hover {
+    background-color: rgba(52, 152, 219, 0.1);
+    transform: translateX(5px);
+}
+
+.list-group-item.active {
+    background-color: var(--accent-color);
+}
+
+/* Toasts */
+.toast {
+    border: none;
+    box-shadow: var(--shadow-md);
+    border-radius: var(--border-radius-md);
+    background-color: #fff;
+}
+
+/* Better scrollbars */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #ccc;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #aaa;
+}
+
+/* Animation keyframes */
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}

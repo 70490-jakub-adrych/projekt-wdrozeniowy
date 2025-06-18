@@ -4,14 +4,60 @@
 
 {% block extra_css %}
 <style>
-    /* Consistent table styling with ticket_list */
+    /* Enhanced dashboard components */
+    .stat-card {
+        border-radius: 0.75rem;
+        overflow: hidden;
+        transition: all 0.3s ease;
+        border: none;
+        box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+        height: 100%;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15);
+    }
+    
+    .stat-card-icon {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stat-card-count {
+        font-size: 2.5rem;
+        font-weight: 700;
+        line-height: 1;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stat-card-label {
+        font-size: 1rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05rem;
+    }
+    
+    /* Card with hover effect */
+    .card-hover {
+        transition: all 0.3s ease;
+    }
+    
+    .card-hover:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15);
+    }
+    
+    /* Table enhancements */
     .table-sm td, .table-sm th {
-        padding: 0.5rem 0.3rem;
+        padding: 0.75rem 0.5rem;
     }
     
     .table {
         table-layout: fixed;
         width: 100%;
+        border-radius: 0.5rem;
+        overflow: hidden;
+        box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
     }
     
     .table td {
@@ -38,9 +84,26 @@
         width: 120px;
     }
     
-    /* Make badge text slightly smaller to save space */
-    .badge {
-        font-size: 85%;
+    /* Quick action buttons */
+    .quick-action-btn {
+        transition: all 0.3s ease;
+        border-radius: 0.5rem;
+        padding: 1rem;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        font-weight: 500;
+        margin-bottom: 0.5rem;
+    }
+    
+    .quick-action-btn i {
+        font-size: 1.25rem;
+        margin-right: 0.75rem;
+    }
+    
+    .quick-action-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15);
     }
 </style>
 {% endblock %}
@@ -49,39 +112,54 @@
 <!-- Include the 2FA warning -->
 {% include 'crm/2fa/2fa_warning.html' %}
 
-<div class="row mb-3">
-    <div class="col-md-12">
-        <h2>Panel Główny</h2>
-        <hr>
+<div class="row mb-4">
+    <div class="col">
+        <h2 class="fw-bold">Panel Główny</h2>
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item active" aria-current="page">Panel główny</li>
+            </ol>
+        </nav>
     </div>
 </div>
 
 <!-- Quick Action buttons - show for all users including clients -->
 <div class="row mb-4">
     <div class="col-md-12">
-        <div class="card">
-            <div class="card-header">
-                <i class="fas fa-bolt mr-1"></i> Szybkie akcje
+        <div class="card shadow-sm">
+            <div class="card-header bg-light">
+                <i class="fas fa-bolt me-2"></i> Szybkie akcje
             </div>
-            <div class="card-body">
-                <div class="btn-group" role="group">
-                    <a href="{% url 'ticket_create' %}" class="btn btn-primary mr-2">
-                        <i class="fas fa-plus"></i> Nowe zgłoszenie
-                    </a>
+            <div class="card-body pb-0">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'ticket_create' %}" class="quick-action-btn btn-ripple btn btn-primary d-block">
+                            <i class="fas fa-plus"></i> Nowe zgłoszenie
+                        </a>
+                    </div>
+                    
                     {% if resolved_tickets_count > 0 and user.profile.role == 'client' %}
-                    <a href="{% url 'ticket_list' %}?status=resolved&created_by=me" class="btn btn-warning mr-2">
-                        <i class="fas fa-exclamation-circle"></i> Zgłoszenia oczekujące na potwierdzenie ({{ resolved_tickets_count }})
-                    </a>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'ticket_list' %}?status=resolved&created_by=me" class="quick-action-btn btn-ripple btn btn-warning d-block">
+                            <i class="fas fa-exclamation-circle"></i> Zgłoszenia do potwierdzenia ({{ resolved_tickets_count }})
+                        </a>
+                    </div>
                     {% endif %}
+                    
                     {% if pending_approvals > 0 and user.profile.role in 'admin,superagent,agent' %}
-                    <a href="{% url 'pending_approvals' %}" class="btn btn-warning mr-2">
-                        <i class="fas fa-user-clock"></i> Oczekujące zatwierdzenia ({{ pending_approvals }})
-                    </a>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'pending_approvals' %}" class="quick-action-btn btn-ripple btn btn-warning d-block">
+                            <i class="fas fa-user-clock"></i> Oczekujące zatwierdzenia ({{ pending_approvals }})
+                        </a>
+                    </div>
                     {% endif %}
+                    
                     {% if user.profile.role == 'admin' or user.profile.role == 'superagent' %}
-                    <a href="{% url 'organization_create' %}" class="btn btn-success mr-2">
-                        <i class="fas fa-building"></i> Nowa organizacja
-                    </a>
+                    <div class="col-md-3 mb-3">
+                        <a href="{% url 'organization_create' %}" class="quick-action-btn btn-ripple btn btn-success d-block">
+                            <i class="fas fa-building"></i> Nowa organizacja
+                        </a>
+                    </div>
                     {% endif %}
                 </div>
             </div>
@@ -90,43 +168,64 @@
 </div>
 
 <!-- Statistics summary for all roles -->
-<div class="row">
+<div class="row mb-4">
     <div class="col-md-12">
-        <div class="card mb-4">
-            <div class="card-header">
-                <i class="fas fa-chart-pie mr-1"></i>
-                Statystyki zgłoszeń
+        <div class="card shadow-sm">
+            <div class="card-header bg-light">
+                <div class="d-flex justify-content-between align-items-center">
+                    <span><i class="fas fa-chart-pie me-2"></i> Statystyki zgłoszeń</span>
+                    {% if user.profile.role == 'admin' or user.profile.role == 'superagent' %}
+                    <a href="{% url 'statistics_dashboard' %}" class="btn btn-sm btn-outline-primary">
+                        <i class="fas fa-chart-line"></i> Szczegółowe statystyki
+                    </a>
+                    {% endif %}
+                </div>
             </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col">
-                        <div class="bg-primary text-white p-3 rounded text-center">
-                            <h4>{{ new_tickets }}</h4>
-                            <p class="mb-0">Nowe</p>
+            <div class="card-body p-3">
+                <div class="row g-3">
+                    <div class="col-md-4 col-lg">
+                        <div class="stat-card card bg-primary text-white">
+                            <div class="card-body text-center py-4">
+                                <div class="stat-card-icon"><i class="fas fa-file-alt"></i></div>
+                                <div class="stat-card-count animate-counter" data-count="{{ new_tickets }}">{{ new_tickets }}</div>
+                                <div class="stat-card-label">Nowe</div>
+                            </div>
                         </div>
                     </div>
-                    <div class="col">
-                        <div class="bg-info text-white p-3 rounded text-center">
-                            <h4>{{ in_progress_tickets }}</h4>
-                            <p class="mb-0">W trakcie</p>
+                    <div class="col-md-4 col-lg">
+                        <div class="stat-card card bg-info text-white">
+                            <div class="card-body text-center py-4">
+                                <div class="stat-card-icon"><i class="fas fa-spinner"></i></div>
+                                <div class="stat-card-count animate-counter" data-count="{{ in_progress_tickets }}">{{ in_progress_tickets }}</div>
+                                <div class="stat-card-label">W trakcie</div>
+                            </div>
                         </div>
                     </div>
-                    <div class="col">
-                        <div class="bg-warning text-dark p-3 rounded text-center">
-                            <h4>{{ unresolved_tickets }}</h4>
-                            <p class="mb-0">Nierozwiązane</p>
+                    <div class="col-md-4 col-lg">
+                        <div class="stat-card card bg-warning">
+                            <div class="card-body text-center py-4">
+                                <div class="stat-card-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                                <div class="stat-card-count animate-counter" data-count="{{ unresolved_tickets }}">{{ unresolved_tickets }}</div>
+                                <div class="stat-card-label">Nierozwiązane</div>
+                            </div>
                         </div>
                     </div>
-                    <div class="col">
-                        <div class="bg-success text-white p-3 rounded text-center">
-                            <h4>{{ resolved_tickets }}</h4>
-                            <p class="mb-0">Rozwiązane</p>
+                    <div class="col-md-4 col-lg">
+                        <div class="stat-card card bg-success text-white">
+                            <div class="card-body text-center py-4">
+                                <div class="stat-card-icon"><i class="fas fa-check-circle"></i></div>
+                                <div class="stat-card-count animate-counter" data-count="{{ resolved_tickets }}">{{ resolved_tickets }}</div>
+                                <div class="stat-card-label">Rozwiązane</div>
+                            </div>
                         </div>
                     </div>
-                    <div class="col">
-                        <div class="bg-secondary text-white p-3 rounded text-center">
-                            <h4>{{ closed_tickets }}</h4>
-                            <p class="mb-0">Zamknięte</p>
+                    <div class="col-md-4 col-lg">
+                        <div class="stat-card card bg-secondary text-white">
+                            <div class="card-body text-center py-4">
+                                <div class="stat-card-icon"><i class="fas fa-lock"></i></div>
+                                <div class="stat-card-count animate-counter" data-count="{{ closed_tickets }}">{{ closed_tickets }}</div>
+                                <div class="stat-card-label">Zamknięte</div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -140,16 +239,16 @@
 <div class="row">
     <!-- Admin Panel 1: Tickets awaiting approval -->
     <div class="col-md-6">
-        <div class="card mb-4">
-            <div class="card-header">
-                <i class="fas fa-bell mr-1"></i>
+        <div class="card card-hover shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <i class="fas fa-bell me-2"></i>
                 Zgłoszenia oczekujące na akceptację
             </div>
-            <div class="card-body p-2">
+            <div class="card-body p-0">
                 {% if unassigned_tickets %}
                 <div class="table-responsive">
-                    <table class="table table-hover table-sm">
-                        <thead>
+                    <table class="table table-hover table-sm mb-0">
+                        <thead class="table-light">
                             <tr>
                                 <th class="col-id">ID</th>
                                 <th class="col-title">Tytuł</th>
@@ -161,14 +260,14 @@
                             {% for ticket in unassigned_tickets %}
                             <tr>
                                 <td>#{{ ticket.id }}</td>
-                                <td title="{{ ticket.title }}"><a href="{% url 'ticket_detail' ticket.pk %}">{{ ticket.title }}</a></td>
+                                <td title="{{ ticket.title }}"><a href="{% url 'ticket_detail' ticket.pk %}" class="text-decoration-none">{{ ticket.title }}</a></td>
                                 <td title="{{ ticket.organization.name }}">{{ ticket.organization.name }}</td>
                                 <td>
                                     <span class="badge 
-                                        {% if ticket.priority == 'low' %}badge-secondary
-                                        {% elif ticket.priority == 'medium' %}badge-info
-                                        {% elif ticket.priority == 'high' %}badge-warning
-                                        {% elif ticket.priority == 'critical' %}badge-danger{% endif %}">
+                                        {% if ticket.priority == 'low' %}bg-secondary
+                                        {% elif ticket.priority == 'medium' %}bg-info
+                                        {% elif ticket.priority == 'high' %}bg-warning
+                                        {% elif ticket.priority == 'critical' %}bg-danger{% endif %}">
                                         {{ ticket.get_priority_display }}
                                     </span>
                                 </td>
@@ -178,27 +277,32 @@
                     </table>
                 </div>
                 {% else %}
-                <p>Brak nieprzypisanych zgłoszeń.</p>
+                <div class="p-4 text-center">
+                    <i class="fas fa-check-circle text-success mb-3" style="font-size: 2rem;"></i>
+                    <p>Brak nieprzypisanych zgłoszeń.</p>
+                </div>
                 {% endif %}
             </div>
-            <div class="card-footer">
-                <a href="{% url 'ticket_list' %}?assigned=unassigned&exclude_closed=true" class="btn btn-sm btn-primary">Zobacz wszystkie</a>
+            <div class="card-footer bg-white">
+                <a href="{% url 'ticket_list' %}?assigned=unassigned&exclude_closed=true" class="btn btn-sm btn-primary">
+                    <i class="fas fa-list me-1"></i> Zobacz wszystkie
+                </a>
             </div>
         </div>
     </div>
     
     <!-- Admin Panel 2: Tickets in progress -->
     <div class="col-md-6">
-        <div class="card mb-4">
-            <div class="card-header">
-                <i class="fas fa-tasks mr-1"></i>
+        <div class="card card-hover shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <i class="fas fa-tasks me-2"></i>
                 Zgłoszenia w trakcie
             </div>
-            <div class="card-body p-2">
+            <div class="card-body p-0">
                 {% if in_progress_tickets_list %}
                 <div class="table-responsive">
-                    <table class="table table-hover table-sm">
-                        <thead>
+                    <table class="table table-hover table-sm mb-0">
+                        <thead class="table-light">
                             <tr>
                                 <th class="col-id">ID</th>
                                 <th class="col-title">Tytuł</th>
@@ -210,20 +314,23 @@
                             {% for ticket in in_progress_tickets_list %}
                             <tr>
                                 <td>#{{ ticket.id }}</td>
-                                <td title="{{ ticket.title }}"><a href="{% url 'ticket_detail' ticket.pk %}">{{ ticket.title }}</a></td>
+                                <td title="{{ ticket.title }}"><a href="{% url 'ticket_detail' ticket.pk %}" class="text-decoration-none">{{ ticket.title }}</a></td>
                                 <td title="{% if ticket.assigned_to %}{{ ticket.assigned_to.username }}{% else %}Nieprzypisane{% endif %}">
                                     {% if ticket.assigned_to %}
-                                    {{ ticket.assigned_to.username }}
+                                    <span class="d-inline-flex align-items-center">
+                                        <i class="fas fa-user-check me-1 text-success"></i>
+                                        {{ ticket.assigned_to.username }}
+                                    </span>
                                     {% else %}
-                                    <span class="text-muted">Nieprzypisane</span>
+                                    <span class="text-muted"><i class="fas fa-user-slash me-1"></i> Nieprzypisane</span>
                                     {% endif %}
                                 </td>
                                 <td>
                                     <span class="badge 
-                                        {% if ticket.priority == 'low' %}badge-secondary
-                                        {% elif ticket.priority == 'medium' %}badge-info
-                                        {% elif ticket.priority == 'high' %}badge-warning
-                                        {% elif ticket.priority == 'critical' %}badge-danger{% endif %}">
+                                        {% if ticket.priority == 'low' %}bg-secondary
+                                        {% elif ticket.priority == 'medium' %}bg-info
+                                        {% elif ticket.priority == 'high' %}bg-warning
+                                        {% elif ticket.priority == 'critical' %}bg-danger{% endif %}">
                                         {{ ticket.get_priority_display }}
                                     </span>
                                 </td>
@@ -233,11 +340,16 @@
                     </table>
                 </div>
                 {% else %}
-                <p>Brak zgłoszeń w trakcie realizacji.</p>
+                <div class="p-4 text-center">
+                    <i class="fas fa-check-circle text-success mb-3" style="font-size: 2rem;"></i>
+                    <p>Brak zgłoszeń w trakcie realizacji.</p>
+                </div>
                 {% endif %}
             </div>
-            <div class="card-footer">
-                <a href="{% url 'ticket_list' %}?status=in_progress" class="btn btn-sm btn-primary">Zobacz wszystkie</a>
+            <div class="card-footer bg-white">
+                <a href="{% url 'ticket_list' %}?status=in_progress" class="btn btn-sm btn-primary">
+                    <i class="fas fa-list me-1"></i> Zobacz wszystkie
+                </a>
             </div>
         </div>
     </div>
@@ -247,18 +359,18 @@
 <!-- SUPERAGENT PANELS -->
 {% if user.profile.role == 'superagent' %}
 <div class="row">
-    <!-- Superagent Panel 1: Tickets awaiting approval -->
+    <!-- Similar structure to admin panels but tailored for superagent -->
     <div class="col-md-6">
-        <div class="card mb-4">
-            <div class="card-header">
-                <i class="fas fa-bell mr-1"></i>
+        <div class="card card-hover shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <i class="fas fa-bell me-2"></i>
                 Zgłoszenia oczekujące na akceptację
             </div>
-            <div class="card-body p-2">
+            <div class="card-body p-0">
                 {% if unassigned_tickets %}
                 <div class="table-responsive">
-                    <table class="table table-hover table-sm">
-                        <thead>
+                    <table class="table table-hover table-sm mb-0">
+                        <thead class="table-light">
                             <tr>
                                 <th class="col-id">ID</th>
                                 <th class="col-title">Tytuł</th>
@@ -270,14 +382,14 @@
                             {% for ticket in unassigned_tickets %}
                             <tr>
                                 <td>#{{ ticket.id }}</td>
-                                <td title="{{ ticket.title }}"><a href="{% url 'ticket_detail' ticket.pk %}">{{ ticket.title }}</a></td>
+                                <td title="{{ ticket.title }}"><a href="{% url 'ticket_detail' ticket.pk %}" class="text-decoration-none">{{ ticket.title }}</a></td>
                                 <td title="{{ ticket.organization.name }}">{{ ticket.organization.name }}</td>
                                 <td>
                                     <span class="badge 
-                                        {% if ticket.priority == 'low' %}badge-secondary
-                                        {% elif ticket.priority == 'medium' %}badge-info
-                                        {% elif ticket.priority == 'high' %}badge-warning
-                                        {% elif ticket.priority == 'critical' %}badge-danger{% endif %}">
+                                        {% if ticket.priority == 'low' %}bg-secondary
+                                        {% elif ticket.priority == 'medium' %}bg-info
+                                        {% elif ticket.priority == 'high' %}bg-warning
+                                        {% elif ticket.priority == 'critical' %}bg-danger{% endif %}">
                                         {{ ticket.get_priority_display }}
                                     </span>
                                 </td>
@@ -287,27 +399,31 @@
                     </table>
                 </div>
                 {% else %}
-                <p>Brak nieprzypisanych zgłoszeń.</p>
+                <div class="p-4 text-center">
+                    <i class="fas fa-check-circle text-success mb-3" style="font-size: 2rem;"></i>
+                    <p>Brak nieprzypisanych zgłoszeń.</p>
+                </div>
                 {% endif %}
             </div>
-            <div class="card-footer">
-                <a href="{% url 'ticket_list' %}?assigned=unassigned&exclude_closed=true" class="btn btn-sm btn-primary">Zobacz wszystkie</a>
+            <div class="card-footer bg-white">
+                <a href="{% url 'ticket_list' %}?assigned=unassigned&exclude_closed=true" class="btn btn-sm btn-primary">
+                    <i class="fas fa-list me-1"></i> Zobacz wszystkie
+                </a>
             </div>
         </div>
     </div>
     
-    <!-- Superagent Panel 2: Tickets in progress -->
     <div class="col-md-6">
-        <div class="card mb-4">
-            <div class="card-header">
-                <i class="fas fa-tasks mr-1"></i>
+        <div class="card card-hover shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <i class="fas fa-tasks me-2"></i>
                 Zgłoszenia w trakcie
             </div>
-            <div class="card-body p-2">
+            <div class="card-body p-0">
                 {% if in_progress_tickets_list %}
                 <div class="table-responsive">
-                    <table class="table table-hover table-sm">
-                        <thead>
+                    <table class="table table-hover table-sm mb-0">
+                        <thead class="table-light">
                             <tr>
                                 <th class="col-id">ID</th>
                                 <th class="col-title">Tytuł</th>
@@ -319,20 +435,23 @@
                             {% for ticket in in_progress_tickets_list %}
                             <tr>
                                 <td>#{{ ticket.id }}</td>
-                                <td title="{{ ticket.title }}"><a href="{% url 'ticket_detail' ticket.pk %}">{{ ticket.title }}</a></td>
+                                <td title="{{ ticket.title }}"><a href="{% url 'ticket_detail' ticket.pk %}" class="text-decoration-none">{{ ticket.title }}</a></td>
                                 <td title="{% if ticket.assigned_to %}{{ ticket.assigned_to.username }}{% else %}Nieprzypisane{% endif %}">
                                     {% if ticket.assigned_to %}
-                                    {{ ticket.assigned_to.username }}
+                                    <span class="d-inline-flex align-items-center">
+                                        <i class="fas fa-user-check me-1 text-success"></i>
+                                        {{ ticket.assigned_to.username }}
+                                    </span>
                                     {% else %}
-                                    <span class="text-muted">Nieprzypisane</span>
+                                    <span class="text-muted"><i class="fas fa-user-slash me-1"></i> Nieprzypisane</span>
                                     {% endif %}
                                 </td>
                                 <td>
                                     <span class="badge 
-                                        {% if ticket.priority == 'low' %}badge-secondary
-                                        {% elif ticket.priority == 'medium' %}badge-info
-                                        {% elif ticket.priority == 'high' %}badge-warning
-                                        {% elif ticket.priority == 'critical' %}badge-danger{% endif %}">
+                                        {% if ticket.priority == 'low' %}bg-secondary
+                                        {% elif ticket.priority == 'medium' %}bg-info
+                                        {% elif ticket.priority == 'high' %}bg-warning
+                                        {% elif ticket.priority == 'critical' %}bg-danger{% endif %}">
                                         {{ ticket.get_priority_display }}
                                     </span>
                                 </td>
@@ -342,11 +461,16 @@
                     </table>
                 </div>
                 {% else %}
-                <p>Brak zgłoszeń w trakcie realizacji.</p>
+                <div class="p-4 text-center">
+                    <i class="fas fa-check-circle text-success mb-3" style="font-size: 2rem;"></i>
+                    <p>Brak zgłoszeń w trakcie realizacji.</p>
+                </div>
                 {% endif %}
             </div>
-            <div class="card-footer">
-                <a href="{% url 'ticket_list' %}?status=in_progress" class="btn btn-sm btn-primary">Zobacz wszystkie</a>
+            <div class="card-footer bg-white">
+                <a href="{% url 'ticket_list' %}?status=in_progress" class="btn btn-sm btn-primary">
+                    <i class="fas fa-list me-1"></i> Zobacz wszystkie
+                </a>
             </div>
         </div>
     </div>
@@ -356,18 +480,17 @@
 <!-- AGENT PANELS -->
 {% if user.profile.role == 'agent' %}
 <div class="row">
-    <!-- Agent Panel 1: Assigned to me -->
     <div class="col-md-6">
-        <div class="card mb-4">
-            <div class="card-header">
-                <i class="fas fa-tasks mr-1"></i>
+        <div class="card card-hover shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <i class="fas fa-tasks me-2"></i>
                 Zgłoszenia przypisane do mnie
             </div>
-            <div class="card-body p-2">
+            <div class="card-body p-0">
                 {% if assigned_tickets %}
                 <div class="table-responsive">
-                    <table class="table table-hover table-sm">
-                        <thead>
+                    <table class="table table-hover table-sm mb-0">
+                        <thead class="table-light">
                             <tr>
                                 <th class="col-id">ID</th>
                                 <th class="col-title">Tytuł</th>
@@ -379,24 +502,24 @@
                             {% for ticket in assigned_tickets %}
                             <tr>
                                 <td>#{{ ticket.id }}</td>
-                                <td title="{{ ticket.title }}"><a href="{% url 'ticket_detail' ticket.pk %}">{{ ticket.title }}</a></td>
+                                <td title="{{ ticket.title }}"><a href="{% url 'ticket_detail' ticket.pk %}" class="text-decoration-none">{{ ticket.title }}</a></td>
                                 <td>
                                     <span class="badge 
-                                        {% if ticket.priority == 'low' %}badge-secondary
-                                        {% elif ticket.priority == 'medium' %}badge-info
-                                        {% elif ticket.priority == 'high' %}badge-warning
-                                        {% elif ticket.priority == 'critical' %}badge-danger{% endif %}">
+                                        {% if ticket.priority == 'low' %}bg-secondary
+                                        {% elif ticket.priority == 'medium' %}bg-info
+                                        {% elif ticket.priority == 'high' %}bg-warning
+                                        {% elif ticket.priority == 'critical' %}bg-danger{% endif %}">
                                         {{ ticket.get_priority_display }}
                                     </span>
                                 </td>
                                 <td>
                                     <span class="badge 
-                                        {% if ticket.status == 'new' %}badge-primary
-                                        {% elif ticket.status == 'in_progress' %}badge-info
-                                        {% elif ticket.status == 'waiting' %}badge-warning text-dark
-                                        {% elif ticket.status == 'unresolved' %}badge-warning text-dark
-                                        {% elif ticket.status == 'resolved' %}badge-success
-                                        {% else %}badge-secondary{% endif %}">
+                                        {% if ticket.status == 'new' %}bg-primary
+                                        {% elif ticket.status == 'in_progress' %}bg-info
+                                        {% elif ticket.status == 'waiting' %}bg-warning text-dark
+                                        {% elif ticket.status == 'unresolved' %}bg-warning text-dark
+                                        {% elif ticket.status == 'resolved' %}bg-success
+                                        {% else %}bg-secondary{% endif %}">
                                         {{ ticket.get_status_display }}
                                     </span>
                                 </td>
@@ -406,27 +529,31 @@
                     </table>
                 </div>
                 {% else %}
-                <p>Brak przypisanych zgłoszeń.</p>
+                <div class="p-4 text-center">
+                    <i class="fas fa-check-circle text-success mb-3" style="font-size: 2rem;"></i>
+                    <p>Brak przypisanych zgłoszeń.</p>
+                </div>
                 {% endif %}
             </div>
-            <div class="card-footer">
-                <a href="{% url 'ticket_list' %}?assigned=me&exclude_closed=true" class="btn btn-sm btn-primary">Zobacz wszystkie</a>
+            <div class="card-footer bg-white">
+                <a href="{% url 'ticket_list' %}?assigned=me&exclude_closed=true" class="btn btn-sm btn-primary">
+                    <i class="fas fa-list me-1"></i> Zobacz wszystkie
+                </a>
             </div>
         </div>
     </div>
     
-    <!-- Agent Panel 2: Awaiting approval -->
     <div class="col-md-6">
-        <div class="card mb-4">
-            <div class="card-header">
-                <i class="fas fa-bell mr-1"></i>
+        <div class="card card-hover shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <i class="fas fa-bell me-2"></i>
                 Zgłoszenia oczekujące na akceptację
             </div>
-            <div class="card-body p-2">
+            <div class="card-body p-0">
                 {% if unassigned_tickets %}
                 <div class="table-responsive">
-                    <table class="table table-hover table-sm">
-                        <thead>
+                    <table class="table table-hover table-sm mb-0">
+                        <thead class="table-light">
                             <tr>
                                 <th class="col-id">ID</th>
                                 <th class="col-title">Tytuł</th>
@@ -438,14 +565,14 @@
                             {% for ticket in unassigned_tickets %}
                             <tr>
                                 <td>#{{ ticket.id }}</td>
-                                <td title="{{ ticket.title }}"><a href="{% url 'ticket_detail' ticket.pk %}">{{ ticket.title }}</a></td>
+                                <td title="{{ ticket.title }}"><a href="{% url 'ticket_detail' ticket.pk %}" class="text-decoration-none">{{ ticket.title }}</a></td>
                                 <td title="{{ ticket.organization.name }}">{{ ticket.organization.name }}</td>
                                 <td>
                                     <span class="badge 
-                                        {% if ticket.priority == 'low' %}badge-secondary
-                                        {% elif ticket.priority == 'medium' %}badge-info
-                                        {% elif ticket.priority == 'high' %}badge-warning
-                                        {% elif ticket.priority == 'critical' %}badge-danger{% endif %}">
+                                        {% if ticket.priority == 'low' %}bg-secondary
+                                        {% elif ticket.priority == 'medium' %}bg-info
+                                        {% elif ticket.priority == 'high' %}bg-warning
+                                        {% elif ticket.priority == 'critical' %}bg-danger{% endif %}">
                                         {{ ticket.get_priority_display }}
                                     </span>
                                 </td>
@@ -455,11 +582,16 @@
                     </table>
                 </div>
                 {% else %}
-                <p>Brak nieprzypisanych zgłoszeń.</p>
+                <div class="p-4 text-center">
+                    <i class="fas fa-check-circle text-success mb-3" style="font-size: 2rem;"></i>
+                    <p>Brak nieprzypisanych zgłoszeń.</p>
+                </div>
                 {% endif %}
             </div>
-            <div class="card-footer">
-                <a href="{% url 'ticket_list' %}?assigned=unassigned&exclude_closed=true" class="btn btn-sm btn-primary">Zobacz wszystkie</a>
+            <div class="card-footer bg-white">
+                <a href="{% url 'ticket_list' %}?assigned=unassigned&exclude_closed=true" class="btn btn-sm btn-primary">
+                    <i class="fas fa-list me-1"></i> Zobacz wszystkie
+                </a>
             </div>
         </div>
     </div>
@@ -469,18 +601,17 @@
 <!-- CLIENT PANELS -->
 {% if user.profile.role == 'client' %}
 <div class="row">
-    <!-- Client Panel 1: Your recent tickets -->
     <div class="col-md-6">
-        <div class="card mb-4">
-            <div class="card-header">
-                <i class="fas fa-ticket-alt mr-1"></i>
+        <div class="card card-hover shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <i class="fas fa-ticket-alt me-2"></i>
                 Twoje ostatnie zgłoszenia
             </div>
-            <div class="card-body p-2">
+            <div class="card-body p-0">
                 {% if user_tickets %}
                 <div class="table-responsive">
-                    <table class="table table-hover table-sm">
-                        <thead>
+                    <table class="table table-hover table-sm mb-0">
+                        <thead class="table-light">
                             <tr>
                                 <th class="col-id">ID</th>
                                 <th class="col-title">Tytuł</th>
@@ -492,15 +623,15 @@
                             {% for ticket in user_tickets %}
                             <tr>
                                 <td>#{{ ticket.id }}</td>
-                                <td title="{{ ticket.title }}"><a href="{% url 'ticket_detail' ticket.pk %}">{{ ticket.title }}</a></td>
+                                <td title="{{ ticket.title }}"><a href="{% url 'ticket_detail' ticket.pk %}" class="text-decoration-none">{{ ticket.title }}</a></td>
                                 <td>
                                     <span class="badge 
-                                        {% if ticket.status == 'new' %}badge-primary
-                                        {% elif ticket.status == 'in_progress' %}badge-info
-                                        {% elif ticket.status == 'waiting' %}badge-warning text-dark
-                                        {% elif ticket.status == 'unresolved' %}badge-warning text-dark
-                                        {% elif ticket.status == 'resolved' %}badge-success
-                                        {% else %}badge-secondary{% endif %}">
+                                        {% if ticket.status == 'new' %}bg-primary
+                                        {% elif ticket.status == 'in_progress' %}bg-info
+                                        {% elif ticket.status == 'waiting' %}bg-warning text-dark
+                                        {% elif ticket.status == 'unresolved' %}bg-warning text-dark
+                                        {% elif ticket.status == 'resolved' %}bg-success
+                                        {% else %}bg-secondary{% endif %}">
                                         {{ ticket.get_status_display }}
                                     </span>
                                 </td>
@@ -511,27 +642,31 @@
                     </table>
                 </div>
                 {% else %}
-                <p>Brak zgłoszeń utworzonych przez Ciebie.</p>
+                <div class="p-4 text-center">
+                    <i class="fas fa-ticket-alt text-muted mb-3" style="font-size: 2rem;"></i>
+                    <p>Brak zgłoszeń utworzonych przez Ciebie.</p>
+                </div>
                 {% endif %}
             </div>
-            <div class="card-footer">
-                <a href="{% url 'ticket_list' %}?created_by=me&exclude_closed=true" class="btn btn-sm btn-primary">Zobacz wszystkie</a>
+            <div class="card-footer bg-white">
+                <a href="{% url 'ticket_list' %}?created_by=me&exclude_closed=true" class="btn btn-sm btn-primary">
+                    <i class="fas fa-list me-1"></i> Zobacz wszystkie
+                </a>
             </div>
         </div>
     </div>
     
-    <!-- Client Panel 2: Organization's tickets -->
     <div class="col-md-6">
-        <div class="card mb-4">
-            <div class="card-header">
-                <i class="fas fa-building mr-1"></i>
+        <div class="card card-hover shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <i class="fas fa-building me-2"></i>
                 Zgłoszenia Twojej organizacji
             </div>
-            <div class="card-body p-2">
+            <div class="card-body p-0">
                 {% if org_recent_tickets %}
                 <div class="table-responsive">
-                    <table class="table table-hover table-sm">
-                        <thead>
+                    <table class="table table-hover table-sm mb-0">
+                        <thead class="table-light">
                             <tr>
                                 <th class="col-id">ID</th>
                                 <th class="col-title">Tytuł</th>
@@ -543,15 +678,15 @@
                             {% for ticket in org_recent_tickets %}
                             <tr>
                                 <td>#{{ ticket.id }}</td>
-                                <td title="{{ ticket.title }}"><a href="{% url 'ticket_detail' ticket.pk %}">{{ ticket.title }}</a></td>
+                                <td title="{{ ticket.title }}"><a href="{% url 'ticket_detail' ticket.pk %}" class="text-decoration-none">{{ ticket.title }}</a></td>
                                 <td>
                                     <span class="badge 
-                                        {% if ticket.status == 'new' %}badge-primary
-                                        {% elif ticket.status == 'in_progress' %}badge-info
-                                        {% elif ticket.status == 'waiting' %}badge-warning text-dark
-                                        {% elif ticket.status == 'unresolved' %}badge-warning text-dark
-                                        {% elif ticket.status == 'resolved' %}badge-success
-                                        {% else %}badge-secondary{% endif %}">
+                                        {% if ticket.status == 'new' %}bg-primary
+                                        {% elif ticket.status == 'in_progress' %}bg-info
+                                        {% elif ticket.status == 'waiting' %}bg-warning text-dark
+                                        {% elif ticket.status == 'unresolved' %}bg-warning text-dark
+                                        {% elif ticket.status == 'resolved' %}bg-success
+                                        {% else %}bg-secondary{% endif %}">
                                         {{ ticket.get_status_display }}
                                     </span>
                                 </td>
@@ -562,11 +697,16 @@
                     </table>
                 </div>
                 {% else %}
-                <p>Brak zgłoszeń w Twojej organizacji.</p>
+                <div class="p-4 text-center">
+                    <i class="fas fa-building text-muted mb-3" style="font-size: 2rem;"></i>
+                    <p>Brak zgłoszeń w Twojej organizacji.</p>
+                </div>
                 {% endif %}
             </div>
-            <div class="card-footer">
-                <a href="{% url 'ticket_list' %}?exclude_created_by=me&exclude_closed=true" class="btn btn-sm btn-primary">Zobacz wszystkie</a>
+            <div class="card-footer bg-white">
+                <a href="{% url 'ticket_list' %}?exclude_created_by=me&exclude_closed=true" class="btn btn-sm btn-primary">
+                    <i class="fas fa-list me-1"></i> Zobacz wszystkie
+                </a>
             </div>
         </div>
     </div>
@@ -574,17 +714,17 @@
 {% endif %}
 
 <!-- Recently Closed Tickets Section - common for all roles -->
-<div class="row mt-4">
+<div class="row">
     <div class="col-md-12">
-        <div class="card mb-4">
-            <div class="card-header">
-                <i class="fas fa-check-circle mr-1"></i> Ostatnio zamknięte zgłoszenia
+        <div class="card card-hover shadow-sm mb-4">
+            <div class="card-header bg-light">
+                <i class="fas fa-check-circle me-2"></i> Ostatnio zamknięte zgłoszenia
             </div>
-            <div class="card-body p-2">
+            <div class="card-body p-0">
                 {% if recently_closed_tickets %}
                 <div class="table-responsive">
-                    <table class="table table-hover table-sm">
-                        <thead>
+                    <table class="table table-hover table-sm mb-0">
+                        <thead class="table-light">
                             <tr>
                                 <th class="col-id">ID</th>
                                 <th class="col-title">Tytuł</th>
@@ -596,7 +736,7 @@
                             {% for ticket in recently_closed_tickets %}
                             <tr>
                                 <td>#{{ ticket.id }}</td>
-                                <td title="{{ ticket.title }}"><a href="{% url 'ticket_detail' ticket.pk %}">{{ ticket.title }}</a></td>
+                                <td title="{{ ticket.title }}"><a href="{% url 'ticket_detail' ticket.pk %}" class="text-decoration-none">{{ ticket.title }}</a></td>
                                 <td title="{{ ticket.organization.name }}">{{ ticket.organization.name }}</td>
                                 <td>{{ ticket.closed_at|date:"d.m.Y" }}</td>
                             </tr>
@@ -605,13 +745,22 @@
                     </table>
                 </div>
                 {% else %}
-                <p>Brak zamkniętych zgłoszeń.</p>
+                <div class="p-4 text-center">
+                    <i class="fas fa-info-circle text-info mb-3" style="font-size: 2rem;"></i>
+                    <p>Brak zamkniętych zgłoszeń.</p>
+                </div>
                 {% endif %}
             </div>
-            <div class="card-footer">
-                <a href="{% url 'ticket_list' %}?status=closed" class="btn btn-sm btn-primary">Zobacz wszystkie</a>
+            <div class="card-footer bg-white">
+                <a href="{% url 'ticket_list' %}?status=closed" class="btn btn-sm btn-primary">
+                    <i class="fas fa-list me-1"></i> Zobacz wszystkie
+                </a>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'crm/js/ui-enhancements.js' %}"></script>
 {% endblock %}
