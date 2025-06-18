@@ -16,29 +16,9 @@
     }
     
     .stat-card:hover {
-        transform: translateY(-5px);
+        /* Remove transform to prevent jumping */
         box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15);
         cursor: pointer; /* Add pointer cursor to indicate clickable */
-    }
-    
-    .stat-card-icon {
-        font-size: 2rem;
-        margin-bottom: 0.5rem;
-    }
-    
-    .stat-card-count {
-        font-size: 2.5rem;
-        font-weight: 700;
-        line-height: 1;
-        margin-bottom: 0.5rem;
-    }
-    
-    .stat-card-label {
-        font-size: 0.85rem;
-        margin-bottom: 0;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
     }
     
     /* Card with hover effect */
@@ -47,7 +27,7 @@
     }
     
     .card-hover:hover {
-        transform: translateY(-3px);
+        /* Remove transform to prevent jumping */
         box-shadow: var(--shadow-md);
     }
     
@@ -813,6 +793,26 @@
                         </tbody>
                     </table>
                 </div>
+                {% else %}
+                <div class="p-4 text-center">
+                    <i class="fas fa-info-circle text-info mb-3" style="font-size: 2rem;"></i>
+                    <p>Brak zamkniętych zgłoszeń.</p>
+                </div>
+                {% endif %}
+            </div>
+            <div class="card-footer bg-white">
+                <a href="{% url 'ticket_list' %}?status=closed" class="btn btn-sm btn-primary">
+                    <i class="fas fa-list me-1"></i> Zobacz wszystkie
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'crm/js/ui-enhancements.js' %}"></script>
+{% endblock %}
                 {% else %}
                 <div class="p-4 text-center">
                     <i class="fas fa-info-circle text-info mb-3" style="font-size: 2rem;"></i>
