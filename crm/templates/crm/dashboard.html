@@ -813,23 +813,3 @@
 {% block extra_js %}
 <script src="{% static 'crm/js/ui-enhancements.js' %}"></script>
 {% endblock %}
-                {% else %}
-                <div class="p-4 text-center">
-                    <i class="fas fa-info-circle text-info mb-3" style="font-size: 2rem;"></i>
-                    <p>Brak zamkniętych zgłoszeń.</p>
-                </div>
-                {% endif %}
-            </div>
-            <div class="card-footer bg-white">
-                <a href="{% url 'ticket_list' %}?status=closed" class="btn btn-sm btn-primary">
-                    <i class="fas fa-list me-1"></i> Zobacz wszystkie
-                </a>
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-{% block extra_js %}
-<script src="{% static 'crm/js/ui-enhancements.js' %}"></script>
-{% endblock %}
