@@ -7,7 +7,7 @@
     <div class="col-md-6">
         <div class="card">
             <div class="card-header bg-success text-white">
-                <i class="fas fa-check mr-2"></i> Zatwierdź użytkownika
+                <i class="fas fa-check me-2"></i> Zatwierdź użytkownika
             </div>
             <div class="card-body">
                 <h5 class="card-title">Zatwierdź konto użytkownika</h5>
@@ -15,23 +15,23 @@
                 <div class="card bg-light mb-4">
                     <div class="card-body">
                         <div class="row mb-2">
-                            <div class="col-md-4 font-weight-bold">Nazwa użytkownika:</div>
+                            <div class="col-md-4 fw-bold">Nazwa użytkownika:</div>
                             <div class="col-md-8">{{ profile.user.username }}</div>
                         </div>
                         <div class="row mb-2">
-                            <div class="col-md-4 font-weight-bold">Email:</div>
+                            <div class="col-md-4 fw-bold">Email:</div>
                             <div class="col-md-8">{{ profile.user.email }}</div>
                         </div>
                         <div class="row mb-2">
-                            <div class="col-md-4 font-weight-bold">Imię i nazwisko:</div>
+                            <div class="col-md-4 fw-bold">Imię i nazwisko:</div>
                             <div class="col-md-8">{{ profile.user.first_name }} {{ profile.user.last_name }}</div>
                         </div>
                         <div class="row mb-2">
-                            <div class="col-md-4 font-weight-bold">Data rejestracji:</div>
+                            <div class="col-md-4 fw-bold">Data rejestracji:</div>
                             <div class="col-md-8">{{ profile.user.date_joined|date:"d.m.Y H:i" }}</div>
                         </div>
                         <div class="row">
-                            <div class="col-md-4 font-weight-bold">Wybrana organizacja:</div>
+                            <div class="col-md-4 fw-bold">Wybrana organizacja:</div>
                             <div class="col-md-8">
                                 {% if profile.organizations.exists %}
                                     <ul>
@@ -50,10 +50,10 @@
                 <form method="post" id="approveForm">
                     {% csrf_token %}
                     
-                    <div class="form-group">
-                        <label for="{{ form.group.id_for_label }}">{{ form.group.label }}</label>
+                    <div class="mb-3">
+                        <label for="{{ form.group.id_for_label }}" class="form-label">{{ form.group.label }}</label>
                         {{ form.group }}
-                        <small class="form-text text-muted">{{ form.group.help_text }}</small>
+                        <div class="form-text text-muted">{{ form.group.help_text }}</div>
                         {% if form.group.errors %}
                             <div class="alert alert-danger mt-2">
                                 {{ form.group.errors }}
@@ -61,10 +61,10 @@
                         {% endif %}
                     </div>
                     
-                    <div class="form-group">
-                        <label for="{{ form.organizations.id_for_label }}">{{ form.organizations.label }}</label>
+                    <div class="mb-3">
+                        <label for="{{ form.organizations.id_for_label }}" class="form-label">{{ form.organizations.label }}</label>
                         {{ form.organizations }}
-                        <small class="form-text text-muted">{{ form.organizations.help_text }}</small>
+                        <div class="form-text text-muted">{{ form.organizations.help_text }}</div>
                         {% if form.organizations.errors %}
                             <div class="alert alert-danger mt-2">
                                 {{ form.organizations.errors }}
