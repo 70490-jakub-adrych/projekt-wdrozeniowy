@@ -20,36 +20,46 @@
 <!-- Filtry -->
 <div class="card mb-4">
     <div class="card-header">
-        <i class="fas fa-filter"></i> Filtry
+        <i class="fas fa-filter me-2"></i> Filtry
     </div>
     <div class="card-body">
-        <form method="get" class="form-inline">
-            <div class="form-group mr-3">
-                <label for="action" class="mr-2">Akcja:</label>
-                <select name="action" id="action" class="form-control form-control-sm">
-                    <option value="" {% if not action_filter %}selected{% endif %}>Wszystkie</option>
-                    <option value="login" {% if action_filter == 'login' %}selected{% endif %}>Zalogowanie</option>
-                    <option value="logout" {% if action_filter == 'logout' %}selected{% endif %}>Wylogowanie</option>
-                    <option value="login_failed" {% if action_filter == 'login_failed' %}selected{% endif %}>Nieudane logowanie</option>
-                    <option value="account_locked" {% if action_filter == 'account_locked' %}selected{% endif %}>Blokada konta</option>
-                    <option value="account_unlocked" {% if action_filter == 'account_unlocked' %}selected{% endif %}>Odblokowanie konta</option>
-                    <option value="ticket_created" {% if action_filter == 'ticket_created' %}selected{% endif %}>Utworzenie zgłoszenia</option>
-                    <option value="ticket_updated" {% if action_filter == 'ticket_updated' %}selected{% endif %}>Aktualizacja zgłoszenia</option>
-                    <option value="ticket_commented" {% if action_filter == 'ticket_commented' %}selected{% endif %}>Odpowiedź do zgłoszenia</option>
-                    <option value="ticket_resolved" {% if action_filter == 'ticket_resolved' %}selected{% endif %}>Rozwiązanie zgłoszenia</option>
-                    <option value="ticket_closed" {% if action_filter == 'ticket_closed' %}selected{% endif %}>Zamknięcie zgłoszenia</option>
-                    <option value="ticket_reopened" {% if action_filter == 'ticket_reopened' %}selected{% endif %}>Ponowne otwarcie zgłoszenia</option>
-                    <option value="preferences_updated" {% if action_filter == 'preferences_updated' %}selected{% endif %}>Aktualizacja preferencji</option>
-                    <option value="404_error" {% if action_filter == '404_error' %}selected{% endif %}>Błąd 404 - Strona nie znaleziona</option>
-                    <option value="403_error" {% if action_filter == '403_error' %}selected{% endif %}>Błąd 403 - Brak dostępu</option>
-                </select>
+        <form method="get">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-5">
+                    <label for="action" class="form-label">Akcja:</label>
+                    <select name="action" id="action" class="form-select form-select-sm">
+                        <option value="" {% if not action_filter %}selected{% endif %}>Wszystkie</option>
+                        <option value="login" {% if action_filter == 'login' %}selected{% endif %}>Zalogowanie</option>
+                        <option value="logout" {% if action_filter == 'logout' %}selected{% endif %}>Wylogowanie</option>
+                        <option value="login_failed" {% if action_filter == 'login_failed' %}selected{% endif %}>Nieudane logowanie</option>
+                        <option value="account_locked" {% if action_filter == 'account_locked' %}selected{% endif %}>Blokada konta</option>
+                        <option value="account_unlocked" {% if action_filter == 'account_unlocked' %}selected{% endif %}>Odblokowanie konta</option>
+                        <option value="ticket_created" {% if action_filter == 'ticket_created' %}selected{% endif %}>Utworzenie zgłoszenia</option>
+                        <option value="ticket_updated" {% if action_filter == 'ticket_updated' %}selected{% endif %}>Aktualizacja zgłoszenia</option>
+                        <option value="ticket_commented" {% if action_filter == 'ticket_commented' %}selected{% endif %}>Odpowiedź do zgłoszenia</option>
+                        <option value="ticket_resolved" {% if action_filter == 'ticket_resolved' %}selected{% endif %}>Rozwiązanie zgłoszenia</option>
+                        <option value="ticket_closed" {% if action_filter == 'ticket_closed' %}selected{% endif %}>Zamknięcie zgłoszenia</option>
+                        <option value="ticket_reopened" {% if action_filter == 'ticket_reopened' %}selected{% endif %}>Ponowne otwarcie zgłoszenia</option>
+                        <option value="preferences_updated" {% if action_filter == 'preferences_updated' %}selected{% endif %}>Aktualizacja preferencji</option>
+                        <option value="404_error" {% if action_filter == '404_error' %}selected{% endif %}>Błąd 404 - Strona nie znaleziona</option>
+                        <option value="403_error" {% if action_filter == '403_error' %}selected{% endif %}>Błąd 403 - Brak dostępu</option>
+                    </select>
+                </div>
+                <div class="col-md-5">
+                    <label for="user" class="form-label">Użytkownik:</label>
+                    <input type="text" name="user" id="user" class="form-control form-control-sm" value="{{ user_filter|default:'' }}" placeholder="Nazwa użytkownika">
+                </div>
+                <div class="col-md-2">
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <button type="submit" class="btn btn-sm btn-primary btn-ripple">
+                            <i class="fas fa-search me-1"></i> Zastosuj
+                        </button>
+                        <a href="{% url 'activity_logs' %}" class="btn btn-sm btn-outline-secondary btn-ripple">
+                            <i class="fas fa-sync-alt me-1"></i> Resetuj
+                        </a>
+                    </div>
+                </div>
             </div>
-            <div class="form-group mr-3">
-                <label for="user" class="mr-2">Użytkownik:</label>
-                <input type="text" name="user" id="user" class="form-control form-control-sm" value="{{ user_filter|default:'' }}" placeholder="Nazwa użytkownika">
-            </div>
-            <button type="submit" class="btn btn-sm btn-primary btn-ripple">Zastosuj filtry</button>
-            <a href="{% url 'activity_logs' %}" class="btn btn-sm btn-outline-secondary btn-ripple ml-2">Resetuj</a>
         </form>
     </div>
 </div>
