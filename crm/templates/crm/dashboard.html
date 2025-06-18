@@ -217,6 +217,42 @@
     .animate-float {
         animation: float 3s ease-in-out infinite;
     }
+
+    /* Fix to disable Font Awesome animations until hover */
+    .fa-spin {
+        -webkit-animation: none !important;
+        animation: none !important;
+    }
+    
+    .stat-card:hover .fa-spin {
+        -webkit-animation: fa-spin 2s infinite linear !important;
+        animation: fa-spin 2s infinite linear !important;
+    }
+    
+    /* Remove the existing animation definitions that might be running all the time */
+    .animate-spin, 
+    .animate-pulse, 
+    .animate-shake,
+    .animate-float {
+        animation: none !important;
+    }
+    
+    /* Animation only happens on stat-card hover */
+    .stat-card:hover .animate-spin {
+        animation: spin 2s linear infinite !important;
+    }
+    
+    .stat-card:hover .animate-pulse {
+        animation: pulse 1.5s ease-in-out infinite !important;
+    }
+    
+    .stat-card:hover .animate-shake {
+        animation: shake 0.5s ease-in-out infinite !important;
+    }
+    
+    .stat-card:hover .animate-float {
+        animation: float 3s ease-in-out infinite !important;
+    }
 </style>
 {% endblock %}
 
