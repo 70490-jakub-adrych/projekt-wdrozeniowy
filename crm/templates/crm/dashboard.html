@@ -9,31 +9,30 @@
     .stat-card {
         border-radius: 0.75rem;
         overflow: hidden;
-        transition: all 0.3s ease;
+        transition: box-shadow 0.3s ease; /* Explicitly transition box-shadow property */
         border: none;
         box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
         height: 100%;
     }
     
     .stat-card:hover {
-        /* Remove transform to prevent jumping */
         box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15);
         cursor: pointer; /* Add pointer cursor to indicate clickable */
     }
     
     /* Card with hover effect */
     .card-hover {
-        transition: all 0.3s ease;
+        transition: box-shadow 0.3s ease; /* Explicitly transition box-shadow property */
+        box-shadow: var(--shadow-sm);
     }
     
     .card-hover:hover {
-        /* Remove transform to prevent jumping */
         box-shadow: var(--shadow-md);
     }
     
     /* Enhanced card styling to match logs page */
     .card {
-        transition: all var(--transition-speed);
+        transition: box-shadow var(--transition-speed); /* Explicitly transition box-shadow property */
         border: none;
         box-shadow: var(--shadow-sm);
         border-radius: 0.5rem;
@@ -812,4 +811,5 @@
 
 {% block extra_js %}
 <script src="{% static 'crm/js/ui-enhancements.js' %}"></script>
+{% endblock %}
 {% endblock %}
