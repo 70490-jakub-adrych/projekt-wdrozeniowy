@@ -7,7 +7,7 @@
     <div class="col-md-8">
         <div class="card">
             <div class="card-header text-white bg-warning">
-                <i class="fas fa-user-plus"></i> Przydziel zgłoszenie do agenta
+                <i class="fas fa-user-plus me-2"></i> Przydziel zgłoszenie do agenta
             </div>
             <div class="card-body">
                 <h5 class="card-title">Przydzielanie zgłoszenia #{{ ticket.id }}: {{ ticket.title }}</h5>
@@ -25,9 +25,9 @@
                 {% if possible_agents %}
                 <form method="post">
                     {% csrf_token %}
-                    <div class="form-group">
-                        <label for="agent_id">Wybierz agenta:</label>
-                        <select name="agent_id" id="agent_id" class="form-control" required>
+                    <div class="mb-3">
+                        <label for="agent_id" class="form-label">Wybierz agenta:</label>
+                        <select name="agent_id" id="agent_id" class="form-select" required>
                             <option value="">-- Wybierz agenta --</option>
                             {% for agent in possible_agents %}
                             <option value="{{ agent.id }}">{{ agent.username }} ({{ agent.first_name }} {{ agent.last_name }})</option>
@@ -36,49 +36,52 @@
                     </div>
                     
                     <!-- Priority selection -->
-                    <div class="form-group mt-4">
-                        <label for="priority">Ustal priorytet zgłoszenia:</label>
+                    <div class="mb-3 mt-4">
+                        <label for="priority" class="form-label">Ustal priorytet zgłoszenia:</label>
                         <div class="mt-2">
-                            <div class="btn-group btn-group-toggle" data-toggle="buttons">
-                                <label class="btn btn-outline-secondary">
-                                    <input type="radio" name="priority" value="low" {% if ticket.priority == 'low' %}checked{% endif %}> 
-                                    <span class="badge badge-secondary">Niski</span>
+                            <div class="btn-group" role="group" aria-label="Priority selection">
+                                <input type="radio" class="btn-check" name="priority" id="priority-low" value="low" {% if ticket.priority == 'low' %}checked{% endif %}>
+                                <label class="btn btn-outline-secondary" for="priority-low">
+                                    <span class="badge bg-secondary">Niski</span>
                                 </label>
-                                <label class="btn btn-outline-info active">
-                                    <input type="radio" name="priority" value="medium" {% if ticket.priority == 'medium' or not ticket.priority %}checked{% endif %}> 
-                                    <span class="badge badge-info">Średni</span>
+                                
+                                <input type="radio" class="btn-check" name="priority" id="priority-medium" value="medium" {% if ticket.priority == 'medium' or not ticket.priority %}checked{% endif %}>
+                                <label class="btn btn-outline-info" for="priority-medium">
+                                    <span class="badge bg-info">Średni</span>
                                 </label>
-                                <label class="btn btn-outline-warning">
-                                    <input type="radio" name="priority" value="high" {% if ticket.priority == 'high' %}checked{% endif %}> 
-                                    <span class="badge badge-warning">Wysoki</span>
+                                
+                                <input type="radio" class="btn-check" name="priority" id="priority-high" value="high" {% if ticket.priority == 'high' %}checked{% endif %}>
+                                <label class="btn btn-outline-warning" for="priority-high">
+                                    <span class="badge bg-warning text-dark">Wysoki</span>
                                 </label>
-                                <label class="btn btn-outline-danger">
-                                    <input type="radio" name="priority" value="critical" {% if ticket.priority == 'critical' %}checked{% endif %}> 
-                                    <span class="badge badge-danger">Krytyczny</span>
+                                
+                                <input type="radio" class="btn-check" name="priority" id="priority-critical" value="critical" {% if ticket.priority == 'critical' %}checked{% endif %}>
+                                <label class="btn btn-outline-danger" for="priority-critical">
+                                    <span class="badge bg-danger">Krytyczny</span>
                                 </label>
                             </div>
                         </div>
                     </div>
                     
                     <div class="mt-4">
-                        <button type="submit" class="btn btn-primary">Przydziel zgłoszenie</button>
-                        <button type="button" class="btn btn-outline-secondary" onclick="goBack()">Anuluj</button>
+                        <button type="submit" class="btn btn-primary me-2">
+                            <i class="fas fa-user-plus me-1"></i> Przydziel zgłoszenie
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" onclick="window.history.back()">
+                            <i class="fas fa-times me-1"></i> Anuluj
+                        </button>
                     </div>
                 </form>
                 {% else %}
                 <div class="alert alert-warning">
                     <p>Brak agentów, którzy mogą obsłużyć to zgłoszenie. Agenci muszą należeć do organizacji: {{ ticket.organization.name }}</p>
                 </div>
-                <button type="button" class="btn btn-outline-secondary" onclick="goBack()">Powrót</button>
+                <button type="button" class="btn btn-outline-secondary" onclick="window.history.back()">
+                    <i class="fas fa-arrow-left me-1"></i> Powrót
+                </button>
                 {% endif %}
             </div>
         </div>
     </div>
 </div>
-
-<script>
-    function goBack() {
-        window.history.back();
-    }
-</script>
 {% endblock %}

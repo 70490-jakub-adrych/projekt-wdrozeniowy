@@ -242,15 +242,15 @@
                         <h5 class="mt-0">
                             {{ comment.author.username }}
                             {% if comment.author.profile.role == 'admin' %}
-                                <span class="badge badge-danger">Admin</span>
+                                <span class="badge bg-danger">Admin</span>
                             {% elif comment.author.profile.role == 'superagent' %}
-                                <span class="badge badge-warning">Superagent</span>
+                                <span class="badge bg-warning text-dark">Superagent</span>
                             {% elif comment.author.profile.role == 'agent' %}
-                                <span class="badge badge-info">Agent</span>
+                                <span class="badge bg-info">Agent</span>
                             {% elif comment.author.profile.role == 'viewer' %}
-                                <span class="badge badge-dark">Viewer</span>
+                                <span class="badge bg-dark">Viewer</span>
                             {% else %}
-                                <span class="badge badge-secondary">Klient</span>
+                                <span class="badge bg-secondary">Klient</span>
                             {% endif %}
                             <small class="text-muted">{{ comment.created_at|date:"d.m.Y H:i" }}</small>
                         </h5>
@@ -413,9 +413,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="privacyPolicyModalLabel">Polityka prywatności i regulamin dotyczący załączników</h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
                 <h6>Regulamin dotyczący załączników w systemie Helpdesk</h6>
@@ -445,7 +443,7 @@
                 </p>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Zamknij</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zamknij</button>
             </div>
         </div>
     </div>
@@ -542,5 +540,7 @@
         margin-bottom: 3px;
     }
 </style>
+{% endblock %}
+{% endblock %}
 {% endblock %}
 {% endblock %}

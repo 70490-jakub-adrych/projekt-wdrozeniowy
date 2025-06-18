@@ -6,65 +6,66 @@
 <div class="row">
     <div class="col-md-6 offset-md-3">
         <div class="card">
-            <div class="card-header">
-                <i class="fas fa-user-check"></i> Przypisz zgłoszenie do siebie
+            <div class="card-header bg-info text-white">
+                <i class="fas fa-user-check me-2"></i> Przypisz zgłoszenie do siebie
             </div>
             <div class="card-body">
-                <h5>Czy na pewno chcesz przypisać to zgłoszenie do siebie?</h5>
-                <p>Zgłoszenie: <strong>{{ ticket.title }}</strong> (ID: #{{ ticket.id }})</p>
-                <p>Status: <span class="badge 
-                    {% if ticket.status == 'new' %}bg-primary
-                    {% elif ticket.status == 'in_progress' %}bg-info
-                    {% elif ticket.status == 'unresolved' %}bg-warning text-dark
-                    {% elif ticket.status == 'resolved' %}bg-success
-                    {% elif ticket.status == 'closed' %}bg-secondary
-                    {% endif %}">
-                    {{ ticket.get_status_display }}
-                </span></p>
+                <h5 class="mb-3">Czy na pewno chcesz przypisać to zgłoszenie do siebie?</h5>
+                <p class="mb-3">Zgłoszenie: <strong>{{ ticket.title }}</strong> (ID: #{{ ticket.id }})</p>
+                <p class="mb-4">Status: 
+                    <span class="badge 
+                        {% if ticket.status == 'new' %}bg-primary
+                        {% elif ticket.status == 'in_progress' %}bg-info
+                        {% elif ticket.status == 'unresolved' %}bg-warning text-dark
+                        {% elif ticket.status == 'resolved' %}bg-success
+                        {% elif ticket.status == 'closed' %}bg-secondary
+                        {% endif %}">
+                        {{ ticket.get_status_display }}
+                    </span>
+                </p>
                 
                 <form method="post" class="mt-4">
                     {% csrf_token %}
                     
                     <!-- Priority selection -->
-                    <div class="form-group">
-                        <label for="priority">Ustal priorytet zgłoszenia:</label>
+                    <div class="mb-4">
+                        <label for="priority" class="form-label fw-bold mb-3">Ustal priorytet zgłoszenia:</label>
                         <div class="mt-2">
-                            <div class="btn-group btn-group-toggle" data-toggle="buttons">
-                                <label class="btn btn-outline-secondary">
-                                    <input type="radio" name="priority" value="low" {% if ticket.priority == 'low' %}checked{% endif %}> 
+                            <div class="btn-group" role="group" aria-label="Priority selection">
+                                <input type="radio" class="btn-check" name="priority" id="priority-low" value="low" {% if ticket.priority == 'low' %}checked{% endif %}>
+                                <label class="btn btn-outline-secondary" for="priority-low">
                                     <span class="badge bg-secondary">Niski</span>
                                 </label>
-                                <label class="btn btn-outline-info active">
-                                    <input type="radio" name="priority" value="medium" {% if ticket.priority == 'medium' or not ticket.priority %}checked{% endif %}> 
+                                
+                                <input type="radio" class="btn-check" name="priority" id="priority-medium" value="medium" {% if ticket.priority == 'medium' or not ticket.priority %}checked{% endif %}>
+                                <label class="btn btn-outline-info" for="priority-medium">
                                     <span class="badge bg-info">Średni</span>
                                 </label>
-                                <label class="btn btn-outline-warning">
-                                    <input type="radio" name="priority" value="high" {% if ticket.priority == 'high' %}checked{% endif %}> 
+                                
+                                <input type="radio" class="btn-check" name="priority" id="priority-high" value="high" {% if ticket.priority == 'high' %}checked{% endif %}>
+                                <label class="btn btn-outline-warning" for="priority-high">
                                     <span class="badge bg-warning text-dark">Wysoki</span>
                                 </label>
-                                <label class="btn btn-outline-danger">
-                                    <input type="radio" name="priority" value="critical" {% if ticket.priority == 'critical' %}checked{% endif %}> 
+                                
+                                <input type="radio" class="btn-check" name="priority" id="priority-critical" value="critical" {% if ticket.priority == 'critical' %}checked{% endif %}>
+                                <label class="btn btn-outline-danger" for="priority-critical">
                                     <span class="badge bg-danger">Krytyczny</span>
                                 </label>
                             </div>
                         </div>
                     </div>
                     
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-user-check"></i> Zaakceptuj
-                    </button>
-                    <button type="button" class="btn btn-secondary" onclick="goBack()">
-                        <i class="fas fa-times"></i> Anuluj
-                    </button>
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">
+                        <button type="button" class="btn btn-secondary me-md-2" onclick="window.history.back()">
+                            <i class="fas fa-times me-1"></i> Anuluj
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-user-check me-1"></i> Zaakceptuj
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>
     </div>
 </div>
-
-<script>
-    function goBack() {
-        window.history.back();
-    }
-</script>
 {% endblock %}
