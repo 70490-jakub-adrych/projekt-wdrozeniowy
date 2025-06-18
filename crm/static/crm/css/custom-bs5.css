@@ -390,23 +390,40 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 /* Icon animations for dashboard */
-.animate-float {
+.animate-float,
+.animate-bounce,
+.animate-shake,
+.animate-pulse,
+.fa-spin {
+    animation: none; /* Disable animations by default */
+}
+
+/* Only play animations on hover */
+.stat-card:hover .animate-float {
     animation: floating 3s ease-in-out infinite;
 }
 
-.animate-bounce {
+.stat-card:hover .animate-bounce {
     animation: bouncing 2s ease-in-out infinite;
 }
 
-.animate-shake {
-    animation: shaking 2s ease-in-out infinite;
+.stat-card:hover .animate-shake {
+    animation: shaking 1s ease-in-out infinite;
 }
 
-.animate-pulse {
-    animation: pulsing 2s ease-in-out infinite;
+.stat-card:hover .animate-pulse {
+    animation: pulsing 1.5s ease-in-out infinite;
 }
 
-/* Font Awesome already has fa-spin class for spinning animations */
+.stat-card:hover .fa-spin {
+    animation: spin 2s linear infinite;
+}
+
+/* Add spin keyframes since we're not using fa-spin's built-in animation by default */
+@keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+}
 
 /* Animation keyframes */
 @keyframes fadeInDown {
@@ -474,13 +491,4 @@ h1, h2, h3, h4, h5, h6 {
     display: flex;
     align-items: center;
     justify-content: center;
-}
-
-/* Make animations pause on hover for accessibility */
-.stat-card:hover .animate-float,
-.stat-card:hover .animate-bounce,
-.stat-card:hover .animate-shake,
-.stat-card:hover .animate-pulse,
-.stat-card:hover .fa-spin {
-    animation-play-state: paused;
 }
