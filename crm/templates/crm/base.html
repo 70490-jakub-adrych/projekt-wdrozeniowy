@@ -268,6 +268,31 @@
             from { opacity: 0; }
             to { opacity: 1; }
         }
+        
+        /* Additional styles for compact navigation */
+        .navbar .nav-link {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.9rem;
+        }
+        
+        /* Smaller icons in navigation */
+        .navbar .fas, .navbar .far, .navbar .fab {
+            font-size: 0.875rem;
+            margin-right: 0.375rem; /* Reduce space between icon and text */
+        }
+        
+        /* Prevent wrapping of nav items */
+        .navbar-nav .nav-item {
+            white-space: nowrap;
+        }
+        
+        @media (max-width: 992px) {
+            /* Further reduce size on smaller screens */
+            .navbar .nav-link {
+                font-size: 0.85rem;
+                padding: 0.4rem 0.6rem;
+            }
+        }
     </style>
     <!-- Google Fonts - Poppins -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
