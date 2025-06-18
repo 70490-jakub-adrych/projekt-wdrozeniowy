@@ -9,30 +9,43 @@
     .stat-card {
         border-radius: 0.75rem;
         overflow: hidden;
-        transition: box-shadow 0.3s ease; /* Explicitly transition box-shadow property */
+        transition: all 0.3s ease;
         border: none;
         box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
         height: 100%;
     }
     
     .stat-card:hover {
+        transform: translateY(-5px);
         box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15);
         cursor: pointer; /* Add pointer cursor to indicate clickable */
     }
     
+    .stat-card-icon {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stat-card-count {
+        font-size: 2.5rem;
+        font-weight: 700;
+        line-height: 1;
+        margin-bottom: 0.5rem;
+    }
+    
     /* Card with hover effect */
     .card-hover {
-        transition: box-shadow 0.3s ease; /* Explicitly transition box-shadow property */
-        box-shadow: var(--shadow-sm);
+        transition: all 0.3s ease;
     }
     
     .card-hover:hover {
+        transform: translateY(-3px);
         box-shadow: var(--shadow-md);
     }
     
     /* Enhanced card styling to match logs page */
     .card {
-        transition: box-shadow var(--transition-speed); /* Explicitly transition box-shadow property */
+        transition: all var(--transition-speed);
         border: none;
         box-shadow: var(--shadow-sm);
         border-radius: 0.5rem;
@@ -145,6 +158,22 @@
     .stat-card-link:hover {
         color: inherit;
         text-decoration: none;
+    }
+    
+    /* Add animation for counter elements */
+    .animate-counter {
+        animation: fadeInUp 0.8s ease-out;
+    }
+    
+    @keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
     }
 </style>
 {% endblock %}
@@ -811,5 +840,4 @@
 
 {% block extra_js %}
 <script src="{% static 'crm/js/ui-enhancements.js' %}"></script>
-{% endblock %}
 {% endblock %}
