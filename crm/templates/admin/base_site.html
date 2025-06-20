@@ -1,0 +1,17 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrastyle %}
+{{ block.super }}
+{% for css_url in extra_css %}
+  <link rel="stylesheet" type="text/css" href="{% static css_url %}">
+{% endfor %}
+{% endblock %}
+
+{% block branding %}
+<h1 id="site-name">
+    <a href="{% url 'admin:index' %}">
+        {{ site_header|default:_('Django administration') }}
+    </a>
+</h1>
+{% endblock %}

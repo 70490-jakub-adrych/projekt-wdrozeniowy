@@ -36,7 +36,7 @@ if not DEBUG:
 # Application definition
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
+    'crm.apps.CrmAdminConfig',  # Replace 'django.contrib.admin' with this
     'django.contrib.auth',
     'django.contrib.contenttypes',
     'django.contrib.sessions',

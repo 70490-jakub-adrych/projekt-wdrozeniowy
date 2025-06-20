@@ -1,0 +1,83 @@
+/* Custom styles for Django 4 admin */
+
+:root {
+    --primary: #3498db;
+    --secondary: #2c3e50;
+    --accent: #e74c3c;
+    --header-bg: #2c3e50;
+    --link-color: #3498db;
+    --header-link-color: #ecf0f1;
+}
+
+/* Header styling */
+#header {
+    background: var(--header-bg);
+    color: white;
+}
+
+#header a:link, #header a:visited {
+    color: var(--header-link-color);
+}
+
+/* Django 4 specific selectors */
+.module h2, .module caption, .inline-group h2 {
+    background: var(--primary);
+}
+
+div.breadcrumbs {
+    background: var(--secondary);
+}
+
+.button, input[type=submit], input[type=button], .submit-row input, a.button {
+    background: var(--primary);
+}
+
+.button:hover, input[type=submit]:hover, input[type=button]:hover {
+    background: var(--accent);
+}
+
+.button.default, input[type=submit].default, .submit-row input.default {
+    background: var(--accent);
+}
+
+.button.default:hover, input[type=submit].default:hover {
+    background: #c0392b;
+}
+
+/* Custom form styling */
+.select2-container--admin-autocomplete .select2-results__option--highlighted[aria-selected] {
+    background-color: var(--primary);
+}
+
+/* Fix for dark mode toggle if present */
+.theme-toggle svg {
+    fill: var(--header-link-color);
+}
+
+/* Improve inline elements */
+.inline-related {
+    border: 1px solid #ddd;
+    margin-bottom: 10px;
+    padding: 10px;
+    border-radius: 4px;
+}
+
+.inline-related h3 {
+    background: #f8f9fa;
+    padding: 8px;
+    margin-top: 0;
+    border-radius: 4px 4px 0 0;
+}
+
+/* Fix form layouts */
+.aligned label {
+    width: 180px;
+}
+
+/* Fix for Django 4's new help text styling */
+.help {
+    font-size: 12px;
+    color: #666;
+    margin-left: 0;
+    padding-left: 0;
+}
