@@ -7,7 +7,7 @@
     <div class="col-md-6">
         <div class="card">
             <div class="card-header bg-danger text-white">
-                <i class="fas fa-times mr-2"></i> Odrzuć użytkownika
+                <i class="fas fa-times me-2"></i> Odrzuć użytkownika
             </div>
             <div class="card-body">
                 <h5 class="card-title">Czy na pewno chcesz odrzucić tego użytkownika?</h5>
@@ -15,23 +15,23 @@
                 <div class="card bg-light mb-4">
                     <div class="card-body">
                         <div class="row mb-2">
-                            <div class="col-md-4 font-weight-bold">Nazwa użytkownika:</div>
+                            <div class="col-md-4 fw-bold">Nazwa użytkownika:</div>
                             <div class="col-md-8">{{ profile.user.username }}</div>
                         </div>
                         <div class="row mb-2">
-                            <div class="col-md-4 font-weight-bold">Email:</div>
+                            <div class="col-md-4 fw-bold">Email:</div>
                             <div class="col-md-8">{{ profile.user.email }}</div>
                         </div>
                         <div class="row mb-2">
-                            <div class="col-md-4 font-weight-bold">Imię i nazwisko:</div>
+                            <div class="col-md-4 fw-bold">Imię i nazwisko:</div>
                             <div class="col-md-8">{{ profile.user.first_name }} {{ profile.user.last_name }}</div>
                         </div>
                         <div class="row mb-2">
-                            <div class="col-md-4 font-weight-bold">Data rejestracji:</div>
+                            <div class="col-md-4 fw-bold">Data rejestracji:</div>
                             <div class="col-md-8">{{ profile.user.date_joined|date:"d.m.Y H:i" }}</div>
                         </div>
                         <div class="row">
-                            <div class="col-md-4 font-weight-bold">Organizacja:</div>
+                            <div class="col-md-4 fw-bold">Organizacja:</div>
                             <div class="col-md-8">
                                 {% if profile.organizations.exists %}
                                     <ul>

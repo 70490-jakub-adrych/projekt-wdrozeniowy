@@ -7,7 +7,7 @@
     <div class="col-md-6">
         <div class="card">
             <div class="card-header bg-warning text-dark">
-                <i class="fas fa-unlock mr-2"></i> Odblokuj konto użytkownika
+                <i class="fas fa-unlock me-2"></i> Odblokuj konto użytkownika
             </div>
             <div class="card-body">
                 <h5 class="card-title">Czy na pewno chcesz odblokować to konto?</h5>
@@ -15,25 +15,25 @@
                 <div class="card bg-light mb-4">
                     <div class="card-body">
                         <div class="row mb-2">
-                            <div class="col-md-4 font-weight-bold">Nazwa użytkownika:</div>
+                            <div class="col-md-4 fw-bold">Nazwa użytkownika:</div>
                             <div class="col-md-8">{{ profile.user.username }}</div>
                         </div>
                         <div class="row mb-2">
-                            <div class="col-md-4 font-weight-bold">Email:</div>
+                            <div class="col-md-4 fw-bold">Email:</div>
                             <div class="col-md-8">{{ profile.user.email }}</div>
                         </div>
                         <div class="row mb-2">
-                            <div class="col-md-4 font-weight-bold">Data blokady:</div>
+                            <div class="col-md-4 fw-bold">Data blokady:</div>
                             <div class="col-md-8">{{ profile.locked_at|date:"d.m.Y H:i" }}</div>
                         </div>
                         <div class="row mb-2">
-                            <div class="col-md-4 font-weight-bold">Nieudane próby:</div>
+                            <div class="col-md-4 fw-bold">Nieudane próby:</div>
                             <div class="col-md-8">
-                                <span class="badge badge-danger">{{ profile.failed_login_attempts }}</span>
+                                <span class="badge bg-danger">{{ profile.failed_login_attempts }}</span>
                             </div>
                         </div>
                         <div class="row">
-                            <div class="col-md-4 font-weight-bold">Organizacja:</div>
+                            <div class="col-md-4 fw-bold">Organizacja:</div>
                             <div class="col-md-8">
                                 {% if profile.organizations.exists %}
                                     <ul>

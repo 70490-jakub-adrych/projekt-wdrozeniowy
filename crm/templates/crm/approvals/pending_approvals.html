@@ -50,7 +50,7 @@
                         </td>
                         <td>{{ profile.locked_at|date:"d.m.Y H:i" }}</td>
                         <td>
-                            <span class="badge badge-danger">{{ profile.failed_login_attempts }}</span>
+                            <span class="badge bg-danger">{{ profile.failed_login_attempts }}</span>
                         </td>
                         <td>
                             <a href="{% url 'unlock_user' profile.user.id %}" class="btn btn-sm btn-warning">
@@ -105,7 +105,7 @@
                         </td>
                         <td>{{ profile.user.date_joined|date:"d.m.Y H:i" }}</td>
                         <td>
-                            <span class="badge badge-info">
+                            <span class="badge bg-info text-white">
                                 <i class="fas fa-clock"></i> Oczekuje na weryfikację email
                             </span>
                         </td>
