@@ -13,7 +13,7 @@ class Command(BaseCommand):
         
         # Sprawdzanie czy istnieje organizacja testowa
         try:
-            organizacja = Organization.objects.get(name='Firma IT Solutions')
+            organizacja = Organization.objects.get(name='Organizacja Testowa')
             self.stdout.write(self.style.SUCCESS(f'Znaleziono organizację: {organizacja.name}'))
         except Organization.DoesNotExist:
             self.stdout.write(self.style.WARNING('Nie znaleziono organizacji "Firma IT Solutions". Tworzę nową.'))
