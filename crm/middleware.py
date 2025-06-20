@@ -84,8 +84,24 @@ class TwoFactorMiddleware:
             # Check if user is exempt from 2FA enforcement (like superuser during initial setup)
             is_exempt = request.user.is_superuser and getattr(settings, 'EXEMPT_SUPERUSER_FROM_2FA', False)
             
+            # Also check if user's group is exempt from 2FA
+            group_exempt = False
+            if hasattr(request.user, 'profile') and request.user.groups.exists():
+                group = request.user.groups.first()
+                if hasattr(group, 'settings'):
+                    group_exempt = group.settings.exempt_from_2fa
+                    
+                    # Save navbar visibility setting in request for use in templates
+                    request.show_navbar = group.settings.show_navbar
+                else:
+                    # Default show navbar if no settings
+                    request.show_navbar = True
+            else:
+                # Default show navbar if no groups
+                request.show_navbar = True
+            
             # Check if user has profile and is already approved
-            if hasattr(request.user, 'profile') and request.user.profile.is_approved and not is_exempt:
+            if hasattr(request.user, 'profile') and request.user.profile.is_approved and not is_exempt and not group_exempt:
                 # First case: User has 2FA enabled and needs verification
                 if request.user.profile.ga_enabled:
                     profile = request.user.profile

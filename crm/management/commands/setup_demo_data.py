@@ -146,6 +146,8 @@ class Command(BaseCommand):
                 'allow_multiple_organizations': False,
                 'show_statistics': False,
                 'attachments_access_level': 'own',
+                'exempt_from_2fa': True,  # Exempt viewers from 2FA
+                'show_navbar': False,     # Hide navbar for viewers
                 # Viewer - no permissions (same as client)
                 'can_assign_unassigned_tickets': False,
                 'can_assign_tickets_to_others': False,

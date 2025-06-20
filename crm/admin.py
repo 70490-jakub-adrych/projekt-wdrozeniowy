@@ -202,6 +202,10 @@ class GroupSettingsInline(admin.StackedInline):
         (None, {
             'fields': ('allow_multiple_organizations', 'show_statistics')
         }),
+        ('Ustawienia interfejsu i bezpieczeństwa', {
+            'fields': ('exempt_from_2fa', 'show_navbar'),
+            'description': 'Ustawienia dotyczące interfejsu użytkownika i uwierzytelniania dwuskładnikowego.'
+        }),
         ('Ustawienia dostępu do załączników', {
             'fields': ('attachments_access_level',),
             'description': 'Określ poziom dostępu do załączników dla tej grupy użytkowników.'

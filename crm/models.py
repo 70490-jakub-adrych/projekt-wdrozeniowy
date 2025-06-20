@@ -520,6 +520,16 @@ class GroupSettings(models.Model):
         verbose_name="Pokaż statystyki",
         help_text="Jeśli zaznaczone, użytkownicy w tej grupie mają dostęp do panelu statystyk."
     )
+    exempt_from_2fa = models.BooleanField(
+        default=False,
+        verbose_name="Zwolnij z 2FA",
+        help_text="Jeśli zaznaczone, użytkownicy w tej grupie nie będą musieli konfigurować uwierzytelniania dwuskładnikowego."
+    )
+    show_navbar = models.BooleanField(
+        default=True,
+        verbose_name="Pokaż pasek nawigacyjny",
+        help_text="Jeśli zaznaczone, użytkownicy w tej grupie będą widzieć górny pasek nawigacyjny. Jeśli odznaczone, pasek będzie ukryty."
+    )
     attachments_access_level = models.CharField(
         max_length=20,
         choices=[
