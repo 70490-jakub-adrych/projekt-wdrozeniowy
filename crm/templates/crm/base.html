@@ -486,24 +486,26 @@
 
     <div class="container mt-4">
         {% if messages %}
-            <div class="toast-container position-fixed top-0 end-0 p-3">
-                {% for message in messages %}
-                    <div class="toast align-items-center border-0 show" role="alert" aria-live="assertive" aria-atomic="true">
-                        <div class="d-flex">
-                            <div class="toast-body d-flex align-items-center">
-                                <i class="
-                                    {% if message.tags == 'success' %}fas fa-check-circle text-success
-                                    {% elif message.tags == 'error' %}fas fa-exclamation-circle text-danger
-                                    {% elif message.tags == 'warning' %}fas fa-exclamation-triangle text-warning
-                                    {% elif message.tags == 'info' %}fas fa-info-circle text-info
-                                    {% else %}fas fa-bell text-primary{% endif %} me-2"></i>
-                                {{ message }}
+            {% if not user.is_authenticated or user.profile.role != 'viewer' %}
+                <div class="toast-container position-fixed top-0 end-0 p-3">
+                    {% for message in messages %}
+                        <div class="toast align-items-center border-0 show" role="alert" aria-live="assertive" aria-atomic="true">
+                            <div class="d-flex">
+                                <div class="toast-body d-flex align-items-center">
+                                    <i class="
+                                        {% if message.tags == 'success' %}fas fa-check-circle text-success
+                                        {% elif message.tags == 'error' %}fas fa-exclamation-circle text-danger
+                                        {% elif message.tags == 'warning' %}fas fa-exclamation-triangle text-warning
+                                        {% elif message.tags == 'info' %}fas fa-info-circle text-info
+                                        {% else %}fas fa-bell text-primary{% endif %} me-2"></i>
+                                    {{ message }}
+                                </div>
+                                <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
                             </div>
-                            <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
                         </div>
-                    </div>
-                {% endfor %}
-            </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
         {% endif %}
 
         {% block content %}{% endblock %}
