@@ -147,7 +147,7 @@
         <div>
             <i class="fas fa-filter"></i> Filtry 
             {% if status_filter or priority_filter or category_filter or assigned_filter or organization_filter or created_by_filter or date_from or date_to %}
-            <span class="badge badge-info ml-2">Aktywne</span>
+            <span class="badge bg-info ms-2">Aktywne</span>
             {% endif %}
         </div>
         <button class="btn btn-sm btn-outline-secondary btn-ripple" type="button" data-bs-toggle="collapse" data-bs-target="#filterContainer">
@@ -205,7 +205,7 @@
                 <span class="active-filter"><strong>Ukryte zamknięte</strong></span>
                 {% endif %}
             </div>
-            <div class="text-right">
+            <div class="text-end">
                 <a href="{% url 'ticket_list' %}" class="btn btn-sm btn-outline-secondary btn-ripple">
                     <i class="fas fa-times"></i> Wyczyść filtry
                 </a>
@@ -333,11 +333,11 @@
                         <input type="hidden" name="exclude_created_by" value="{{ exclude_created_by }}">
                         {% endif %}
                                 
-                        <div class="col-md-6 col-sm-12 mb-2 text-right d-flex align-items-end justify-content-end">
+                        <div class="col-md-6 col-sm-12 mb-2 text-end d-flex align-items-end justify-content-end">
                             <button type="submit" class="btn btn-sm btn-primary">
                                 <i class="fas fa-search"></i> Zastosuj filtry
                             </button>
-                            <a href="{% url 'ticket_list' %}" class="btn btn-sm btn-outline-secondary ml-2">
+                            <a href="{% url 'ticket_list' %}" class="btn btn-sm btn-outline-secondary ms-3">
                                 <i class="fas fa-sync"></i> Resetuj
                             </a>
                         </div>

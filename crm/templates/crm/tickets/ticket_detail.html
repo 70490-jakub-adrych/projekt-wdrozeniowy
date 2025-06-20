@@ -137,60 +137,60 @@
             </div>
             <div class="card-body">
                 <div class="row mb-3">
-                    <div class="col-md-3 font-weight-bold">Status:</div>
+                    <div class="col-md-3 fw-bold">Status:</div>
                     <div class="col-md-9">
                         <span class="badge 
-                            {% if ticket.status == 'new' %}badge-primary
-                            {% elif ticket.status == 'in_progress' %}badge-info
-                            {% elif ticket.status == 'unresolved' %}badge-warning text-dark
-                            {% elif ticket.status == 'resolved' %}badge-success
-                            {% else %}badge-secondary{% endif %} p-2">
+                            {% if ticket.status == 'new' %}bg-primary
+                            {% elif ticket.status == 'in_progress' %}bg-info
+                            {% elif ticket.status == 'unresolved' %}bg-warning text-dark
+                            {% elif ticket.status == 'resolved' %}bg-success
+                            {% else %}bg-secondary{% endif %} p-2">
                             {{ ticket.get_status_display }}
                         </span>
                     </div>
                 </div>
                 <div class="row mb-3">
-                    <div class="col-md-3 font-weight-bold">Priorytet:</div>
+                    <div class="col-md-3 fw-bold">Priorytet:</div>
                     <div class="col-md-9">
                         <span class="badge 
-                            {% if ticket.priority == 'low' %}badge-secondary
-                            {% elif ticket.priority == 'medium' %}badge-info
-                            {% elif ticket.priority == 'high' %}badge-warning
-                            {% elif ticket.priority == 'critical' %}badge-danger
+                            {% if ticket.priority == 'low' %}bg-secondary
+                            {% elif ticket.priority == 'medium' %}bg-info
+                            {% elif ticket.priority == 'high' %}bg-warning
+                            {% elif ticket.priority == 'critical' %}bg-danger
                             {% endif %} p-2">
                             {{ ticket.get_priority_display }}
                         </span>
                     </div>
                 </div>
                 <div class="row mb-3">
-                    <div class="col-md-3 font-weight-bold">Kategoria:</div>
+                    <div class="col-md-3 fw-bold">Kategoria:</div>
                     <div class="col-md-9">{{ ticket.get_category_display }}</div>
                 </div>
                 <div class="row mb-3">
-                    <div class="col-md-3 font-weight-bold">Organizacja:</div>
+                    <div class="col-md-3 fw-bold">Organizacja:</div>
                     <div class="col-md-9">{{ ticket.organization.name }}</div>
                 </div>
                 <div class="row mb-3">
-                    <div class="col-md-3 font-weight-bold">Zgłaszający:</div>
+                    <div class="col-md-3 fw-bold">Zgłaszający:</div>
                     <div class="col-md-9">{{ ticket.created_by.username }}</div>
                 </div>
                 <div class="row mb-3">
-                    <div class="col-md-3 font-weight-bold">Przypisane do:</div>
+                    <div class="col-md-3 fw-bold">Przypisane do:</div>
                     <div class="col-md-9">{% if ticket.assigned_to %}{{ ticket.assigned_to.username }}{% else %}<span class="text-muted">Oczekuje na akceptację</span>{% endif %}</div>
                 </div>
                 <div class="row mb-3">
-                    <div class="col-md-3 font-weight-bold">Data utworzenia:</div>
+                    <div class="col-md-3 fw-bold">Data utworzenia:</div>
                     <div class="col-md-9">{{ ticket.created_at|date:"d.m.Y H:i" }}</div>
                 </div>
                 {% if ticket.resolved_at %}
                 <div class="row mb-3">
-                    <div class="col-md-3 font-weight-bold">Data rozwiązania:</div>
+                    <div class="col-md-3 fw-bold">Data rozwiązania:</div>
                     <div class="col-md-9">{{ ticket.resolved_at|date:"d.m.Y H:i" }}</div>
                 </div>
                 {% endif %}
                 {% if ticket.closed_at %}
                 <div class="row mb-3">
-                    <div class="col-md-3 font-weight-bold">Data zamknięcia:</div>
+                    <div class="col-md-3 fw-bold">Data zamknięcia:</div>
                     <div class="col-md-9">{{ ticket.closed_at|date:"d.m.Y H:i" }}</div>
                 </div>
                 {% endif %}
@@ -220,7 +220,7 @@
                         <div>
                             <i class="fas fa-file"></i> 
                             <a href="{% url 'serve_attachment' attachment.id %}" target="_blank">{{ attachment.filename }}</a>
-                            <small class="text-muted ml-2">(Dodane przez: {{ attachment.uploaded_by.username }}, {{ attachment.uploaded_at|date:"d.m.Y H:i" }})</small>
+                            <small class="text-muted ms-2">(Dodane przez: {{ attachment.uploaded_by.username }}, {{ attachment.uploaded_at|date:"d.m.Y H:i" }})</small>
                         </div>
                     </li>
                     {% endfor %}
