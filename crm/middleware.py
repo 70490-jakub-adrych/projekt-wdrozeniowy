@@ -6,6 +6,9 @@ import logging
 from django.conf import settings
 from datetime import datetime, timedelta
 from django.utils import timezone
+import os
+import sys
+import traceback
 
 logger = logging.getLogger(__name__)
 
@@ -104,6 +107,23 @@ class TwoFactorMiddleware:
             # Very detailed logging to help troubleshoot
             logger.debug(f"Processing request for {request.user.username} to path: {request.path}")
             
+            # Add a session access check to identify potential session issues
+            try:
+                # Try to access and modify the session to verify it's working
+                test_key = '2fa_session_test'
+                request.session[test_key] = datetime.now().isoformat()
+                del request.session[test_key]
+            except Exception as e:
+                logger.error(f"Session access error for {request.user.username}: {str(e)}")
+                # Log the traceback
+                logger.error(traceback.format_exc())
+            
+            # Check for the debug parameter
+            if request.GET.get('2fa_debug') == '1':
+                debug_url = reverse('debug_2fa')
+                logger.info(f"Redirecting {request.user.username} to 2FA debug page")
+                return redirect(debug_url)
+            
             # Check if user is exempt from 2FA enforcement (like superuser during initial setup)
             is_exempt = request.user.is_superuser and getattr(settings, 'EXEMPT_SUPERUSER_FROM_2FA', False)
             
@@ -128,6 +148,21 @@ class TwoFactorMiddleware:
                 # First case: User has 2FA enabled
                 if request.user.profile.ga_enabled:
                     profile = request.user.profile
+                    
+                    # Log detailed information about the user's 2FA status
+                    logger.debug(f"User {request.user.username} 2FA status: enabled={profile.ga_enabled}, " +
+                                f"has_secret={bool(profile.ga_secret_key)}, " +
+                                f"last_auth={profile.ga_last_authenticated}")
+                    
+                    # Check URL path details to help diagnose routing issues
+                    try:
+                        from django.urls import get_resolver
+                        resolver = get_resolver(None)
+                        all_patterns = resolver.url_patterns
+                        verify_patterns = [p for p in all_patterns if getattr(p, 'name', '') == 'verify_2fa']
+                        logger.debug(f"URL resolver found verify_2fa patterns: {verify_patterns}")
+                    except Exception as e:
+                        logger.error(f"Error checking URL patterns: {str(e)}")
                     
                     # CRITICAL CHECK: Exact match for verify_2fa URL
                     logger.debug(f"Comparing paths: request.path={request.path}, verify_2fa_url={self.verify_2fa_url}")
@@ -169,14 +204,22 @@ class TwoFactorMiddleware:
                         logger.warning(f"Too many 2FA redirects ({redirect_count}) for {request.user.username}, using emergency bypass")
                         request.session['2fa_redirect_count'] = 0  # Reset counter
                         
-                        # EMERGENCY BYPASS - Skip the direct template rendering and let the user through
-                        # This is simpler than trying to import forms and render templates
+                        # EMERGENCY BYPASS - Add a link to the debug page
+                        debug_url = reverse('debug_2fa')
                         messages.warning(
                             request, 
-                            "Wystąpił problem z uwierzytelnianiem dwuskładnikowym. Kliknij <a href='/2fa/verify/'>tutaj</a>, aby zweryfikować."
+                            f"""
+                            Wystąpił problem z uwierzytelnianiem dwuskładnikowym. 
+                            <br><a href='{self.verify_2fa_url}'>Kliknij tutaj</a>, aby przejść bezpośrednio do weryfikacji.
+                            <br><a href='{debug_url}'>Diagnozuj problem</a> (dla administratorów).
+                            """
                         )
                         # Set a flag to indicate the bypass was used
                         request.session['2fa_bypass_used'] = True
+                        # Also log system information to help diagnose the issue
+                        logger.error(f"2FA bypass activated for {request.user.username}. " +
+                                    f"Python: {sys.version}, OS: {os.name}, " +
+                                    f"Platform: {sys.platform}")
                         return self.get_response(request)
                     
                     # Get the IP address
