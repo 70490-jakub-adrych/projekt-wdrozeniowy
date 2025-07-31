@@ -90,6 +90,7 @@ class TwoFactorMiddleware:
         self.setup_2fa_success_url = reverse('setup_2fa_success')
         self.recovery_code_url = reverse('recovery_code')
         self.logout_url = reverse('logout')
+        self.debug_2fa_url = reverse('debug_2fa')  # Add debug URL
         
         # Store exempt paths as a set for faster lookups
         self.static_exempt_paths = {
@@ -104,6 +105,11 @@ class TwoFactorMiddleware:
         
     def __call__(self, request):
         if request.user.is_authenticated:
+            # Skip the entire middleware if bypass was already used in this session
+            if request.session.get('2fa_bypass_used', False):
+                logger.debug(f"2FA bypass active for {request.user.username}, skipping middleware")
+                return self.get_response(request)
+            
             # Very detailed logging to help troubleshoot
             logger.debug(f"Processing request for {request.user.username} to path: {request.path}")
             
@@ -120,9 +126,8 @@ class TwoFactorMiddleware:
             
             # Check for the debug parameter
             if request.GET.get('2fa_debug') == '1':
-                debug_url = reverse('debug_2fa')
                 logger.info(f"Redirecting {request.user.username} to 2FA debug page")
-                return redirect(debug_url)
+                return redirect(self.debug_2fa_url)
             
             # Check if user is exempt from 2FA enforcement (like superuser during initial setup)
             is_exempt = request.user.is_superuser and getattr(settings, 'EXEMPT_SUPERUSER_FROM_2FA', False)
@@ -154,47 +159,9 @@ class TwoFactorMiddleware:
                                 f"has_secret={bool(profile.ga_secret_key)}, " +
                                 f"last_auth={profile.ga_last_authenticated}")
                     
-                    # Check URL path details to help diagnose routing issues
-                    try:
-                        from django.urls import get_resolver
-                        resolver = get_resolver(None)
-                        all_patterns = resolver.url_patterns
-                        verify_patterns = [p for p in all_patterns if getattr(p, 'name', '') == 'verify_2fa']
-                        logger.debug(f"URL resolver found verify_2fa patterns: {verify_patterns}")
-                    except Exception as e:
-                        logger.error(f"Error checking URL patterns: {str(e)}")
-                    
-                    # CRITICAL CHECK: Exact match for verify_2fa URL
-                    logger.debug(f"Comparing paths: request.path={request.path}, verify_2fa_url={self.verify_2fa_url}")
-                    
-                    # If we're already on the verification page, proceed
-                    if request.path == self.verify_2fa_url:
-                        logger.debug(f"EXACT MATCH: Already on verify_2fa page - proceeding")
-                        return self.get_response(request)
-                    
-                    # Try URL resolver to check if we're on the verify_2fa page
-                    try:
-                        current_url_name = resolve(request.path).url_name
-                        logger.debug(f"Resolved URL name: {current_url_name}")
-                        if current_url_name == 'verify_2fa':
-                            logger.debug(f"RESOLVER MATCH: Already on verify_2fa page - proceeding")
-                            return self.get_response(request)
-                    except Resolver404:
-                        logger.debug(f"URL resolver failed for path: {request.path}")
-                    except Exception as e:
-                        logger.debug(f"Exception in URL resolver: {str(e)}")
-                    
-                    # Normalize paths (remove trailing slashes) and compare
-                    current_path = request.path.rstrip('/')
-                    verify_path = self.verify_2fa_url.rstrip('/')
-                    logger.debug(f"Normalized paths: current={current_path}, verify={verify_path}")
-                    
-                    if current_path == verify_path:
-                        logger.debug(f"NORMALIZED MATCH: Already on verify_2fa page - proceeding")
-                        return self.get_response(request)
-                        
-                    # Check if the path is exempt regardless
-                    if self._is_exempt_path(request.path):
+                    # FIX: Check if we're already on an exempt page first before anything else
+                    # This prevents redirection loops even when URL resolving has issues
+                    if self._is_exempt_path_improved(request.path):
                         logger.debug(f"EXEMPT PATH: {request.path} is exempt from 2FA - proceeding")
                         return self.get_response(request)
                     
@@ -204,8 +171,11 @@ class TwoFactorMiddleware:
                         logger.warning(f"Too many 2FA redirects ({redirect_count}) for {request.user.username}, using emergency bypass")
                         request.session['2fa_redirect_count'] = 0  # Reset counter
                         
-                        # EMERGENCY BYPASS - Add a link to the debug page
-                        debug_url = reverse('debug_2fa')
+                        # EMERGENCY BYPASS - Set permanent bypass flag
+                        request.session['2fa_bypass_used'] = True
+                        
+                        # Add a link to the debug page
+                        debug_url = self.debug_2fa_url
                         messages.warning(
                             request, 
                             f"""
@@ -214,12 +184,16 @@ class TwoFactorMiddleware:
                             <br><a href='{debug_url}'>Diagnozuj problem</a> (dla administratorów).
                             """
                         )
-                        # Set a flag to indicate the bypass was used
-                        request.session['2fa_bypass_used'] = True
+                        
                         # Also log system information to help diagnose the issue
                         logger.error(f"2FA bypass activated for {request.user.username}. " +
                                     f"Python: {sys.version}, OS: {os.name}, " +
                                     f"Platform: {sys.platform}")
+                        
+                        # Mark as verified temporarily to break out of loops
+                        request.session['2fa_verified'] = True
+                        request.session['2fa_verified_time'] = timezone.now().isoformat()
+                        
                         return self.get_response(request)
                     
                     # Get the IP address
@@ -274,20 +248,8 @@ class TwoFactorMiddleware:
                 
                 # Second case: Approved user doesn't have 2FA enabled yet - redirect to setup
                 elif not request.user.profile.ga_enabled:
-                    # Check if we're already on the setup page
-                    try:
-                        current_url_name = resolve(request.path).url_name
-                        if current_url_name == 'setup_2fa':
-                            return self.get_response(request)
-                    except:
-                        pass
-                        
-                    # Direct path comparison
-                    if request.path.rstrip('/') == self.setup_2fa_url.rstrip('/'):
-                        return self.get_response(request)
-                        
                     # Check if current path is already an exempt path
-                    if self._is_exempt_path(request.path):
+                    if self._is_exempt_path_improved(request.path):
                         return self.get_response(request)
                         
                     # If not in a grace period (first login)
@@ -303,8 +265,43 @@ class TwoFactorMiddleware:
         
         return self.get_response(request)
     
+    def _is_exempt_path_improved(self, path):
+        """Improved version of is_exempt_path with more robust checks"""
+        # First check direct matches
+        if path == self.verify_2fa_url or path == self.setup_2fa_url or path == self.setup_2fa_success_url or \
+           path == self.recovery_code_url or path == self.logout_url or path == self.debug_2fa_url:
+            return True
+            
+        # Check with trailing slashes normalized
+        path_no_slash = path.rstrip('/')
+        if path_no_slash == self.verify_2fa_url.rstrip('/') or \
+           path_no_slash == self.setup_2fa_url.rstrip('/') or \
+           path_no_slash == self.setup_2fa_success_url.rstrip('/') or \
+           path_no_slash == self.recovery_code_url.rstrip('/') or \
+           path_no_slash == self.logout_url.rstrip('/') or \
+           path_no_slash == self.debug_2fa_url.rstrip('/'):
+            return True
+            
+        # Then check static paths
+        for exempt_path in self.static_exempt_paths:
+            if path.startswith(exempt_path):
+                return True
+                
+        # Fallback to URL resolver (but put this last as it's the slowest method)
+        try:
+            current_url_name = resolve(path).url_name
+            exempt_names = ['verify_2fa', 'setup_2fa', 'setup_2fa_success', 'recovery_code', 'logout', 'debug_2fa']
+            if current_url_name in exempt_names:
+                return True
+        except Resolver404:
+            pass
+        except Exception as e:
+            logger.debug(f"Exception in URL resolver: {str(e)}")
+            
+        return False
+    
     def _is_exempt_path(self, path):
-        """Check if path is exempt from 2FA verification"""
+        """Original is_exempt_path method - preserved for backward compatibility"""
         # First check against cached URL paths (exact matches)
         path_no_slash = path.rstrip('/')
         
@@ -314,7 +311,8 @@ class TwoFactorMiddleware:
             self.setup_2fa_url,
             self.setup_2fa_success_url,
             self.recovery_code_url,
-            self.logout_url
+            self.logout_url,
+            self.debug_2fa_url  # Add debug URL
         ]
         
         for exempt_url in exempt_urls:
