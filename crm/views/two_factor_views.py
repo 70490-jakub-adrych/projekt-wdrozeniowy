@@ -53,6 +53,9 @@ def setup_2fa(request):
                 profile.ga_enabled = True
                 profile.ga_enabled_on = timezone.now()
                 
+                # Set the last authentication timestamp to now and mark device as trusted
+                profile.ga_last_authenticated = timezone.now()
+                
                 # Generate a recovery code if not already generated
                 if not profile.ga_recovery_hash:
                     success, recovery_code = profile.generate_recovery_code()
@@ -63,8 +66,14 @@ def setup_2fa(request):
                         messages.error(request, 'Nie udało się wygenerować kodu odzyskiwania.')
                         return redirect('setup_2fa')
                 
-                # Save the profile
+                # Save the profile before marking device as trusted
                 profile.save()
+                
+                # Mark current device as trusted for 30 days
+                profile.set_device_trusted(
+                    request_ip=get_client_ip(request),
+                    fingerprint=request.META.get('HTTP_USER_AGENT', '')
+                )
                 
                 # Clean up session
                 if 'ga_secret_key' in request.session:
