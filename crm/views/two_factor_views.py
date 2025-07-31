@@ -305,6 +305,25 @@ def verify_2fa_status(request):
     
     return render(request, 'crm/2fa/status.html', context)
 
+@login_required
+def recovery_code(request):
+    """View for recovery code verification when 2FA device is lost"""
+    user = request.user
+    profile = getattr(user, 'profile', None)
+    
+    if not profile or not profile.ga_enabled:
+        messages.info(request, 'Uwierzytelnianie dwuskładnikowe nie jest włączone dla Twojego konta.')
+        return redirect('dashboard')
+    
+    if request.method == 'POST':
+        recovery_code = request.POST.get('recovery_code', '')
+        if recovery_code:
+            # For now, just provide a simple success message
+            messages.success(request, 'Funkcjonalność kodu odzyskiwania zostanie wkrótce wdrożona.')
+            return redirect('dashboard')
+    
+    return render(request, 'crm/2fa/verify.html', {'form': TOTPVerificationForm()})
+
 def generate_qr_code(data):
     """Generate QR code image"""
     # Create QR code instance
