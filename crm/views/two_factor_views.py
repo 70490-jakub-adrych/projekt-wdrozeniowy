@@ -9,7 +9,7 @@ from django.contrib import messages
 from django.utils import timezone
 from django.http import HttpResponse
 from django.views.decorators.http import require_POST
-from django.urls import reverse
+from django.urls import reverse, NoReverseMatch
 
 from ..forms import TOTPVerificationForm
 from ..models import UserProfile
@@ -25,6 +25,19 @@ def get_client_ip(request):
     else:
         ip = request.META.get('REMOTE_ADDR')
     return ip
+
+def safe_redirect(request, url_name, fallback_url_name='dashboard'):
+    """Helper function to safely handle URL redirects with fallback"""
+    try:
+        return redirect(url_name)
+    except NoReverseMatch:
+        logger.warning(f"Failed to redirect to {url_name}, falling back to {fallback_url_name}")
+        try:
+            return redirect(fallback_url_name)
+        except NoReverseMatch:
+            logger.error(f"Fallback redirect to {fallback_url_name} also failed")
+            # Emergency fallback to an absolute URL
+            return redirect('/')
 
 @login_required
 def setup_2fa(request):
@@ -193,10 +206,8 @@ def verify_2fa(request):
     # Check if requires fresh verification even for trusted devices
     require_fresh = request.session.get('require_fresh_2fa', False)
     
-    # If user doesn't need 2FA verification, redirect to dashboard
-    if not profile or not profile.ga_enabled or (not require_fresh and not profile.needs_2fa_verification(get_client_ip(request))):
-        return redirect('dashboard')
-    
+    # IMPORTANT: ALWAYS ALLOW ACCESS TO THIS PAGE - NEVER REDIRECT AWAY
+    # This prevents redirect loops with the middleware
     if request.method == 'POST':
         form = TOTPVerificationForm(request.POST)
         if form.is_valid():
@@ -235,6 +246,10 @@ def verify_2fa(request):
                 if 'require_fresh_2fa' in request.session:
                     del request.session['require_fresh_2fa']
                 
+                # IMPORTANT: Reset the redirect counter to prevent loop detection false positives
+                if '2fa_redirect_count' in request.session:
+                    del request.session['2fa_redirect_count']
+                    
                 # Add a marker in the session that 2FA verification is completed
                 request.session['2fa_verified'] = True
                 request.session['2fa_verified_time'] = timezone.now().isoformat()
