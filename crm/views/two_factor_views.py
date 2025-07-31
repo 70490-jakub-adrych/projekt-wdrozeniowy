@@ -203,20 +203,36 @@ def verify_2fa(request):
     user = request.user
     profile = getattr(user, 'profile', None)
     
-    # Debug info
-    logger.debug(f"verify_2fa view accessed by {user.username} with path: {request.path}")
-    logger.debug(f"Session contains 2fa_next: {request.session.get('2fa_next', 'None')}")
-    
-    # If user doesn't have 2FA enabled, they shouldn't be here
+    # Redirect if 2FA is not enabled for this user
     if not profile or not profile.ga_enabled:
-        logger.debug(f"User {user.username} doesn't have 2FA enabled, redirecting to setup")
         messages.warning(request, 'Uwierzytelnianie dwuskładnikowe nie jest włączone dla Twojego konta.')
         return redirect('setup_2fa')
     
-    # NEVER redirect to any other page unless it's an intentional action (like form submission)
-    # This prevents redirect loops
+    # Check if authentication is still valid (within 30 days)
+    auth_valid = False
+    days_remaining = 0
+    verification_expired = request.session.get('2fa_verification_expired', False)
     
-    # Handle verification code submission
+    if profile.ga_last_authenticated and not verification_expired:
+        time_since_auth = timezone.now() - profile.ga_last_authenticated
+        auth_valid = time_since_auth.days < 30
+        days_remaining = max(0, 30 - time_since_auth.days)
+    
+    # If auth is still valid and not explicitly marked as expired, show status instead
+    if auth_valid and not verification_expired and request.method != 'POST':
+        logger.debug(f"2FA auth still valid for {user.username}, showing status info")
+        context = {
+            'auth_valid': auth_valid,
+            'days_remaining': days_remaining,
+            'last_auth': profile.ga_last_authenticated,
+            'setup_date': profile.ga_enabled_on
+        }
+        return render(request, 'crm/2fa/verify_status.html', context)
+    
+    # Clear the expired flag now that we're handling it
+    if 'verification_expired' in request.session:
+        del request.session['verification_expired']
+    
     if request.method == 'POST':
         form = TOTPVerificationForm(request.POST)
         if form.is_valid():
@@ -251,30 +267,12 @@ def verify_2fa(request):
                 # Log failed verification attempt
                 logger.warning(f"Failed 2FA verification attempt for user {user.username} from IP {get_client_ip(request)}")
     else:
-        # For GET requests, always show the verification form
-        # Check if user is in grace period
-        if request.session.get('2fa_setup_exempt_until'):
-            try:
-                exempt_until = datetime.fromisoformat(request.session.get('2fa_setup_exempt_until'))
-                if timezone.now() < exempt_until:
-                    logger.debug(f"User {user.username} is in grace period, redirecting to dashboard")
-                    return redirect('dashboard')
-            except (ValueError, TypeError):
-                pass
-        
         form = TOTPVerificationForm()
     
-    # Create the context with debug info
     context = {
         'form': form,
-        'debug_info': {
-            'path': request.path,
-            'next': request.session.get('2fa_next', None),
-            'redirect_count': request.session.get('2fa_redirect_count', 0),
-        }
+        'verification_expired': verification_expired
     }
-    
-    # Always render the template - never redirect!
     return render(request, 'crm/2fa/verify.html', context)
 
 @login_required

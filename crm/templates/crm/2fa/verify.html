@@ -65,21 +65,6 @@
         </div>
     </div>
 </div>
-
-{% if debug_info %}
-<div class="alert alert-info mt-4">
-    <h6>Debug Information:</h6>
-    <ul class="mb-0">
-        <li>Current path: {{ debug_info.path }}</li>
-        <li>Redirect destination: {{ debug_info.next|default:"Dashboard" }}</li>
-        <li>Redirect count: {{ debug_info.redirect_count }}</li>
-    </ul>
-    <p class="mt-2 mb-0">
-        <small>If you're seeing this page repeatedly, please contact an administrator.</small>
-    </p>
-</div>
-{% endif %}
-
 {% endblock %}
 </div>
 {% endblock %}
