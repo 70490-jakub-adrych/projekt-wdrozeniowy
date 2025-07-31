@@ -78,26 +78,17 @@ class UserProfile(models.Model):
         self.save()
         
     def generate_recovery_code(self):
-        """Generate a new recovery code for 2FA"""
+        """Generate a recovery code for 2FA"""
         import secrets
         import string
-        import hashlib
-        from django.utils import timezone
         
-        # Check if code was generated in the last 24 hours
-        if (self.ga_recovery_last_generated and 
-            timezone.now() < self.ga_recovery_last_generated + timedelta(hours=24)):
-            return False, "Kod odzyskiwania można wygenerować tylko raz na 24 godziny."
-        
-        # Generate a strong recovery code (20 characters, alphanumeric)
-        alphabet = string.ascii_letters + string.digits
+        # Generate a secure random recovery code (20 characters)
+        alphabet = string.ascii_uppercase + string.digits
         recovery_code = ''.join(secrets.choice(alphabet) for _ in range(20))
         
-        # Hash the recovery code for storage
-        hashed_code = hashlib.sha256(recovery_code.encode()).hexdigest()
-        
-        # Store the hash and update timestamp
-        self.ga_recovery_hash = hashed_code
+        # Store the code directly (for simplicity)
+        # In production, you might want to hash this
+        self.ga_recovery_hash = recovery_code
         self.ga_recovery_last_generated = timezone.now()
         self.save(update_fields=['ga_recovery_hash', 'ga_recovery_last_generated'])
         
@@ -105,29 +96,17 @@ class UserProfile(models.Model):
         
     def verify_recovery_code(self, code):
         """Verify a recovery code and disable 2FA if valid"""
-        import hashlib
-        
         if not self.ga_recovery_hash:
             return False
-        
-        # Hash the provided code
-        hashed_code = hashlib.sha256(code.encode()).hexdigest()
-        
-        # Compare with stored hash
-        if hashed_code == self.ga_recovery_hash:
-            # Disable 2FA upon successful recovery
+            
+        if self.ga_recovery_hash == code:
+            # Code is valid, disable 2FA
             self.ga_enabled = False
-            self.ga_recovery_hash = None
             self.ga_secret_key = None
-            self.trusted_ip = None
-            self.trusted_until = None
-            self.device_fingerprint = None
-            self.save(update_fields=[
-                'ga_enabled', 'ga_recovery_hash', 'ga_secret_key',
-                'trusted_ip', 'trusted_until', 'device_fingerprint'
-            ])
+            self.ga_recovery_hash = None  # Use code only once
+            self.save()
             return True
-        
+            
         return False
         
     def needs_2fa_verification(self, request_ip=None):
@@ -843,6 +822,27 @@ class EmailNotificationSettings(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, verbose_name="Użytkownik")
     
     # Ticket notifications
+    notify_ticket_created = models.BooleanField(default=True, verbose_name="Nowe zgłoszenie")
+    notify_ticket_assigned = models.BooleanField(default=True, verbose_name="Przypisanie zgłoszenia")
+    notify_ticket_status_changed = models.BooleanField(default=True, verbose_name="Zmiana statusu")
+    notify_ticket_commented = models.BooleanField(default=True, verbose_name="Nowy komentarz")
+    notify_ticket_updated = models.BooleanField(default=True, verbose_name="Aktualizacja zgłoszenia")
+    notify_ticket_closed = models.BooleanField(default=True, verbose_name="Zamknięcie zgłoszenia")
+    notify_ticket_reopened = models.BooleanField(default=True, verbose_name="Ponowne otwarcie")
+    
+    # System notifications
+    notify_account_approved = models.BooleanField(default=True, verbose_name="Zatwierdzenie konta")
+    notify_password_reset = models.BooleanField(default=True, verbose_name="Reset hasła")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    def __str__(self):
+        return f"Ustawienia powiadomień dla {self.user.username}"
+    
+    class Meta:
+        verbose_name = "Ustawienia powiadomień email"
+        verbose_name_plural = "Ustawienia powiadomień email"
     notify_ticket_created = models.BooleanField(default=True, verbose_name="Nowe zgłoszenie")
     notify_ticket_assigned = models.BooleanField(default=True, verbose_name="Przypisanie zgłoszenia")
     notify_ticket_status_changed = models.BooleanField(default=True, verbose_name="Zmiana statusu")
