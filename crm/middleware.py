@@ -1,5 +1,7 @@
 from django.shortcuts import redirect
-from django.urls import reverse, resolve
+from django.urls import reverse
+from django.contrib import messages
+import re
 import logging
 from django.conf import settings
 from datetime import datetime, timedelta
@@ -122,38 +124,19 @@ class TwoFactorMiddleware:
                 if request.user.profile.ga_enabled:
                     profile = request.user.profile
                     
-                    # NEW APPROACH: Use Django's URL resolver to check if we're on the verify_2fa page
-                    try:
-                        current_url_name = resolve(request.path).url_name
-                        if current_url_name == 'verify_2fa':
-                            logger.debug(f"Already on verify_2fa page, allowing access for {request.user.username}")
-                            return self.get_response(request)
-                    except:
-                        pass
-                    
-                    # ADDITIONAL CHECK: Direct path comparison
+                    # First, check if we're already on the verification page to prevent infinite loops
                     current_path = request.path.rstrip('/')
                     verify_path = self.verify_2fa_url.rstrip('/')
                     
-                    # Debug logging to help identify the issue
-                    logger.debug(f"Path comparison: Current={current_path}, Verify={verify_path}")
-                    
-                    # If paths match (with or without trailing slash), we're already on the verification page
-                    if current_path == verify_path or request.path == self.verify_2fa_url:
-                        logger.debug(f"Path match: Already on verify_2fa page, allowing access for {request.user.username}")
+                    # Direct equality check for verification page
+                    if current_path == verify_path:
+                        # Already on verification page, don't redirect
                         return self.get_response(request)
                         
                     # Check if the path is exempt regardless
                     if self._is_exempt_path(request.path):
-                        logger.debug(f"Path {request.path} is exempt from 2FA for user {request.user.username}")
+                        # Path is exempt from 2FA, proceed normally
                         return self.get_response(request)
-                    
-                    # NEW: Add a redirect counter to prevent infinite loops
-                    redirect_count = request.session.get('2fa_redirect_count', 0)
-                    if redirect_count > 5:  # Allow a maximum of 5 redirects
-                        logger.warning(f"Too many 2FA redirects for user {request.user.username}, breaking loop")
-                        request.session['2fa_redirect_count'] = 0  # Reset counter
-                        return self.get_response(request)  # Let the request through to break the loop
                     
                     # Get the IP address
                     x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
@@ -195,65 +178,45 @@ class TwoFactorMiddleware:
                     )
                     
                     if needs_verification:
-                        # Store the original destination if it's not already in session
-                        if '2fa_next' not in request.session:
-                            request.session['2fa_next'] = request.path
-                        
-                        # Increment the redirect counter
-                        request.session['2fa_redirect_count'] = redirect_count + 1
-                        
-                        logger.info(f"Redirecting user {request.user.username} to 2FA verification (count: {redirect_count + 1})")
-                        return redirect('verify_2fa')
+                        # If we're not already on the verification page
+                        if current_path != verify_path:
+                            # Store the original destination if it's not already in session
+                            if '2fa_next' not in request.session:
+                                request.session['2fa_next'] = request.path
+                                
+                            logger.info(f"Redirecting user {request.user.username} to 2FA verification")
+                            return redirect(self.verify_2fa_url)
                 
                 # Second case: Approved user doesn't have 2FA enabled yet - redirect to setup
                 elif not request.user.profile.ga_enabled:
-                    # Check if we're already on the setup page
-                    try:
-                        current_url_name = resolve(request.path).url_name
-                        if current_url_name == 'setup_2fa':
-                            return self.get_response(request)
-                    except:
-                        pass
-                        
-                    # Direct path comparison
-                    if request.path.rstrip('/') == self.setup_2fa_url.rstrip('/'):
-                        return self.get_response(request)
-                        
-                    # Check if current path is already an exempt path
-                    if self._is_exempt_path(request.path):
-                        return self.get_response(request)
-                        
-                    # If not in a grace period (first login)
-                    setup_exempt_until = request.session.get('2fa_setup_exempt_until')
-                    if not setup_exempt_until or timezone.now() > datetime.fromisoformat(setup_exempt_until):
-                        messages.warning(request, 'Dla bezpieczeństwa Twojego konta, musisz skonfigurować uwierzytelnianie dwuskładnikowe.')
-                        
-                        # Store the original destination
-                        request.session['2fa_next'] = request.path
-                        
-                        logger.info(f"Redirecting user {request.user.username} to 2FA setup (required)")
-                        return redirect('setup_2fa')
+                    # Check if current path is already an exempt path (like 2FA setup itself)
+                    if not self._is_exempt_path(request.path) and request.path != self.setup_2fa_url:
+                        # If not in a grace period (first login)
+                        setup_exempt_until = request.session.get('2fa_setup_exempt_until')
+                        if not setup_exempt_until or timezone.now() > datetime.fromisoformat(setup_exempt_until):
+                            messages.warning(request, 'Dla bezpieczeństwa Twojego konta, musisz skonfigurować uwierzytelnianie dwuskładnikowe.')
+                            
+                            # Store the original destination
+                            request.session['2fa_next'] = request.path
+                            
+                            logger.info(f"Redirecting user {request.user.username} to 2FA setup (required)")
+                            return redirect(self.setup_2fa_url)
         
         return self.get_response(request)
     
     def _is_exempt_path(self, path):
         """Check if path is exempt from 2FA verification"""
         # First check against cached URL paths (exact matches)
-        path_no_slash = path.rstrip('/')
-        
-        # Check exact matches with and without trailing slashes
-        exempt_urls = [
-            self.verify_2fa_url,
-            self.setup_2fa_url,
-            self.setup_2fa_success_url,
-            self.recovery_code_url,
-            self.logout_url
-        ]
-        
-        for exempt_url in exempt_urls:
-            exempt_no_slash = exempt_url.rstrip('/')
-            if path == exempt_url or path_no_slash == exempt_no_slash:
-                return True
+        if path.rstrip('/') == self.verify_2fa_url.rstrip('/'):
+            return True
+        if path.rstrip('/') == self.setup_2fa_url.rstrip('/'):
+            return True
+        if path.rstrip('/') == self.setup_2fa_success_url.rstrip('/'):
+            return True
+        if path.rstrip('/') == self.recovery_code_url.rstrip('/'):
+            return True
+        if path.rstrip('/') == self.logout_url.rstrip('/'):
+            return True
         
         # Then check against static paths (prefix matches)
         for exempt_path in self.static_exempt_paths:
