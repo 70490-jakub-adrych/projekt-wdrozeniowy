@@ -13,6 +13,7 @@ from django.urls import reverse
 
 from ..forms import TOTPVerificationForm
 from ..models import UserProfile
+from ..decorators import admin_required
 
 logger = logging.getLogger(__name__)
 
@@ -303,3 +304,86 @@ def generate_qr_code(data):
     base64_encoded = base64.b64encode(image_data).decode('utf-8')
     
     return f"data:image/png;base64,{base64_encoded}"
+
+@login_required
+@admin_required
+def debug_2fa(request):
+    """Debug view for troubleshooting 2FA issues"""
+    user = request.user
+    
+    # Get client IP
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    client_ip = x_forwarded_for.split(',')[0] if x_forwarded_for else request.META.get('REMOTE_ADDR')
+    
+    # Get user agent
+    user_agent = request.META.get('HTTP_USER_AGENT', 'Unknown')
+    
+    # Prepare profile data
+    profile_data = {}
+    if hasattr(user, 'profile'):
+        profile = user.profile
+        profile_data = {
+            'ga_enabled': profile.ga_enabled,
+            'ga_enabled_on': profile.ga_enabled_on,
+            'ga_last_authenticated': profile.ga_last_authenticated,
+            'ga_recovery_last_generated': profile.ga_recovery_last_generated,
+            'trusted_ip': profile.trusted_ip,
+            'trusted_until': profile.trusted_until,
+        }
+    
+    # Collect relevant session data
+    session_data = {}
+    for key, value in request.session.items():
+        if '2fa' in key:
+            session_data[key] = value
+    
+    # Important URLs for debugging
+    urls = {
+        'verify_2fa': reverse('verify_2fa'),
+        'setup_2fa': reverse('setup_2fa'),
+        'recovery_code': reverse('recovery_code'),
+        'dashboard': reverse('dashboard')
+    }
+    
+    # Handle actions
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        if action == 'reset_redirect_count':
+            if '2fa_redirect_count' in request.session:
+                del request.session['2fa_redirect_count']
+            messages.success(request, 'Licznik przekierowań zresetowany.')
+            
+        elif action == 'mark_verified':
+            from django.utils import timezone
+            request.session['2fa_verified'] = True
+            request.session['2fa_verified_time'] = timezone.now().isoformat()
+            messages.success(request, '2FA oznaczone jako zweryfikowane w sesji.')
+            
+        elif action == 'add_trusted_ip':
+            trusted_ips = request.session.get('trusted_admin_ips', [])
+            if client_ip not in trusted_ips:
+                trusted_ips.append(client_ip)
+                request.session['trusted_admin_ips'] = trusted_ips
+                messages.success(request, f'Adres IP {client_ip} dodany do zaufanych.')
+            else:
+                messages.info(request, f'Adres IP {client_ip} jest już w zaufanych.')
+                
+        elif action == 'disable_2fa':
+            if hasattr(user, 'profile') and user.profile.ga_enabled:
+                user.profile.ga_enabled = False
+                user.profile.ga_secret_key = None
+                user.profile.save(update_fields=['ga_enabled', 'ga_secret_key'])
+                messages.success(request, '2FA zostało wyłączone dla Twojego konta.')
+            else:
+                messages.info(request, '2FA jest już wyłączone.')
+    
+    context = {
+        'profile_data': profile_data,
+        'session_data': session_data,
+        'client_ip': client_ip,
+        'user_agent': user_agent,
+        'urls': urls,
+    }
+    
+    return render(request, 'crm/2fa/debug.html', context)
