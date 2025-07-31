@@ -27,9 +27,14 @@
                             Nie masz konta? <a href="{% url 'register' %}" class="text-decoration-none">Zarejestruj się</a>
                         </small>
                     </div>
-                    <div>
+                    <div class="mb-2">
                         <small>
                             Zapomniałeś hasła? <a href="{% url 'password_reset' %}" class="text-decoration-none">Resetuj hasło</a>
+                        </small>
+                    </div>
+                    <div>
+                        <small>
+                            Problem z 2FA? <a href="{% url 'recovery_code' %}" class="text-decoration-none">Użyj kodu odzyskiwania</a>
                         </small>
                     </div>
                 </div>

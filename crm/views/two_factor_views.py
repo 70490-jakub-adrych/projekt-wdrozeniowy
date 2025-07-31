@@ -262,7 +262,7 @@ def recovery_code(request):
     # If user doesn't have 2FA enabled, redirect to profile
     if not profile or not profile.ga_enabled:
         messages.info(request, 'Uwierzytelnianie dwuskładnikowe nie jest włączone dla Twojego konta.')
-        return redirect('profile')
+        return redirect('dashboard')  # Changed from 'profile' to 'dashboard'
     
     if request.method == 'POST':
         recovery_code = request.POST.get('recovery_code', '')
@@ -271,7 +271,7 @@ def recovery_code(request):
             # Verify recovery code
             if profile.verify_recovery_code(recovery_code):
                 messages.success(request, 'Kod odzyskiwania poprawny. Twoje konto zostało zabezpieczone, a uwierzytelnianie dwuskładnikowe zostało wyłączone.')
-                return redirect('profile')
+                return redirect('dashboard')  # Changed from 'profile' to 'dashboard'
             else:
                 messages.error(request, 'Niepoprawny kod odzyskiwania. Spróbuj ponownie lub skontaktuj się z administratorem.')
     
