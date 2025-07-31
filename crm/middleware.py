@@ -82,26 +82,15 @@ class TwoFactorMiddleware:
     def __init__(self, get_response):
         self.get_response = get_response
         # Cache verify_2fa URL to avoid repeated calls to reverse()
-        try:
-            self.verify_2fa_url = reverse('verify_2fa')
-            # Get other exempt URLs once on initialization
-            self.setup_2fa_url = reverse('setup_2fa')
-            self.setup_2fa_success_url = reverse('setup_2fa_success')
-            self.recovery_code_url = reverse('recovery_code')
-            self.logout_url = reverse('logout')
-            self.debug_2fa_url = reverse('debug_2fa')
-            
-            logger.debug(f"Initialized TwoFactorMiddleware with URLs: verify={self.verify_2fa_url}, "
-                          f"setup={self.setup_2fa_url}, debug={self.debug_2fa_url}")
-        except NoReverseMatch as e:
-            logger.error(f"Failed to initialize TwoFactorMiddleware URLs: {str(e)}")
-            # Default fallback URLs
-            self.verify_2fa_url = '/2fa/verify/'
-            self.setup_2fa_url = '/2fa/setup/'
-            self.setup_2fa_success_url = '/2fa/setup/success/'
-            self.recovery_code_url = '/2fa/recovery/'
-            self.logout_url = '/logout/'
-            self.debug_2fa_url = '/2fa/debug/'
+        self.verify_2fa_url = reverse('verify_2fa')
+        logger.debug(f"Initialized TwoFactorMiddleware with verify_2fa_url = {self.verify_2fa_url}")
+        
+        # Get other exempt URLs once on initialization
+        self.setup_2fa_url = reverse('setup_2fa')
+        self.setup_2fa_success_url = reverse('setup_2fa_success')
+        self.recovery_code_url = reverse('recovery_code')
+        self.logout_url = reverse('logout')
+        self.debug_2fa_url = reverse('debug_2fa')  # Add debug URL
         
         # Store exempt paths as a set for faster lookups
         self.static_exempt_paths = {
@@ -112,17 +101,10 @@ class TwoFactorMiddleware:
             '/register/',
             '/password_reset/',
             '/reset/',
-            '/2fa/',  # Important: exempting all 2FA paths
         }
         
     def __call__(self, request):
         if request.user.is_authenticated:
-            # Skip middleware entirely for these key paths to prevent loops
-            for critical_path in [self.verify_2fa_url, self.debug_2fa_url, self.setup_2fa_url]:
-                if request.path.startswith(critical_path.rstrip('/')):
-                    logger.debug(f"Critical 2FA path {request.path}, skipping middleware checks")
-                    return self.get_response(request)
-            
             # Skip the entire middleware if bypass was already used in this session
             if request.session.get('2fa_bypass_used', False):
                 logger.debug(f"2FA bypass active for {request.user.username}, skipping middleware")
@@ -285,11 +267,6 @@ class TwoFactorMiddleware:
     
     def _is_exempt_path_improved(self, path):
         """Improved version of is_exempt_path with more robust checks"""
-        # First check direct prefix matches - critical for 2FA paths
-        if path.startswith('/2fa/'):
-            logger.debug(f"Path {path} is exempt as it starts with /2fa/")
-            return True
-            
         # First check direct matches
         if path == self.verify_2fa_url or path == self.setup_2fa_url or path == self.setup_2fa_success_url or \
            path == self.recovery_code_url or path == self.logout_url or path == self.debug_2fa_url:
@@ -349,11 +326,3 @@ class TwoFactorMiddleware:
                 return True
         
         return False
-    
-    def _get_url_safely(self, url_name, default_path='/dashboard/'):
-        """Get URL by name with fallback to prevent crashes"""
-        try:
-            return reverse(url_name)
-        except NoReverseMatch:
-            logger.error(f"Failed to reverse URL name: {url_name}, using fallback")
-            return default_path
