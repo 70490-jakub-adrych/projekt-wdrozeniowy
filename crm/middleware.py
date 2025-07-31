@@ -4,7 +4,7 @@ from django.contrib import messages
 import re
 import logging
 from django.conf import settings
-from datetime import datetime, timedelta
+from datetime import datetime
 from django.utils import timezone
 
 logger = logging.getLogger(__name__)
@@ -102,7 +102,7 @@ class TwoFactorMiddleware:
             
             # Check if user has profile and is already approved
             if hasattr(request.user, 'profile') and request.user.profile.is_approved and not is_exempt and not group_exempt:
-                # First case: User has 2FA enabled
+                # First case: User has 2FA enabled and needs verification
                 if request.user.profile.ga_enabled:
                     profile = request.user.profile
                     
@@ -113,20 +113,8 @@ class TwoFactorMiddleware:
                     else:
                         ip = request.META.get('REMOTE_ADDR')
                     
-                    # Check for successful 2FA verification in this session
-                    verified = request.session.get('2fa_verified', False)
-                    verified_time_str = request.session.get('2fa_verified_time', None)
-                    
-                    # Check if verification is still valid (not expired)
-                    verification_valid = False
-                    if verified and verified_time_str:
-                        try:
-                            verified_time = datetime.fromisoformat(verified_time_str)
-                            verification_expiry = getattr(settings, '2FA_VERIFICATION_EXPIRY_HOURS', 24)
-                            if timezone.now() < verified_time + timedelta(hours=verification_expiry):
-                                verification_valid = True
-                        except (ValueError, TypeError):
-                            verification_valid = False
+                    # Get browser/device fingerprint
+                    user_agent = request.META.get('HTTP_USER_AGENT', '')
                     
                     # Check for trusted session marker (for superusers/admins)
                     trusted_session = False
@@ -136,19 +124,10 @@ class TwoFactorMiddleware:
                             trusted_session = True
                             logger.debug(f"Admin/superuser {request.user.username} has already verified from IP {ip} this session")
                     
-                    # Force verification if:
-                    # 1. Not verified in this session OR
-                    # 2. Not from a trusted device/IP OR
-                    # 3. Session verification has expired
-                    needs_verification = (
-                        not verification_valid or 
-                        (not trusted_session and profile.needs_2fa_verification(request_ip=ip))
-                    )
-                    
-                    # Check if current path requires verification
-                    if needs_verification and not self._is_exempt_path(request.path):
-                        # Check if currently trying to access verify_2fa
-                        if request.path != reverse('verify_2fa'):
+                    # Check if verification is needed
+                    if not trusted_session and profile.needs_2fa_verification(request_ip=ip):
+                        # Check if current path is already the 2FA verification path or other exempt path
+                        if not self._is_exempt_path(request.path):
                             # Store the original destination if it's not already in session
                             if '2fa_next' not in request.session:
                                 request.session['2fa_next'] = request.path

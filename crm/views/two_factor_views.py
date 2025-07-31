@@ -16,15 +16,6 @@ from ..models import UserProfile
 
 logger = logging.getLogger(__name__)
 
-def get_client_ip(request):
-    """Helper function to get client IP address"""
-    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-    if x_forwarded_for:
-        ip = x_forwarded_for.split(',')[0]
-    else:
-        ip = request.META.get('REMOTE_ADDR')
-    return ip
-
 @login_required
 def setup_2fa(request):
     """View for setting up 2FA for approved users"""
@@ -234,10 +225,6 @@ def verify_2fa(request):
                 if 'require_fresh_2fa' in request.session:
                     del request.session['require_fresh_2fa']
                 
-                # Add a marker in the session that 2FA verification is completed
-                request.session['2fa_verified'] = True
-                request.session['2fa_verified_time'] = timezone.now().isoformat()
-                
                 # Redirect to original destination
                 next_url = request.session.pop('2fa_next', reverse('dashboard'))
                 messages.success(request, 'Weryfikacja dwuskładnikowa pomyślna.')
@@ -282,8 +269,7 @@ def recovery_code(request):
     return render(request, 'crm/2fa/recovery.html')
 
 def generate_qr_code(data):
-    """Generate QR code image"""
-    # Create QR code instance
+    """Generate QR code image as base64 data URL"""
     qr = qrcode.QRCode(
         version=1,
         error_correction=qrcode.constants.ERROR_CORRECT_L,
@@ -292,14 +278,23 @@ def generate_qr_code(data):
     )
     qr.add_data(data)
     qr.make(fit=True)
-
-    # Create an image from the QR Code instance
+    
     img = qr.make_image(fill_color="black", back_color="white")
     
-    # Convert to base64 for embedding in HTML
+    # Save image to bytes buffer
     buffer = io.BytesIO()
-    img.save(buffer)
-    image_data = buffer.getvalue()
-    base64_encoded = base64.b64encode(image_data).decode('utf-8')
+    img.save(buffer, format='PNG')
+    buffer.seek(0)
     
-    return f"data:image/png;base64,{base64_encoded}"
+    # Convert to base64
+    img_str = base64.b64encode(buffer.getvalue()).decode('ascii')
+    return f"data:image/png;base64,{img_str}"
+
+def get_client_ip(request):
+    """Get client IP address from request"""
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip
