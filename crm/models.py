@@ -82,21 +82,17 @@ class UserProfile(models.Model):
         import secrets
         import string
         
-        try:
-            # Generate a secure random recovery code (20 characters)
-            alphabet = string.ascii_uppercase + string.digits
-            recovery_code = ''.join(secrets.choice(alphabet) for _ in range(20))
-            
-            # Store the code directly (for simplicity)
-            # In production, you might want to hash this
-            self.ga_recovery_hash = recovery_code
-            self.ga_recovery_last_generated = timezone.now()
-            self.save(update_fields=['ga_recovery_hash', 'ga_recovery_last_generated'])
-            
-            return True, recovery_code
-        except Exception as e:
-            logger.error(f"Failed to generate recovery code: {str(e)}")
-            return False, None
+        # Generate a secure random recovery code (20 characters)
+        alphabet = string.ascii_uppercase + string.digits
+        recovery_code = ''.join(secrets.choice(alphabet) for _ in range(20))
+        
+        # Store the code directly (for simplicity)
+        # In production, you might want to hash this
+        self.ga_recovery_hash = recovery_code
+        self.ga_recovery_last_generated = timezone.now()
+        self.save(update_fields=['ga_recovery_hash', 'ga_recovery_last_generated'])
+        
+        return True, recovery_code
         
     def verify_recovery_code(self, code):
         """Verify a recovery code and disable 2FA if valid"""
