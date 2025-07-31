@@ -1,5 +1,6 @@
-from django.shortcuts import redirect
-from django.urls import reverse, resolve
+from django.shortcuts import redirect, render
+from django.urls import reverse, resolve, Resolver404
+from django.contrib import messages
 import logging
 from django.conf import settings
 from datetime import datetime, timedelta
@@ -78,6 +79,8 @@ class TwoFactorMiddleware:
         self.get_response = get_response
         # Cache verify_2fa URL to avoid repeated calls to reverse()
         self.verify_2fa_url = reverse('verify_2fa')
+        logger.debug(f"Initialized TwoFactorMiddleware with verify_2fa_url = {self.verify_2fa_url}")
+        
         # Get other exempt URLs once on initialization
         self.setup_2fa_url = reverse('setup_2fa')
         self.setup_2fa_success_url = reverse('setup_2fa_success')
@@ -97,6 +100,9 @@ class TwoFactorMiddleware:
         
     def __call__(self, request):
         if request.user.is_authenticated:
+            # Very detailed logging to help troubleshoot
+            logger.debug(f"Processing request for {request.user.username} to path: {request.path}")
+            
             # Check if user is exempt from 2FA enforcement (like superuser during initial setup)
             is_exempt = request.user.is_superuser and getattr(settings, 'EXEMPT_SUPERUSER_FROM_2FA', False)
             
@@ -122,38 +128,87 @@ class TwoFactorMiddleware:
                 if request.user.profile.ga_enabled:
                     profile = request.user.profile
                     
-                    # NEW APPROACH: Use Django's URL resolver to check if we're on the verify_2fa page
+                    # CRITICAL CHECK: Exact match for verify_2fa URL
+                    logger.debug(f"Comparing paths: request.path={request.path}, verify_2fa_url={self.verify_2fa_url}")
+                    
+                    # If we're already on the verification page, proceed
+                    if request.path == self.verify_2fa_url:
+                        logger.debug(f"EXACT MATCH: Already on verify_2fa page - proceeding")
+                        return self.get_response(request)
+                    
+                    # Try URL resolver to check if we're on the verify_2fa page
                     try:
                         current_url_name = resolve(request.path).url_name
+                        logger.debug(f"Resolved URL name: {current_url_name}")
                         if current_url_name == 'verify_2fa':
-                            logger.debug(f"Already on verify_2fa page, allowing access for {request.user.username}")
+                            logger.debug(f"RESOLVER MATCH: Already on verify_2fa page - proceeding")
                             return self.get_response(request)
-                    except:
-                        pass
+                    except Resolver404:
+                        logger.debug(f"URL resolver failed for path: {request.path}")
+                    except Exception as e:
+                        logger.debug(f"Exception in URL resolver: {str(e)}")
                     
-                    # ADDITIONAL CHECK: Direct path comparison
+                    # Normalize paths (remove trailing slashes) and compare
                     current_path = request.path.rstrip('/')
                     verify_path = self.verify_2fa_url.rstrip('/')
+                    logger.debug(f"Normalized paths: current={current_path}, verify={verify_path}")
                     
-                    # Debug logging to help identify the issue
-                    logger.debug(f"Path comparison: Current={current_path}, Verify={verify_path}")
-                    
-                    # If paths match (with or without trailing slash), we're already on the verification page
-                    if current_path == verify_path or request.path == self.verify_2fa_url:
-                        logger.debug(f"Path match: Already on verify_2fa page, allowing access for {request.user.username}")
+                    if current_path == verify_path:
+                        logger.debug(f"NORMALIZED MATCH: Already on verify_2fa page - proceeding")
                         return self.get_response(request)
                         
                     # Check if the path is exempt regardless
                     if self._is_exempt_path(request.path):
-                        logger.debug(f"Path {request.path} is exempt from 2FA for user {request.user.username}")
+                        logger.debug(f"EXEMPT PATH: {request.path} is exempt from 2FA - proceeding")
                         return self.get_response(request)
                     
-                    # NEW: Add a redirect counter to prevent infinite loops
+                    # Check redirect counter to prevent infinite loops
                     redirect_count = request.session.get('2fa_redirect_count', 0)
-                    if redirect_count > 5:  # Allow a maximum of 5 redirects
-                        logger.warning(f"Too many 2FA redirects for user {request.user.username}, breaking loop")
+                    if redirect_count >= 3:  # Reduced from 5 to 3 for faster fallback
+                        logger.warning(f"Too many 2FA redirects ({redirect_count}) for {request.user.username}, using direct template render")
                         request.session['2fa_redirect_count'] = 0  # Reset counter
-                        return self.get_response(request)  # Let the request through to break the loop
+                        
+                        # DIRECT RENDER: Instead of redirecting again, render the 2FA verification template directly
+                        from django.apps import apps
+                        from ..forms import TOTPVerificationForm  # This may need adjustment based on project structure
+                        
+                        # Import only if needed (fallback mode)
+                        try:
+                            TOTPForm = apps.get_model('crm', 'TOTPVerificationForm')
+                        except:
+                            # If model import fails, try the direct import
+                            try:
+                                from crm.forms import TOTPVerificationForm as TOTPForm
+                            except ImportError:
+                                # Last resort - create a simple form class
+                                from django import forms
+                                class TOTPForm(forms.Form):
+                                    verification_code = forms.CharField(
+                                        max_length=6, min_length=6,
+                                        label="Kod weryfikacyjny",
+                                        help_text="Wprowadź 6-cyfrowy kod z aplikacji Google Authenticator"
+                                    )
+                        
+                        # Add debug info to the template context
+                        context = {
+                            'form': TOTPForm(),
+                            'require_fresh': request.session.get('require_fresh_2fa', False),
+                            'debug_info': {
+                                'current_path': request.path,
+                                'verify_path': self.verify_2fa_url,
+                                'redirect_count': redirect_count,
+                                'is_verified': request.session.get('2fa_verified', False),
+                                'verified_time': request.session.get('2fa_verified_time', None)
+                            }
+                        }
+                        
+                        # Try to render the 2FA verification template directly
+                        try:
+                            return render(request, 'crm/2fa/verify.html', context)
+                        except Exception as e:
+                            logger.error(f"Failed to render 2FA template directly: {str(e)}")
+                            # If direct rendering fails, let the request through as a last resort
+                            return self.get_response(request)
                     
                     # Get the IP address
                     x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
@@ -203,7 +258,7 @@ class TwoFactorMiddleware:
                         request.session['2fa_redirect_count'] = redirect_count + 1
                         
                         logger.info(f"Redirecting user {request.user.username} to 2FA verification (count: {redirect_count + 1})")
-                        return redirect('verify_2fa')
+                        return redirect(self.verify_2fa_url)
                 
                 # Second case: Approved user doesn't have 2FA enabled yet - redirect to setup
                 elif not request.user.profile.ga_enabled:
