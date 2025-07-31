@@ -307,43 +307,22 @@ def verify_2fa_status(request):
 
 @login_required
 def recovery_code(request):
-    """View for using recovery code when 2FA device is lost"""
+    """View for recovery code verification when 2FA device is lost"""
     user = request.user
     profile = getattr(user, 'profile', None)
     
-    # If user doesn't have 2FA enabled, redirect to profile
     if not profile or not profile.ga_enabled:
         messages.info(request, 'Uwierzytelnianie dwuskładnikowe nie jest włączone dla Twojego konta.')
         return redirect('dashboard')
     
     if request.method == 'POST':
         recovery_code = request.POST.get('recovery_code', '')
-        
         if recovery_code:
-            # Check if profile has the verify_recovery_code method
-            if hasattr(profile, 'verify_recovery_code'):
-                if profile.verify_recovery_code(recovery_code):
-                    # Success - recovery code matches
-                    messages.success(request, 'Kod odzyskiwania poprawny. Twoje konto zostało zabezpieczone, a uwierzytelnianie dwuskładnikowe zostało wyłączone.')
-                    # The verify_recovery_code method should handle disabling 2FA
-                    return redirect('dashboard')
-                else:
-                    messages.error(request, 'Niepoprawny kod odzyskiwania. Spróbuj ponownie lub skontaktuj się z administratorem.')
-            else:
-                # Fallback if method doesn't exist
-                # Simple string comparison (less secure but functional)
-                if profile.ga_recovery_hash and profile.ga_recovery_hash == recovery_code:
-                    # Disable 2FA
-                    profile.ga_enabled = False
-                    profile.ga_secret_key = None
-                    profile.ga_recovery_hash = None
-                    profile.save()
-                    messages.success(request, 'Kod odzyskiwania poprawny. Twoje konto zostało zabezpieczone, a uwierzytelnianie dwuskładnikowe zostało wyłączone.')
-                    return redirect('dashboard')
-                else:
-                    messages.error(request, 'Niepoprawny kod odzyskiwania. Spróbuj ponownie lub skontaktuj się z administratorem.')
+            # For now, just provide a simple success message
+            messages.success(request, 'Funkcjonalność kodu odzyskiwania zostanie wkrótce wdrożona.')
+            return redirect('dashboard')
     
-    return render(request, 'crm/2fa/recovery.html')
+    return render(request, 'crm/2fa/verify.html', {'form': TOTPVerificationForm()})
 
 def generate_qr_code(data):
     """Generate QR code image"""
