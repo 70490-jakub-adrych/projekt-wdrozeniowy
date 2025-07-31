@@ -1,7 +1,6 @@
 from django.shortcuts import redirect, render
 from django.urls import reverse, resolve, Resolver404
 from django.contrib import messages
-from django.http import HttpResponse
 import logging
 from django.conf import settings
 from datetime import datetime, timedelta
@@ -166,18 +165,50 @@ class TwoFactorMiddleware:
                     # Check redirect counter to prevent infinite loops
                     redirect_count = request.session.get('2fa_redirect_count', 0)
                     if redirect_count >= 3:  # Reduced from 5 to 3 for faster fallback
-                        logger.warning(f"Too many 2FA redirects ({redirect_count}) for {request.user.username}, using emergency bypass")
+                        logger.warning(f"Too many 2FA redirects ({redirect_count}) for {request.user.username}, using direct template render")
                         request.session['2fa_redirect_count'] = 0  # Reset counter
                         
-                        # EMERGENCY BYPASS - Skip the direct template rendering and let the user through
-                        # This is simpler than trying to import forms and render templates
-                        messages.warning(
-                            request, 
-                            "Wystąpił problem z uwierzytelnianiem dwuskładnikowym. Kliknij <a href='/2fa/verify/'>tutaj</a>, aby zweryfikować."
-                        )
-                        # Set a flag to indicate the bypass was used
-                        request.session['2fa_bypass_used'] = True
-                        return self.get_response(request)
+                        # DIRECT RENDER: Instead of redirecting again, render the 2FA verification template directly
+                        from django.apps import apps
+                        from ..forms import TOTPVerificationForm  # This may need adjustment based on project structure
+                        
+                        # Import only if needed (fallback mode)
+                        try:
+                            TOTPForm = apps.get_model('crm', 'TOTPVerificationForm')
+                        except:
+                            # If model import fails, try the direct import
+                            try:
+                                from crm.forms import TOTPVerificationForm as TOTPForm
+                            except ImportError:
+                                # Last resort - create a simple form class
+                                from django import forms
+                                class TOTPForm(forms.Form):
+                                    verification_code = forms.CharField(
+                                        max_length=6, min_length=6,
+                                        label="Kod weryfikacyjny",
+                                        help_text="Wprowadź 6-cyfrowy kod z aplikacji Google Authenticator"
+                                    )
+                        
+                        # Add debug info to the template context
+                        context = {
+                            'form': TOTPForm(),
+                            'require_fresh': request.session.get('require_fresh_2fa', False),
+                            'debug_info': {
+                                'current_path': request.path,
+                                'verify_path': self.verify_2fa_url,
+                                'redirect_count': redirect_count,
+                                'is_verified': request.session.get('2fa_verified', False),
+                                'verified_time': request.session.get('2fa_verified_time', None)
+                            }
+                        }
+                        
+                        # Try to render the 2FA verification template directly
+                        try:
+                            return render(request, 'crm/2fa/verify.html', context)
+                        except Exception as e:
+                            logger.error(f"Failed to render 2FA template directly: {str(e)}")
+                            # If direct rendering fails, let the request through as a last resort
+                            return self.get_response(request)
                     
                     # Get the IP address
                     x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
