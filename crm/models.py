@@ -84,11 +84,7 @@ class UserProfile(models.Model):
         import hashlib
         from django.utils import timezone
         
-        # Check if code was generated in the last 24 hours
-        if (self.ga_recovery_last_generated and 
-            timezone.now() < self.ga_recovery_last_generated + timedelta(hours=24)):
-            return False, "Kod odzyskiwania można wygenerować tylko raz na 24 godziny."
-        
+        # Always generate a new code, ignoring any time constraints
         # Generate a strong recovery code (20 characters, alphanumeric)
         alphabet = string.ascii_letters + string.digits
         recovery_code = ''.join(secrets.choice(alphabet) for _ in range(20))
@@ -860,6 +856,10 @@ class EmailNotificationSettings(models.Model):
     
     def __str__(self):
         return f"Ustawienia powiadomień dla {self.user.username}"
+    
+    class Meta:
+        verbose_name = "Ustawienia powiadomień email"
+        verbose_name_plural = "Ustawienia powiadomień email"
     
     class Meta:
         verbose_name = "Ustawienia powiadomień email"

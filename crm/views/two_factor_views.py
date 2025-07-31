@@ -10,6 +10,8 @@ from django.utils import timezone
 from django.http import HttpResponse
 from django.views.decorators.http import require_POST
 from django.urls import reverse
+from django.contrib.auth import login
+from django.contrib.auth.models import User
 
 from ..forms import TOTPVerificationForm
 from ..models import UserProfile
@@ -253,29 +255,38 @@ def verify_2fa(request):
         'require_fresh': require_fresh
     })
 
-@login_required
+# Remove the login_required decorator
 def recovery_code(request):
     """View for using recovery code when 2FA device is lost"""
-    user = request.user
-    profile = getattr(user, 'profile', None)
-    
-    # If user doesn't have 2FA enabled, redirect to profile
-    if not profile or not profile.ga_enabled:
-        messages.info(request, 'Uwierzytelnianie dwuskładnikowe nie jest włączone dla Twojego konta.')
-        return redirect('dashboard')  # Changed from 'profile' to 'dashboard'
     
     if request.method == 'POST':
         recovery_code = request.POST.get('recovery_code', '')
+        username = request.POST.get('username', '')
         
-        if recovery_code:
-            # Verify recovery code
-            if profile.verify_recovery_code(recovery_code):
-                messages.success(request, 'Kod odzyskiwania poprawny. Twoje konto zostało zabezpieczone, a uwierzytelnianie dwuskładnikowe zostało wyłączone.')
-                return redirect('dashboard')  # Changed from 'profile' to 'dashboard'
-            else:
-                messages.error(request, 'Niepoprawny kod odzyskiwania. Spróbuj ponownie lub skontaktuj się z administratorem.')
+        if recovery_code and username:
+            try:
+                user = User.objects.get(username=username)
+                profile = getattr(user, 'profile', None)
+                
+                if not profile or not profile.ga_enabled:
+                    messages.error(request, 'Uwierzytelnianie dwuskładnikowe nie jest włączone dla tego użytkownika.')
+                    return render(request, 'crm/2fa/recovery.html')
+                
+                # Verify recovery code
+                if profile.verify_recovery_code(recovery_code):
+                    # Log the user in after successful verification
+                    login(request, user)
+                    messages.success(request, 'Kod odzyskiwania poprawny. Twoje konto zostało zabezpieczone, a uwierzytelnianie dwuskładnikowe zostało wyłączone.')
+                    return redirect('dashboard')
+                else:
+                    messages.error(request, 'Niepoprawny kod odzyskiwania. Spróbuj ponownie lub skontaktuj się z administratorem.')
+            except User.DoesNotExist:
+                messages.error(request, 'Nie znaleziono użytkownika o podanej nazwie.')
     
-    return render(request, 'crm/2fa/recovery.html')
+    # If user is already logged in, pre-populate username
+    username = request.user.username if request.user.is_authenticated else ''
+    
+    return render(request, 'crm/2fa/recovery.html', {'username': username})
 
 def generate_qr_code(data):
     """Generate QR code image as base64 data URL"""
@@ -301,8 +312,8 @@ def generate_qr_code(data):
 
 def get_client_ip(request):
     """Get client IP address from request"""
-    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
-    if x_forwarded_for:
+
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')    if x_forwarded_for:
         ip = x_forwarded_for.split(',')[0]
     else:
         ip = request.META.get('REMOTE_ADDR')

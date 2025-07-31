@@ -59,6 +59,7 @@ class EmailVerificationMiddleware:
             '/static/',
             '/media/',
             '/admin/',
+            '/2fa/recovery/',  # Add exemption for recovery code path
         ]
         return any(path.startswith(exempt) for exempt in exempt_paths)
     
