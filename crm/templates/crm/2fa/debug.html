@@ -1,0 +1,131 @@
+{% extends 'crm/base.html' %}
+
+{% block title %}2FA Debug Information | System Helpdesk{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0"><i class="fas fa-bug"></i> 2FA Diagnostyka</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i> Ta strona zawiera informacje diagnostyczne dotyczące uwierzytelniania dwuskładnikowego (2FA).
+                    </div>
+                    
+                    <h5>Akcje naprawcze:</h5>
+                    <div class="mb-4">
+                        <a href="{% url 'verify_2fa' %}" class="btn btn-primary me-2">
+                            <i class="fas fa-shield-alt"></i> Przejdź do weryfikacji 2FA
+                        </a>
+                        <a href="{% url 'setup_2fa' %}" class="btn btn-outline-primary me-2">
+                            <i class="fas fa-cog"></i> Konfiguruj 2FA
+                        </a>
+                        <form method="post" action="{% url 'disable_2fa' %}" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger" 
+                                    onclick="return confirm('Czy na pewno chcesz wyłączyć 2FA? To obniży poziom bezpieczeństwa Twojego konta.')">
+                                <i class="fas fa-power-off"></i> Wyłącz 2FA
+                            </button>
+                        </form>
+                    </div>
+                    
+                    <h5>Informacje diagnostyczne:</h5>
+                    <div class="accordion" id="debugAccordion">
+                        <!-- User Section -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingUser">
+                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseUser">
+                                    Informacje o użytkowniku
+                                </button>
+                            </h2>
+                            <div id="collapseUser" class="accordion-collapse collapse show" data-bs-parent="#debugAccordion">
+                                <div class="accordion-body">
+                                    <pre class="bg-light p-3 rounded">{{ debug_info.user|pprint }}</pre>
+                                    <hr>
+                                    <h6>Profil użytkownika:</h6>
+                                    <pre class="bg-light p-3 rounded">{{ debug_info.profile|pprint }}</pre>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 2FA Status Section -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="heading2FA">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse2FA">
+                                    Status 2FA
+                                </button>
+                            </h2>
+                            <div id="collapse2FA" class="accordion-collapse collapse" data-bs-parent="#debugAccordion">
+                                <div class="accordion-body">
+                                    <pre class="bg-light p-3 rounded">{{ debug_info.2fa_status|pprint }}</pre>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Session Section -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingSession">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSession">
+                                    Informacje o sesji
+                                </button>
+                            </h2>
+                            <div id="collapseSession" class="accordion-collapse collapse" data-bs-parent="#debugAccordion">
+                                <div class="accordion-body">
+                                    <pre class="bg-light p-3 rounded">{{ debug_info.session|pprint }}</pre>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Request Section -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingRequest">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseRequest">
+                                    Informacje o żądaniu
+                                </button>
+                            </h2>
+                            <div id="collapseRequest" class="accordion-collapse collapse" data-bs-parent="#debugAccordion">
+                                <div class="accordion-body">
+                                    <pre class="bg-light p-3 rounded">{{ debug_info.request|pprint }}</pre>
+                                    <hr>
+                                    <h6>Adresy URL:</h6>
+                                    <pre class="bg-light p-3 rounded">{{ debug_info.urls|pprint }}</pre>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- System Section -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingSystem">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseSystem">
+                                    Informacje o systemie
+                                </button>
+                            </h2>
+                            <div id="collapseSystem" class="accordion-collapse collapse" data-bs-parent="#debugAccordion">
+                                <div class="accordion-body">
+                                    <pre class="bg-light p-3 rounded">{{ debug_info.system|pprint }}</pre>
+                                    <hr>
+                                    <h6>Informacje o szablonach:</h6>
+                                    <pre class="bg-light p-3 rounded">{{ debug_info.templates|pprint }}</pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'dashboard' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Powrót do panelu
+                        </a>
+                        <a href="?format=json" class="btn btn-outline-primary">
+                            <i class="fas fa-code"></i> Pobierz jako JSON
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
