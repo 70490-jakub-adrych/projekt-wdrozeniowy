@@ -448,8 +448,8 @@
                                 {% endif %}
                             </div>
                             <div class="dropdown-divider"></div>
+                            <a class="dropdown-item d-flex align-items-center" href="{% if user.profile.ga_enabled %}{% url 'recovery_code' %}{% else %}{% url 'setup_2fa' %}{% endif %}">
                                 <div>
-                                    <a class="dropdown-item d-flex align-items-center" href="{% if user.profile.ga_enabled %}{% url 'recovery_code' %}{% else %}{% url 'setup_2fa' %}{% endif %}">
                                     <i class="fas fa-shield-alt me-2"></i>
                                     {% if user.profile.ga_enabled %}
                                     2FA (Włączone) <span class="text-success"><i class="fas fa-check-circle ms-2"></i></a></span>
