@@ -203,36 +203,11 @@ def verify_2fa(request):
     user = request.user
     profile = getattr(user, 'profile', None)
     
-    # Redirect if 2FA is not enabled for this user
-    if not profile or not profile.ga_enabled:
-        messages.warning(request, 'Uwierzytelnianie dwuskładnikowe nie jest włączone dla Twojego konta.')
-        return redirect('setup_2fa')
+    # Check if requires fresh verification even for trusted devices
+    require_fresh = request.session.get('require_fresh_2fa', False)
     
-    # Check if authentication is still valid (within 30 days)
-    auth_valid = False
-    days_remaining = 0
-    verification_expired = request.session.get('2fa_verification_expired', False)
-    
-    if profile.ga_last_authenticated and not verification_expired:
-        time_since_auth = timezone.now() - profile.ga_last_authenticated
-        auth_valid = time_since_auth.days < 30
-        days_remaining = max(0, 30 - time_since_auth.days)
-    
-    # If auth is still valid and not explicitly marked as expired, show status instead
-    if auth_valid and not verification_expired and request.method != 'POST':
-        logger.debug(f"2FA auth still valid for {user.username}, showing status info")
-        context = {
-            'auth_valid': auth_valid,
-            'days_remaining': days_remaining,
-            'last_auth': profile.ga_last_authenticated,
-            'setup_date': profile.ga_enabled_on
-        }
-        return render(request, 'crm/2fa/verify_status.html', context)
-    
-    # Clear the expired flag now that we're handling it
-    if 'verification_expired' in request.session:
-        del request.session['verification_expired']
-    
+    # IMPORTANT: ALWAYS ALLOW ACCESS TO THIS PAGE - NEVER REDIRECT AWAY
+    # This prevents redirect loops with the middleware
     if request.method == 'POST':
         form = TOTPVerificationForm(request.POST)
         if form.is_valid():
@@ -246,9 +221,30 @@ def verify_2fa(request):
                 # Code is valid, mark device as trusted if checkbox is checked
                 trust_device = request.POST.get('trust_device') == 'on'
                 
-                # Update last authentication time
-                profile.ga_last_authenticated = timezone.now()
-                profile.save(update_fields=['ga_last_authenticated'])
+                if trust_device:
+                    # Mark device as trusted
+                    profile.set_device_trusted(
+                        request_ip=get_client_ip(request),
+                        fingerprint=request.META.get('HTTP_USER_AGENT', '')
+                    )
+                else:
+                    # Just update the last authentication time
+                    profile.ga_last_authenticated = timezone.now()
+                    profile.save(update_fields=['ga_last_authenticated'])
+                
+                # If user is admin/superuser, add IP to trusted session IPs
+                if user.is_superuser or profile.role == 'admin':
+                    # Get current list of trusted IPs for this session
+                    trusted_ips = request.session.get('trusted_admin_ips', [])
+                    ip = get_client_ip(request)
+                    if ip not in trusted_ips:
+                        trusted_ips.append(ip)
+                        request.session['trusted_admin_ips'] = trusted_ips
+                        logger.debug(f"Added IP {ip} to trusted admin IPs for this session")
+                
+                # Clear require_fresh flag if set
+                if 'require_fresh_2fa' in request.session:
+                    del request.session['require_fresh_2fa']
                 
                 # IMPORTANT: Reset the redirect counter to prevent loop detection false positives
                 if '2fa_redirect_count' in request.session:
@@ -260,7 +256,7 @@ def verify_2fa(request):
                 
                 # Redirect to original destination
                 next_url = request.session.pop('2fa_next', reverse('dashboard'))
-                messages.success(request, 'Weryfikacja dwuskładnikowa pomyślna. Ważna przez następne 30 dni.')
+                messages.success(request, 'Weryfikacja dwuskładnikowa pomyślna.')
                 return redirect(next_url)
             else:
                 messages.error(request, 'Niepoprawny kod weryfikacyjny. Spróbuj ponownie.')
@@ -269,39 +265,37 @@ def verify_2fa(request):
     else:
         form = TOTPVerificationForm()
     
-    context = {
+    # Get the require_fresh flag from session to inform the template
+    require_fresh = request.session.get('require_fresh_2fa', False)
+    
+    return render(request, 'crm/2fa/verify.html', {
         'form': form,
-        'verification_expired': verification_expired
-    }
-    return render(request, 'crm/2fa/verify.html', context)
+        'require_fresh': require_fresh
+    })
 
 @login_required
-def verify_2fa_status(request):
-    """View to display 2FA status and provide access to recovery options"""
+def recovery_code(request):
+    """View for using recovery code when 2FA device is lost"""
     user = request.user
     profile = getattr(user, 'profile', None)
     
+    # If user doesn't have 2FA enabled, redirect to profile
     if not profile or not profile.ga_enabled:
-        messages.warning(request, 'Uwierzytelnianie dwuskładnikowe nie jest włączone dla Twojego konta.')
-        return redirect('setup_2fa')
+        messages.info(request, 'Uwierzytelnianie dwuskładnikowe nie jest włączone dla Twojego konta.')
+        return redirect('dashboard')  # Changed from 'profile' to 'dashboard'
     
-    # Calculate days remaining for current authentication
-    days_remaining = 0
-    auth_valid = False
+    if request.method == 'POST':
+        recovery_code = request.POST.get('recovery_code', '')
+        
+        if recovery_code:
+            # Verify recovery code
+            if profile.verify_recovery_code(recovery_code):
+                messages.success(request, 'Kod odzyskiwania poprawny. Twoje konto zostało zabezpieczone, a uwierzytelnianie dwuskładnikowe zostało wyłączone.')
+                return redirect('dashboard')  # Changed from 'profile' to 'dashboard'
+            else:
+                messages.error(request, 'Niepoprawny kod odzyskiwania. Spróbuj ponownie lub skontaktuj się z administratorem.')
     
-    if profile.ga_last_authenticated:
-        time_since_auth = timezone.now() - profile.ga_last_authenticated
-        auth_valid = time_since_auth.days < 30
-        days_remaining = max(0, 30 - time_since_auth.days)
-    
-    context = {
-        'auth_valid': auth_valid,
-        'days_remaining': days_remaining,
-        'last_auth': profile.ga_last_authenticated,
-        'setup_date': profile.ga_enabled_on
-    }
-    
-    return render(request, 'crm/2fa/status.html', context)
+    return render(request, 'crm/2fa/recovery.html')
 
 def generate_qr_code(data):
     """Generate QR code image"""

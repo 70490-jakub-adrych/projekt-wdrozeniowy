@@ -1,0 +1,37 @@
+{% extends 'crm/base.html' %}
+
+{% block title %}Weryfikacja dwuskładnikowa | System Helpdesk{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <i class="fas fa-shield-alt mr-2"></i> Weryfikacja dwuskładnikowa aktywna
+            </div>
+            <div class="card-body text-center">
+                <div class="mb-4">
+                    <i class="fas fa-check-circle fa-5x text-success mb-3"></i>
+                    <h4>Twoja weryfikacja dwuskładnikowa jest aktywna</h4>
+                    <p class="text-muted">Nie musisz wprowadzać kodu weryfikacyjnego w tej chwili.</p>
+                </div>
+                
+                <div class="alert alert-info">
+                    <p><i class="fas fa-clock"></i> Twoja weryfikacja 2FA jest ważna jeszcze przez <strong>{{ days_remaining }} dni</strong>.</p>
+                    <p class="mb-0">Ostatnie uwierzytelnienie: {{ last_auth|date:"d.m.Y H:i" }}</p>
+                </div>
+                
+                <div class="mt-4">
+                    <a href="{{ request.session.2fa_next|default:'dashboard' }}" class="btn btn-primary">
+                        <i class="fas fa-arrow-right"></i> Kontynuuj do systemu
+                    </a>
+                    
+                    <a href="{% url 'recovery_code' %}" class="btn btn-outline-warning ml-2">
+                        <i class="fas fa-key"></i> Kod odzyskiwania
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

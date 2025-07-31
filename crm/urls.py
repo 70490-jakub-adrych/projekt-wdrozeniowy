@@ -113,11 +113,12 @@ urlpatterns = [
     # Ticket solution confirmation
     path('tickets/<int:pk>/confirm-solution/', ticket_confirm_solution, name='ticket_confirm_solution'),
 
-    # 2FA URLs
+    # Two-factor authentication paths
     path('2fa/setup/', setup_2fa, name='setup_2fa'),
     path('2fa/success/', setup_2fa_success, name='setup_2fa_success'),
-    path('2fa/disable/', disable_2fa, name='disable_2fa'),
     path('2fa/verify/', verify_2fa, name='verify_2fa'),
     path('2fa/recovery/', recovery_code, name='recovery_code'),
     path('2fa/debug/', debug_2fa, name='debug_2fa'),  # Add debug URL
+    # Add the new status view
+    path('2fa/status/', verify_2fa_status, name='verify_2fa_status'),
 ]
