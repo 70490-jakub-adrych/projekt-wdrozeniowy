@@ -78,24 +78,6 @@ class TwoFactorMiddleware:
     
     def __init__(self, get_response):
         self.get_response = get_response
-        # Cache verify_2fa URL to avoid repeated calls to reverse()
-        self.verify_2fa_url = reverse('verify_2fa')
-        # Get other exempt URLs once on initialization
-        self.setup_2fa_url = reverse('setup_2fa')
-        self.setup_2fa_success_url = reverse('setup_2fa_success')
-        self.recovery_code_url = reverse('recovery_code')
-        self.logout_url = reverse('logout')
-        
-        # Store exempt paths as a set for faster lookups
-        self.static_exempt_paths = {
-            '/static/',
-            '/media/',
-            '/admin/',
-            '/verify-email/',
-            '/register/',
-            '/password_reset/',
-            '/reset/',
-        }
         
     def __call__(self, request):
         if request.user.is_authenticated:
@@ -123,20 +105,6 @@ class TwoFactorMiddleware:
                 # First case: User has 2FA enabled
                 if request.user.profile.ga_enabled:
                     profile = request.user.profile
-                    
-                    # First, check if we're already on the verification page to prevent infinite loops
-                    current_path = request.path.rstrip('/')
-                    verify_path = self.verify_2fa_url.rstrip('/')
-                    
-                    # Direct equality check for verification page
-                    if current_path == verify_path:
-                        # Already on verification page, don't redirect
-                        return self.get_response(request)
-                        
-                    # Check if the path is exempt regardless
-                    if self._is_exempt_path(request.path):
-                        # Path is exempt from 2FA, proceed normally
-                        return self.get_response(request)
                     
                     # Get the IP address
                     x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
@@ -177,20 +145,21 @@ class TwoFactorMiddleware:
                         (not trusted_session and profile.needs_2fa_verification(request_ip=ip))
                     )
                     
-                    if needs_verification:
-                        # If we're not already on the verification page
-                        if current_path != verify_path:
+                    # Check if current path requires verification
+                    if needs_verification and not self._is_exempt_path(request.path):
+                        # Check if currently trying to access verify_2fa
+                        if request.path != reverse('verify_2fa'):
                             # Store the original destination if it's not already in session
                             if '2fa_next' not in request.session:
                                 request.session['2fa_next'] = request.path
                                 
                             logger.info(f"Redirecting user {request.user.username} to 2FA verification")
-                            return redirect(self.verify_2fa_url)
+                            return redirect('verify_2fa')
                 
                 # Second case: Approved user doesn't have 2FA enabled yet - redirect to setup
                 elif not request.user.profile.ga_enabled:
                     # Check if current path is already an exempt path (like 2FA setup itself)
-                    if not self._is_exempt_path(request.path) and request.path != self.setup_2fa_url:
+                    if not self._is_exempt_path(request.path) and request.path != reverse('setup_2fa'):
                         # If not in a grace period (first login)
                         setup_exempt_until = request.session.get('2fa_setup_exempt_until')
                         if not setup_exempt_until or timezone.now() > datetime.fromisoformat(setup_exempt_until):
@@ -200,27 +169,24 @@ class TwoFactorMiddleware:
                             request.session['2fa_next'] = request.path
                             
                             logger.info(f"Redirecting user {request.user.username} to 2FA setup (required)")
-                            return redirect(self.setup_2fa_url)
+                            return redirect('setup_2fa')
         
         return self.get_response(request)
     
     def _is_exempt_path(self, path):
         """Check if path is exempt from 2FA verification"""
-        # First check against cached URL paths (exact matches)
-        if path.rstrip('/') == self.verify_2fa_url.rstrip('/'):
-            return True
-        if path.rstrip('/') == self.setup_2fa_url.rstrip('/'):
-            return True
-        if path.rstrip('/') == self.setup_2fa_success_url.rstrip('/'):
-            return True
-        if path.rstrip('/') == self.recovery_code_url.rstrip('/'):
-            return True
-        if path.rstrip('/') == self.logout_url.rstrip('/'):
-            return True
-        
-        # Then check against static paths (prefix matches)
-        for exempt_path in self.static_exempt_paths:
-            if path.startswith(exempt_path):
-                return True
-        
-        return False
+        exempt_paths = [
+            reverse('verify_2fa'),
+            reverse('setup_2fa'),
+            reverse('setup_2fa_success'),
+            reverse('recovery_code'),
+            reverse('logout'),
+            '/static/',
+            '/media/',
+            '/admin/',
+            '/verify-email/',  # Don't interfere with email verification
+            '/register/',       # Don't interfere with registration flow
+            '/password_reset/', # Don't interfere with password resets
+            '/reset/',          # Don't interfere with password reset confirmations
+        ]
+        return any(path.startswith(exempt) for exempt in exempt_paths)
