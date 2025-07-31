@@ -117,12 +117,16 @@ class TwoFactorMiddleware:
         
     def __call__(self, request):
         if request.user.is_authenticated:
-            # Skip middleware entirely for these key paths to prevent loops
-            for critical_path in [self.verify_2fa_url, self.debug_2fa_url, self.setup_2fa_url]:
-                if request.path.startswith(critical_path.rstrip('/')):
-                    logger.debug(f"Critical 2FA path {request.path}, skipping middleware checks")
-                    return self.get_response(request)
+            # DEBUG: Add detailed logging about the request path
+            logger.debug(f"2FA Middleware processing path: {request.path}")
             
+            # CRITICAL FIX: Check exact paths first before anything else
+            if (request.path == self.verify_2fa_url or
+                request.path.rstrip('/') == self.verify_2fa_url.rstrip('/') or
+                request.path.startswith('/2fa/')):
+                logger.debug(f"Exempt 2FA path detected: {request.path} - skipping middleware checks")
+                return self.get_response(request)
+
             # Skip the entire middleware if bypass was already used in this session
             if request.session.get('2fa_bypass_used', False):
                 logger.debug(f"2FA bypass active for {request.user.username}, skipping middleware")
@@ -168,6 +172,16 @@ class TwoFactorMiddleware:
             
             # Check if user has profile and is already approved
             if hasattr(request.user, 'profile') and request.user.profile.is_approved and not is_exempt and not group_exempt:
+                # Store debug info in session
+                request.session['debug_last_path'] = request.path
+                request.session['debug_verify_2fa_url'] = self.verify_2fa_url
+                
+                # Force verification if auth is expired
+                # Important: first check if we should completely skip verification
+                if self._should_skip_verification(request):
+                    logger.debug(f"Skipping verification for user {request.user.username} based on session state")
+                    return self.get_response(request)
+                
                 # First case: User has 2FA enabled
                 if request.user.profile.ga_enabled:
                     profile = request.user.profile
@@ -297,6 +311,27 @@ class TwoFactorMiddleware:
         
         return self.get_response(request)
     
+    def _should_skip_verification(self, request):
+        """Determine if verification should be skipped completely"""
+        user = request.user
+        
+        # Skip for grace period (first login)
+        if request.session.get('2fa_setup_exempt_until'):
+            try:
+                exempt_until = datetime.fromisoformat(request.session.get('2fa_setup_exempt_until'))
+                if timezone.now() < exempt_until:
+                    logger.debug(f"User {user.username} is in 2FA setup grace period until {exempt_until}")
+                    return True
+            except (ValueError, TypeError):
+                pass
+        
+        # Skip if already verified in this session
+        if request.session.get('2fa_verified'):
+            logger.debug(f"User {user.username} already verified 2FA in this session")
+            return True
+            
+        return False
+
     def _is_exempt_path_improved(self, path):
         """Improved version of is_exempt_path with more robust checks"""
         # First check direct prefix matches - critical for 2FA paths
