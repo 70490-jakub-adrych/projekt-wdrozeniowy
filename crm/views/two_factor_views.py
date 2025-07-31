@@ -141,7 +141,7 @@ def setup_2fa(request):
 def setup_2fa_success(request):
     """Success page after setting up 2FA"""
     if 'recovery_code' not in request.session:
-        return redirect('profile')
+        return redirect('dashboard')  # Changed from 'profile' to 'dashboard'
     
     recovery_code = request.session['recovery_code']
     # Clear from session after displaying to user
