@@ -23,7 +23,7 @@ from django.contrib.auth import views as auth_views
 from .views.statistics_views import statistics_dashboard, update_agent_work_log, generate_statistics_report
 from .views.tickets.unassignment_views import ticket_unassign
 from .views.tickets.assignment_views import ticket_assign_to_other
-from .views.two_factor_views import setup_2fa, setup_2fa_success, disable_2fa, verify_2fa, recovery_code, debug_2fa, verify_2fa_status
+from .views.two_factor_views import setup_2fa, setup_2fa_success, disable_2fa, verify_2fa, debug_2fa, verify_2fa_status
 
 urlpatterns = [
     # Landing and authentication
@@ -117,8 +117,8 @@ urlpatterns = [
     path('2fa/setup/', setup_2fa, name='setup_2fa'),
     path('2fa/success/', setup_2fa_success, name='setup_2fa_success'),
     path('2fa/verify/', verify_2fa, name='verify_2fa'),
-    path('2fa/recovery/', recovery_code, name='recovery_code'),  # This should point to recovery_code view
-    path('2fa/debug/', debug_2fa, name='debug_2fa'),
+    path('2fa/recovery/', verify_2fa, name='recovery_code'),  # Temporarily point to verify_2fa
+    path('2fa/debug/', debug_2fa, name='debug_2fa'),  # Add debug URL
+    # Add the new status view
     path('2fa/status/', verify_2fa_status, name='verify_2fa_status'),
 ]
-

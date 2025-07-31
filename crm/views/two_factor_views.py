@@ -3,7 +3,6 @@ import qrcode
 import io
 import base64
 import logging
-from datetime import datetime  # Add this missing import
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
