@@ -189,11 +189,19 @@ def verify_2fa(request):
     user = request.user
     profile = getattr(user, 'profile', None)
     
+    # Reset redirect counter whenever user reaches this page directly
+    # This helps break potential redirection loops
+    request.session['2fa_redirect_count'] = 0
+    
     # Check if requires fresh verification even for trusted devices
     require_fresh = request.session.get('require_fresh_2fa', False)
     
     # If user doesn't need 2FA verification, redirect to dashboard
     if not profile or not profile.ga_enabled or (not require_fresh and not profile.needs_2fa_verification(get_client_ip(request))):
+        # Clear the redirect counter since verification isn't needed
+        if '2fa_redirect_count' in request.session:
+            del request.session['2fa_redirect_count']
+        
         return redirect('dashboard')
     
     if request.method == 'POST':
@@ -237,6 +245,10 @@ def verify_2fa(request):
                 # Add a marker in the session that 2FA verification is completed
                 request.session['2fa_verified'] = True
                 request.session['2fa_verified_time'] = timezone.now().isoformat()
+                
+                # Clear the redirect counter since verification is complete
+                if '2fa_redirect_count' in request.session:
+                    del request.session['2fa_redirect_count']
                 
                 # Redirect to original destination
                 next_url = request.session.pop('2fa_next', reverse('dashboard'))
@@ -303,3 +315,73 @@ def generate_qr_code(data):
     base64_encoded = base64.b64encode(image_data).decode('utf-8')
     
     return f"data:image/png;base64,{base64_encoded}"
+
+@login_required
+def debug_2fa(request):
+    """Debug view for 2FA issues"""
+    user = request.user
+    profile = getattr(user, 'profile', None)
+    
+    # Collect all relevant 2FA information
+    session_data = {k: v for k, v in request.session.items() 
+                    if k.startswith('2fa_') or k in ['trusted_admin_ips']}
+    
+    # Get the client IP
+    ip = get_client_ip(request)
+    
+    # Gather profile 2FA info
+    profile_data = {}
+    if profile:
+        profile_data = {
+            'ga_enabled': profile.ga_enabled,
+            'has_secret_key': bool(profile.ga_secret_key),
+            'has_recovery_hash': bool(profile.ga_recovery_hash),
+            'ga_enabled_on': profile.ga_enabled_on,
+            'ga_last_authenticated': profile.ga_last_authenticated,
+            'trusted_ip': profile.trusted_ip,
+            'trusted_until': profile.trusted_until,
+            'needs_verification': profile.ga_enabled and profile.needs_2fa_verification(ip),
+        }
+    
+    # URLs for reference
+    urls = {
+        'verify_2fa': reverse('verify_2fa'),
+        'setup_2fa': reverse('setup_2fa'),
+        'recovery_code': reverse('recovery_code'),
+        'current_path': request.path,
+    }
+    
+    # Manual actions to fix issues
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        if action == 'reset_redirect_count':
+            request.session['2fa_redirect_count'] = 0
+            messages.success(request, 'Reset redirect counter to 0')
+        elif action == 'mark_verified':
+            request.session['2fa_verified'] = True
+            request.session['2fa_verified_time'] = timezone.now().isoformat()
+            messages.success(request, 'Marked 2FA as verified in this session')
+        elif action == 'disable_2fa':
+            if profile and profile.ga_enabled:
+                profile.ga_enabled = False
+                profile.ga_secret_key = None
+                profile.ga_recovery_hash = None
+                profile.trusted_ip = None
+                profile.trusted_until = None
+                profile.save()
+                messages.success(request, '2FA has been disabled for your account')
+            else:
+
+
+
+
+
+
+
+
+
+
+
+
+
+    })        'user_agent': request.META.get('HTTP_USER_AGENT', 'Unknown'),        'urls': urls,        'client_ip': ip,        'session_data': session_data,        'profile_data': profile_data,    return render(request, 'crm/2fa/debug.html', {                    messages.success(request, f'Added your current IP ({ip}) to trusted devices')                profile.set_device_trusted(request_ip=ip, fingerprint=request.META.get('HTTP_USER_AGENT', ''))            if profile:        elif action == 'add_trusted_ip':                messages.error(request, '2FA is not enabled for this account')    })
