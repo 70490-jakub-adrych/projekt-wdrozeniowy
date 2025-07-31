@@ -79,27 +79,13 @@ def setup_2fa(request):
                 
                 # Generate a recovery code if not already generated
                 if not profile.ga_recovery_hash:
-                    logger.debug(f"Generating recovery code for user {user.username}")
                     success, recovery_code = profile.generate_recovery_code()
                     if success:
                         # Store recovery code in session for display on success page
-                        logger.debug(f"Generated recovery code successfully for {user.username}")
                         request.session['recovery_code'] = recovery_code
                     else:
-                        logger.error(f"Failed to generate recovery code for {user.username}")
                         messages.error(request, 'Nie udało się wygenerować kodu odzyskiwania.')
                         return redirect('setup_2fa')
-                else:
-                    # If recovery hash already exists, retrieve it for display
-                    logger.debug(f"Recovery hash already exists for user {user.username}")
-                    recovery_code = profile.ga_recovery_hash
-                    request.session['recovery_code'] = recovery_code
-                
-                # Make sure the recovery code is in the session
-                if 'recovery_code' not in request.session or not request.session['recovery_code']:
-                    logger.error(f"Recovery code missing from session for user {user.username}")
-                    messages.error(request, 'Wystąpił problem z kodem odzyskiwania. Skontaktuj się z administratorem.')
-                    return redirect('dashboard')
                 
                 # Save the profile
                 profile.save()
