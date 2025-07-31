@@ -16,9 +16,9 @@
                     <p class="text-muted">Twoje konto jest zabezpieczone uwierzytelnianiem dwuskładnikowym</p>
                 </div>
                 
-                {% if verification_expired %}
-                <div class="alert alert-warning">
-                    <i class="fas fa-exclamation-triangle"></i> Twoja weryfikacja wygasła (po 30 dniach). Wprowadź kod ponownie, aby kontynuować.
+                {% if require_fresh %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> Ta strona wymaga dodatkowej weryfikacji ze względów bezpieczeństwa, nawet jeśli używasz zaufanego urządzenia.
                 </div>
                 {% endif %}
                 
@@ -36,15 +36,17 @@
                         </small>
                     </div>
                     
+                    {% if not require_fresh %}
                     <div class="form-check mb-3 text-left">
                         <input type="checkbox" class="form-check-input" id="trust_device" name="trust_device" checked>
                         <label class="form-check-label" for="trust_device">
-                            Zapisz to uwierzytelnienie na 30 dni
+                            Zaufaj temu urządzeniu na 30 dni
                         </label>
                         <small class="form-text text-muted">
-                            Przez 30 dni nie będziesz musiał ponownie podawać kodu.
+                            Na zaufanych urządzeniach nie będziesz musiał ponownie podawać kodu przez 30 dni.
                         </small>
                     </div>
+                    {% endif %}
                     
                     <div class="mt-4">
                         <button type="submit" class="btn btn-primary btn-lg">
@@ -64,7 +66,5 @@
             </div>
         </div>
     </div>
-</div>
-{% endblock %}
 </div>
 {% endblock %}

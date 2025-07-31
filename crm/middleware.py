@@ -177,25 +177,10 @@ class TwoFactorMiddleware:
                                 f"has_secret={bool(profile.ga_secret_key)}, " +
                                 f"last_auth={profile.ga_last_authenticated}")
                     
-                    # Skip verification check if we're on these specific pages
-                    if request.path == reverse('verify_2fa_status') or self._is_exempt_path_improved(request.path):
-                        logger.debug(f"Skipping 2FA check for exempt path: {request.path}")
-                        return self.get_response(request)
-                    
-                    # Check if we're within the 30-day verification window
-                    auth_valid = False
-                    if profile.ga_last_authenticated:
-                        time_since_auth = timezone.now() - profile.ga_last_authenticated
-                        auth_valid = time_since_auth.days < 30  # Valid for 30 days
-                        
-                        logger.debug(f"2FA auth valid: {auth_valid}, days since auth: {time_since_auth.days}")
-                        
-                        # Store if auth is valid in session for views to use
-                        request.session['2fa_auth_valid'] = auth_valid
-                        request.session['2fa_days_remaining'] = max(0, 30 - time_since_auth.days)
-                    
-                    # If authentication is still valid, let the user through
-                    if auth_valid:
+                    # FIX: Check if we're already on an exempt page first before anything else
+                    # This prevents redirection loops even when URL resolving has issues
+                    if self._is_exempt_path_improved(request.path):
+                        logger.debug(f"EXEMPT PATH: {request.path} is exempt from 2FA - proceeding")
                         return self.get_response(request)
                     
                     # Check redirect counter to prevent infinite loops
@@ -279,20 +264,21 @@ class TwoFactorMiddleware:
                         logger.info(f"Redirecting user {request.user.username} to 2FA verification (count: {redirect_count + 1})")
                         return redirect(self.verify_2fa_url)
                 
-                # Second case: Approved user doesn't have 2FA enabled yet - redirect to setup (UNSKIPPABLE)
+                # Second case: Approved user doesn't have 2FA enabled yet - redirect to setup
                 elif not request.user.profile.ga_enabled:
-                    # Always check non-exempt paths first to prevent loops
+                    # Check if current path is already an exempt path
                     if self._is_exempt_path_improved(request.path):
                         return self.get_response(request)
-                    
-                    # For approved users without 2FA, force setup (no grace period)
-                    if request.path != reverse('setup_2fa'):
-                        # Store the original destination for later redirect
+                        
+                    # If not in a grace period (first login)
+                    setup_exempt_until = request.session.get('2fa_setup_exempt_until')
+                    if not setup_exempt_until or timezone.now() > datetime.fromisoformat(setup_exempt_until):
+                        messages.warning(request, 'Dla bezpieczeństwa Twojego konta, musisz skonfigurować uwierzytelnianie dwuskładnikowe.')
+                        
+                        # Store the original destination
                         request.session['2fa_next'] = request.path
                         
-                        # Force redirect to 2FA setup
-                        messages.warning(request, 'Musisz skonfigurować uwierzytelnianie dwuskładnikowe przed kontynuowaniem.')
-                        logger.info(f"Redirecting user {request.user.username} to mandatory 2FA setup")
+                        logger.info(f"Redirecting user {request.user.username} to 2FA setup (required)")
                         return redirect('setup_2fa')
         
         return self.get_response(request)
