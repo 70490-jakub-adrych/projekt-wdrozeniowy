@@ -61,17 +61,18 @@ def setup_2fa(request):
                 # Initialize recovery_code variable
                 recovery_code = None
                 
-                # Generate a recovery code if not already generated
-                if not profile.ga_recovery_hash:
-                    success, recovery_code = profile.generate_recovery_code()
-                    if success:
-                        # Store recovery code in session for display on success page
-                        request.session['recovery_code'] = recovery_code
-                        # Log that we're storing the recovery code for debug purposes
-                        logger.info(f"Stored recovery code in session for user {user.username}")
-                    else:
-                        messages.error(request, 'Nie udało się wygenerować kodu odzyskiwania.')
-                        return redirect('setup_2fa')
+                # ALWAYS generate a new recovery code when setting up 2FA
+                # This ensures users get a new code every time they set up 2FA
+                logger.info(f"Generating new recovery code for user {user.username} during 2FA setup")
+                success, recovery_code = profile.generate_recovery_code()
+                if success:
+                    # Store recovery code in session for display on success page
+                    request.session['recovery_code'] = recovery_code
+                    logger.info(f"Stored recovery code in session for user {user.username}: {recovery_code[:3]}...{recovery_code[-3:]}")
+                else:
+                    logger.error(f"Failed to generate recovery code for user {user.username}")
+                    messages.error(request, 'Nie udało się wygenerować kodu odzyskiwania.')
+                    return redirect('setup_2fa')
                 
                 # Save the profile before marking device as trusted
                 profile.save()
@@ -90,11 +91,17 @@ def setup_2fa(request):
                 
                 messages.success(request, 'Uwierzytelnianie dwuskładnikowe zostało pomyślnie włączone!')
                 
-                # Make sure the recovery code is stored in the session before redirecting
-                # Use safer approach by not referencing the variable that might not exist
-                
                 # Explicitly save the session before redirecting
                 request.session.modified = True
+                
+                # Verify the code is in the session before redirecting
+                if 'recovery_code' not in request.session:
+                    logger.error(f"Recovery code not found in session after storing it for user {user.username}")
+                    # As a fallback, put it back in the session
+                    request.session['recovery_code'] = recovery_code
+                    request.session.modified = True
+                else:
+                    logger.info(f"Recovery code confirmed in session for user {user.username}")
                 
                 # Log the redirect
                 logger.info(f"Redirecting user {user.username} to 2FA success page")
@@ -166,15 +173,31 @@ def setup_2fa(request):
 @login_required
 def setup_2fa_success(request):
     """Success page after setting up 2FA"""
-    logger.info(f"2FA success page accessed by user {request.user.username}")
+    user = request.user
+    logger.info(f"2FA success page accessed by user {user.username}")
     
     # Check if there's a recovery code in the session
     if 'recovery_code' not in request.session:
-        logger.warning(f"No recovery code found in session for user {request.user.username}, redirecting to dashboard")
-        return redirect('dashboard')
+        logger.warning(f"No recovery code found in session for user {user.username}, attempting recovery")
+        
+        # If the user has 2FA enabled, try to generate a new recovery code
+        if hasattr(user, 'profile') and user.profile.ga_enabled:
+            logger.info(f"Generating new recovery code as fallback for user {user.username}")
+            success, recovery_code = user.profile.generate_recovery_code()
+            if success:
+                logger.info(f"Generated fallback recovery code for user {user.username}")
+                request.session['recovery_code'] = recovery_code
+            else:
+                logger.error(f"Failed to generate fallback recovery code for user {user.username}")
+                messages.error(request, "Nie udało się wygenerować kodu odzyskiwania. Skontaktuj się z administratorem.")
+                return redirect('dashboard')
+        else:
+            logger.warning(f"User {user.username} doesn't have 2FA enabled, redirecting to dashboard")
+            return redirect('dashboard')
     
+    # Now we should have a recovery code
     recovery_code = request.session['recovery_code']
-    logger.info(f"Recovery code found in session for user {request.user.username}, displaying success page")
+    logger.info(f"Recovery code found in session for user {user.username}, displaying success page")
     
     # Clear from session after displaying to user
     del request.session['recovery_code']

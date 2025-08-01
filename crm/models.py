@@ -83,11 +83,18 @@ class UserProfile(models.Model):
         import string
         import hashlib
         from django.utils import timezone
+        import logging
         
-        # Always generate a new code, ignoring any time constraints
-        # Generate a strong recovery code (20 characters, alphanumeric)
+        logger = logging.getLogger(__name__)
+        
+        # Always generate a new code regardless of previous state
+        # Get recovery code length from settings or use default
+        from django.conf import settings
+        recovery_code_length = getattr(settings, 'GOOGLE_AUTHENTICATOR', {}).get('RECOVERY_CODE_LENGTH', 20)
+        
+        # Generate a strong recovery code (alphanumeric)
         alphabet = string.ascii_letters + string.digits
-        recovery_code = ''.join(secrets.choice(alphabet) for _ in range(20))
+        recovery_code = ''.join(secrets.choice(alphabet) for _ in range(recovery_code_length))
         
         # Hash the recovery code for storage
         hashed_code = hashlib.sha256(recovery_code.encode()).hexdigest()
@@ -97,6 +104,7 @@ class UserProfile(models.Model):
         self.ga_recovery_last_generated = timezone.now()
         self.save(update_fields=['ga_recovery_hash', 'ga_recovery_last_generated'])
         
+        logger.info(f"Generated new recovery code for user {self.user.username}")
         return True, recovery_code
         
     def verify_recovery_code(self, code):
