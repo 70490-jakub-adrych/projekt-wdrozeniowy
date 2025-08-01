@@ -58,6 +58,9 @@ def setup_2fa(request):
                 # Set the last authentication timestamp to now and mark device as trusted
                 profile.ga_last_authenticated = timezone.now()
                 
+                # Initialize recovery_code variable
+                recovery_code = None
+                
                 # Generate a recovery code if not already generated
                 if not profile.ga_recovery_hash:
                     success, recovery_code = profile.generate_recovery_code()
@@ -88,15 +91,15 @@ def setup_2fa(request):
                 messages.success(request, 'Uwierzytelnianie dwuskładnikowe zostało pomyślnie włączone!')
                 
                 # Make sure the recovery code is stored in the session before redirecting
-                if 'recovery_code' not in request.session and recovery_code:
-                    request.session['recovery_code'] = recovery_code
-                    
+                # Use safer approach by not referencing the variable that might not exist
+                
                 # Explicitly save the session before redirecting
                 request.session.modified = True
                 
                 # Log the redirect
                 logger.info(f"Redirecting user {user.username} to 2FA success page")
                 return redirect('setup_2fa_success')
+                
             else:
                 messages.error(request, 'Niepoprawny kod weryfikacyjny. Spróbuj ponownie.')
         
