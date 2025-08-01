@@ -2,8 +2,10 @@ from django.contrib import admin
 from django.contrib.auth.models import User, Group
 from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
 from django.contrib.auth.admin import GroupAdmin as BaseGroupAdmin
-from django.contrib import messages  # Add this import
+from django.contrib import messages
 from django import forms
+from django.utils import timezone  # Add this import for timezone
+from .views.helpers import get_client_ip  # Add this import for get_client_ip
 from .models import (
     UserProfile, Organization, Ticket, TicketComment,
     TicketAttachment, ActivityLog, GroupSettings, 
@@ -54,7 +56,7 @@ class UserProfileInline(admin.StackedInline):
 
 class UserAdmin(BaseUserAdmin):
     inlines = (UserProfileInline,)
-    actions = ['regenerate_recovery_code', 'disable_2fa_action']
+    actions = ['regenerate_recovery_code', 'disable_2fa_action', 'clear_2fa_authentication']
     
     def regenerate_recovery_code(self, request, queryset):
         """Action to regenerate recovery code for selected users"""
@@ -141,6 +143,56 @@ class UserAdmin(BaseUserAdmin):
             )
     
     disable_2fa_action.short_description = "Wyłącz uwierzytelnianie dwuskładnikowe (2FA)"
+    
+    def clear_2fa_authentication(self, request, queryset):
+        """Action to clear 2FA authentication status without disabling 2FA"""
+        success_count = 0
+        skipped_count = 0
+        
+        for user in queryset:
+            if hasattr(user, 'profile'):
+                # Check if user has 2FA enabled
+                if user.profile.ga_enabled:
+                    # Clear authentication status
+                    user.profile.trusted_ip = None
+                    user.profile.trusted_until = None
+                    user.profile.device_fingerprint = None
+                    # Don't set ga_last_authenticated to None because it can cause issues
+                    # Instead set it to a very old timestamp
+                    user.profile.ga_last_authenticated = timezone.now() - timezone.timedelta(days=365)
+                    user.profile.save(update_fields=[
+                        'trusted_ip', 'trusted_until', 'device_fingerprint', 'ga_last_authenticated'
+                    ])
+                    
+                    success_count += 1
+                    
+                    # Log this action
+                    ActivityLog.objects.create(
+                        user=user,
+                        action_type='admin_action',
+                        description=f"2FA authentication status cleared by administrator: {request.user.username}",
+                        ip_address=get_client_ip(request)
+                    )
+                else:
+                    skipped_count += 1
+        
+        # Show success message
+        if success_count > 0:
+            self.message_user(
+                request,
+                f"Usunięto status uwierzytelnienia 2FA dla {success_count} użytkowników. Będą musieli ponownie wprowadzić kod przy następnym logowaniu.",
+                messages.SUCCESS
+            )
+        
+        # Show info message if some users were skipped
+        if skipped_count > 0:
+            self.message_user(
+                request,
+                f"Pominięto {skipped_count} użytkowników (nie mają włączonego 2FA).",
+                messages.INFO
+            )
+    
+    clear_2fa_authentication.short_description = "Wyczyść status uwierzytelnienia 2FA (wymusi ponowne wprowadzenie kodu)"
     
     def save_model(self, request, obj, form, change):
         """Override save_model to enforce one group per user"""

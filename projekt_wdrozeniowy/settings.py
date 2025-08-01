@@ -311,4 +311,5 @@ GOOGLE_AUTHENTICATOR = {
     'ISSUER_NAME': 'System Helpdesk',
     'TRUSTED_DEVICE_DAYS': 30,  # Number of days to trust a device
     'RECOVERY_CODE_LENGTH': 20,  # Length of recovery code
+    'SHOW_SUCCESS_PAGE': True,   # Always show success page with recovery code
 }

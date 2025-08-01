@@ -64,6 +64,8 @@ def setup_2fa(request):
                     if success:
                         # Store recovery code in session for display on success page
                         request.session['recovery_code'] = recovery_code
+                        # Log that we're storing the recovery code for debug purposes
+                        logger.info(f"Stored recovery code in session for user {user.username}")
                     else:
                         messages.error(request, 'Nie udało się wygenerować kodu odzyskiwania.')
                         return redirect('setup_2fa')
@@ -84,6 +86,16 @@ def setup_2fa(request):
                     del request.session['last_2fa_key_generation']
                 
                 messages.success(request, 'Uwierzytelnianie dwuskładnikowe zostało pomyślnie włączone!')
+                
+                # Make sure the recovery code is stored in the session before redirecting
+                if 'recovery_code' not in request.session and recovery_code:
+                    request.session['recovery_code'] = recovery_code
+                    
+                # Explicitly save the session before redirecting
+                request.session.modified = True
+                
+                # Log the redirect
+                logger.info(f"Redirecting user {user.username} to 2FA success page")
                 return redirect('setup_2fa_success')
             else:
                 messages.error(request, 'Niepoprawny kod weryfikacyjny. Spróbuj ponownie.')
@@ -151,12 +163,19 @@ def setup_2fa(request):
 @login_required
 def setup_2fa_success(request):
     """Success page after setting up 2FA"""
+    logger.info(f"2FA success page accessed by user {request.user.username}")
+    
+    # Check if there's a recovery code in the session
     if 'recovery_code' not in request.session:
-        return redirect('dashboard')  # Changed from 'profile' to 'dashboard'
+        logger.warning(f"No recovery code found in session for user {request.user.username}, redirecting to dashboard")
+        return redirect('dashboard')
     
     recovery_code = request.session['recovery_code']
+    logger.info(f"Recovery code found in session for user {request.user.username}, displaying success page")
+    
     # Clear from session after displaying to user
     del request.session['recovery_code']
+    request.session.modified = True
     
     return render(request, 'crm/2fa/success.html', {
         'recovery_code': recovery_code
