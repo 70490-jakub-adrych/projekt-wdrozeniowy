@@ -28,10 +28,6 @@ if allowed_hosts_str:
 else:
     ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
 
-# Add the myDevil domain if not in development
-if not DEBUG:
-    if 'betulait.usermd.net' not in ALLOWED_HOSTS:
-        ALLOWED_HOSTS.append('betulait.usermd.net')
 
 # Application definition
 
