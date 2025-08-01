@@ -293,6 +293,11 @@ def recovery_code(request):
                 
                 # Verify recovery code
                 if profile.verify_recovery_code(recovery_code):
+                    # Fix: Set the backend attribute for the user before logging in
+                    # Using the first backend in settings.AUTHENTICATION_BACKENDS
+                    from django.conf import settings
+                    user.backend = settings.AUTHENTICATION_BACKENDS[0]
+                    
                     # Log the user in after successful verification
                     login(request, user)
                     messages.success(request, 'Kod odzyskiwania poprawny. Twoje konto zostało zabezpieczone, a uwierzytelnianie dwuskładnikowe zostało wyłączone.')
