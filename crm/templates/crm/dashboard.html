@@ -479,12 +479,13 @@
                 </div>
             </div>
             <div class="card-body p-3">
-                <!-- First Row: "Nowe" takes full width on mobile, half on desktop -->
-                <div class="row g-3 mb-3">
-                    <div class="col-12 col-md-6">
+                <!-- Statistics Cards: Single row on desktop, 2x2 grid on mobile -->
+                <div class="row g-3">
+                    <!-- Nowe -->
+                    <div class="col-6 col-lg-auto col-lg">
                         <div class="stat-card card bg-primary text-white">
                             <a href="{% url 'ticket_list' %}?status=new" class="stat-card-link text-white">
-                                <div class="card-body text-center py-4">
+                                <div class="card-body text-center py-3">
                                     <div class="stat-card-icon"><i class="fas fa-file-alt animate-float"></i></div>
                                     <div class="stat-card-count animate-counter" data-count="{{ new_tickets }}">{{ new_tickets }}</div>
                                     <div class="stat-card-label">Nowe</div>
@@ -492,11 +493,8 @@
                             </a>
                         </div>
                     </div>
-                </div>
-                
-                <!-- Second Row: 2x2 grid for the remaining 4 panels -->
-                <div class="row g-3">
-                    <div class="col-6 col-md-3">
+                    <!-- W trakcie -->
+                    <div class="col-6 col-lg-auto col-lg">
                         <div class="stat-card card bg-info text-white">
                             <a href="{% url 'ticket_list' %}?status=in_progress" class="stat-card-link text-white">
                                 <div class="card-body text-center py-3">
@@ -507,7 +505,8 @@
                             </a>
                         </div>
                     </div>
-                    <div class="col-6 col-md-3">
+                    <!-- Nierozwiązane -->
+                    <div class="col-6 col-lg-auto col-lg">
                         <div class="stat-card card bg-warning">
                             <a href="{% url 'ticket_list' %}?status=unresolved" class="stat-card-link">
                                 <div class="card-body text-center py-3">
@@ -518,7 +517,8 @@
                             </a>
                         </div>
                     </div>
-                    <div class="col-6 col-md-3">
+                    <!-- Rozwiązane -->
+                    <div class="col-6 col-lg-auto col-lg">
                         <div class="stat-card card bg-success text-white">
                             <a href="{% url 'ticket_list' %}?status=resolved" class="stat-card-link text-white">
                                 <div class="card-body text-center py-3">
@@ -529,7 +529,8 @@
                             </a>
                         </div>
                     </div>
-                    <div class="col-6 col-md-3">
+                    <!-- Zamknięte -->
+                    <div class="col-6 col-lg-auto col-lg">
                         <div class="stat-card card bg-secondary text-white">
                             <a href="{% url 'ticket_list' %}?status=closed" class="stat-card-link text-white">
                                 <div class="card-body text-center py-3">
