@@ -2,6 +2,21 @@
 
 {% block title %}Logi aktywności | System Helpdesk{% endblock %}
 
+{% block extra_css %}
+<style>
+    /* Mobile responsive styles */
+    @media (max-width: 768px) {
+        .mobile-hide {
+            display: none !important;
+        }
+        
+        .table-responsive {
+            font-size: 0.85rem;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Logi aktywności</h2>
@@ -97,19 +112,19 @@
             <table class="table table-hover logs-table">
                 <thead>
                     <tr>
-                        <th class="col-datetime">Data i czas</th>
+                        <th class="col-datetime mobile-hide">Data i czas</th>
                         <th class="col-user">Użytkownik</th>
                         <th class="col-action">Akcja</th>
-                        <th class="col-ticket">Zgłoszenie</th>
-                        <th class="col-details">Szczegóły</th>
-                        <th class="col-ip">Adres IP</th>
-                        <th class="col-actions">Akcje</th>
+                        <th class="col-ticket mobile-hide">Zgłoszenie</th>
+                        <th class="col-details mobile-hide">Szczegóły</th>
+                        <th class="col-ip mobile-hide">Adres IP</th>
+                        <th class="col-actions mobile-hide">Akcje</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for log in logs %}
                     <tr>
-                        <td>{{ log.created_at|date:"d.m.Y H:i:s" }}</td>
+                        <td class="mobile-hide">{{ log.created_at|date:"d.m.Y H:i:s" }}</td>
                         <td>
                             {% if log.user %}
                                 {{ log.user.username }}
@@ -132,22 +147,22 @@
                             {% endif %}
                         </td>
                         <td>{{ log.get_action_type_display }}</td>
-                        <td>
+                        <td class="mobile-hide">
                             {% if log.ticket %}
                             <a href="{% url 'ticket_detail' log.ticket.pk %}">#{{ log.ticket.id }}</a>
                             {% else %}
                             -
                             {% endif %}
                         </td>
-                        <td>
+                        <td class="mobile-hide">
                             {% if log.description %}
                             <span class="truncate-text" title="{{ log.description }}">{{ log.description }}</span>
                             {% else %}
                             -
                             {% endif %}
                         </td>
-                        <td>{{ log.ip_address|default:"-" }}</td>
-                        <td>
+                        <td class="mobile-hide">{{ log.ip_address|default:"-" }}</td>
+                        <td class="mobile-hide">
                             <a href="{% url 'activity_log_detail' log.id %}" class="btn btn-sm btn-info btn-ripple">
                                 <i class="fas fa-search"></i> Szczegóły
                             </a>

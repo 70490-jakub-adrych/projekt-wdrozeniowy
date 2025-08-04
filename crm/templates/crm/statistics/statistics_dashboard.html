@@ -61,6 +61,39 @@
     .performance-poor {
         color: #dc3545;
     }
+    
+    /* Mobile responsive adjustments */
+    @media (max-width: 768px) {
+        .mobile-hide {
+            display: none !important;
+        }
+        
+        .col-md-3, .col-lg-3 {
+            flex: 0 0 100%;
+            max-width: 100%;
+            margin-bottom: 1rem;
+        }
+        
+        .chart-container {
+            height: 250px; /* Shorter charts on mobile */
+        }
+        
+        .stats-card {
+            margin-bottom: 1rem;
+        }
+        
+        .table-responsive {
+            font-size: 0.85rem;
+        }
+        
+        .filter-section .row {
+            flex-direction: column;
+        }
+        
+        .filter-section .col-md-3 {
+            margin-bottom: 0.5rem;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -326,12 +359,12 @@
                         <thead>
                             <tr>
                                 <th>Agent</th>
-                                <th>Liczba zgłoszeń</th>
-                                <th>Rozwiązanych</th>
+                                <th class="mobile-hide">Liczba zgłoszeń</th>
+                                <th class="mobile-hide">Rozwiązanych</th>
                                 <th>% rozwiązanych</th>
-                                <th>Śr. czas rozwiązania</th>
+                                <th class="mobile-hide">Śr. czas rozwiązania</th>
                                 {% if agent_work_time_stats %}
-                                <th>Śr. czas pracy</th>
+                                <th class="mobile-hide">Śr. czas pracy</th>
                                 {% endif %}
                             </tr>
                         </thead>
@@ -339,8 +372,8 @@
                             {% for ap in agent_performance %}
                             <tr>
                                 <td>{{ ap.agent_name }}</td>
-                                <td>{{ ap.ticket_count }}</td>
-                                <td>{{ ap.resolved_count }}</td>
+                                <td class="mobile-hide">{{ ap.ticket_count }}</td>
+                                <td class="mobile-hide">{{ ap.resolved_count }}</td>
                                 <td>
                                     <span class="
                                         {% if ap.resolution_rate > 80 %}text-success
@@ -349,7 +382,7 @@
                                         {{ ap.resolution_rate|floatformat:1 }}%
                                     </span>
                                 </td>
-                                <td>
+                                <td class="mobile-hide">
                                     {% if ap.avg_resolution_time %}
                                         <span class="
                                             {% if ap.avg_resolution_time < 24 %}text-success
@@ -362,7 +395,7 @@
                                     {% endif %}
                                 </td>
                                 {% if agent_work_time_stats %}
-                                <td>
+                                <td class="mobile-hide">
                                     {% if ap.work_time_stats %}
                                         {{ ap.work_time_stats.avg_minutes_per_ticket|floatformat:1 }} min/zgłoszenie
                                     {% else %}

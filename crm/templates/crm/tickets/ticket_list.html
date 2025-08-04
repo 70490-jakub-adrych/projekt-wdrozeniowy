@@ -130,6 +130,35 @@
     .badge {
         font-size: 85%;
     }
+    
+    /* Mobile responsive styles */
+    @media (max-width: 768px) {
+        .mobile-hide {
+            display: none !important;
+        }
+        
+        .col-title {
+            width: 40%; /* Give more space to title on mobile */
+        }
+        
+        .col-status {
+            width: 25%; /* Keep status visible and readable */
+        }
+        
+        .col-actions {
+            width: 35%; /* Give space for action buttons */
+        }
+        
+        .btn-group {
+            flex-direction: column;
+            gap: 2px;
+        }
+        
+        .action-btn {
+            width: 100%;
+            margin: 0;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -403,54 +432,55 @@
         <i class="fas fa-ticket-alt"></i> Lista zgłoszeń
     </div>
     <div class="card-body p-2">  <!-- Reduced padding in card body -->
-        <table class="table table-hover table-sm">  <!-- Added table-sm for more compact layout -->
-            <thead>
-                <tr>
-                    <th class="col-id">ID</th>
-                    <th class="col-title">Tytuł</th>
-                    <th class="col-org">Organizacja</th>
-                    <th class="col-category">Kategoria</th>
-                    <th class="col-priority">Priorytet</th>
-                    <th class="col-status">Status</th>
-                    <th class="col-assigned">Przypisane do</th>
-                    <th class="col-date">Data utworzenia</th>
-                    <th class="col-actions col-actions-header">Akcje</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for ticket in tickets %}
-                <tr>
-                    <td>#{{ ticket.id }}</td>  <!-- No truncation for ID -->
-                    <td title="{{ ticket.title }}">
-                        <a href="{% url 'ticket_detail' ticket.pk %}">{{ ticket.title }}</a>
-                    </td>
-                    <td title="{{ ticket.organization.name }}">{{ ticket.organization.name }}</td>
-                    <td title="{{ ticket.get_category_display }}">{{ ticket.get_category_display }}</td>
-                    <td>
-                        <span class="badge 
-                            {% if ticket.priority == 'low' %}bg-secondary
-                            {% elif ticket.priority == 'medium' %}bg-info
-                            {% elif ticket.priority == 'high' %}bg-warning
-                            {% elif ticket.priority == 'critical' %}bg-danger
-                            {% endif %}">
-                            {{ ticket.get_priority_display }}
-                        </span>
-                    </td>
-                    <td>  <!-- No truncation for status -->
-                        <span class="badge 
-                            {% if ticket.status == 'new' %}bg-primary
-                            {% elif ticket.status == 'in_progress' %}bg-info
-                            {% elif ticket.status == 'unresolved' %}bg-warning text-dark
-                            {% elif ticket.status == 'resolved' %}bg-success
-                            {% elif ticket.status == 'closed' %}bg-secondary
-                            {% endif %}">
-                            {{ ticket.get_status_display }}
-                        </span>
-                    </td>
-                    <td title="{% if ticket.assigned_to %}{{ ticket.assigned_to.username }}{% else %}Oczekuje na akceptację{% endif %}">
-                        {% if ticket.assigned_to %}{{ ticket.assigned_to.username }}{% else %}<span class="text-muted">Oczekuje na akceptację</span>{% endif %}
-                    </td>
-                    <td>{{ ticket.created_at|date:"d-m-Y" }}</td>
+        <div class="table-responsive">
+            <table class="table table-hover table-sm">  <!-- Added table-sm for more compact layout -->
+                <thead>
+                    <tr>
+                        <th class="col-id mobile-hide">ID</th>
+                        <th class="col-title">Tytuł</th>
+                        <th class="col-org mobile-hide">Organizacja</th>
+                        <th class="col-category mobile-hide">Kategoria</th>
+                        <th class="col-priority mobile-hide">Priorytet</th>
+                        <th class="col-status">Status</th>
+                        <th class="col-assigned mobile-hide">Przypisane do</th>
+                        <th class="col-date mobile-hide">Data utworzenia</th>
+                        <th class="col-actions col-actions-header">Akcje</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ticket in tickets %}
+                    <tr>
+                        <td class="mobile-hide">#{{ ticket.id }}</td>  <!-- No truncation for ID -->
+                        <td title="{{ ticket.title }}">
+                            <a href="{% url 'ticket_detail' ticket.pk %}">{{ ticket.title }}</a>
+                        </td>
+                        <td class="mobile-hide" title="{{ ticket.organization.name }}">{{ ticket.organization.name }}</td>
+                        <td class="mobile-hide" title="{{ ticket.get_category_display }}">{{ ticket.get_category_display }}</td>
+                        <td class="mobile-hide">
+                            <span class="badge 
+                                {% if ticket.priority == 'low' %}bg-secondary
+                                {% elif ticket.priority == 'medium' %}bg-info
+                                {% elif ticket.priority == 'high' %}bg-warning
+                                {% elif ticket.priority == 'critical' %}bg-danger
+                                {% endif %}">
+                                {{ ticket.get_priority_display }}
+                            </span>
+                        </td>
+                        <td>  <!-- No truncation for status -->
+                            <span class="badge 
+                                {% if ticket.status == 'new' %}bg-primary
+                                {% elif ticket.status == 'in_progress' %}bg-info
+                                {% elif ticket.status == 'unresolved' %}bg-warning text-dark
+                                {% elif ticket.status == 'resolved' %}bg-success
+                                {% elif ticket.status == 'closed' %}bg-secondary
+                                {% endif %}">
+                                {{ ticket.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="mobile-hide" title="{% if ticket.assigned_to %}{{ ticket.assigned_to.username }}{% else %}Oczekuje na akceptację{% endif %}">
+                            {% if ticket.assigned_to %}{{ ticket.assigned_to.username }}{% else %}<span class="text-muted">Oczekuje na akceptację</span>{% endif %}
+                        </td>
+                        <td class="mobile-hide">{{ ticket.created_at|date:"d-m-Y" }}</td>
                     <td>
                         <div class="btn-group">
                             <a href="{% url 'ticket_detail' ticket.pk %}" class="btn btn-sm btn-info action-btn" title="Szczegóły">

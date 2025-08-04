@@ -20,6 +20,27 @@
         display: flex;
         justify-content: flex-start;
     }
+    
+    /* Mobile responsive styles */
+    @media (max-width: 768px) {
+        .mobile-hide {
+            display: none !important;
+        }
+        
+        .table-responsive {
+            font-size: 0.9rem;
+        }
+        
+        .btn-group {
+            flex-direction: column;
+            gap: 2px;
+        }
+        
+        .action-btn {
+            width: 100%;
+            margin: 0;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -41,11 +62,11 @@
                 <thead>
                     <tr>
                         <th>Nazwa</th>
-                        <th>Email</th>
-                        <th>Telefon</th>
-                        <th>Strona internetowa</th>
-                        <th>Liczba użytkowników</th>
-                        <th>Liczba zgłoszeń</th>
+                        <th class="mobile-hide">Email</th>
+                        <th class="mobile-hide">Telefon</th>
+                        <th class="mobile-hide">Strona internetowa</th>
+                        <th class="mobile-hide">Liczba użytkowników</th>
+                        <th class="mobile-hide">Liczba zgłoszeń</th>
                         <th>Akcje</th>
                     </tr>
                 </thead>
@@ -57,29 +78,29 @@
                                 {{ organization.name }}
                             </a>
                         </td>
-                        <td>
+                        <td class="mobile-hide">
                             {% if organization.email %}
                             <a href="mailto:{{ organization.email }}">{{ organization.email }}</a>
                             {% else %}
                             <span class="text-muted">Brak</span>
                             {% endif %}
                         </td>
-                        <td>
+                        <td class="mobile-hide">
                             {% if organization.phone %}
                             {{ organization.phone }}
                             {% else %}
                             <span class="text-muted">Brak</span>
                             {% endif %}
                         </td>
-                        <td>
+                        <td class="mobile-hide">
                             {% if organization.website %}
                             <a href="{{ organization.website }}" target="_blank">{{ organization.website }}</a>
                             {% else %}
                             <span class="text-muted">Brak</span>
                             {% endif %}
                         </td>
-                        <td>{{ organization.members.count }}</td>
-                        <td>{{ organization.ticket_count }}</td>
+                        <td class="mobile-hide">{{ organization.members.count }}</td>
+                        <td class="mobile-hide">{{ organization.ticket_count }}</td>
                         <td>
                             <div class="btn-group">
                                 <a href="{% url 'organization_detail' organization.pk %}" class="btn btn-sm btn-info action-btn btn-ripple" title="Szczegóły">

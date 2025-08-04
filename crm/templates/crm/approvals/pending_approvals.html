@@ -2,6 +2,21 @@
 
 {% block title %}Oczekujące zatwierdzenia | System Helpdesk{% endblock %}
 
+{% block extra_css %}
+<style>
+    /* Mobile responsive styles */
+    @media (max-width: 768px) {
+        .mobile-hide {
+            display: none !important;
+        }
+        
+        .table-responsive {
+            font-size: 0.9rem;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>Zatwierdzanie kont</h2>
@@ -25,10 +40,10 @@
                 <thead>
                     <tr>
                         <th>Nazwa użytkownika</th>
-                        <th>Email</th>
-                        <th>Organizacja</th>
-                        <th>Data blokady</th>
-                        <th>Nieudane próby</th>
+                        <th class="mobile-hide">Email</th>
+                        <th class="mobile-hide">Organizacja</th>
+                        <th class="mobile-hide">Data blokady</th>
+                        <th class="mobile-hide">Nieudane próby</th>
                         <th>Akcje</th>
                     </tr>
                 </thead>
@@ -36,8 +51,8 @@
                     {% for profile in locked_users %}
                     <tr>
                         <td>{{ profile.user.username }}</td>
-                        <td>{{ profile.user.email }}</td>
-                        <td>
+                        <td class="mobile-hide">{{ profile.user.email }}</td>
+                        <td class="mobile-hide">
                             {% if profile.organizations.exists %}
                                 <ul class="list-unstyled mb-0">
                                 {% for org in profile.organizations.all %}
@@ -48,8 +63,8 @@
                                 <span class="text-muted">Brak</span>
                             {% endif %}
                         </td>
-                        <td>{{ profile.locked_at|date:"d.m.Y H:i" }}</td>
-                        <td>
+                        <td class="mobile-hide">{{ profile.locked_at|date:"d.m.Y H:i" }}</td>
+                        <td class="mobile-hide">
                             <span class="badge bg-danger">{{ profile.failed_login_attempts }}</span>
                         </td>
                         <td>
@@ -81,9 +96,9 @@
                 <thead>
                     <tr>
                         <th>Nazwa użytkownika</th>
-                        <th>Email</th>
-                        <th>Organizacja</th>
-                        <th>Data rejestracji</th>
+                        <th class="mobile-hide">Email</th>
+                        <th class="mobile-hide">Organizacja</th>
+                        <th class="mobile-hide">Data rejestracji</th>
                         <th>Status</th>
                     </tr>
                 </thead>
@@ -91,8 +106,8 @@
                     {% for profile in pending_email_verification %}
                     <tr>
                         <td>{{ profile.user.username }}</td>
-                        <td>{{ profile.user.email }}</td>
-                        <td>
+                        <td class="mobile-hide">{{ profile.user.email }}</td>
+                        <td class="mobile-hide">
                             {% if profile.organizations.exists %}
                                 <ul class="list-unstyled mb-0">
                                 {% for org in profile.organizations.all %}
@@ -103,7 +118,7 @@
                                 <span class="text-muted">Brak</span>
                             {% endif %}
                         </td>
-                        <td>{{ profile.user.date_joined|date:"d.m.Y H:i" }}</td>
+                        <td class="mobile-hide">{{ profile.user.date_joined|date:"d.m.Y H:i" }}</td>
                         <td>
                             <span class="badge bg-info text-white">
                                 <i class="fas fa-clock"></i> Oczekuje na weryfikację email
@@ -130,9 +145,9 @@
                 <thead>
                     <tr>
                         <th>Nazwa użytkownika</th>
-                        <th>Email</th>
-                        <th>Organizacja</th>
-                        <th>Data rejestracji</th>
+                        <th class="mobile-hide">Email</th>
+                        <th class="mobile-hide">Organizacja</th>
+                        <th class="mobile-hide">Data rejestracji</th>
                         <th>Akcje</th>
                     </tr>
                 </thead>
@@ -140,8 +155,8 @@
                     {% for profile in pending_users %}
                     <tr>
                         <td>{{ profile.user.username }}</td>
-                        <td>{{ profile.user.email }}</td>
-                        <td>
+                        <td class="mobile-hide">{{ profile.user.email }}</td>
+                        <td class="mobile-hide">
                             {% if profile.organizations.exists %}
                                 <ul class="list-unstyled mb-0">
                                 {% for org in profile.organizations.all %}
@@ -152,7 +167,7 @@
                                 <span class="text-muted">Brak</span>
                             {% endif %}
                         </td>
-                        <td>{{ profile.user.date_joined|date:"d.m.Y H:i" }}</td>
+                        <td class="mobile-hide">{{ profile.user.date_joined|date:"d.m.Y H:i" }}</td>
                         <td>
                             <a href="{% url 'approve_user' profile.user.id %}" class="btn btn-sm btn-success">
                                 <i class="fas fa-check"></i> Zatwierdź
