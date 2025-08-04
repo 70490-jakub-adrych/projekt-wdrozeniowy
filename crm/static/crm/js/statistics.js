@@ -651,43 +651,124 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('Response headers:', [...response.headers.entries()]);
             console.log('Response ok:', response.ok);
             
-            if (response.ok) {
-                // Check if response is JSON (error) or file (success)
+            // Always get the response as a blob first
+            return response.blob().then(blob => {
                 const contentType = response.headers.get('content-type');
-                console.log('Content-Type:', contentType);
+                const contentDisposition = response.headers.get('content-disposition');
                 
-                if (contentType && contentType.includes('application/json')) {
-                    return response.json().then(data => {
-                        console.error('Server returned JSON error:', data);
-                        throw new Error(data.message || 'Unknown server error');
-                    });
-                } else if (contentType && (contentType.includes('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') || contentType.includes('text/csv'))) {
-                    // It's a file download
-                    return response.blob().then(blob => {
-                        console.log('Received blob with size:', blob.size, 'bytes');
-                        console.log('Blob type:', blob.type);
+                console.log('Content-Type:', contentType);
+                console.log('Content-Disposition:', contentDisposition);
+                console.log('Blob size:', blob.size);
+                console.log('Blob type:', blob.type);
+                
+                if (!response.ok) {
+                    // For error responses, try to read the blob as text to get error message
+                    return blob.text().then(text => {
+                        console.error('Server error response:', text);
+                        let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
                         
-                        if (blob.size === 0) {
-                            throw new Error('Otrzymano pusty plik');
-                        }
-                        
-                        // Extract filename from Content-Disposition header
-                        const contentDisposition = response.headers.get('content-disposition');
-                        console.log('Content-Disposition:', contentDisposition);
-                        
-                        let filename = `raport_statystyk_${dateFrom}_${dateTo}.${format}`;
-                        if (contentDisposition) {
-                            const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
-                            if (filenameMatch && filenameMatch[1]) {
-                                filename = filenameMatch[1].replace(/['"]/g, '');
+                        try {
+                            const errorData = JSON.parse(text);
+                            if (errorData.message) {
+                                errorMessage = errorData.message;
+                            }
+                        } catch (e) {
+                            if (text && text.length > 0) {
+                                errorMessage = text.substring(0, 200) + (text.length > 200 ? '...' : '');
                             }
                         }
                         
-                        console.log('Downloading file:', filename);
-                        
-                        // Create download link
+                        throw new Error(errorMessage);
+                    });
+                }
+                
+                // Check if this is an error response disguised as a successful response
+                if (contentType && contentType.includes('application/json')) {
+                    // It's a JSON error response
+                    return blob.text().then(text => {
                         try {
-                            const url = window.URL.createObjectURL(blob);
+                            const errorData = JSON.parse(text);
+                            console.error('Server returned JSON error:', errorData);
+                            throw new Error(errorData.message || 'Unknown server error');
+                        } catch (parseError) {
+                            console.error('Error parsing JSON response:', parseError);
+                            throw new Error('Invalid JSON response from server');
+                        }
+                    });
+                }
+                
+                // Check if blob is empty
+                if (blob.size === 0) {
+                    throw new Error('Otrzymano pusty plik');
+                }
+                
+                // Check for file download indicators
+                const isExcelFile = contentType && contentType.includes('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+                const isCsvFile = contentType && (contentType.includes('text/csv') || contentType.includes('application/csv'));
+                const hasAttachmentHeader = contentDisposition && contentDisposition.includes('attachment');
+                
+                // If it's clearly a file download OR we have attachment header, proceed with download
+                if (isExcelFile || isCsvFile || hasAttachmentHeader || blob.size > 1000) {
+                    // Extract filename from Content-Disposition header
+                    let filename = `raport_statystyk_${dateFrom}_${dateTo}.${format}`;
+                    if (contentDisposition) {
+                        const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+                        if (filenameMatch && filenameMatch[1]) {
+                            filename = filenameMatch[1].replace(/['"]/g, '');
+                        }
+                    }
+                    
+                    console.log('Downloading file:', filename);
+                    
+                    // Create download link
+                    try {
+                        // Create a new blob with the correct MIME type if needed
+                        let downloadBlob = blob;
+                        if (format === 'xlsx' && !blob.type.includes('spreadsheet')) {
+                            downloadBlob = new Blob([blob], { 
+                                type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+                            });
+                        } else if (format === 'csv' && !blob.type.includes('csv')) {
+                            downloadBlob = new Blob([blob], { 
+                                type: 'text/csv' 
+                            });
+                        }
+                        
+                        const url = window.URL.createObjectURL(downloadBlob);
+                        const a = document.createElement('a');
+                        a.style.display = 'none';
+                        a.href = url;
+                        a.download = filename;
+                        document.body.appendChild(a);
+                        a.click();
+                        
+                        // Clean up
+                        setTimeout(() => {
+                            window.URL.revokeObjectURL(url);
+                            document.body.removeChild(a);
+                        }, 100);
+                        
+                        console.log('File download triggered successfully');
+                        return { success: true, filename: filename };
+                    } catch (downloadError) {
+                        console.error('Error creating download:', downloadError);
+                        throw new Error(`Błąd pobierania pliku: ${downloadError.message}`);
+                    }
+                } else {
+                    // Unknown response type, try to read as text for debugging
+                    return blob.text().then(text => {
+                        console.error('Unexpected response - not a file download');
+                        console.error('Response text (first 500 chars):', text.substring(0, 500));
+                        
+                        // Last resort: if it looks like binary data, try to download it anyway
+                        if (text.charCodeAt(0) === 0x50 && text.charCodeAt(1) === 0x4B) {
+                            console.log('Detected ZIP/Excel magic bytes, forcing download');
+                            const binaryBlob = new Blob([blob], { 
+                                type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' 
+                            });
+                            
+                            const filename = `raport_statystyk_${dateFrom}_${dateTo}.${format}`;
+                            const url = window.URL.createObjectURL(binaryBlob);
                             const a = document.createElement('a');
                             a.style.display = 'none';
                             a.href = url;
@@ -695,49 +776,18 @@ document.addEventListener('DOMContentLoaded', function() {
                             document.body.appendChild(a);
                             a.click();
                             
-                            // Clean up
                             setTimeout(() => {
                                 window.URL.revokeObjectURL(url);
                                 document.body.removeChild(a);
                             }, 100);
                             
-                            console.log('File download triggered successfully');
                             return { success: true, filename: filename };
-                        } catch (downloadError) {
-                            console.error('Error creating download:', downloadError);
-                            throw new Error(`Błąd pobierania pliku: ${downloadError.message}`);
+                        } else {
+                            throw new Error(`Nieoczekiwany typ odpowiedzi. Sprawdź logi serwera.`);
                         }
-                    });
-                } else {
-                    // Unknown content type, try to read as text for error details
-                    return response.text().then(text => {
-                        console.error('Unexpected content type:', contentType);
-                        console.error('Response text:', text.substring(0, 500));
-                        throw new Error(`Nieoczekiwany typ odpowiedzi: ${contentType}. Sprawdź logi serwera.`);
                     });
                 }
-            } else {
-                // Try to get error message from response
-                return response.text().then(text => {
-                    console.error('Server error response:', text);
-                    let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
-                    
-                    // Try to parse JSON error message
-                    try {
-                        const errorData = JSON.parse(text);
-                        if (errorData.message) {
-                            errorMessage = errorData.message;
-                        }
-                    } catch (e) {
-                        // If not JSON, use the text directly (up to 200 chars)
-                        if (text && text.length > 0) {
-                            errorMessage = text.substring(0, 200) + (text.length > 200 ? '...' : '');
-                        }
-                    }
-                    
-                    throw new Error(errorMessage);
-                });
-            }
+            });
         })
         .then(result => {
             if (result && result.success) {
@@ -757,6 +807,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 errorMessage += ' (Błąd połączenia sieciowego)';
             } else if (error.message.includes('timeout')) {
                 errorMessage += ' (Przekroczono limit czasu)';
+            } else if (error.message.includes('SyntaxError')) {
+                errorMessage = 'Błąd przetwarzania odpowiedzi serwera. Sprawdź format pliku.';
             }
             
             statusDiv.innerHTML = `
