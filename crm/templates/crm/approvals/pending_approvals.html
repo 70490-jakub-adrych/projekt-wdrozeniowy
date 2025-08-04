@@ -53,9 +53,11 @@
                             <span class="badge bg-danger">{{ profile.failed_login_attempts }}</span>
                         </td>
                         <td>
-                            <a href="{% url 'unlock_user' profile.user.id %}" class="btn btn-sm btn-warning">
-                                <i class="fas fa-unlock"></i> Odblokuj
-                            </a>
+                            <div class="d-flex flex-wrap gap-1">
+                                <a href="{% url 'unlock_user' profile.user.id %}" class="btn btn-sm btn-warning">
+                                    <i class="fas fa-unlock"></i> Odblokuj
+                                </a>
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}
@@ -154,12 +156,14 @@
                         </td>
                         <td>{{ profile.user.date_joined|date:"d.m.Y H:i" }}</td>
                         <td>
-                            <a href="{% url 'approve_user' profile.user.id %}" class="btn btn-sm btn-success">
-                                <i class="fas fa-check"></i> Zatwierdź
-                            </a>
-                            <a href="{% url 'reject_user' profile.user.id %}" class="btn btn-sm btn-danger">
-                                <i class="fas fa-times"></i> Odrzuć
-                            </a>
+                            <div class="d-flex flex-wrap gap-1">
+                                <a href="{% url 'approve_user' profile.user.id %}" class="btn btn-sm btn-success">
+                                    <i class="fas fa-check"></i> Zatwierdź
+                                </a>
+                                <a href="{% url 'reject_user' profile.user.id %}" class="btn btn-sm btn-danger">
+                                    <i class="fas fa-times"></i> Odrzuć
+                                </a>
+                            </div>
                         </td>
                     </tr>
                     {% endfor %}

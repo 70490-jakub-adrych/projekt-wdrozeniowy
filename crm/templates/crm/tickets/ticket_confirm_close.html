@@ -19,8 +19,14 @@
                 <p class="text-muted">Zamknięcie zgłoszenia oznacza, że sprawa została rozwiązana i nie wymaga dalszych działań.</p>
                 <form method="post">
                     {% csrf_token %}
-                    <button type="submit" class="btn btn-secondary">Zamknij zgłoszenie</button>
-                    <button type="button" class="btn btn-outline-secondary" onclick="goBack()">Anuluj</button>
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="submit" class="btn btn-secondary">
+                            <i class="fas fa-lock"></i> Zamknij zgłoszenie
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary" onclick="goBack()">
+                            <i class="fas fa-arrow-left"></i> Anuluj
+                        </button>
+                    </div>
                 </form>
             </div>
         </div>
