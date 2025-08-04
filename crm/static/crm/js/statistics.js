@@ -581,8 +581,38 @@ document.addEventListener('DOMContentLoaded', function() {
         const organization = document.getElementById('organization').value;
         const agent = document.getElementById('agent').value;
         
+        console.log('Report generation parameters:', {
+            period, dateFrom, dateTo, organization, agent, format
+        });
+        
+        // Validate required fields
+        if (!dateFrom || !dateTo) {
+            statusDiv.innerHTML = '<i class="fas fa-times-circle"></i> Błąd: Wymagane są daty początkowa i końcowa';
+            statusDiv.className = 'mt-3 text-danger';
+            reportBtn.disabled = false;
+            reportBtn.innerHTML = '<i class="fas fa-file-export"></i> Wygeneruj raport z aktualnych filtrów';
+            return;
+        }
+        
+        // Validate date range
+        if (new Date(dateFrom) > new Date(dateTo)) {
+            statusDiv.innerHTML = '<i class="fas fa-times-circle"></i> Błąd: Data początkowa nie może być późniejsza niż końcowa';
+            statusDiv.className = 'mt-3 text-danger';
+            reportBtn.disabled = false;
+            reportBtn.innerHTML = '<i class="fas fa-file-export"></i> Wygeneruj raport z aktualnych filtrów';
+            return;
+        }
+        
         // Get CSRF token
         const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        
+        if (!csrfToken) {
+            statusDiv.innerHTML = '<i class="fas fa-times-circle"></i> Błąd: Brak tokenu CSRF. Odśwież stronę i spróbuj ponownie.';
+            statusDiv.className = 'mt-3 text-danger';
+            reportBtn.disabled = false;
+            reportBtn.innerHTML = '<i class="fas fa-file-export"></i> Wygeneruj raport z aktualnych filtrów';
+            return;
+        }
         
         // Create form data
         const formData = new FormData();
@@ -593,7 +623,21 @@ document.addEventListener('DOMContentLoaded', function() {
         if (organization) formData.append('organization', organization);
         if (agent) formData.append('agent', agent);
         
-        // Send request
+        console.log('Sending request to /statistics/generate-report/ with data:', {
+            period_type: period,
+            period_start: dateFrom,
+            period_end: dateTo,
+            format: format,
+            organization: organization || 'none',
+            agent: agent || 'none'
+        });
+        
+        // Send request with timeout
+        const timeoutId = setTimeout(() => {
+            statusDiv.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Ostrzeżenie: Generowanie raportu trwa dłużej niż oczekiwano. Proszę czekać...';
+            statusDiv.className = 'mt-3 text-warning';
+        }, 10000); // Show warning after 10 seconds
+        
         fetch('/statistics/generate-report/', {
             method: 'POST',
             body: formData,
@@ -602,16 +646,29 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         })
         .then(response => {
+            clearTimeout(timeoutId);
+            console.log('Response status:', response.status);
+            console.log('Response headers:', [...response.headers.entries()]);
+            
             if (response.ok) {
                 // Check if response is JSON (error) or file (success)
                 const contentType = response.headers.get('content-type');
+                console.log('Content-Type:', contentType);
+                
                 if (contentType && contentType.includes('application/json')) {
                     return response.json().then(data => {
-                        throw new Error(data.message || 'Unknown error');
+                        console.error('Server returned JSON error:', data);
+                        throw new Error(data.message || 'Unknown server error');
                     });
                 } else {
                     // It's a file download
                     return response.blob().then(blob => {
+                        console.log('Received blob with size:', blob.size, 'bytes');
+                        
+                        if (blob.size === 0) {
+                            throw new Error('Otrzymano pusty plik');
+                        }
+                        
                         // Extract filename from Content-Disposition header
                         const contentDisposition = response.headers.get('content-disposition');
                         let filename = `raport_statystyk_${dateFrom}_${dateTo}.${format}`;
@@ -621,6 +678,8 @@ document.addEventListener('DOMContentLoaded', function() {
                                 filename = filenameMatch[1].replace(/['"]/g, '');
                             }
                         }
+                        
+                        console.log('Downloading file:', filename);
                         
                         // Create download link
                         const url = window.URL.createObjectURL(blob);
@@ -637,19 +696,56 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                 }
             } else {
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                // Try to get error message from response
+                return response.text().then(text => {
+                    console.error('Server error response:', text);
+                    let errorMessage = `HTTP ${response.status}: ${response.statusText}`;
+                    
+                    // Try to parse JSON error message
+                    try {
+                        const errorData = JSON.parse(text);
+                        if (errorData.message) {
+                            errorMessage = errorData.message;
+                        }
+                    } catch (e) {
+                        // If not JSON, use the text directly (up to 200 chars)
+                        if (text && text.length > 0) {
+                            errorMessage = text.substring(0, 200) + (text.length > 200 ? '...' : '');
+                        }
+                    }
+                    
+                    throw new Error(errorMessage);
+                });
             }
         })
         .then(result => {
-            if (result.success) {
+            if (result && result.success) {
                 statusDiv.innerHTML = `<i class="fas fa-check-circle"></i> Raport został wygenerowany i pobrany: ${result.filename}`;
                 statusDiv.className = 'mt-3 text-success';
+                console.log('Report generation successful:', result.filename);
             }
         })
         .catch(error => {
-            statusDiv.innerHTML = `<i class="fas fa-times-circle"></i> Błąd: ${error.message}`;
-            statusDiv.className = 'mt-3 text-danger';
+            clearTimeout(timeoutId);
             console.error('Error generating report:', error);
+            
+            let errorMessage = error.message || 'Nieznany błąd';
+            
+            // Add specific error details for debugging
+            if (error.message.includes('NetworkError') || error.message.includes('fetch')) {
+                errorMessage += ' (Błąd połączenia sieciowego)';
+            } else if (error.message.includes('timeout')) {
+                errorMessage += ' (Przekroczono limit czasu)';
+            }
+            
+            statusDiv.innerHTML = `
+                <i class="fas fa-times-circle"></i> Błąd: ${errorMessage}
+                <br><small class="text-muted">
+                    Sprawdź konsolę przeglądarki (F12) aby uzyskać więcej informacji.
+                    Jeśli problem się powtarza, skontaktuj się z administratorem.
+                </small>
+            `;
+            statusDiv.className = 'mt-3 text-danger';
         })
         .finally(() => {
             // Reset button state

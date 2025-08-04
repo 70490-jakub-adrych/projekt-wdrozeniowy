@@ -587,156 +587,270 @@ def generate_statistics_report(request):
     """Generate and download statistics report"""
     user = request.user
     
+    logger.info(f"Report generation started by user: {user.username} (role: {user.profile.role})")
+    
     # Only admin and superagent can generate reports
     if user.profile.role not in ['admin', 'superagent']:
+        logger.warning(f"Permission denied for user {user.username} with role {user.profile.role}")
         return JsonResponse({'status': 'error', 'message': 'Permission denied'}, status=403)
     
-    period_type = request.POST.get('period_type', 'month')
-    period_start = request.POST.get('period_start')
-    period_end = request.POST.get('period_end')
-    organization_id = request.POST.get('organization')
-    agent_id = request.POST.get('agent')
-    report_format = request.POST.get('format', 'xlsx')  # xlsx or csv
-    
     try:
-        period_start_date = datetime.datetime.strptime(period_start, '%Y-%m-%d').date()
-        period_end_date = datetime.datetime.strptime(period_end, '%Y-%m-%d').date()
-    except (ValueError, TypeError):
-        return JsonResponse({'status': 'error', 'message': 'Invalid date format'}, status=400)
-    
-    # Filter tickets
-    tickets_query = Ticket.objects.filter(
-        created_at__date__gte=period_start_date,
-        created_at__date__lte=period_end_date
-    )
-    
-    # Apply organization filter if specified
-    organization = None
-    if organization_id:
-        try:
-            organization = Organization.objects.get(id=organization_id)
-            tickets_query = tickets_query.filter(organization=organization)
-        except Organization.DoesNotExist:
-            return JsonResponse({'status': 'error', 'message': 'Organization not found'}, status=400)
-    
-    # Apply agent filter if specified
-    agent = None
-    if agent_id:
-        try:
-            agent = UserProfile.objects.get(user_id=agent_id).user
-            tickets_query = tickets_query.filter(assigned_to=agent)
-        except UserProfile.DoesNotExist:
-            return JsonResponse({'status': 'error', 'message': 'Agent not found'}, status=400)
-    
-    # Calculate statistics
-    tickets_opened = tickets_query.count()
-    tickets_closed = tickets_query.filter(status='closed').count()
-    tickets_resolved = tickets_query.filter(status='resolved').count()
-    tickets_new = tickets_query.filter(status='new').count()
-    tickets_in_progress = tickets_query.filter(status='in_progress').count()
-    tickets_unresolved = tickets_query.filter(status='unresolved').count()
-    
-    # Calculate average resolution time
-    resolution_time_data = tickets_query.exclude(
-        resolved_at__isnull=True
-    ).aggregate(
-        avg_time=Avg(
-            ExpressionWrapper(
-                F('resolved_at') - F('created_at'),
-                output_field=fields.DurationField()
-            )
-        )
-    )
-    avg_resolution_time = 0
-    if resolution_time_data['avg_time']:
-        avg_resolution_time = resolution_time_data['avg_time'].total_seconds() / 3600  # Convert to hours
-    
-    # Calculate priority distribution
-    priority_counts = tickets_query.values('priority').annotate(count=Count('id'))
-    priority_distribution = {item['priority']: item['count'] for item in priority_counts}
-    
-    # Calculate category distribution
-    category_counts = tickets_query.values('category').annotate(count=Count('id'))
-    category_distribution = {item['category']: item['count'] for item in category_counts}
-    
-    # Calculate average agent work time if agent work logs exist
-    avg_agent_work_time = 0
-    if AgentWorkLog.objects.filter(ticket__in=tickets_query).exists():
-        agent_work_data = AgentWorkLog.objects.filter(
-            ticket__in=tickets_query
-        ).aggregate(
-            avg_time=Avg('work_time_minutes')
-        )
-        avg_agent_work_time = agent_work_data['avg_time'] or 0
-    
-    # Get agent performance data
-    agent_performance = []
-    if user.profile.role in ['admin', 'superagent']:
-        agents_with_tickets = tickets_query.values(
-            'assigned_to'
-        ).exclude(
-            assigned_to__isnull=True
-        ).annotate(
-            ticket_count=Count('id')
-        ).order_by('-ticket_count')
+        period_type = request.POST.get('period_type', 'month')
+        period_start = request.POST.get('period_start')
+        period_end = request.POST.get('period_end')
+        organization_id = request.POST.get('organization')
+        agent_id = request.POST.get('agent')
+        report_format = request.POST.get('format', 'xlsx')  # xlsx or csv
         
-        for agent_data in agents_with_tickets:
-            agent_id = agent_data['assigned_to']
-            if agent_id:
-                try:
-                    agent_user = UserProfile.objects.get(user_id=agent_id).user
-                    agent_tickets = tickets_query.filter(assigned_to_id=agent_id)
-                    
-                    agent_resolved = agent_tickets.filter(status__in=['resolved', 'closed']).count()
-                    agent_total = agent_tickets.count()
-                    
-                    if agent_total > 0:
-                        resolution_rate = (agent_resolved / agent_total) * 100
-                    else:
-                        resolution_rate = 0
-                    
-                    # Calculate average resolution time for this agent
-                    agent_avg_time = agent_tickets.exclude(
-                        resolved_at__isnull=True
-                    ).aggregate(
-                        avg_time=Avg(
-                            ExpressionWrapper(
-                                F('resolved_at') - F('created_at'),
-                                output_field=fields.DurationField()
-                            )
-                        )
-                    )['avg_time']
-                    
-                    if agent_avg_time:
-                        agent_avg_hours = agent_avg_time.total_seconds() / 3600
-                    else:
-                        agent_avg_hours = 0
-                    
-                    agent_performance.append({
-                        'agent_name': f"{agent_user.first_name} {agent_user.last_name}" if agent_user.first_name else agent_user.username,
-                        'ticket_count': agent_total,
-                        'resolved_count': agent_resolved,
-                        'resolution_rate': resolution_rate,
-                        'avg_resolution_time': agent_avg_hours
-                    })
-                except UserProfile.DoesNotExist:
-                    pass
-    
-    # Create the report file
-    if report_format == 'csv':
-        return _generate_csv_report(
-            period_start_date, period_end_date, organization, agent,
-            tickets_opened, tickets_closed, tickets_resolved, tickets_new, 
-            tickets_in_progress, tickets_unresolved, avg_resolution_time,
-            priority_distribution, category_distribution, agent_performance
+        logger.info(f"Report parameters: period_type={period_type}, period_start={period_start}, period_end={period_end}, organization_id={organization_id}, agent_id={agent_id}, format={report_format}")
+        
+        # Validate input parameters
+        if not period_start or not period_end:
+            logger.error("Missing required date parameters")
+            return JsonResponse({'status': 'error', 'message': 'Brakuje wymaganych dat'}, status=400)
+        
+        try:
+            period_start_date = datetime.datetime.strptime(period_start, '%Y-%m-%d').date()
+            period_end_date = datetime.datetime.strptime(period_end, '%Y-%m-%d').date()
+            logger.info(f"Parsed dates: {period_start_date} to {period_end_date}")
+        except (ValueError, TypeError) as e:
+            logger.error(f"Date parsing error: {e}")
+            return JsonResponse({'status': 'error', 'message': 'Nieprawidłowy format daty'}, status=400)
+        
+        # Check date range validity
+        if period_start_date > period_end_date:
+            logger.error("Start date is after end date")
+            return JsonResponse({'status': 'error', 'message': 'Data początkowa nie może być późniejsza niż końcowa'}, status=400)
+        
+        # Filter tickets
+        logger.info("Building tickets query...")
+        tickets_query = Ticket.objects.filter(
+            created_at__date__gte=period_start_date,
+            created_at__date__lte=period_end_date
         )
-    else:  # xlsx
-        return _generate_excel_report(
-            period_start_date, period_end_date, organization, agent,
-            tickets_opened, tickets_closed, tickets_resolved, tickets_new,
-            tickets_in_progress, tickets_unresolved, avg_resolution_time,
-            priority_distribution, category_distribution, agent_performance
-        )
+        
+        initial_count = tickets_query.count()
+        logger.info(f"Initial tickets count for date range: {initial_count}")
+        
+        # Apply organization filter if specified
+        organization = None
+        if organization_id:
+            try:
+                organization = Organization.objects.get(id=organization_id)
+                tickets_query = tickets_query.filter(organization=organization)
+                org_filtered_count = tickets_query.count()
+                logger.info(f"After organization filter ({organization.name}): {org_filtered_count} tickets")
+            except Organization.DoesNotExist:
+                logger.error(f"Organization not found: {organization_id}")
+                return JsonResponse({'status': 'error', 'message': 'Organizacja nie została znaleziona'}, status=400)
+            except Exception as e:
+                logger.error(f"Error filtering by organization: {e}")
+                return JsonResponse({'status': 'error', 'message': f'Błąd filtrowania organizacji: {str(e)}'}, status=400)
+        
+        # Apply agent filter if specified
+        agent = None
+        if agent_id:
+            try:
+                agent = UserProfile.objects.get(user_id=agent_id).user
+                tickets_query = tickets_query.filter(assigned_to=agent)
+                agent_filtered_count = tickets_query.count()
+                logger.info(f"After agent filter ({agent.username}): {agent_filtered_count} tickets")
+            except UserProfile.DoesNotExist:
+                logger.error(f"Agent not found: {agent_id}")
+                return JsonResponse({'status': 'error', 'message': 'Agent nie został znaleziony'}, status=400)
+            except Exception as e:
+                logger.error(f"Error filtering by agent: {e}")
+                return JsonResponse({'status': 'error', 'message': f'Błąd filtrowania agenta: {str(e)}'}, status=400)
+        
+        # Calculate statistics
+        logger.info("Calculating ticket statistics...")
+        try:
+            tickets_opened = tickets_query.count()
+            tickets_closed = tickets_query.filter(status='closed').count()
+            tickets_resolved = tickets_query.filter(status='resolved').count()
+            tickets_new = tickets_query.filter(status='new').count()
+            tickets_in_progress = tickets_query.filter(status='in_progress').count()
+            tickets_unresolved = tickets_query.filter(status='unresolved').count()
+            
+            logger.info(f"Ticket counts: total={tickets_opened}, new={tickets_new}, in_progress={tickets_in_progress}, unresolved={tickets_unresolved}, resolved={tickets_resolved}, closed={tickets_closed}")
+            
+            # Verify total
+            sum_statuses = tickets_new + tickets_in_progress + tickets_unresolved + tickets_resolved + tickets_closed
+            if sum_statuses != tickets_opened:
+                logger.warning(f"Status counts don't match total: {sum_statuses} vs {tickets_opened}")
+                # Check for other statuses
+                all_statuses = tickets_query.values('status').annotate(count=Count('id'))
+                logger.info(f"All status counts: {list(all_statuses)}")
+        except Exception as e:
+            logger.error(f"Error calculating basic statistics: {e}")
+            return JsonResponse({'status': 'error', 'message': f'Błąd obliczania statystyk: {str(e)}'}, status=500)
+        
+        # Calculate average resolution time
+        logger.info("Calculating average resolution time...")
+        try:
+            resolution_time_data = tickets_query.exclude(
+                resolved_at__isnull=True
+            ).aggregate(
+                avg_time=Avg(
+                    ExpressionWrapper(
+                        F('resolved_at') - F('created_at'),
+                        output_field=fields.DurationField()
+                    )
+                )
+            )
+            avg_resolution_time = 0
+            if resolution_time_data['avg_time']:
+                avg_resolution_time = resolution_time_data['avg_time'].total_seconds() / 3600  # Convert to hours
+            
+            logger.info(f"Average resolution time: {avg_resolution_time} hours")
+        except Exception as e:
+            logger.error(f"Error calculating resolution time: {e}")
+            avg_resolution_time = 0
+        
+        # Calculate priority distribution
+        logger.info("Calculating priority distribution...")
+        try:
+            priority_counts = tickets_query.values('priority').annotate(count=Count('id'))
+            priority_distribution = {item['priority']: item['count'] for item in priority_counts}
+            logger.info(f"Priority distribution: {priority_distribution}")
+        except Exception as e:
+            logger.error(f"Error calculating priority distribution: {e}")
+            priority_distribution = {}
+        
+        # Calculate category distribution
+        logger.info("Calculating category distribution...")
+        try:
+            category_counts = tickets_query.values('category').annotate(count=Count('id'))
+            category_distribution = {item['category']: item['count'] for item in category_counts}
+            logger.info(f"Category distribution: {category_distribution}")
+        except Exception as e:
+            logger.error(f"Error calculating category distribution: {e}")
+            category_distribution = {}
+        
+        # Calculate average agent work time if agent work logs exist
+        logger.info("Calculating agent work time...")
+        try:
+            avg_agent_work_time = 0
+            if AgentWorkLog.objects.filter(ticket__in=tickets_query).exists():
+                agent_work_data = AgentWorkLog.objects.filter(
+                    ticket__in=tickets_query
+                ).aggregate(
+                    avg_time=Avg('work_time_minutes')
+                )
+                avg_agent_work_time = agent_work_data['avg_time'] or 0
+            logger.info(f"Average agent work time: {avg_agent_work_time} minutes")
+        except Exception as e:
+            logger.error(f"Error calculating agent work time: {e}")
+            avg_agent_work_time = 0
+        
+        # Get agent performance data
+        logger.info("Calculating agent performance...")
+        agent_performance = []
+        try:
+            if user.profile.role in ['admin', 'superagent']:
+                agents_with_tickets = tickets_query.values(
+                    'assigned_to'
+                ).exclude(
+                    assigned_to__isnull=True
+                ).annotate(
+                    ticket_count=Count('id')
+                ).order_by('-ticket_count')
+                
+                logger.info(f"Found {len(agents_with_tickets)} agents with tickets")
+                
+                for agent_data in agents_with_tickets:
+                    agent_id = agent_data['assigned_to']
+                    if agent_id:
+                        try:
+                            agent_user = UserProfile.objects.get(user_id=agent_id).user
+                            agent_tickets = tickets_query.filter(assigned_to_id=agent_id)
+                            
+                            agent_resolved = agent_tickets.filter(status__in=['resolved', 'closed']).count()
+                            agent_total = agent_tickets.count()
+                            
+                            if agent_total > 0:
+                                resolution_rate = (agent_resolved / agent_total) * 100
+                            else:
+                                resolution_rate = 0
+                            
+
+                            # Calculate average resolution time for this agent
+                            agent_avg_time = agent_tickets.exclude(
+                                resolved_at__isnull=True
+                            ).aggregate(
+                                avg_time=Avg(
+                                    ExpressionWrapper(
+                                        F('resolved_at') - F('created_at'),
+                                        output_field=fields.DurationField()
+                                    )
+                                )
+                            )['avg_time']
+                            
+                            if agent_avg_time:
+                                agent_avg_hours = agent_avg_time.total_seconds() / 3600
+                            else:
+                                agent_avg_hours = 0
+                            
+
+                            agent_performance.append({
+                                'agent_name': f"{agent_user.first_name} {agent_user.last_name}" if agent_user.first_name else agent_user.username,
+                                'ticket_count': agent_total,
+                                'resolved_count': agent_resolved,
+                                'resolution_rate': resolution_rate,
+                                'avg_resolution_time': agent_avg_hours
+                            })
+                            
+                            logger.debug(f"Agent {agent_user.username}: {agent_total} tickets, {resolution_rate}% resolution rate")
+                        except UserProfile.DoesNotExist:
+                            logger.warning(f"UserProfile not found for user_id: {agent_id}")
+                        except Exception as e:
+                            logger.error(f"Error processing agent {agent_id}: {e}")
+                
+                logger.info(f"Processed {len(agent_performance)} agents for performance data")
+        except Exception as e:
+            logger.error(f"Error calculating agent performance: {e}")
+            agent_performance = []
+        
+        # Create the report file
+        logger.info(f"Generating {report_format} report...")
+        try:
+            if report_format == 'csv':
+                return _generate_csv_report(
+                    period_start_date, period_end_date, organization, agent,
+                    tickets_opened, tickets_closed, tickets_resolved, tickets_new, 
+                    tickets_in_progress, tickets_unresolved, avg_resolution_time,
+                    priority_distribution, category_distribution, agent_performance
+                )
+            else:  # xlsx
+                return _generate_excel_report(
+                    period_start_date, period_end_date, organization, agent,
+                    tickets_opened, tickets_closed, tickets_resolved, tickets_new,
+                    tickets_in_progress, tickets_unresolved, avg_resolution_time,
+                    priority_distribution, category_distribution, agent_performance
+                )
+        except ImportError as e:
+            logger.error(f"Import error during report generation: {e}")
+            return JsonResponse({
+                'status': 'error', 
+                'message': f'Brak wymaganej biblioteki: {str(e)}. Spróbuj użyć formatu CSV.'
+            }, status=500)
+        except Exception as e:
+            logger.error(f"Error generating {report_format} report: {e}")
+            import traceback
+            logger.error(f"Full traceback: {traceback.format_exc()}")
+            return JsonResponse({
+                'status': 'error', 
+                'message': f'Błąd generowania raportu {report_format.upper()}: {str(e)}'
+            }, status=500)
+            
+    except Exception as e:
+        logger.error(f"Unexpected error in generate_statistics_report: {e}")
+        import traceback
+        logger.error(f"Full traceback: {traceback.format_exc()}")
+        return JsonResponse({
+            'status': 'error', 
+            'message': f'Nieoczekiwany błąd: {str(e)}'
+        }, status=500)
 
 def _generate_csv_report(period_start, period_end, organization, agent, 
                         tickets_opened, tickets_closed, tickets_resolved, tickets_new,
@@ -811,137 +925,164 @@ def _generate_excel_report(period_start, period_end, organization, agent,
                           tickets_in_progress, tickets_unresolved, avg_resolution_time,
                           priority_distribution, category_distribution, agent_performance):
     """Generate Excel report with formatting"""
-    wb = Workbook()
-    ws = wb.active
-    ws.title = "Raport Statystyk"
+    logger.info("Starting Excel report generation...")
     
-    # Styles
-    header_font = Font(bold=True, size=14)
-    subheader_font = Font(bold=True, size=12)
-    bold_font = Font(bold=True)
-    header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
-    
-    # Generate filename
-    org_name = organization.name if organization else "Wszystkie"
-    agent_name = agent.username if agent else "Wszyscy"
-    
-    # Header information
-    ws['A1'] = 'RAPORT STATYSTYK ZGŁOSZEŃ'
-    ws['A1'].font = header_font
-    
-    row = 3
-    ws[f'A{row}'] = 'Okres:'
-    ws[f'B{row}'] = f"{period_start} - {period_end}"
-    row += 1
-    ws[f'A{row}'] = 'Organizacja:'
-    ws[f'B{row}'] = org_name
-    row += 1
-    ws[f'A{row}'] = 'Agent:'
-    ws[f'B{row}'] = agent_name
-    row += 1
-    ws[f'A{row}'] = 'Data generacji:'
-    ws[f'B{row}'] = timezone.now().strftime('%Y-%m-%d %H:%M:%S')
-    
-    row += 3
-    
-    # Summary statistics
-    ws[f'A{row}'] = 'PODSUMOWANIE'
-    ws[f'A{row}'].font = subheader_font
-    row += 1
-    
-    summary_data = [
-        ('Łącznie zgłoszeń:', tickets_opened),
-        ('Nowych:', tickets_new),
-        ('W trakcie:', tickets_in_progress),
-        ('Nierozwiązanych:', tickets_unresolved),
-        ('Rozwiązanych:', tickets_resolved),
-        ('Zamkniętych:', tickets_closed),
-        ('Średni czas rozwiązania (godziny):', f"{avg_resolution_time:.2f}"),
-    ]
-    
-    for label, value in summary_data:
-        ws[f'A{row}'] = label
-        ws[f'B{row}'] = value
-        ws[f'A{row}'].font = bold_font
+    try:
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Raport Statystyk"
+        logger.info("Created Excel workbook")
+        
+        # Styles
+        header_font = Font(bold=True, size=14)
+        subheader_font = Font(bold=True, size=12)
+        bold_font = Font(bold=True)
+        header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+        
+        # Generate filename
+        org_name = organization.name if organization else "Wszystkie"
+        agent_name = agent.username if agent else "Wszyscy"
+        
+        logger.info(f"Report for organization: {org_name}, agent: {agent_name}")
+        
+        # Header information
+        ws['A1'] = 'RAPORT STATYSTYK ZGŁOSZEŃ'
+        ws['A1'].font = header_font
+        
+        row = 3
+        ws[f'A{row}'] = 'Okres:'
+        ws[f'B{row}'] = f"{period_start} - {period_end}"
         row += 1
-    
-    row += 2
-    
-    # Priority distribution
-    ws[f'A{row}'] = 'ROZKŁAD WEDŁUG PRIORYTETU'
-    ws[f'A{row}'].font = subheader_font
-    row += 1
-    
-    ws[f'A{row}'] = 'Priorytet'
-    ws[f'B{row}'] = 'Liczba zgłoszeń'
-    ws[f'A{row}'].font = bold_font
-    ws[f'B{row}'].font = bold_font
-    row += 1
-    
-    priority_labels = {'low': 'Niski', 'medium': 'Średni', 'high': 'Wysoki', 'critical': 'Krytyczny'}
-    for priority, count in priority_distribution.items():
-        ws[f'A{row}'] = priority_labels.get(priority, priority)
-        ws[f'B{row}'] = count
+        ws[f'A{row}'] = 'Organizacja:'
+        ws[f'B{row}'] = org_name
         row += 1
-    
-    row += 2
-    
-    # Category distribution
-    ws[f'A{row}'] = 'ROZKŁAD WEDŁUG KATEGORII'
-    ws[f'A{row}'].font = subheader_font
-    row += 1
-    
-    ws[f'A{row}'] = 'Kategoria'
-    ws[f'B{row}'] = 'Liczba zgłoszeń'
-    ws[f'A{row}'].font = bold_font
-    ws[f'B{row}'].font = bold_font
-    row += 1
-    
-    category_labels = {'hardware': 'Sprzęt', 'software': 'Oprogramowanie', 'network': 'Sieć', 'account': 'Konto', 'other': 'Inne'}
-    for category, count in category_distribution.items():
-        ws[f'A{row}'] = category_labels.get(category, category)
-        ws[f'B{row}'] = count
+        ws[f'A{row}'] = 'Agent:'
+        ws[f'B{row}'] = agent_name
         row += 1
-    
-    # Agent performance
-    if agent_performance:
-        row += 2
-        ws[f'A{row}'] = 'WYDAJNOŚĆ AGENTÓW'
+        ws[f'A{row}'] = 'Data generacji:'
+        ws[f'B{row}'] = timezone.now().strftime('%Y-%m-%d %H:%M:%S')
+        
+        row += 3
+        
+        logger.info("Adding summary statistics to Excel...")
+        
+        # Summary statistics
+        ws[f'A{row}'] = 'PODSUMOWANIE'
         ws[f'A{row}'].font = subheader_font
         row += 1
         
-        headers = ['Agent', 'Liczba zgłoszeń', 'Rozwiązanych', '% rozwiązanych', 'Śr. czas rozwiązania (godz.)']
-        for col, header in enumerate(headers, 1):
-            cell = ws.cell(row=row, column=col, value=header)
-            cell.font = bold_font
+        summary_data = [
+            ('Łącznie zgłoszeń:', tickets_opened),
+            ('Nowych:', tickets_new),
+            ('W trakcie:', tickets_in_progress),
+            ('Nierozwiązanych:', tickets_unresolved),
+            ('Rozwiązanych:', tickets_resolved),
+            ('Zamkniętych:', tickets_closed),
+            ('Średni czas rozwiązania (godziny):', f"{avg_resolution_time:.2f}"),
+        ]
+        
+        for label, value in summary_data:
+            ws[f'A{row}'] = label
+            ws[f'B{row}'] = value
+            ws[f'A{row}'].font = bold_font
+            row += 1
+        
+        row += 2
+        
+        logger.info("Adding priority distribution to Excel...")
+        
+        # Priority distribution
+        ws[f'A{row}'] = 'ROZKŁAD WEDŁUG PRIORYTETU'
+        ws[f'A{row}'].font = subheader_font
         row += 1
         
-        for ap in agent_performance:
-            ws[f'A{row}'] = ap['agent_name']
-            ws[f'B{row}'] = ap['ticket_count']
-            ws[f'C{row}'] = ap['resolved_count']
-            ws[f'D{row}'] = f"{ap['resolution_rate']:.1f}%"
-            ws[f'E{row}'] = f"{ap['avg_resolution_time']:.2f}"
+        ws[f'A{row}'] = 'Priorytet'
+        ws[f'B{row}'] = 'Liczba zgłoszeń'
+        ws[f'A{row}'].font = bold_font
+        ws[f'B{row}'].font = bold_font
+        row += 1
+        
+        priority_labels = {'low': 'Niski', 'medium': 'Średni', 'high': 'Wysoki', 'critical': 'Krytyczny'}
+        for priority, count in priority_distribution.items():
+            ws[f'A{row}'] = priority_labels.get(priority, priority)
+            ws[f'B{row}'] = count
             row += 1
-    
-    # Auto-adjust column widths
-    for column in ws.columns:
-        max_length = 0
-        column_letter = get_column_letter(column[0].column)
-        for cell in column:
-            try:
-                if len(str(cell.value)) > max_length:
-                    max_length = len(str(cell.value))
-            except:
-                pass
-        adjusted_width = min(max_length + 2, 50)
-        ws.column_dimensions[column_letter].width = adjusted_width
-    
-    # Save to response
-    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    filename = f"raport_statystyk_{period_start}_{period_end}_{org_name}_{agent_name}.xlsx"
-    filename = filename.replace(" ", "_").replace("/", "_")
-    response['Content-Disposition'] = f'attachment; filename="{filename}"'
-    
-    wb.save(response)
-    return response
+        
+        row += 2
+        
+        logger.info("Adding category distribution to Excel...")
+        
+        # Category distribution
+        ws[f'A{row}'] = 'ROZKŁAD WEDŁUG KATEGORII'
+        ws[f'A{row}'].font = subheader_font
+        row += 1
+        
+        ws[f'A{row}'] = 'Kategoria'
+        ws[f'B{row}'] = 'Liczba zgłoszeń'
+        ws[f'A{row}'].font = bold_font
+        ws[f'B{row}'].font = bold_font
+        row += 1
+        
+        category_labels = {'hardware': 'Sprzęt', 'software': 'Oprogramowanie', 'network': 'Sieć', 'account': 'Konto', 'other': 'Inne'}
+        for category, count in category_distribution.items():
+            ws[f'A{row}'] = category_labels.get(category, category)
+            ws[f'B{row}'] = count
+            row += 1
+        
+        # Agent performance
+        if agent_performance:
+            row += 2
+            logger.info(f"Adding agent performance data ({len(agent_performance)} agents) to Excel...")
+            
+            ws[f'A{row}'] = 'WYDAJNOŚĆ AGENTÓW'
+            ws[f'A{row}'].font = subheader_font
+            row += 1
+            
+            headers = ['Agent', 'Liczba zgłoszeń', 'Rozwiązanych', '% rozwiązanych', 'Śr. czas rozwiązania (godz.)']
+            for col, header in enumerate(headers, 1):
+                cell = ws.cell(row=row, column=col, value=header)
+                cell.font = bold_font
+            row += 1
+            
+            for ap in agent_performance:
+                ws[f'A{row}'] = ap['agent_name']
+                ws[f'B{row}'] = ap['ticket_count']
+                ws[f'C{row}'] = ap['resolved_count']
+                ws[f'D{row}'] = f"{ap['resolution_rate']:.1f}%"
+                ws[f'E{row}'] = f"{ap['avg_resolution_time']:.2f}"
+                row += 1
+        
+        logger.info("Auto-adjusting column widths...")
+        
+        # Auto-adjust column widths
+        for column in ws.columns:
+            max_length = 0
+            column_letter = get_column_letter(column[0].column)
+            for cell in column:
+                try:
+                    if len(str(cell.value)) > max_length:
+                        max_length = len(str(cell.value))
+                except:
+                    pass
+            adjusted_width = min(max_length + 2, 50)
+            ws.column_dimensions[column_letter].width = adjusted_width
+        
+        logger.info("Preparing HTTP response...")
+        
+        # Save to response
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        filename = f"raport_statystyk_{period_start}_{period_end}_{org_name}_{agent_name}.xlsx"
+        filename = filename.replace(" ", "_").replace("/", "_")
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        
+        logger.info(f"Saving Excel file: {filename}")
+        wb.save(response)
+        
+        logger.info("Excel report generation completed successfully")
+        return response
+        
+    except Exception as e:
+        logger.error(f"Error in _generate_excel_report: {e}")
+        import traceback
+        logger.error(f"Full traceback: {traceback.format_exc()}")
+        raise

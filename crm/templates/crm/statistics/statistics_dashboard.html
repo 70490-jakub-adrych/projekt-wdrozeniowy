@@ -400,6 +400,21 @@
                         <i class="fas fa-info-circle"></i> Raport zostanie automatycznie pobrany po wygenerowaniu
                     </small>
                 </div>
+                
+                <!-- Debug information (visible only in development) -->
+                {% if debug %}
+                <div class="mt-4 p-3 bg-light border rounded">
+                    <h6>Informacje debugowania:</h6>
+                    <small class="text-muted">
+                        <strong>Okres:</strong> {{ date_from|date:"Y-m-d" }} - {{ date_to|date:"Y-m-d" }}<br>
+                        <strong>Organizacja:</strong> {% if org_filter %}{{ org_filter }}{% else %}Wszystkie{% endif %}<br>
+                        <strong>Agent:</strong> {% if agent_filter %}{{ agent_filter }}{% else %}Wszyscy{% endif %}<br>
+                        <strong>Łączna liczba zgłoszeń:</strong> {{ total_tickets }}<br>
+                        <strong>Dostępne organizacje:</strong> {{ organizations.count }}<br>
+                        <strong>Dostępni agenci:</strong> {{ agents.count }}
+                    </small>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
