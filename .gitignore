@@ -48,3 +48,5 @@ crm/migrations/0002_add_2fa_fields.py
 crm/migrations/0003_set_ga_enabled_default.py
 crm/migrations/0002_add_2fa_fields.py
 crm/migrations/0003_set_ga_enabled_default.py
+MOBILE_UI_FIXES.md
+MOBILE_UI_FIXES_ROUND2.md

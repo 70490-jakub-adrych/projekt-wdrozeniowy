@@ -137,13 +137,55 @@
             margin-bottom: 1rem;
         }
         
-        .d-flex.justify-content-between {
-            flex-direction: column;
-            gap: 1rem;
+        /* Mobile header layout - 2x1 matrix */
+        .ticket-header-mobile {
+            display: grid !important;
+            grid-template-columns: 1fr auto;
+            grid-template-rows: auto auto;
+            gap: 0.75rem;
+            align-items: center;
         }
         
-        .d-flex.justify-content-between h2 {
-            margin-bottom: 0;
+        .ticket-header-mobile h2 {
+            grid-column: 1;
+            grid-row: 1;
+            margin: 0;
+            font-size: 1.5rem;
+        }
+        
+        .ticket-header-mobile .btn-primary {
+            grid-column: 2;
+            grid-row: 1;
+            white-space: nowrap;
+        }
+        
+        .mobile-filter-controls {
+            grid-column: 1 / -1;
+            grid-row: 2;
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        
+        /* Hide desktop filter card on mobile */
+        .desktop-filter-card {
+            display: none !important;
+        }
+        
+        /* Mobile filter popup */
+        .mobile-filter-popup {
+            display: block !important;
+        }
+        
+        .mobile-filter-popup .btn {
+            font-size: 0.875rem;
+            padding: 0.375rem 0.75rem;
+        }
+        
+        /* Modal for mobile filters */
+        .mobile-filter-modal .modal-dialog {
+            margin: 1rem;
+            max-width: calc(100% - 2rem);
         }
         
         /* Hide desktop table, show mobile cards */
@@ -242,12 +284,29 @@
         .mobile-cards {
             display: none !important;
         }
+        
+        .desktop-filter-card {
+            display: block !important;
+        }
+        
+        .mobile-filter-popup {
+            display: none !important;
+        }
+        
+        .ticket-header-desktop {
+            display: flex !important;
+        }
+        
+        .ticket-header-mobile {
+            display: none !important;
+        }
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-start align-items-md-center mb-3 flex-column flex-md-row">
+<!-- Desktop Header -->
+<div class="d-flex justify-content-between align-items-start align-items-md-center mb-3 flex-column flex-md-row ticket-header-desktop">
     <h2 class="mb-2 mb-md-0">Zgłoszenia</h2>
     <div class="d-flex flex-wrap gap-2">
         <a href="{% url 'ticket_create' %}" class="btn btn-primary btn-ripple">
@@ -256,8 +315,29 @@
     </div>
 </div>
 
-<!-- Filter summary and toggle button -->
-<div class="card mb-2">
+<!-- Mobile Header - 2x1 Matrix -->
+<div class="ticket-header-mobile mb-3">
+    <h2>Zgłoszenia</h2>
+    <a href="{% url 'ticket_create' %}" class="btn btn-primary btn-ripple">
+        <i class="fas fa-plus me-1"></i> Nowe zgłoszenie
+    </a>
+    <div class="mobile-filter-controls">
+        <button class="btn btn-outline-primary btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#mobileFilterModal">
+            <i class="fas fa-filter me-1"></i> Filtry
+            {% if status_filter or priority_filter or category_filter or assigned_filter or organization_filter or created_by_filter or date_from or date_to %}
+            <span class="badge bg-info ms-1">!</span>
+            {% endif %}
+        </button>
+        {% if status_filter or priority_filter or category_filter or assigned_filter or organization_filter or created_by_filter or date_from or date_to %}
+        <a href="{% url 'ticket_list' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-times me-1"></i> Wyczyść
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Desktop Filter Card -->
+<div class="card mb-2 desktop-filter-card">
     <div class="card-header p-2 d-flex justify-content-between align-items-center flex-column flex-sm-row">
         <div class="mb-2 mb-sm-0">
             <i class="fas fa-filter me-1"></i> Filtry 
@@ -508,6 +588,98 @@
                     text.textContent = 'Pokaż filtry';
                 });
             </script>
+        </div>
+    </div>
+</div>
+
+<!-- Mobile Filter Modal -->
+<div class="modal fade mobile-filter-modal" id="mobileFilterModal" tabindex="-1" aria-labelledby="mobileFilterModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen-sm-down">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="mobileFilterModalLabel">
+                    <i class="fas fa-filter me-2"></i>Filtry zgłoszeń
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="get" class="mobile-filter-form">
+                    <div class="mb-3">
+                        <label for="mobile_status" class="form-label">Status</label>
+                        <select name="status" id="mobile_status" class="form-select">
+                            <option value="" {% if not status_filter %}selected{% endif %}>Wszystkie</option>
+                            <option value="new" {% if status_filter == 'new' %}selected{% endif %}>Nowe</option>
+                            <option value="in_progress" {% if status_filter == 'in_progress' %}selected{% endif %}>W trakcie</option>
+                            <option value="unresolved" {% if status_filter == 'unresolved' %}selected{% endif %}>Nierozwiązany</option>
+                            <option value="resolved" {% if status_filter == 'resolved' %}selected{% endif %}>Rozwiązane</option>
+                            <option value="closed" {% if status_filter == 'closed' %}selected{% endif %}>Zamknięte</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="mobile_priority" class="form-label">Priorytet</label>
+                        <select name="priority" id="mobile_priority" class="form-select">
+                            <option value="" {% if not priority_filter %}selected{% endif %}>Wszystkie</option>
+                            <option value="low" {% if priority_filter == 'low' %}selected{% endif %}>Niski</option>
+                            <option value="medium" {% if priority_filter == 'medium' %}selected{% endif %}>Średni</option>
+                            <option value="high" {% if priority_filter == 'high' %}selected{% endif %}>Wysoki</option>
+                            <option value="critical" {% if priority_filter == 'critical' %}selected{% endif %}>Krytyczny</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="mobile_category" class="form-label">Kategoria</label>
+                        <select name="category" id="mobile_category" class="form-select">
+                            <option value="" {% if not category_filter %}selected{% endif %}>Wszystkie</option>
+                            <option value="hardware" {% if category_filter == 'hardware' %}selected{% endif %}>Sprzęt</option>
+                            <option value="software" {% if category_filter == 'software' %}selected{% endif %}>Oprogramowanie</option>
+                            <option value="network" {% if category_filter == 'network' %}selected{% endif %}>Sieć</option>
+                            <option value="security" {% if category_filter == 'security' %}selected{% endif %}>Bezpieczeństwo</option>
+                            <option value="other" {% if category_filter == 'other' %}selected{% endif %}>Inne</option>
+                        </select>
+                    </div>
+                    
+                    {% if user.is_staff %}
+                    <div class="mb-3">
+                        <label for="mobile_assigned" class="form-label">Przypisanie</label>
+                        <select name="assigned" id="mobile_assigned" class="form-select">
+                            <option value="" {% if not assigned_filter %}selected{% endif %}>Wszystkie</option>
+                            <option value="me" {% if assigned_filter == 'me' %}selected{% endif %}>Przypisane do mnie</option>
+                            <option value="unassigned" {% if assigned_filter == 'unassigned' %}selected{% endif %}>Nieprzypisane</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="mobile_organization" class="form-label">Organizacja</label>
+                        <select name="organization" id="mobile_organization" class="form-select">
+                            <option value="" {% if not organization_filter %}selected{% endif %}>Wszystkie</option>
+                            {% for org in all_organizations %}
+                            <option value="{{ org.id }}" {% if org.id|stringformat:"i" == organization_filter %}selected{% endif %}>
+                                {{ org.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="exclude_closed" id="mobile_exclude_closed" 
+                                   {% if exclude_closed %}checked{% endif %}>
+                            <label class="form-check-label" for="mobile_exclude_closed">
+                                Ukryj zamknięte zgłoszenia
+                            </label>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anuluj</button>
+                <a href="{% url 'ticket_list' %}" class="btn btn-outline-secondary">Wyczyść</a>
+                <button type="button" class="btn btn-primary" onclick="document.querySelector('.mobile-filter-form').submit();">
+                    <i class="fas fa-search me-1"></i>Zastosuj filtry
+                </button>
+            </div>
         </div>
     </div>
 </div>

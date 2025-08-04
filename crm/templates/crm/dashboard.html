@@ -33,6 +33,17 @@
         margin-bottom: 0.5rem;
     }
     
+    /* Fix dashboard footer spacing */
+    .container-fluid {
+        padding-bottom: 0 !important;
+        margin-bottom: 0 !important;
+    }
+    
+    .dashboard-content {
+        padding-bottom: 0;
+        margin-bottom: 0;
+    }
+    
     /* Card with hover effect */
     .card-hover {
         transition: all 0.3s ease;
@@ -468,8 +479,9 @@
                 </div>
             </div>
             <div class="card-body p-3">
-                <div class="row g-3">
-                    <div class="col-md-4 col-lg">
+                <!-- First Row: "Nowe" takes full width on mobile, half on desktop -->
+                <div class="row g-3 mb-3">
+                    <div class="col-12 col-md-6">
                         <div class="stat-card card bg-primary text-white">
                             <a href="{% url 'ticket_list' %}?status=new" class="stat-card-link text-white">
                                 <div class="card-body text-center py-4">
@@ -480,10 +492,14 @@
                             </a>
                         </div>
                     </div>
-                    <div class="col-md-4 col-lg">
+                </div>
+                
+                <!-- Second Row: 2x2 grid for the remaining 4 panels -->
+                <div class="row g-3">
+                    <div class="col-6 col-md-3">
                         <div class="stat-card card bg-info text-white">
                             <a href="{% url 'ticket_list' %}?status=in_progress" class="stat-card-link text-white">
-                                <div class="card-body text-center py-4">
+                                <div class="card-body text-center py-3">
                                     <div class="stat-card-icon"><i class="fas fa-spinner fa-spin"></i></div>
                                     <div class="stat-card-count animate-counter" data-count="{{ in_progress_tickets }}">{{ in_progress_tickets }}</div>
                                     <div class="stat-card-label">W trakcie</div>
@@ -491,10 +507,10 @@
                             </a>
                         </div>
                     </div>
-                    <div class="col-md-4 col-lg">
+                    <div class="col-6 col-md-3">
                         <div class="stat-card card bg-warning">
                             <a href="{% url 'ticket_list' %}?status=unresolved" class="stat-card-link">
-                                <div class="card-body text-center py-4">
+                                <div class="card-body text-center py-3">
                                     <div class="stat-card-icon"><i class="fas fa-exclamation-triangle animate-shake"></i></div>
                                     <div class="stat-card-count animate-counter" data-count="{{ unresolved_tickets }}">{{ unresolved_tickets }}</div>
                                     <div class="stat-card-label">Nierozwiązane</div>
@@ -502,10 +518,10 @@
                             </a>
                         </div>
                     </div>
-                    <div class="col-md-4 col-lg">
+                    <div class="col-6 col-md-3">
                         <div class="stat-card card bg-success text-white">
                             <a href="{% url 'ticket_list' %}?status=resolved" class="stat-card-link text-white">
-                                <div class="card-body text-center py-4">
+                                <div class="card-body text-center py-3">
                                     <div class="stat-card-icon"><i class="fas fa-check-circle animate-pulse"></i></div>
                                     <div class="stat-card-count animate-counter" data-count="{{ resolved_tickets }}">{{ resolved_tickets }}</div>
                                     <div class="stat-card-label">Rozwiązane</div>
@@ -513,10 +529,10 @@
                             </a>
                         </div>
                     </div>
-                    <div class="col-md-4 col-lg">
+                    <div class="col-6 col-md-3">
                         <div class="stat-card card bg-secondary text-white">
                             <a href="{% url 'ticket_list' %}?status=closed" class="stat-card-link text-white">
-                                <div class="card-body text-center py-4">
+                                <div class="card-body text-center py-3">
                                     <div class="stat-card-icon"><i class="fas fa-lock animate-bounce"></i></div>
                                     <div class="stat-card-count animate-counter" data-count="{{ closed_tickets }}">{{ closed_tickets }}</div>
                                     <div class="stat-card-label">Zamknięte</div>
