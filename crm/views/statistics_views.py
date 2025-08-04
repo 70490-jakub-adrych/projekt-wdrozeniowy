@@ -943,6 +943,10 @@ def _generate_excel_report(period_start, period_end, organization, agent,
         org_name = organization.name if organization else "Wszystkie"
         agent_name = agent.username if agent else "Wszyscy"
         
+        # Clean filename for Windows compatibility
+        org_name = org_name.replace(" ", "_").replace("/", "_").replace("\\", "_").replace(":", "_")
+        agent_name = agent_name.replace(" ", "_").replace("/", "_").replace("\\", "_").replace(":", "_")
+        
         logger.info(f"Report for organization: {org_name}, agent: {agent_name}")
         
         # Header information
@@ -954,10 +958,10 @@ def _generate_excel_report(period_start, period_end, organization, agent,
         ws[f'B{row}'] = f"{period_start} - {period_end}"
         row += 1
         ws[f'A{row}'] = 'Organizacja:'
-        ws[f'B{row}'] = org_name
+        ws[f'B{row}'] = organization.name if organization else "Wszystkie"
         row += 1
         ws[f'A{row}'] = 'Agent:'
-        ws[f'B{row}'] = agent_name
+        ws[f'B{row}'] = agent.username if agent else "Wszyscy"
         row += 1
         ws[f'A{row}'] = 'Data generacji:'
         ws[f'B{row}'] = timezone.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -1069,14 +1073,32 @@ def _generate_excel_report(period_start, period_end, organization, agent,
         
         logger.info("Preparing HTTP response...")
         
-        # Save to response
+        # Create response with proper headers
         response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-        filename = f"raport_statystyk_{period_start}_{period_end}_{org_name}_{agent_name}.xlsx"
-        filename = filename.replace(" ", "_").replace("/", "_")
-        response['Content-Disposition'] = f'attachment; filename="{filename}"'
         
-        logger.info(f"Saving Excel file: {filename}")
-        wb.save(response)
+        # Generate clean filename
+        filename = f"raport_statystyk_{period_start}_{period_end}_{org_name}_{agent_name}.xlsx"
+        
+        # Set proper headers for file download
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        response['Content-Description'] = 'File Transfer'
+        response['Content-Transfer-Encoding'] = 'binary'
+        response['Cache-Control'] = 'must-revalidate, post-check=0, pre-check=0'
+        response['Pragma'] = 'public'
+        
+        logger.info(f"Saving Excel file with filename: {filename}")
+        
+        # Save workbook to response
+        try:
+            wb.save(response)
+            logger.info("Excel file saved to response successfully")
+        except Exception as save_error:
+            logger.error(f"Error saving workbook to response: {save_error}")
+            raise
+        
+        # Log response details
+        logger.info(f"Response content type: {response.get('Content-Type')}")
+        logger.info(f"Response content disposition: {response.get('Content-Disposition')}")
         
         logger.info("Excel report generation completed successfully")
         return response

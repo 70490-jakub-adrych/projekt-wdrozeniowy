@@ -649,6 +649,7 @@ document.addEventListener('DOMContentLoaded', function() {
             clearTimeout(timeoutId);
             console.log('Response status:', response.status);
             console.log('Response headers:', [...response.headers.entries()]);
+            console.log('Response ok:', response.ok);
             
             if (response.ok) {
                 // Check if response is JSON (error) or file (success)
@@ -660,10 +661,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         console.error('Server returned JSON error:', data);
                         throw new Error(data.message || 'Unknown server error');
                     });
-                } else {
+                } else if (contentType && (contentType.includes('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') || contentType.includes('text/csv'))) {
                     // It's a file download
                     return response.blob().then(blob => {
                         console.log('Received blob with size:', blob.size, 'bytes');
+                        console.log('Blob type:', blob.type);
                         
                         if (blob.size === 0) {
                             throw new Error('Otrzymano pusty plik');
@@ -671,6 +673,8 @@ document.addEventListener('DOMContentLoaded', function() {
                         
                         // Extract filename from Content-Disposition header
                         const contentDisposition = response.headers.get('content-disposition');
+                        console.log('Content-Disposition:', contentDisposition);
+                        
                         let filename = `raport_statystyk_${dateFrom}_${dateTo}.${format}`;
                         if (contentDisposition) {
                             const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
@@ -682,17 +686,34 @@ document.addEventListener('DOMContentLoaded', function() {
                         console.log('Downloading file:', filename);
                         
                         // Create download link
-                        const url = window.URL.createObjectURL(blob);
-                        const a = document.createElement('a');
-                        a.style.display = 'none';
-                        a.href = url;
-                        a.download = filename;
-                        document.body.appendChild(a);
-                        a.click();
-                        window.URL.revokeObjectURL(url);
-                        document.body.removeChild(a);
-                        
-                        return { success: true, filename: filename };
+                        try {
+                            const url = window.URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.style.display = 'none';
+                            a.href = url;
+                            a.download = filename;
+                            document.body.appendChild(a);
+                            a.click();
+                            
+                            // Clean up
+                            setTimeout(() => {
+                                window.URL.revokeObjectURL(url);
+                                document.body.removeChild(a);
+                            }, 100);
+                            
+                            console.log('File download triggered successfully');
+                            return { success: true, filename: filename };
+                        } catch (downloadError) {
+                            console.error('Error creating download:', downloadError);
+                            throw new Error(`Błąd pobierania pliku: ${downloadError.message}`);
+                        }
+                    });
+                } else {
+                    // Unknown content type, try to read as text for error details
+                    return response.text().then(text => {
+                        console.error('Unexpected content type:', contentType);
+                        console.error('Response text:', text.substring(0, 500));
+                        throw new Error(`Nieoczekiwany typ odpowiedzi: ${contentType}. Sprawdź logi serwera.`);
                     });
                 }
             } else {
