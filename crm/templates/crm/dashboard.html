@@ -479,10 +479,13 @@
                 </div>
             </div>
             <div class="card-body p-3">
-                <!-- Statistics Cards: Single row on desktop, 2x2 grid on mobile -->
-                <div class="row g-3">
-                    <!-- Nowe -->
-                    <div class="col-6 col-lg-auto col-lg">
+                <!-- Statistics Cards Layout:
+                     Mobile: First card full width, then 2x2 grid for remaining 4
+                     Desktop: All 5 cards in single row with equal width -->
+                
+                <!-- First card - Nowe -->
+                <div class="row g-3 mb-3">
+                    <div class="col-12 col-lg">
                         <div class="stat-card card bg-primary text-white">
                             <a href="{% url 'ticket_list' %}?status=new" class="stat-card-link text-white">
                                 <div class="card-body text-center py-3">
@@ -493,8 +496,9 @@
                             </a>
                         </div>
                     </div>
-                    <!-- W trakcie -->
-                    <div class="col-6 col-lg-auto col-lg">
+                    
+                    <!-- Remaining 4 cards on desktop only -->
+                    <div class="col-lg d-none d-lg-block">
                         <div class="stat-card card bg-info text-white">
                             <a href="{% url 'ticket_list' %}?status=in_progress" class="stat-card-link text-white">
                                 <div class="card-body text-center py-3">
@@ -505,8 +509,8 @@
                             </a>
                         </div>
                     </div>
-                    <!-- Nierozwiązane -->
-                    <div class="col-6 col-lg-auto col-lg">
+                    
+                    <div class="col-lg d-none d-lg-block">
                         <div class="stat-card card bg-warning">
                             <a href="{% url 'ticket_list' %}?status=unresolved" class="stat-card-link">
                                 <div class="card-body text-center py-3">
@@ -517,8 +521,8 @@
                             </a>
                         </div>
                     </div>
-                    <!-- Rozwiązane -->
-                    <div class="col-6 col-lg-auto col-lg">
+                    
+                    <div class="col-lg d-none d-lg-block">
                         <div class="stat-card card bg-success text-white">
                             <a href="{% url 'ticket_list' %}?status=resolved" class="stat-card-link text-white">
                                 <div class="card-body text-center py-3">
@@ -529,8 +533,56 @@
                             </a>
                         </div>
                     </div>
-                    <!-- Zamknięte -->
-                    <div class="col-6 col-lg-auto col-lg">
+                    
+                    <div class="col-lg d-none d-lg-block">
+                        <div class="stat-card card bg-secondary text-white">
+                            <a href="{% url 'ticket_list' %}?status=closed" class="stat-card-link text-white">
+                                <div class="card-body text-center py-3">
+                                    <div class="stat-card-icon"><i class="fas fa-lock animate-bounce"></i></div>
+                                    <div class="stat-card-count animate-counter" data-count="{{ closed_tickets }}">{{ closed_tickets }}</div>
+                                    <div class="stat-card-label">Zamknięte</div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Mobile 2x2 grid for remaining 4 cards -->
+                <div class="row g-3 d-lg-none">
+                    <div class="col-6">
+                        <div class="stat-card card bg-info text-white">
+                            <a href="{% url 'ticket_list' %}?status=in_progress" class="stat-card-link text-white">
+                                <div class="card-body text-center py-3">
+                                    <div class="stat-card-icon"><i class="fas fa-spinner fa-spin"></i></div>
+                                    <div class="stat-card-count animate-counter" data-count="{{ in_progress_tickets }}">{{ in_progress_tickets }}</div>
+                                    <div class="stat-card-label">W trakcie</div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="stat-card card bg-warning">
+                            <a href="{% url 'ticket_list' %}?status=unresolved" class="stat-card-link">
+                                <div class="card-body text-center py-3">
+                                    <div class="stat-card-icon"><i class="fas fa-exclamation-triangle animate-shake"></i></div>
+                                    <div class="stat-card-count animate-counter" data-count="{{ unresolved_tickets }}">{{ unresolved_tickets }}</div>
+                                    <div class="stat-card-label">Nierozwiązane</div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="stat-card card bg-success text-white">
+                            <a href="{% url 'ticket_list' %}?status=resolved" class="stat-card-link text-white">
+                                <div class="card-body text-center py-3">
+                                    <div class="stat-card-icon"><i class="fas fa-check-circle animate-pulse"></i></div>
+                                    <div class="stat-card-count animate-counter" data-count="{{ resolved_tickets }}">{{ resolved_tickets }}</div>
+                                    <div class="stat-card-label">Rozwiązane</div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-6">
                         <div class="stat-card card bg-secondary text-white">
                             <a href="{% url 'ticket_list' %}?status=closed" class="stat-card-link text-white">
                                 <div class="card-body text-center py-3">
