@@ -495,58 +495,166 @@ document.addEventListener('DOMContentLoaded', function() {
         reportBtn.addEventListener('click', function(e) {
             e.preventDefault();
             
-            // Show loading state
-            reportBtn.disabled = true;
-            reportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generowanie...';
-            statusDiv.innerHTML = 'Generowanie raportu, proszę czekać...';
-            statusDiv.className = 'mt-3 text-info';
-            
-            // Get filter values
-            const period = document.getElementById('period').value;
-            const dateFrom = document.getElementById('date_from').value;
-            const dateTo = document.getElementById('date_to').value;
-            const organization = document.getElementById('organization').value;
-            const agent = document.getElementById('agent').value;
-            
-            // Get CSRF token
-            const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-            
-            // Create form data
-            const formData = new FormData();
-            formData.append('period_type', period);
-            formData.append('period_start', dateFrom);
-            formData.append('period_end', dateTo);
-            if (organization) formData.append('organization', organization);
-            if (agent) formData.append('agent', agent);
-            
-            // Send AJAX request
-            fetch('/statistics/generate-report/', {
-                method: 'POST',
-                body: formData,
-                headers: {
-                    'X-CSRFToken': csrfToken
-                }
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.status === 'success') {
-                    statusDiv.innerHTML = `<i class="fas fa-check-circle"></i> Raport został wygenerowany pomyślnie!`;
-                    statusDiv.className = 'mt-3 text-success';
+            // Show format selection modal first
+            showReportFormatModal();
+        });
+    };
+    
+    /**
+     * Show modal for report format selection
+     */
+    const showReportFormatModal = () => {
+        // Create modal HTML
+        const modalHtml = `
+            <div class="modal fade" id="reportFormatModal" tabindex="-1" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Wybierz format raportu</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body">
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="reportFormat" id="formatExcel" value="xlsx" checked>
+                                <label class="form-check-label" for="formatExcel">
+                                    <i class="fas fa-file-excel text-success"></i> Excel (.xlsx) - Zalecany
+                                </label>
+                                <small class="form-text text-muted d-block">Plik Excel z formatowaniem i wykresami</small>
+                            </div>
+                            <div class="form-check mt-3">
+                                <input class="form-check-input" type="radio" name="reportFormat" id="formatCsv" value="csv">
+                                <label class="form-check-label" for="formatCsv">
+                                    <i class="fas fa-file-csv text-info"></i> CSV (.csv)
+                                </label>
+                                <small class="form-text text-muted d-block">Plik CSV do importu w innych aplikacjach</small>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anuluj</button>
+                            <button type="button" class="btn btn-primary" id="confirmGenerateReport">
+                                <i class="fas fa-download"></i> Generuj i pobierz
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        // Remove existing modal if present
+        const existingModal = document.getElementById('reportFormatModal');
+        if (existingModal) {
+            existingModal.remove();
+        }
+        
+        // Add modal to body
+        document.body.insertAdjacentHTML('beforeend', modalHtml);
+        
+        // Show modal
+        const modal = new bootstrap.Modal(document.getElementById('reportFormatModal'));
+        modal.show();
+        
+        // Handle confirm button
+        document.getElementById('confirmGenerateReport').addEventListener('click', function() {
+            const selectedFormat = document.querySelector('input[name="reportFormat"]:checked').value;
+            modal.hide();
+            generateReport(selectedFormat);
+        });
+    };
+    
+    /**
+     * Generate and download report
+     */
+    const generateReport = (format) => {
+        const reportBtn = document.getElementById('generateReportBtn');
+        const statusDiv = document.getElementById('reportStatus');
+        
+        // Show loading state
+        reportBtn.disabled = true;
+        reportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generowanie...';
+        statusDiv.innerHTML = `<i class="fas fa-info-circle"></i> Generowanie raportu ${format.toUpperCase()}, proszę czekać...`;
+        statusDiv.className = 'mt-3 text-info';
+        
+        // Get filter values
+        const period = document.getElementById('period').value;
+        const dateFrom = document.getElementById('date_from').value;
+        const dateTo = document.getElementById('date_to').value;
+        const organization = document.getElementById('organization').value;
+        const agent = document.getElementById('agent').value;
+        
+        // Get CSRF token
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        
+        // Create form data
+        const formData = new FormData();
+        formData.append('period_type', period);
+        formData.append('period_start', dateFrom);
+        formData.append('period_end', dateTo);
+        formData.append('format', format);
+        if (organization) formData.append('organization', organization);
+        if (agent) formData.append('agent', agent);
+        
+        // Send request
+        fetch('/statistics/generate-report/', {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-CSRFToken': csrfToken
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                // Check if response is JSON (error) or file (success)
+                const contentType = response.headers.get('content-type');
+                if (contentType && contentType.includes('application/json')) {
+                    return response.json().then(data => {
+                        throw new Error(data.message || 'Unknown error');
+                    });
                 } else {
-                    statusDiv.innerHTML = `<i class="fas fa-times-circle"></i> Błąd: ${data.message}`;
-                    statusDiv.className = 'mt-3 text-danger';
+                    // It's a file download
+                    return response.blob().then(blob => {
+                        // Extract filename from Content-Disposition header
+                        const contentDisposition = response.headers.get('content-disposition');
+                        let filename = `raport_statystyk_${dateFrom}_${dateTo}.${format}`;
+                        if (contentDisposition) {
+                            const filenameMatch = contentDisposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+                            if (filenameMatch && filenameMatch[1]) {
+                                filename = filenameMatch[1].replace(/['"]/g, '');
+                            }
+                        }
+                        
+                        // Create download link
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.style.display = 'none';
+                        a.href = url;
+                        a.download = filename;
+                        document.body.appendChild(a);
+                        a.click();
+                        window.URL.revokeObjectURL(url);
+                        document.body.removeChild(a);
+                        
+                        return { success: true, filename: filename };
+                    });
                 }
-            })
-            .catch(error => {
-                statusDiv.innerHTML = `<i class="fas fa-times-circle"></i> Wystąpił błąd podczas generowania raportu.`;
-                statusDiv.className = 'mt-3 text-danger';
-                console.error('Error generating report:', error);
-            })
-            .finally(() => {
-                // Reset button state
-                reportBtn.disabled = false;
-                reportBtn.innerHTML = '<i class="fas fa-file-export"></i> Wygeneruj raport z aktualnych filtrów';
-            });
+            } else {
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+            }
+        })
+        .then(result => {
+            if (result.success) {
+                statusDiv.innerHTML = `<i class="fas fa-check-circle"></i> Raport został wygenerowany i pobrany: ${result.filename}`;
+                statusDiv.className = 'mt-3 text-success';
+            }
+        })
+        .catch(error => {
+            statusDiv.innerHTML = `<i class="fas fa-times-circle"></i> Błąd: ${error.message}`;
+            statusDiv.className = 'mt-3 text-danger';
+            console.error('Error generating report:', error);
+        })
+        .finally(() => {
+            // Reset button state
+            reportBtn.disabled = false;
+            reportBtn.innerHTML = '<i class="fas fa-file-export"></i> Wygeneruj raport z aktualnych filtrów';
         });
     };
     

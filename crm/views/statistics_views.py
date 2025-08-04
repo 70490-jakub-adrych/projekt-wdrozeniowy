@@ -8,6 +8,12 @@ import datetime
 from datetime import timedelta
 import json
 import logging
+import csv
+import io
+from django.http import HttpResponse
+from openpyxl import Workbook
+from openpyxl.styles import Font, PatternFill, Alignment
+from openpyxl.utils import get_column_letter
 
 from ..models import (
     Ticket, ActivityLog, UserProfile, 
@@ -578,7 +584,7 @@ def calculate_work_minutes(start_time, end_time):
 
 @login_required
 def generate_statistics_report(request):
-    """Generate and store statistics for analysis"""
+    """Generate and download statistics report"""
     user = request.user
     
     # Only admin and superagent can generate reports
@@ -590,6 +596,7 @@ def generate_statistics_report(request):
     period_end = request.POST.get('period_end')
     organization_id = request.POST.get('organization')
     agent_id = request.POST.get('agent')
+    report_format = request.POST.get('format', 'xlsx')  # xlsx or csv
     
     try:
         period_start_date = datetime.datetime.strptime(period_start, '%Y-%m-%d').date()
@@ -625,6 +632,9 @@ def generate_statistics_report(request):
     tickets_opened = tickets_query.count()
     tickets_closed = tickets_query.filter(status='closed').count()
     tickets_resolved = tickets_query.filter(status='resolved').count()
+    tickets_new = tickets_query.filter(status='new').count()
+    tickets_in_progress = tickets_query.filter(status='in_progress').count()
+    tickets_unresolved = tickets_query.filter(status='unresolved').count()
     
     # Calculate average resolution time
     resolution_time_data = tickets_query.exclude(
@@ -639,7 +649,7 @@ def generate_statistics_report(request):
     )
     avg_resolution_time = 0
     if resolution_time_data['avg_time']:
-        avg_resolution_time = resolution_time_data['avg_time'].total_seconds() / 60
+        avg_resolution_time = resolution_time_data['avg_time'].total_seconds() / 3600  # Convert to hours
     
     # Calculate priority distribution
     priority_counts = tickets_query.values('priority').annotate(count=Count('id'))
@@ -659,30 +669,279 @@ def generate_statistics_report(request):
         )
         avg_agent_work_time = agent_work_data['avg_time'] or 0
     
-    # Calculate average first response time (if we track that data)
-    avg_first_response_time = 0
+    # Get agent performance data
+    agent_performance = []
+    if user.profile.role in ['admin', 'superagent']:
+        agents_with_tickets = tickets_query.values(
+            'assigned_to'
+        ).exclude(
+            assigned_to__isnull=True
+        ).annotate(
+            ticket_count=Count('id')
+        ).order_by('-ticket_count')
+        
+        for agent_data in agents_with_tickets:
+            agent_id = agent_data['assigned_to']
+            if agent_id:
+                try:
+                    agent_user = UserProfile.objects.get(user_id=agent_id).user
+                    agent_tickets = tickets_query.filter(assigned_to_id=agent_id)
+                    
+                    agent_resolved = agent_tickets.filter(status__in=['resolved', 'closed']).count()
+                    agent_total = agent_tickets.count()
+                    
+                    if agent_total > 0:
+                        resolution_rate = (agent_resolved / agent_total) * 100
+                    else:
+                        resolution_rate = 0
+                    
+                    # Calculate average resolution time for this agent
+                    agent_avg_time = agent_tickets.exclude(
+                        resolved_at__isnull=True
+                    ).aggregate(
+                        avg_time=Avg(
+                            ExpressionWrapper(
+                                F('resolved_at') - F('created_at'),
+                                output_field=fields.DurationField()
+                            )
+                        )
+                    )['avg_time']
+                    
+                    if agent_avg_time:
+                        agent_avg_hours = agent_avg_time.total_seconds() / 3600
+                    else:
+                        agent_avg_hours = 0
+                    
+                    agent_performance.append({
+                        'agent_name': f"{agent_user.first_name} {agent_user.last_name}" if agent_user.first_name else agent_user.username,
+                        'ticket_count': agent_total,
+                        'resolved_count': agent_resolved,
+                        'resolution_rate': resolution_rate,
+                        'avg_resolution_time': agent_avg_hours
+                    })
+                except UserProfile.DoesNotExist:
+                    pass
     
-    # Create or update statistics record
-    stats, created = TicketStatistics.objects.update_or_create(
-        period_type=period_type,
-        period_start=period_start_date,
-        period_end=period_end_date,
-        organization=organization,
-        agent=agent,
-        defaults={
-            'tickets_opened': tickets_opened,
-            'tickets_closed': tickets_closed,
-            'tickets_resolved': tickets_resolved,
-            'avg_resolution_time': avg_resolution_time,
-            'avg_first_response_time': avg_first_response_time,
-            'avg_agent_work_time': avg_agent_work_time,
-            'priority_distribution': priority_distribution,
-            'category_distribution': category_distribution,
-        }
-    )
+    # Create the report file
+    if report_format == 'csv':
+        return _generate_csv_report(
+            period_start_date, period_end_date, organization, agent,
+            tickets_opened, tickets_closed, tickets_resolved, tickets_new, 
+            tickets_in_progress, tickets_unresolved, avg_resolution_time,
+            priority_distribution, category_distribution, agent_performance
+        )
+    else:  # xlsx
+        return _generate_excel_report(
+            period_start_date, period_end_date, organization, agent,
+            tickets_opened, tickets_closed, tickets_resolved, tickets_new,
+            tickets_in_progress, tickets_unresolved, avg_resolution_time,
+            priority_distribution, category_distribution, agent_performance
+        )
+
+def _generate_csv_report(period_start, period_end, organization, agent, 
+                        tickets_opened, tickets_closed, tickets_resolved, tickets_new,
+                        tickets_in_progress, tickets_unresolved, avg_resolution_time,
+                        priority_distribution, category_distribution, agent_performance):
+    """Generate CSV report"""
+    response = HttpResponse(content_type='text/csv; charset=utf-8')
     
-    return JsonResponse({
-        'status': 'success',
-        'message': 'Statistics report generated successfully',
-        'report_id': stats.id
-    })
+    # Generate filename
+    org_name = organization.name if organization else "Wszystkie"
+    agent_name = agent.username if agent else "Wszyscy"
+    filename = f"raport_statystyk_{period_start}_{period_end}_{org_name}_{agent_name}.csv"
+    filename = filename.replace(" ", "_").replace("/", "_")
+    
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    
+    writer = csv.writer(response)
+    
+    # Header information
+    writer.writerow(['RAPORT STATYSTYK ZGŁOSZEŃ'])
+    writer.writerow([''])
+    writer.writerow(['Okres:', f"{period_start} - {period_end}"])
+    writer.writerow(['Organizacja:', org_name])
+    writer.writerow(['Agent:', agent_name])
+    writer.writerow(['Data generacji:', timezone.now().strftime('%Y-%m-%d %H:%M:%S')])
+    writer.writerow([''])
+    
+    # Summary statistics
+    writer.writerow(['PODSUMOWANIE'])
+    writer.writerow(['Łącznie zgłoszeń:', tickets_opened])
+    writer.writerow(['Nowych:', tickets_new])
+    writer.writerow(['W trakcie:', tickets_in_progress])
+    writer.writerow(['Nierozwiązanych:', tickets_unresolved])
+    writer.writerow(['Rozwiązanych:', tickets_resolved])
+    writer.writerow(['Zamkniętych:', tickets_closed])
+    writer.writerow(['Średni czas rozwiązania (godziny):', f"{avg_resolution_time:.2f}"])
+    writer.writerow([''])
+    
+    # Priority distribution
+    writer.writerow(['ROZKŁAD WEDŁUG PRIORYTETU'])
+    writer.writerow(['Priorytet', 'Liczba zgłoszeń'])
+    priority_labels = {'low': 'Niski', 'medium': 'Średni', 'high': 'Wysoki', 'critical': 'Krytyczny'}
+    for priority, count in priority_distribution.items():
+        writer.writerow([priority_labels.get(priority, priority), count])
+    writer.writerow([''])
+    
+    # Category distribution
+    writer.writerow(['ROZKŁAD WEDŁUG KATEGORII'])
+    writer.writerow(['Kategoria', 'Liczba zgłoszeń'])
+    category_labels = {'hardware': 'Sprzęt', 'software': 'Oprogramowanie', 'network': 'Sieć', 'account': 'Konto', 'other': 'Inne'}
+    for category, count in category_distribution.items():
+        writer.writerow([category_labels.get(category, category), count])
+    writer.writerow([''])
+    
+    # Agent performance
+    if agent_performance:
+        writer.writerow(['WYDAJNOŚĆ AGENTÓW'])
+        writer.writerow(['Agent', 'Liczba zgłoszeń', 'Rozwiązanych', '% rozwiązanych', 'Śr. czas rozwiązania (godz.)'])
+        for ap in agent_performance:
+            writer.writerow([
+                ap['agent_name'], 
+                ap['ticket_count'], 
+                ap['resolved_count'],
+                f"{ap['resolution_rate']:.1f}%",
+                f"{ap['avg_resolution_time']:.2f}"
+            ])
+    
+    return response
+
+def _generate_excel_report(period_start, period_end, organization, agent,
+                          tickets_opened, tickets_closed, tickets_resolved, tickets_new,
+                          tickets_in_progress, tickets_unresolved, avg_resolution_time,
+                          priority_distribution, category_distribution, agent_performance):
+    """Generate Excel report with formatting"""
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Raport Statystyk"
+    
+    # Styles
+    header_font = Font(bold=True, size=14)
+    subheader_font = Font(bold=True, size=12)
+    bold_font = Font(bold=True)
+    header_fill = PatternFill(start_color="366092", end_color="366092", fill_type="solid")
+    
+    # Generate filename
+    org_name = organization.name if organization else "Wszystkie"
+    agent_name = agent.username if agent else "Wszyscy"
+    
+    # Header information
+    ws['A1'] = 'RAPORT STATYSTYK ZGŁOSZEŃ'
+    ws['A1'].font = header_font
+    
+    row = 3
+    ws[f'A{row}'] = 'Okres:'
+    ws[f'B{row}'] = f"{period_start} - {period_end}"
+    row += 1
+    ws[f'A{row}'] = 'Organizacja:'
+    ws[f'B{row}'] = org_name
+    row += 1
+    ws[f'A{row}'] = 'Agent:'
+    ws[f'B{row}'] = agent_name
+    row += 1
+    ws[f'A{row}'] = 'Data generacji:'
+    ws[f'B{row}'] = timezone.now().strftime('%Y-%m-%d %H:%M:%S')
+    
+    row += 3
+    
+    # Summary statistics
+    ws[f'A{row}'] = 'PODSUMOWANIE'
+    ws[f'A{row}'].font = subheader_font
+    row += 1
+    
+    summary_data = [
+        ('Łącznie zgłoszeń:', tickets_opened),
+        ('Nowych:', tickets_new),
+        ('W trakcie:', tickets_in_progress),
+        ('Nierozwiązanych:', tickets_unresolved),
+        ('Rozwiązanych:', tickets_resolved),
+        ('Zamkniętych:', tickets_closed),
+        ('Średni czas rozwiązania (godziny):', f"{avg_resolution_time:.2f}"),
+    ]
+    
+    for label, value in summary_data:
+        ws[f'A{row}'] = label
+        ws[f'B{row}'] = value
+        ws[f'A{row}'].font = bold_font
+        row += 1
+    
+    row += 2
+    
+    # Priority distribution
+    ws[f'A{row}'] = 'ROZKŁAD WEDŁUG PRIORYTETU'
+    ws[f'A{row}'].font = subheader_font
+    row += 1
+    
+    ws[f'A{row}'] = 'Priorytet'
+    ws[f'B{row}'] = 'Liczba zgłoszeń'
+    ws[f'A{row}'].font = bold_font
+    ws[f'B{row}'].font = bold_font
+    row += 1
+    
+    priority_labels = {'low': 'Niski', 'medium': 'Średni', 'high': 'Wysoki', 'critical': 'Krytyczny'}
+    for priority, count in priority_distribution.items():
+        ws[f'A{row}'] = priority_labels.get(priority, priority)
+        ws[f'B{row}'] = count
+        row += 1
+    
+    row += 2
+    
+    # Category distribution
+    ws[f'A{row}'] = 'ROZKŁAD WEDŁUG KATEGORII'
+    ws[f'A{row}'].font = subheader_font
+    row += 1
+    
+    ws[f'A{row}'] = 'Kategoria'
+    ws[f'B{row}'] = 'Liczba zgłoszeń'
+    ws[f'A{row}'].font = bold_font
+    ws[f'B{row}'].font = bold_font
+    row += 1
+    
+    category_labels = {'hardware': 'Sprzęt', 'software': 'Oprogramowanie', 'network': 'Sieć', 'account': 'Konto', 'other': 'Inne'}
+    for category, count in category_distribution.items():
+        ws[f'A{row}'] = category_labels.get(category, category)
+        ws[f'B{row}'] = count
+        row += 1
+    
+    # Agent performance
+    if agent_performance:
+        row += 2
+        ws[f'A{row}'] = 'WYDAJNOŚĆ AGENTÓW'
+        ws[f'A{row}'].font = subheader_font
+        row += 1
+        
+        headers = ['Agent', 'Liczba zgłoszeń', 'Rozwiązanych', '% rozwiązanych', 'Śr. czas rozwiązania (godz.)']
+        for col, header in enumerate(headers, 1):
+            cell = ws.cell(row=row, column=col, value=header)
+            cell.font = bold_font
+        row += 1
+        
+        for ap in agent_performance:
+            ws[f'A{row}'] = ap['agent_name']
+            ws[f'B{row}'] = ap['ticket_count']
+            ws[f'C{row}'] = ap['resolved_count']
+            ws[f'D{row}'] = f"{ap['resolution_rate']:.1f}%"
+            ws[f'E{row}'] = f"{ap['avg_resolution_time']:.2f}"
+            row += 1
+    
+    # Auto-adjust column widths
+    for column in ws.columns:
+        max_length = 0
+        column_letter = get_column_letter(column[0].column)
+        for cell in column:
+            try:
+                if len(str(cell.value)) > max_length:
+                    max_length = len(str(cell.value))
+            except:
+                pass
+        adjusted_width = min(max_length + 2, 50)
+        ws.column_dimensions[column_letter].width = adjusted_width
+    
+    # Save to response
+    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+    filename = f"raport_statystyk_{period_start}_{period_end}_{org_name}_{agent_name}.xlsx"
+    filename = filename.replace(" ", "_").replace("/", "_")
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    
+    wb.save(response)
+    return response
