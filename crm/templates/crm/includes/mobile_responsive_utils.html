@@ -1,0 +1,102 @@
+<!-- Mobile-responsive utility styles for tables -->
+<style>
+/* Mobile-responsive utility classes */
+@media (max-width: 576px) {
+    .mobile-responsive-table .desktop-table {
+        display: none !important;
+    }
+    
+    .mobile-responsive-table .mobile-cards {
+        display: block !important;
+    }
+    
+    .mobile-card {
+        border: 1px solid #dee2e6;
+        border-radius: 0.5rem;
+        margin-bottom: 1rem;
+        padding: 1rem;
+        background: white;
+        box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+    }
+    
+    .mobile-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 0.75rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .mobile-card-id {
+        font-weight: bold;
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+    
+    .mobile-card-title {
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        font-size: 1.1rem;
+        line-height: 1.3;
+    }
+    
+    .mobile-card-title a {
+        text-decoration: none;
+        color: inherit;
+    }
+    
+    .mobile-card-title a:hover {
+        color: var(--accent-color);
+    }
+    
+    .mobile-card-field {
+        margin-bottom: 0.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .mobile-card-label {
+        font-weight: 600;
+        color: #6c757d;
+        margin-right: 0.5rem;
+        min-width: 80px;
+    }
+    
+    .mobile-card-value {
+        text-align: right;
+    }
+    
+    .mobile-card-actions {
+        margin-top: 1rem;
+        padding-top: 0.75rem;
+        border-top: 1px solid #e9ecef;
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+    }
+    
+    .mobile-card-actions .btn {
+        flex: 1;
+        min-width: 0;
+    }
+    
+    /* Priority borders for mobile cards */
+    .mobile-priority-critical { border-left: 4px solid #dc3545; }
+    .mobile-priority-high { border-left: 4px solid #fd7e14; }
+    .mobile-priority-medium { border-left: 4px solid #0dcaf0; }
+    .mobile-priority-low { border-left: 4px solid #6c757d; }
+}
+
+/* Desktop styles */
+@media (min-width: 577px) {
+    .mobile-responsive-table .desktop-table {
+        display: block !important;
+    }
+    
+    .mobile-responsive-table .mobile-cards {
+        display: none !important;
+    }
+}
+</style>

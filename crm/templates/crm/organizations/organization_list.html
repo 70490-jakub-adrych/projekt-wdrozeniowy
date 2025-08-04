@@ -21,24 +21,92 @@
         justify-content: flex-start;
     }
     
-    /* Mobile responsive styles */
-    @media (max-width: 768px) {
-        .mobile-hide {
+    /* Mobile-responsive enhancements */
+    @media (max-width: 576px) {
+        .d-flex.justify-content-between {
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .d-flex.justify-content-between h2 {
+            margin-bottom: 0;
+        }
+        
+        /* Hide desktop table, show mobile cards */
+        .desktop-table {
             display: none !important;
         }
         
-        .table-responsive {
-            font-size: 0.9rem;
+        .mobile-cards {
+            display: block !important;
         }
         
-        .btn-group {
-            flex-direction: column;
-            gap: 2px;
+        .mobile-card {
+            border: 1px solid #dee2e6;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background: white;
+            box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
         }
         
-        .action-btn {
-            width: 100%;
-            margin: 0;
+        .mobile-card-title {
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            font-size: 1.2rem;
+        }
+        
+        .mobile-card-title a {
+            text-decoration: none;
+            color: inherit;
+        }
+        
+        .mobile-card-title a:hover {
+            color: var(--accent-color);
+        }
+        
+        .mobile-card-field {
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .mobile-card-label {
+            font-weight: 600;
+            color: #6c757d;
+            margin-right: 0.5rem;
+            min-width: 100px;
+        }
+        
+        .mobile-card-value {
+            text-align: right;
+            flex: 1;
+        }
+        
+        .mobile-card-actions {
+            margin-top: 1rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .mobile-card-actions .btn {
+            flex: 1;
+            min-width: 0;
+        }
+    }
+    
+    /* Desktop styles */
+    @media (min-width: 577px) {
+        .desktop-table {
+            display: block !important;
+        }
+        
+        .mobile-cards {
+            display: none !important;
         }
     }
 </style>
@@ -57,66 +125,117 @@
 {% if organizations %}
 <div class="card">
     <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-hover">
-                <thead>
-                    <tr>
-                        <th>Nazwa</th>
-                        <th class="mobile-hide">Email</th>
-                        <th class="mobile-hide">Telefon</th>
-                        <th class="mobile-hide">Strona internetowa</th>
-                        <th class="mobile-hide">Liczba użytkowników</th>
-                        <th class="mobile-hide">Liczba zgłoszeń</th>
-                        <th>Akcje</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for organization in organizations %}
-                    <tr>
-                        <td>
-                            <a href="{% url 'organization_detail' organization.pk %}">
-                                {{ organization.name }}
-                            </a>
-                        </td>
-                        <td class="mobile-hide">
-                            {% if organization.email %}
-                            <a href="mailto:{{ organization.email }}">{{ organization.email }}</a>
-                            {% else %}
-                            <span class="text-muted">Brak</span>
-                            {% endif %}
-                        </td>
-                        <td class="mobile-hide">
-                            {% if organization.phone %}
-                            {{ organization.phone }}
-                            {% else %}
-                            <span class="text-muted">Brak</span>
-                            {% endif %}
-                        </td>
-                        <td class="mobile-hide">
-                            {% if organization.website %}
-                            <a href="{{ organization.website }}" target="_blank">{{ organization.website }}</a>
-                            {% else %}
-                            <span class="text-muted">Brak</span>
-                            {% endif %}
-                        </td>
-                        <td class="mobile-hide">{{ organization.members.count }}</td>
-                        <td class="mobile-hide">{{ organization.ticket_count }}</td>
-                        <td>
-                            <div class="btn-group">
-                                <a href="{% url 'organization_detail' organization.pk %}" class="btn btn-sm btn-info action-btn btn-ripple" title="Szczegóły">
-                                    <i class="fas fa-eye"></i>
+        <!-- Desktop Table View -->
+        <div class="desktop-table">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Nazwa</th>
+                            <th>Email</th>
+                            <th>Telefon</th>
+                            <th>Strona internetowa</th>
+                            <th>Liczba użytkowników</th>
+                            <th>Liczba zgłoszeń</th>
+                            <th>Akcje</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for organization in organizations %}
+                        <tr>
+                            <td>
+                                <a href="{% url 'organization_detail' organization.pk %}">
+                                    {{ organization.name }}
                                 </a>
-                                {% if user.profile.role == 'admin' %}
-                                <a href="{% url 'organization_update' organization.pk %}" class="btn btn-sm btn-primary action-btn btn-ripple" title="Edytuj">
-                                    <i class="fas fa-edit"></i>
-                                </a>
+                            </td>
+                            <td>
+                                {% if organization.email %}
+                                <a href="mailto:{{ organization.email }}">{{ organization.email }}</a>
+                                {% else %}
+                                <span class="text-muted">Brak</span>
                                 {% endif %}
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                            </td>
+                            <td>
+                                {% if organization.phone %}
+                                {{ organization.phone }}
+                                {% else %}
+                                <span class="text-muted">Brak</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if organization.website %}
+                                <a href="{{ organization.website }}" target="_blank">{{ organization.website }}</a>
+                                {% else %}
+                                <span class="text-muted">Brak</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ organization.members.count }}</td>
+                            <td>{{ organization.ticket_count }}</td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{% url 'organization_detail' organization.pk %}" class="btn btn-sm btn-info action-btn btn-ripple" title="Szczegóły">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                    {% if user.profile.role == 'admin' %}
+                                    <a href="{% url 'organization_update' organization.pk %}" class="btn btn-sm btn-primary action-btn btn-ripple" title="Edytuj">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Mobile Card View -->
+        <div class="mobile-cards">
+            {% for organization in organizations %}
+            <div class="mobile-card">
+                <div class="mobile-card-title">
+                    <a href="{% url 'organization_detail' organization.pk %}">{{ organization.name }}</a>
+                </div>
+                
+                <div class="mobile-card-field">
+                    <span class="mobile-card-label">Użytkownicy:</span>
+                    <span class="mobile-card-value">{{ organization.members.count }}</span>
+                </div>
+                
+                <div class="mobile-card-field">
+                    <span class="mobile-card-label">Zgłoszenia:</span>
+                    <span class="mobile-card-value">{{ organization.ticket_count }}</span>
+                </div>
+                
+                {% if organization.email %}
+                <div class="mobile-card-field">
+                    <span class="mobile-card-label">Email:</span>
+                    <span class="mobile-card-value">
+                        <a href="mailto:{{ organization.email }}">{{ organization.email }}</a>
+                    </span>
+                </div>
+                {% endif %}
+                
+                {% if organization.phone %}
+                <div class="mobile-card-field">
+                    <span class="mobile-card-label">Telefon:</span>
+                    <span class="mobile-card-value">{{ organization.phone }}</span>
+                </div>
+                {% endif %}
+                
+                <div class="mobile-card-actions">
+                    <a href="{% url 'organization_detail' organization.pk %}" class="btn btn-info">
+                        <i class="fas fa-eye"></i> Szczegóły
+                    </a>
+                    {% if user.profile.role == 'admin' %}
+                    <a href="{% url 'organization_update' organization.pk %}" class="btn btn-primary">
+                        <i class="fas fa-edit"></i> Edytuj
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
         </div>
     </div>
 </div>

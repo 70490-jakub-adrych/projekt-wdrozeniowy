@@ -131,32 +131,116 @@
         font-size: 85%;
     }
     
-    /* Mobile responsive styles */
-    @media (max-width: 768px) {
-        .mobile-hide {
+    /* Mobile-responsive enhancements */
+    @media (max-width: 576px) {
+        .filter-form .col-md-3, .filter-form .col-md-6 {
+            margin-bottom: 1rem;
+        }
+        
+        .d-flex.justify-content-between {
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .d-flex.justify-content-between h2 {
+            margin-bottom: 0;
+        }
+        
+        /* Hide desktop table, show mobile cards */
+        .desktop-table {
             display: none !important;
         }
         
-        .col-title {
-            width: 40%; /* Give more space to title on mobile */
+        .mobile-cards {
+            display: block !important;
         }
         
-        .col-status {
-            width: 25%; /* Keep status visible and readable */
+        .mobile-card {
+            border: 1px solid #dee2e6;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background: white;
+            box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
         }
         
-        .col-actions {
-            width: 35%; /* Give space for action buttons */
+        .mobile-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #e9ecef;
         }
         
-        .btn-group {
-            flex-direction: column;
-            gap: 2px;
+        .mobile-card-id {
+            font-weight: bold;
+            color: #6c757d;
+            font-size: 0.9rem;
         }
         
-        .action-btn {
-            width: 100%;
-            margin: 0;
+        .mobile-card-title {
+            font-weight: 600;
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+            line-height: 1.3;
+        }
+        
+        .mobile-card-title a {
+            text-decoration: none;
+            color: inherit;
+        }
+        
+        .mobile-card-title a:hover {
+            color: var(--accent-color);
+        }
+        
+        .mobile-card-field {
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .mobile-card-label {
+            font-weight: 600;
+            color: #6c757d;
+            margin-right: 0.5rem;
+            min-width: 80px;
+        }
+        
+        .mobile-card-value {
+            text-align: right;
+        }
+        
+        .mobile-card-actions {
+            margin-top: 1rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .mobile-card-actions .btn {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .mobile-priority-critical { border-left: 4px solid #dc3545; }
+        .mobile-priority-high { border-left: 4px solid #fd7e14; }
+        .mobile-priority-medium { border-left: 4px solid #0dcaf0; }
+        .mobile-priority-low { border-left: 4px solid #6c757d; }
+    }
+    
+    /* Desktop styles */
+    @media (min-width: 577px) {
+        .desktop-table {
+            display: block !important;
+        }
+        
+        .mobile-cards {
+            display: none !important;
         }
     }
 </style>
@@ -432,31 +516,32 @@
         <i class="fas fa-ticket-alt"></i> Lista zgłoszeń
     </div>
     <div class="card-body p-2">  <!-- Reduced padding in card body -->
-        <div class="table-responsive">
+        <!-- Desktop Table View -->
+        <div class="desktop-table">
             <table class="table table-hover table-sm">  <!-- Added table-sm for more compact layout -->
                 <thead>
                     <tr>
-                        <th class="col-id mobile-hide">ID</th>
+                        <th class="col-id">ID</th>
                         <th class="col-title">Tytuł</th>
-                        <th class="col-org mobile-hide">Organizacja</th>
-                        <th class="col-category mobile-hide">Kategoria</th>
-                        <th class="col-priority mobile-hide">Priorytet</th>
+                        <th class="col-org">Organizacja</th>
+                        <th class="col-category">Kategoria</th>
+                        <th class="col-priority">Priorytet</th>
                         <th class="col-status">Status</th>
-                        <th class="col-assigned mobile-hide">Przypisane do</th>
-                        <th class="col-date mobile-hide">Data utworzenia</th>
+                        <th class="col-assigned">Przypisane do</th>
+                        <th class="col-date">Data utworzenia</th>
                         <th class="col-actions col-actions-header">Akcje</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for ticket in tickets %}
                     <tr>
-                        <td class="mobile-hide">#{{ ticket.id }}</td>  <!-- No truncation for ID -->
+                        <td>#{{ ticket.id }}</td>  <!-- No truncation for ID -->
                         <td title="{{ ticket.title }}">
                             <a href="{% url 'ticket_detail' ticket.pk %}">{{ ticket.title }}</a>
                         </td>
-                        <td class="mobile-hide" title="{{ ticket.organization.name }}">{{ ticket.organization.name }}</td>
-                        <td class="mobile-hide" title="{{ ticket.get_category_display }}">{{ ticket.get_category_display }}</td>
-                        <td class="mobile-hide">
+                        <td title="{{ ticket.organization.name }}">{{ ticket.organization.name }}</td>
+                        <td title="{{ ticket.get_category_display }}">{{ ticket.get_category_display }}</td>
+                        <td>
                             <span class="badge 
                                 {% if ticket.priority == 'low' %}bg-secondary
                                 {% elif ticket.priority == 'medium' %}bg-info
@@ -477,49 +562,138 @@
                                 {{ ticket.get_status_display }}
                             </span>
                         </td>
-                        <td class="mobile-hide" title="{% if ticket.assigned_to %}{{ ticket.assigned_to.username }}{% else %}Oczekuje na akceptację{% endif %}">
+                        <td title="{% if ticket.assigned_to %}{{ ticket.assigned_to.username }}{% else %}Oczekuje na akceptację{% endif %}">
                             {% if ticket.assigned_to %}{{ ticket.assigned_to.username }}{% else %}<span class="text-muted">Oczekuje na akceptację</span>{% endif %}
                         </td>
-                        <td class="mobile-hide">{{ ticket.created_at|date:"d-m-Y" }}</td>
-                    <td>
-                        <div class="btn-group">
-                            <a href="{% url 'ticket_detail' ticket.pk %}" class="btn btn-sm btn-info action-btn" title="Szczegóły">
-                                <i class="fas fa-eye"></i>
-                            </a>
-                            
-                            {% if user.profile.role == 'admin' %}
-                            <a href="{% url 'ticket_update' ticket.pk %}" class="btn btn-sm btn-primary action-btn" title="Edytuj">
-                                <i class="fas fa-edit"></i>
-                            </a>
-                            {% endif %}
-                            
-                            {% if user.profile.role == 'admin' or user.profile.role == 'superagent' or user.profile.role == 'agent' %}
-                                {% if ticket.status != 'closed' and ticket.assigned_to %}
-                                    {% if ticket.status == 'resolved' %}
-                                        <!-- Only show close button to admins and superagents -->
-                                        {% if user.profile.role == 'admin' or user.profile.role == 'superagent' %}
-                                            <a href="{% url 'ticket_close' ticket.pk %}" class="btn btn-sm btn-secondary action-btn" title="Zamknij">
-                                                <i class="fas fa-lock"></i>
+                        <td>{{ ticket.created_at|date:"d-m-Y" }}</td>
+                        <td>
+                            <div class="btn-group">
+                                <a href="{% url 'ticket_detail' ticket.pk %}" class="btn btn-sm btn-info action-btn" title="Szczegóły">
+                                    <i class="fas fa-eye"></i>
+                                </a>
+                                
+                                {% if user.profile.role == 'admin' %}
+                                <a href="{% url 'ticket_update' ticket.pk %}" class="btn btn-sm btn-primary action-btn" title="Edytuj">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                {% endif %}
+                                
+                                {% if user.profile.role == 'admin' or user.profile.role == 'superagent' or user.profile.role == 'agent' %}
+                                    {% if ticket.status != 'closed' and ticket.assigned_to %}
+                                        {% if ticket.status == 'resolved' %}
+                                            <!-- Only show close button to admins and superagents -->
+                                            {% if user.profile.role == 'admin' or user.profile.role == 'superagent' %}
+                                                <a href="{% url 'ticket_close' ticket.pk %}" class="btn btn-sm btn-secondary action-btn" title="Zamknij">
+                                                    <i class="fas fa-lock"></i>
+                                                </a>
+                                            {% endif %}
+                                        {% else %}
+                                            <!-- Show mark as resolved button to all staff roles -->
+                                            <a href="{% url 'ticket_mark_resolved' ticket.pk %}" class="btn btn-sm btn-success action-btn" title="Oznacz jako rozwiązane">
+                                                <i class="fas fa-check-circle"></i>
                                             </a>
                                         {% endif %}
-                                    {% else %}
-                                        <!-- Show mark as resolved button to all staff roles -->
-                                        <a href="{% url 'ticket_mark_resolved' ticket.pk %}" class="btn btn-sm btn-success action-btn" title="Oznacz jako rozwiązane">
-                                            <i class="fas fa-check-circle"></i>
+                                    {% elif ticket.status == 'closed' %}
+                                        <a href="{% url 'ticket_reopen' ticket.pk %}" class="btn btn-sm btn-success action-btn" title="Otwórz ponownie">
+                                            <i class="fas fa-lock-open"></i>
                                         </a>
                                     {% endif %}
-                                {% elif ticket.status == 'closed' %}
-                                    <a href="{% url 'ticket_reopen' ticket.pk %}" class="btn btn-sm btn-success action-btn" title="Otwórz ponownie">
-                                        <i class="fas fa-lock-open"></i>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Mobile Card View -->
+        <div class="mobile-cards">
+            {% for ticket in tickets %}
+            <div class="mobile-card 
+                {% if ticket.priority == 'critical' %}mobile-priority-critical
+                {% elif ticket.priority == 'high' %}mobile-priority-high
+                {% elif ticket.priority == 'medium' %}mobile-priority-medium
+                {% elif ticket.priority == 'low' %}mobile-priority-low
+                {% endif %}">
+                <div class="mobile-card-header">
+                    <span class="mobile-card-id">#{{ ticket.id }}</span>
+                    <span class="badge 
+                        {% if ticket.status == 'new' %}bg-primary
+                        {% elif ticket.status == 'in_progress' %}bg-info
+                        {% elif ticket.status == 'unresolved' %}bg-warning text-dark
+                        {% elif ticket.status == 'resolved' %}bg-success
+                        {% elif ticket.status == 'closed' %}bg-secondary
+                        {% endif %}">
+                        {{ ticket.get_status_display }}
+                    </span>
+                </div>
+                
+                <div class="mobile-card-title">
+                    <a href="{% url 'ticket_detail' ticket.pk %}">{{ ticket.title }}</a>
+                </div>
+                
+                <div class="mobile-card-field">
+                    <span class="mobile-card-label">Priorytet:</span>
+                    <span class="mobile-card-value">
+                        <span class="badge 
+                            {% if ticket.priority == 'low' %}bg-secondary
+                            {% elif ticket.priority == 'medium' %}bg-info
+                            {% elif ticket.priority == 'high' %}bg-warning
+                            {% elif ticket.priority == 'critical' %}bg-danger
+                            {% endif %}">
+                            {{ ticket.get_priority_display }}
+                        </span>
+                    </span>
+                </div>
+                
+                <div class="mobile-card-field">
+                    <span class="mobile-card-label">Utworzone:</span>
+                    <span class="mobile-card-value">{{ ticket.created_at|date:"d-m-Y" }}</span>
+                </div>
+                
+                {% if user.profile.role != 'client' %}
+                <div class="mobile-card-field">
+                    <span class="mobile-card-label">Organizacja:</span>
+                    <span class="mobile-card-value">{{ ticket.organization.name }}</span>
+                </div>
+                {% endif %}
+                
+                <div class="mobile-card-field">
+                    <span class="mobile-card-label">Przypisane:</span>
+                    <span class="mobile-card-value">
+                        {% if ticket.assigned_to %}{{ ticket.assigned_to.username }}{% else %}<span class="text-muted">Oczekuje</span>{% endif %}
+                    </span>
+                </div>
+                
+                <div class="mobile-card-actions">
+                    <a href="{% url 'ticket_detail' ticket.pk %}" class="btn btn-info">
+                        <i class="fas fa-eye"></i> Szczegóły
+                    </a>
+                    
+                    {% if user.profile.role == 'admin' or user.profile.role == 'superagent' or user.profile.role == 'agent' %}
+                        {% if ticket.status != 'closed' and ticket.assigned_to %}
+                            {% if ticket.status == 'resolved' %}
+                                {% if user.profile.role == 'admin' or user.profile.role == 'superagent' %}
+                                    <a href="{% url 'ticket_close' ticket.pk %}" class="btn btn-secondary">
+                                        <i class="fas fa-lock"></i> Zamknij
                                     </a>
                                 {% endif %}
+                            {% else %}
+                                <a href="{% url 'ticket_mark_resolved' ticket.pk %}" class="btn btn-success">
+                                    <i class="fas fa-check-circle"></i> Rozwiąż
+                                </a>
                             {% endif %}
-                        </div>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+                        {% elif ticket.status == 'closed' %}
+                            <a href="{% url 'ticket_reopen' ticket.pk %}" class="btn btn-success">
+                                <i class="fas fa-lock-open"></i> Otwórz
+                            </a>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
     </div>
 </div>
 {% else %}

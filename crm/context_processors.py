@@ -1,4 +1,5 @@
 from .models import GroupViewPermission, UserViewPermission, ViewPermission
+import re
 
 def view_permissions(request):
     """
@@ -40,3 +41,43 @@ def view_permissions(request):
         permissions['statistics'] = False
     
     return {'user_view_permissions': permissions}
+
+
+def device_context(request):
+    """
+    Add device information to template context
+    """
+    user_agent = request.META.get('HTTP_USER_AGENT', '')
+    
+    # Detect mobile device
+    mobile_patterns = [
+        r'Mobile',
+        r'Android.*Mobile',
+        r'iPhone',
+        r'iPod',
+        r'BlackBerry',
+        r'Windows Phone',
+        r'Opera Mini',
+        r'IEMobile',
+    ]
+    
+    is_mobile = bool(re.search('|'.join(mobile_patterns), user_agent, re.IGNORECASE))
+    
+    # Detect tablet
+    is_tablet = bool(re.search(r'iPad|Tablet|Android(?!.*Mobile)', user_agent, re.IGNORECASE))
+    
+    # Determine device type
+    if is_mobile:
+        device_type = 'mobile'
+    elif is_tablet:
+        device_type = 'tablet'
+    else:
+        device_type = 'desktop'
+    
+    return {
+        'is_mobile_device': is_mobile,
+        'is_tablet_device': is_tablet,
+        'is_desktop_device': not (is_mobile or is_tablet),
+        'device_type': device_type,
+        'user_agent': user_agent,
+    }
