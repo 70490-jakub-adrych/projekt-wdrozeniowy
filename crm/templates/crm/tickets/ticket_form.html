@@ -114,26 +114,42 @@
                     {% endif %}
 
                     <!-- Attachment upload section -->
-                    <hr>
-                    <h5 class="mb-3"><i class="fas fa-paperclip me-2"></i> Załączniki (opcjonalnie)</h5>
-                    
-                    <div class="mb-3">
-                        {{ attachment_form.file|as_crispy_field }}
-                    </div>
-                    
-                    <!-- Always show policy checkbox -->
-                    <div class="mb-3 attachment-policy" id="policy-section">
-                        <div class="form-check">
-                            {{ attachment_form.accepted_policy }}
-                            <label class="form-check-label" for="{{ attachment_form.accepted_policy.id_for_label }}">
-                                Akceptuję <a href="#" data-bs-toggle="modal" data-bs-target="#privacyPolicyModal">regulamin dotyczący załączników</a>
-                            </label>
-                        </div>
-                        {% if attachment_form.accepted_policy.errors %}
-                            <div class="alert alert-danger mt-2">
-                                {{ attachment_form.accepted_policy.errors }}
+                    <hr class="my-4">
+                    <div class="attachment-section">
+                        <h5 class="mb-3">
+                            <i class="fas fa-paperclip me-2"></i> 
+                            Załączniki <small class="text-muted">(opcjonalnie)</small>
+                        </h5>
+                        
+                        <div class="row">
+                            <div class="col-md-8">
+                                <div class="mb-3">
+                                    {{ attachment_form.file|as_crispy_field }}
+                                    <small class="form-text text-muted">
+                                        <i class="fas fa-info-circle me-1"></i>
+                                        Maksymalny rozmiar pliku: 20MB. Dozwolone formaty: PDF, DOC, DOCX, XLS, XLSX, JPG, PNG, GIF.
+                                    </small>
+                                </div>
                             </div>
-                        {% endif %}
+                        </div>
+                        
+                        <!-- Policy checkbox in a separate, clearly defined section -->
+                        <div class="mb-3 attachment-policy border rounded p-3 bg-light" id="policy-section">
+                            <div class="form-check">
+                                {{ attachment_form.accepted_policy }}
+                                <label class="form-check-label fw-normal" for="{{ attachment_form.accepted_policy.id_for_label }}">
+                                    Akceptuję 
+                                    <a href="#" data-bs-toggle="modal" data-bs-target="#privacyPolicyModal" class="text-decoration-none">
+                                        regulamin dotyczący załączników
+                                    </a>
+                                </label>
+                            </div>
+                            {% if attachment_form.accepted_policy.errors %}
+                                <div class="alert alert-danger mt-2 mb-0">
+                                    {{ attachment_form.accepted_policy.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
                     </div>
                     
                     <div class="d-grid gap-2 d-md-flex justify-content-md-end mt-4">

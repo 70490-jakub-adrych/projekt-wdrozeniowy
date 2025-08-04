@@ -3,21 +3,17 @@
 {% block title %}{{ organization.name }} | System Helpdesk{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2>{{ organization.name }}</h2>
-    <div>
+<div class="d-flex justify-content-between align-items-start align-items-md-center mb-4 flex-column flex-md-row">
+    <h2 class="mb-2 mb-md-0">{{ organization.name }}</h2>
+    <div class="d-flex flex-wrap gap-2">
         {% if user.profile.role == 'admin' %}
         <a href="{% url 'organization_update' organization.pk %}" class="btn btn-primary btn-ripple">
-            <i class="fas fa-edit"></i> Edytuj
+            <i class="fas fa-edit me-1"></i> Edytuj
         </a>
         {% endif %}
         {% if user.profile.role == 'admin' or user.profile.role == 'agent' %}
         <a href="{% url 'organization_list' %}" class="btn btn-outline-secondary btn-ripple">
-            <i class="fas fa-arrow-left"></i> Powrót do listy organizacji
-        </a>
-        {% else %}
-        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary btn-ripple">
-            <i class="fas fa-arrow-left"></i> Powrót do panelu
+            <i class="fas fa-arrow-left me-1"></i> Powrót do listy
         </a>
         {% endif %}
     </div>
