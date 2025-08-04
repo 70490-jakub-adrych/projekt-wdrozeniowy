@@ -39,7 +39,7 @@ class UserProfileInline(admin.StackedInline):
         }),
         ('Uwierzytelnianie dwuskładnikowe (2FA)', {
             'fields': ('ga_enabled', 'ga_enabled_on', 'ga_last_authenticated', 'ga_recovery_last_generated'),
-            'description': 'Informacje o uwierzytelnianiu dwuskładnikowym użytkownika.'
+            'description': 'Informacje o uwierzytelnianiu dwuskładnikowym użytkownika. UWAGA: 2FA jest teraz wymagane dla wszystkich użytkowników, w tym administratorów.'
         }),
     )
     

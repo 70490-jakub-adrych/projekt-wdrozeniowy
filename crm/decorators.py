@@ -70,19 +70,8 @@ def two_factor_required(view_func):
             else:
                 ip = request.META.get('REMOTE_ADDR')
             
-            # Get user agent as fingerprint
-            user_agent = request.META.get('HTTP_USER_AGENT', '')
-            
-            # Check for trusted session marker (for superusers/admins)
-            trusted_session = False
-            if request.user.is_superuser or request.user.profile.role == 'admin':
-                trusted_ips = request.session.get('trusted_admin_ips', [])
-                if ip in trusted_ips:
-                    trusted_session = True
-                    logger.debug(f"Admin/superuser {request.user.username} has verified session from IP {ip}")
-            
-            # If verification is needed and this isn't a trusted session
-            if not trusted_session and request.user.profile.needs_2fa_verification(request_ip=ip):
+            # If verification is needed
+            if request.user.profile.needs_2fa_verification(request_ip=ip):
                 # Store the original URL
                 request.session['2fa_next'] = request.get_full_path()
                 messages.warning(request, 'Ta strona wymaga weryfikacji dwuskładnikowej.')

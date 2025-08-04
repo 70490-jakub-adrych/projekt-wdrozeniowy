@@ -267,16 +267,6 @@ def verify_2fa(request):
                     profile.ga_last_authenticated = timezone.now()
                     profile.save(update_fields=['ga_last_authenticated'])
                 
-                # If user is admin/superuser, add IP to trusted session IPs
-                if user.is_superuser or profile.role == 'admin':
-                    # Get current list of trusted IPs for this session
-                    trusted_ips = request.session.get('trusted_admin_ips', [])
-                    ip = get_client_ip(request)
-                    if ip not in trusted_ips:
-                        trusted_ips.append(ip)
-                        request.session['trusted_admin_ips'] = trusted_ips
-                        logger.debug(f"Added IP {ip} to trusted admin IPs for this session")
-                
                 # Clear require_fresh flag if set
                 if 'require_fresh_2fa' in request.session:
                     del request.session['require_fresh_2fa']
@@ -358,6 +348,16 @@ def generate_qr_code(data):
     
     # Convert to base64
     img_str = base64.b64encode(buffer.getvalue()).decode('ascii')
+    return f"data:image/png;base64,{img_str}"
+
+def get_client_ip(request):
+    """Get client IP address from request"""
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        ip = x_forwarded_for.split(',')[0]
+    else:
+        ip = request.META.get('REMOTE_ADDR')
+    return ip
     return f"data:image/png;base64,{img_str}"
 
 def get_client_ip(request):

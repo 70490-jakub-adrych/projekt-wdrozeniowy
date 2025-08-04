@@ -42,7 +42,6 @@ INSTALLED_APPS = [
     # Third-party apps
     'crispy_forms',
     'crispy_bootstrap4',
-    'cryptography',  # Add cryptography package
     
     # Local apps
     'crm.apps.CrmConfig',  # Use the app config class instead of just the app name
