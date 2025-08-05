@@ -402,6 +402,34 @@
             font-size: 0.7rem;
         }
         
+        /* Fix navbar collapse issues on mobile */
+        .navbar-collapse {
+            border: none !important;
+            background: transparent !important;
+            box-shadow: none !important;
+        }
+        
+        .navbar-collapse.collapse:not(.show) {
+            display: none !important;
+            height: 0 !important;
+            overflow: hidden !important;
+            border: none !important;
+            background: transparent !important;
+        }
+        
+        .navbar-collapse.collapsing {
+            border: none !important;
+            background: transparent !important;
+            box-shadow: none !important;
+            overflow: hidden !important;
+        }
+        
+        /* Ensure no white bar/border after collapse */
+        .navbar-collapse::after,
+        .navbar-collapse::before {
+            display: none !important;
+        }
+        
         /* Show mobile user nav on smaller screens */
         @media (max-width: 991.98px) {
             .mobile-user-nav {
@@ -1179,6 +1207,40 @@
                         }
                     });
                 });
+                
+                // Fix navbar collapse white bar issue
+                const navbarCollapse = document.querySelector('.navbar-collapse');
+                if (navbarCollapse) {
+                    // Listen for collapse events
+                    navbarCollapse.addEventListener('hidden.bs.collapse', function() {
+                        // Force cleanup after collapse animation
+                        this.style.border = 'none';
+                        this.style.background = 'transparent';
+                        this.style.boxShadow = 'none';
+                        this.style.height = '';
+                        this.style.overflow = '';
+                        
+                        // Ensure complete cleanup
+                        setTimeout(() => {
+                            this.style.display = '';
+                            this.classList.remove('collapsing');
+                        }, 50);
+                    });
+                    
+                    navbarCollapse.addEventListener('hide.bs.collapse', function() {
+                        // Start cleanup during hide animation
+                        this.style.border = 'none';
+                        this.style.background = 'transparent';
+                        this.style.boxShadow = 'none';
+                    });
+                    
+                    navbarCollapse.addEventListener('show.bs.collapse', function() {
+                        // Ensure proper styling when showing
+                        this.style.border = 'none';
+                        this.style.background = 'transparent';
+                        this.style.boxShadow = 'none';
+                    });
+                }
                 
                 // Prevent user display from collapsing navbar
                 const userDisplay = document.querySelector('.mobile-user-display');
