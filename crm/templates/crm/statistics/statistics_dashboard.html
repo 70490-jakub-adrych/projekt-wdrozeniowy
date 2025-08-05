@@ -429,16 +429,26 @@
                     <div class="col-md-4 mb-3">
                         <div class="stats-card bg-light p-3 rounded text-center h-100">
                             <h5 class="text-muted">Obciążenie agentów</h5>
-                            {% if agents.count > 0 %}
-                                {% widthratio total_tickets 1 agents.count as tickets_per_agent %}
-                                <h2 class="mb-0 
-                                    {% if tickets_per_agent < 10 %}performance-good
-                                    {% elif tickets_per_agent < 20 %}performance-medium
-                                    {% else %}performance-poor{% endif %}">
-                                    {{ tickets_per_agent|floatformat:1 }} zgłoszeń/agenta
-                                </h2>
-                            {% else %}
+                            {% if agent_performance %}
+                                {% with active_agents=agent_performance|length %}
+                                    {% if active_agents > 0 %}
+                                        {% widthratio assigned_tickets 1 active_agents as tickets_per_agent %}
+                                        <h2 class="mb-0 
+                                            {% if tickets_per_agent < 5 %}performance-good
+                                            {% elif tickets_per_agent < 10 %}performance-medium
+                                            {% else %}performance-poor{% endif %}">
+                                            {{ tickets_per_agent|floatformat:1 }} zgłoszeń/agenta
+                                        </h2>
+                                        <small class="text-muted">{{ active_agents }} aktywn{{ active_agents|pluralize:"y,ych" }} agent{{ active_agents|pluralize:"ów" }}</small>
+                                    {% else %}
+                                        <h2 class="mb-0">0 zgłoszeń/agenta</h2>
+                                    {% endif %}
+                                {% endwith %}
+                            {% elif agents.count > 0 %}
                                 <h2 class="mb-0">0 zgłoszeń/agenta</h2>
+                                <small class="text-muted">{{ agents.count }} dostępn{{ agents.count|pluralize:"y,ych" }} agent{{ agents.count|pluralize:"ów" }}</small>
+                            {% else %}
+                                <h2 class="mb-0">Brak agentów</h2>
                             {% endif %}
                         </div>
                     </div>

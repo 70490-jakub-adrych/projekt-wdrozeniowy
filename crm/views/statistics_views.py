@@ -136,9 +136,10 @@ def statistics_dashboard(request):
     resolved_tickets = tickets.filter(status='resolved').count()
     closed_tickets = tickets.filter(status='closed').count()
     total_tickets = tickets.count()
+    assigned_tickets = tickets.exclude(assigned_to__isnull=True).count()
     
     # Debug logging to verify totals
-    logger.info(f"Statistics: Total tickets: {total_tickets}, Sum of statuses: {new_tickets + in_progress_tickets + unresolved_tickets + resolved_tickets + closed_tickets}")
+    logger.info(f"Statistics: Total tickets: {total_tickets}, Assigned tickets: {assigned_tickets}, Sum of statuses: {new_tickets + in_progress_tickets + unresolved_tickets + resolved_tickets + closed_tickets}")
     
     # Calculate ticket resolution metrics
     avg_resolution_time = tickets.exclude(
@@ -364,6 +365,7 @@ def statistics_dashboard(request):
         'date_from': date_from,
         'date_to': date_to,
         'total_tickets': total_tickets,
+        'assigned_tickets': assigned_tickets,
         'new_tickets': new_tickets,
         'in_progress_tickets': in_progress_tickets,
         'unresolved_tickets': unresolved_tickets,  # Add this missing key
