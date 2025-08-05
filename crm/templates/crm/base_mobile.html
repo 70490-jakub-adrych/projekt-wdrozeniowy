@@ -317,8 +317,8 @@
         }
         
         /* Mobile-first responsive design */
-        @media (max-width: 991.98px) {
-            /* Mobile and tablet devices */
+        @media (max-width: 576px) {
+            /* Extra small devices (phones) */
             .container {
                 padding-left: 10px;
                 padding-right: 10px;
@@ -338,35 +338,12 @@
                 margin-right: 0.5rem;
             }
             
-            /* Mobile user navigation styling - remove hover effects from non-clickable username */
-            .navbar-nav .nav-item .nav-link[style*="cursor: default"] {
-                pointer-events: none;
+            /* Mobile user display styling */
+            .navbar-nav .nav-link:not([href]) {
+                cursor: default;
+                padding-right: 1rem;
             }
             
-            .navbar-nav .nav-item .nav-link[style*="cursor: default"]:hover {
-                transform: none;
-                background-color: transparent;
-            }
-            
-            /* Mobile username display styling with separator */
-            .navbar-nav .nav-item:has(.nav-link[style*="cursor: default"]) {
-                border-bottom: 1px solid rgba(255, 255, 255, 0.2);
-                margin-bottom: 0.5rem;
-                padding-bottom: 0.5rem;
-            }
-            
-            /* Enhanced spacing for mobile menu items */
-            .navbar-collapse .nav-item {
-                border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            }
-            
-            .navbar-collapse .nav-item:last-child {
-                border-bottom: none;
-            }
-        }
-        
-        @media (max-width: 576px) {
-            /* Extra small devices (phones) */
             .card {
                 margin-bottom: 1rem;
             }
@@ -478,7 +455,7 @@
         }
         
         /* Desktop styles */
-        @media (min-width: 992px) {
+        @media (min-width: 577px) {
             .desktop-table {
                 display: block !important;
             }
@@ -584,7 +561,7 @@
                 </ul>
                 <ul class="navbar-nav">
                     {% if user.is_authenticated %}
-                    <!-- Desktop dropdown menu -->
+                    <!-- Desktop user dropdown -->
                     <li class="nav-item dropdown d-none d-lg-block">
                         <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" 
                            data-bs-toggle="dropdown" aria-expanded="false">
@@ -648,46 +625,38 @@
                         </div>
                     </li>
                     
-                    <!-- Mobile username display (non-clickable) -->
+                    <!-- Mobile user display and buttons -->
                     <li class="nav-item d-lg-none">
-                        <div class="nav-link d-flex align-items-center justify-content-end pe-3" style="cursor: default;">
-                            <div class="d-flex align-items-center">
-                                <span class="me-2 text-white">{{ user.username|truncatechars:12 }}</span>
-                                {% if user.profile.role == 'admin' %}
-                                    <span class="badge bg-danger">Admin</span>
-                                {% elif user.profile.role == 'superagent' %}
-                                    <span class="badge bg-warning text-dark">Superagent</span>
-                                {% elif user.profile.role == 'agent' %}
-                                    <span class="badge bg-info text-white">Agent</span>
-                                {% elif user.profile.role == 'viewer' %}
-                                    <span class="badge bg-dark">Viewer</span>
-                                {% else %}
-                                    <span class="badge bg-secondary">Klient</span>
-                                {% endif %}
-                            </div>
+                        <div class="nav-link d-flex align-items-center justify-content-end pe-3">
+                            <span class="me-2 text-white">{{ user.username|truncatechars:8 }}</span>
+                            {% if user.profile.role == 'admin' %}
+                                <span class="badge bg-danger">Admin</span>
+                            {% elif user.profile.role == 'superagent' %}
+                                <span class="badge bg-warning text-dark">Superagent</span>
+                            {% elif user.profile.role == 'agent' %}
+                                <span class="badge bg-info text-white">Agent</span>
+                            {% elif user.profile.role == 'viewer' %}
+                                <span class="badge bg-dark">Viewer</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Klient</span>
+                            {% endif %}
                         </div>
                     </li>
-                    
-                    <!-- Mobile 2FA link -->
                     <li class="nav-item d-lg-none">
                         <a class="nav-link" href="{% if user.profile.ga_enabled %}{% url 'dashboard' %}{% else %}{% url 'setup_2fa' %}{% endif %}">
-                            <i class="fas fa-shield-alt"></i>
+                            <i class="fas fa-shield-alt"></i> 
                             {% if user.profile.ga_enabled %}
-                                2FA <span class="text-success"><i class="fas fa-check-circle ms-1"></i></span>
+                                2FA (Włączone) <i class="fas fa-check-circle text-success ms-1"></i>
                             {% else %}
-                                Włącz 2FA <span class="text-warning"><i class="fas fa-exclamation-triangle ms-1"></i></span>
+                                Włącz 2FA <i class="fas fa-exclamation-triangle text-warning ms-1"></i>
                             {% endif %}
                         </a>
                     </li>
-                    
-                    <!-- Mobile password change link -->
                     <li class="nav-item d-lg-none">
                         <a class="nav-link" href="{% url 'password_change' %}">
                             <i class="fas fa-key"></i> Zmiana hasła
                         </a>
                     </li>
-                    
-                    <!-- Mobile logout link -->
                     <li class="nav-item d-lg-none">
                         <a class="nav-link" href="{% url 'logout' %}">
                             <i class="fas fa-sign-out-alt"></i> Wyloguj
