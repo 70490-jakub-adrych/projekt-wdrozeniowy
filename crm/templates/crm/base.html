@@ -266,6 +266,7 @@
         .badge {
             border-radius: 50rem;
             padding: 0.35em 0.65em;
+            font-size: 85%;  /* Standardized size from ticket_list reference */
             transition: all var(--transition-speed);
         }
         
@@ -695,9 +696,10 @@
                 font-size: 1.5rem;
             }
             
-            .badge {
-                font-size: 0.9rem;
-                padding: 0.5em 0.75em;
+            /* Keep mobile user display badges smaller for compact navbar */
+            .mobile-user-display .badge {
+                font-size: 0.65rem;
+                padding: 0.25em 0.5em;
             }
             
             /* Hide desktop-only elements on mobile */
