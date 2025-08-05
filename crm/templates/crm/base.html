@@ -431,6 +431,59 @@
             }
         }
         
+        /* Additional mobile device specific fixes */
+        @supports (-webkit-touch-callout: none) {
+            /* iOS Safari specific fixes */
+            @media (max-width: 991.98px) {
+                .navbar-collapse {
+                    -webkit-transform: translateZ(0);
+                    transform: translateZ(0);
+                    will-change: auto;
+                }
+                
+                .navbar-collapse.collapse:not(.show) {
+                    -webkit-transform: translateZ(0);
+                    transform: translateZ(0);
+                    visibility: hidden !important;
+                }
+                
+                .navbar-collapse.collapsing {
+                    -webkit-transform: translateZ(0);
+                    transform: translateZ(0);
+                }
+            }
+        }
+        
+        /* Android Chrome specific fixes */
+        @media (max-width: 991.98px) and (-webkit-min-device-pixel-ratio: 1) {
+            .navbar-collapse {
+                backface-visibility: hidden;
+                -webkit-backface-visibility: hidden;
+            }
+            
+            .navbar-collapse.collapse:not(.show) {
+                opacity: 0 !important;
+                pointer-events: none !important;
+                visibility: hidden !important;
+            }
+        }
+        
+        /* Force hardware acceleration and proper cleanup on touch devices */
+        @media (pointer: coarse) and (max-width: 991.98px) {
+            .navbar-collapse {
+                -webkit-transform: translate3d(0, 0, 0);
+                transform: translate3d(0, 0, 0);
+                -webkit-perspective: 1000px;
+                perspective: 1000px;
+            }
+            
+            .navbar-collapse.collapse:not(.show) {
+                -webkit-transform: translate3d(0, -100%, 0);
+                transform: translate3d(0, -100%, 0);
+                opacity: 0 !important;
+            }
+        }
+        
         /* Show mobile user nav on smaller screens */
         @media (max-width: 991.98px) {
             .mobile-user-nav {
@@ -1157,6 +1210,10 @@
                 return 'ontouchstart' in window || navigator.maxTouchPoints > 0;
             },
             
+            isActualMobileDevice: function() {
+                return /Android|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            },
+            
             // Enhanced touch handling for better mobile UX
             initTouchEnhancements: function() {
                 if (this.isTouch()) {
@@ -1209,9 +1266,12 @@
                     });
                 });
                 
-                // Fix navbar collapse white bar issue (mobile only)
+                // Fix navbar collapse white bar issue (enhanced for actual mobile devices)
                 const navbarCollapse = document.querySelector('.navbar-collapse');
                 if (navbarCollapse && window.innerWidth <= 991.98) {
+                    // More aggressive cleanup for actual mobile devices
+                    const isActualMobile = MobileUtils.isActualMobileDevice();
+                    
                     // Listen for collapse events
                     navbarCollapse.addEventListener('hidden.bs.collapse', function() {
                         // Force cleanup after collapse animation
@@ -1221,10 +1281,38 @@
                         this.style.height = '';
                         this.style.overflow = '';
                         
+                        if (isActualMobile) {
+                            // Additional mobile-specific cleanup
+                            this.style.visibility = 'hidden';
+                            this.style.opacity = '0';
+                            this.style.transform = 'translate3d(0, -100%, 0)';
+                            this.style.webkitTransform = 'translate3d(0, -100%, 0)';
+                            
+                            // Force reflow to ensure styles are applied
+                            this.offsetHeight;
+                            
+                            // Reset after a short delay
+                            setTimeout(() => {
+                                this.style.visibility = '';
+                                this.style.opacity = '';
+                                this.style.transform = '';
+                                this.style.webkitTransform = '';
+                            }, 100);
+                        }
+                        
                         // Ensure complete cleanup
                         setTimeout(() => {
                             this.style.display = '';
                             this.classList.remove('collapsing');
+                            
+                            // Mobile-specific viewport fix
+                            if (isActualMobile) {
+                                // Force viewport recalculation
+                                document.body.style.height = '100vh';
+                                setTimeout(() => {
+                                    document.body.style.height = '';
+                                }, 50);
+                            }
                         }, 50);
                     });
                     
@@ -1240,6 +1328,14 @@
                         this.style.border = 'none';
                         this.style.background = 'transparent';
                         this.style.boxShadow = 'none';
+                        
+                        if (isActualMobile) {
+                            // Reset any mobile-specific transforms
+                            this.style.visibility = '';
+                            this.style.opacity = '';
+                            this.style.transform = '';
+                            this.style.webkitTransform = '';
+                        }
                     });
                 }
                 
