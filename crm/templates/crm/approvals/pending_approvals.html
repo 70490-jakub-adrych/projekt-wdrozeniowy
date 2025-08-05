@@ -2,11 +2,163 @@
 
 {% block title %}Oczekujące zatwierdzenia | System Helpdesk{% endblock %}
 
+{% block extra_css %}
+<style>
+    /* Desktop/Mobile responsive headers */
+    .approvals-header-desktop {
+        display: flex;
+    }
+    
+    .approvals-header-mobile {
+        display: none;
+    }
+    
+    @media (max-width: 576px) {
+        .approvals-header-desktop {
+            display: none;
+        }
+        
+        .approvals-header-mobile {
+            display: flex !important;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        
+        .approvals-header-mobile h2 {
+            margin: 0;
+            font-size: 1.5rem;
+        }
+        
+        .approvals-header-mobile .btn {
+            align-self: flex-start;
+        }
+        
+        /* Hide desktop tables, show mobile cards */
+        .desktop-table {
+            display: none !important;
+        }
+        
+        .mobile-cards {
+            display: block !important;
+        }
+        
+        .mobile-card {
+            border: 1px solid #dee2e6;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            padding: 1rem;
+            background: white;
+            box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+        }
+        
+        .mobile-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 0.75rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+        
+        .mobile-card-username {
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin: 0;
+        }
+        
+        .mobile-card-field {
+            margin-bottom: 0.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            flex-wrap: wrap;
+        }
+        
+        .mobile-card-label {
+            font-weight: 600;
+            color: #6c757d;
+            margin-right: 0.5rem;
+            min-width: 80px;
+            flex-shrink: 0;
+        }
+        
+        .mobile-card-value {
+            text-align: right;
+            flex: 1;
+        }
+        
+        .mobile-card-actions {
+            margin-top: 1rem;
+            padding-top: 0.75rem;
+            border-top: 1px solid #e9ecef;
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        
+        .mobile-card-actions .btn {
+            flex: 1;
+            min-width: 0;
+            font-size: 0.875rem;
+            padding: 0.5rem 0.75rem;
+        }
+        
+        /* Special styling for different card types */
+        .mobile-card-locked {
+            border-left: 4px solid #ffc107;
+        }
+        
+        .mobile-card-pending-email {
+            border-left: 4px solid #17a2b8;
+        }
+        
+        .mobile-card-pending-approval {
+            border-left: 4px solid #28a745;
+        }
+        
+        .mobile-organizations {
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+        
+        .mobile-organizations li {
+            display: inline-block;
+            background-color: #f8f9fa;
+            padding: 0.25rem 0.5rem;
+            margin: 0.125rem;
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+        }
+    }
+    
+    /* Desktop styles */
+    @media (min-width: 577px) {
+        .desktop-table {
+            display: block !important;
+        }
+        
+        .mobile-cards {
+            display: none !important;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
+<!-- Desktop Header -->
+<div class="d-flex justify-content-between align-items-center mb-4 approvals-header-desktop">
     <h2>Zatwierdzanie kont</h2>
     <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">
         <i class="fas fa-arrow-left"></i> Powrót do panelu
+    </a>
+</div>
+
+<!-- Mobile Header -->
+<div class="approvals-header-mobile mb-4">
+    <h2>Zatwierdzanie kont</h2>
+    <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">
+        <i class="fas fa-arrow-left"></i> Powrót
     </a>
 </div>
 
@@ -20,49 +172,96 @@
         <div class="alert alert-warning">
             <strong>Uwaga:</strong> Te konta zostały zablokowane z powodu zbyt wielu nieudanych prób logowania.
         </div>
-        <div class="table-responsive">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Nazwa użytkownika</th>
-                        <th>Email</th>
-                        <th>Organizacja</th>
-                        <th>Data blokady</th>
-                        <th>Nieudane próby</th>
-                        <th>Akcje</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for profile in locked_users %}
-                    <tr>
-                        <td>{{ profile.user.username }}</td>
-                        <td>{{ profile.user.email }}</td>
-                        <td>
-                            {% if profile.organizations.exists %}
-                                <ul class="list-unstyled mb-0">
+        
+        <!-- Desktop Table View -->
+        <div class="desktop-table">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Nazwa użytkownika</th>
+                            <th>Email</th>
+                            <th>Organizacja</th>
+                            <th>Data blokady</th>
+                            <th>Nieudane próby</th>
+                            <th>Akcje</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for profile in locked_users %}
+                        <tr>
+                            <td>{{ profile.user.username }}</td>
+                            <td>{{ profile.user.email }}</td>
+                            <td>
+                                {% if profile.organizations.exists %}
+                                    <ul class="list-unstyled mb-0">
+                                    {% for org in profile.organizations.all %}
+                                        <li>{{ org.name }}</li>
+                                    {% endfor %}
+                                    </ul>
+                                {% else %}
+                                    <span class="text-muted">Brak</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ profile.locked_at|date:"d.m.Y H:i" }}</td>
+                            <td>
+                                <span class="badge bg-danger">{{ profile.failed_login_attempts }}</span>
+                            </td>
+                            <td>
+                                <div class="d-flex flex-wrap gap-1">
+                                    <a href="{% url 'unlock_user' profile.user.id %}" class="btn btn-sm btn-warning">
+                                        <i class="fas fa-unlock"></i> Odblokuj
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Mobile Card View -->
+        <div class="mobile-cards">
+            {% for profile in locked_users %}
+            <div class="mobile-card mobile-card-locked">
+                <div class="mobile-card-header">
+                    <h5 class="mobile-card-username">{{ profile.user.username }}</h5>
+                    <span class="badge bg-danger">{{ profile.failed_login_attempts }} prób</span>
+                </div>
+                
+                <div class="mobile-card-field">
+                    <span class="mobile-card-label">Email:</span>
+                    <span class="mobile-card-value">{{ profile.user.email }}</span>
+                </div>
+                
+                <div class="mobile-card-field">
+                    <span class="mobile-card-label">Organizacja:</span>
+                    <div class="mobile-card-value">
+                        {% if profile.organizations.exists %}
+                            <ul class="mobile-organizations">
                                 {% for org in profile.organizations.all %}
                                     <li>{{ org.name }}</li>
                                 {% endfor %}
-                                </ul>
-                            {% else %}
-                                <span class="text-muted">Brak</span>
-                            {% endif %}
-                        </td>
-                        <td>{{ profile.locked_at|date:"d.m.Y H:i" }}</td>
-                        <td>
-                            <span class="badge bg-danger">{{ profile.failed_login_attempts }}</span>
-                        </td>
-                        <td>
-                            <div class="d-flex flex-wrap gap-1">
-                                <a href="{% url 'unlock_user' profile.user.id %}" class="btn btn-sm btn-warning">
-                                    <i class="fas fa-unlock"></i> Odblokuj
-                                </a>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                            </ul>
+                        {% else %}
+                            <span class="text-muted">Brak</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="mobile-card-field">
+                    <span class="mobile-card-label">Data blokady:</span>
+                    <span class="mobile-card-value">{{ profile.locked_at|date:"d.m.Y H:i" }}</span>
+                </div>
+                
+                <div class="mobile-card-actions">
+                    <a href="{% url 'unlock_user' profile.user.id %}" class="btn btn-warning">
+                        <i class="fas fa-unlock"></i> Odblokuj
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
         </div>
     </div>
 </div>
@@ -78,43 +277,93 @@
         <div class="alert alert-info">
             <strong>Uwaga:</strong> Ci użytkownicy muszą potwierdzić swój adres email przed zatwierdzeniem.
         </div>
-        <div class="table-responsive">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Nazwa użytkownika</th>
-                        <th>Email</th>
-                        <th>Organizacja</th>
-                        <th>Data rejestracji</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for profile in pending_email_verification %}
-                    <tr>
-                        <td>{{ profile.user.username }}</td>
-                        <td>{{ profile.user.email }}</td>
-                        <td>
-                            {% if profile.organizations.exists %}
-                                <ul class="list-unstyled mb-0">
+        
+        <!-- Desktop Table View -->
+        <div class="desktop-table">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Nazwa użytkownika</th>
+                            <th>Email</th>
+                            <th>Organizacja</th>
+                            <th>Data rejestracji</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for profile in pending_email_verification %}
+                        <tr>
+                            <td>{{ profile.user.username }}</td>
+                            <td>{{ profile.user.email }}</td>
+                            <td>
+                                {% if profile.organizations.exists %}
+                                    <ul class="list-unstyled mb-0">
+                                    {% for org in profile.organizations.all %}
+                                        <li>{{ org.name }}</li>
+                                    {% endfor %}
+                                    </ul>
+                                {% else %}
+                                    <span class="text-muted">Brak</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ profile.user.date_joined|date:"d.m.Y H:i" }}</td>
+                            <td>
+                                <span class="badge bg-info text-white">
+                                    <i class="fas fa-clock"></i> Oczekuje na weryfikację email
+                                </span>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Mobile Card View -->
+        <div class="mobile-cards">
+            {% for profile in pending_email_verification %}
+            <div class="mobile-card mobile-card-pending-email">
+                <div class="mobile-card-header">
+                    <h5 class="mobile-card-username">{{ profile.user.username }}</h5>
+                    <span class="badge bg-info text-white">
+                        <i class="fas fa-clock"></i> Email
+                    </span>
+                </div>
+                
+                <div class="mobile-card-field">
+                    <span class="mobile-card-label">Email:</span>
+                    <span class="mobile-card-value">{{ profile.user.email }}</span>
+                </div>
+                
+                <div class="mobile-card-field">
+                    <span class="mobile-card-label">Organizacja:</span>
+                    <div class="mobile-card-value">
+                        {% if profile.organizations.exists %}
+                            <ul class="mobile-organizations">
                                 {% for org in profile.organizations.all %}
                                     <li>{{ org.name }}</li>
                                 {% endfor %}
-                                </ul>
-                            {% else %}
-                                <span class="text-muted">Brak</span>
-                            {% endif %}
-                        </td>
-                        <td>{{ profile.user.date_joined|date:"d.m.Y H:i" }}</td>
-                        <td>
-                            <span class="badge bg-info text-white">
-                                <i class="fas fa-clock"></i> Oczekuje na weryfikację email
-                            </span>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                            </ul>
+                        {% else %}
+                            <span class="text-muted">Brak</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="mobile-card-field">
+                    <span class="mobile-card-label">Rejestracja:</span>
+                    <span class="mobile-card-value">{{ profile.user.date_joined|date:"d.m.Y H:i" }}</span>
+                </div>
+                
+                <div class="mobile-card-field">
+                    <span class="mobile-card-label">Status:</span>
+                    <span class="mobile-card-value">
+                        <span class="badge bg-info text-white">Oczekuje na weryfikację</span>
+                    </span>
+                </div>
+            </div>
+            {% endfor %}
         </div>
     </div>
 </div>
@@ -127,48 +376,99 @@
         <i class="fas fa-user-clock"></i> Użytkownicy oczekujący na zatwierdzenie
     </div>
     <div class="card-body">
-        <div class="table-responsive">
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Nazwa użytkownika</th>
-                        <th>Email</th>
-                        <th>Organizacja</th>
-                        <th>Data rejestracji</th>
-                        <th>Akcje</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for profile in pending_users %}
-                    <tr>
-                        <td>{{ profile.user.username }}</td>
-                        <td>{{ profile.user.email }}</td>
-                        <td>
-                            {% if profile.organizations.exists %}
-                                <ul class="list-unstyled mb-0">
+        <!-- Desktop Table View -->
+        <div class="desktop-table">
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>Nazwa użytkownika</th>
+                            <th>Email</th>
+                            <th>Organizacja</th>
+                            <th>Data rejestracji</th>
+                            <th>Akcje</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for profile in pending_users %}
+                        <tr>
+                            <td>{{ profile.user.username }}</td>
+                            <td>{{ profile.user.email }}</td>
+                            <td>
+                                {% if profile.organizations.exists %}
+                                    <ul class="list-unstyled mb-0">
+                                    {% for org in profile.organizations.all %}
+                                        <li>{{ org.name }}</li>
+                                    {% endfor %}
+                                    </ul>
+                                {% else %}
+                                    <span class="text-muted">Brak</span>
+                                {% endif %}
+                            </td>
+                            <td>{{ profile.user.date_joined|date:"d.m.Y H:i" }}</td>
+                            <td>
+                                <div class="d-flex flex-wrap gap-1">
+                                    <a href="{% url 'approve_user' profile.user.id %}" class="btn btn-sm btn-success">
+                                        <i class="fas fa-check"></i> Zatwierdź
+                                    </a>
+                                    <a href="{% url 'reject_user' profile.user.id %}" class="btn btn-sm btn-danger">
+                                        <i class="fas fa-times"></i> Odrzuć
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Mobile Card View -->
+        <div class="mobile-cards">
+            {% for profile in pending_users %}
+            <div class="mobile-card mobile-card-pending-approval">
+                <div class="mobile-card-header">
+                    <h5 class="mobile-card-username">{{ profile.user.username }}</h5>
+                    <span class="badge bg-warning text-dark">
+                        <i class="fas fa-hourglass-half"></i> Oczekuje
+                    </span>
+                </div>
+                
+                <div class="mobile-card-field">
+                    <span class="mobile-card-label">Email:</span>
+                    <span class="mobile-card-value">{{ profile.user.email }}</span>
+                </div>
+                
+                <div class="mobile-card-field">
+                    <span class="mobile-card-label">Organizacja:</span>
+                    <div class="mobile-card-value">
+                        {% if profile.organizations.exists %}
+                            <ul class="mobile-organizations">
                                 {% for org in profile.organizations.all %}
                                     <li>{{ org.name }}</li>
                                 {% endfor %}
-                                </ul>
-                            {% else %}
-                                <span class="text-muted">Brak</span>
-                            {% endif %}
-                        </td>
-                        <td>{{ profile.user.date_joined|date:"d.m.Y H:i" }}</td>
-                        <td>
-                            <div class="d-flex flex-wrap gap-1">
-                                <a href="{% url 'approve_user' profile.user.id %}" class="btn btn-sm btn-success">
-                                    <i class="fas fa-check"></i> Zatwierdź
-                                </a>
-                                <a href="{% url 'reject_user' profile.user.id %}" class="btn btn-sm btn-danger">
-                                    <i class="fas fa-times"></i> Odrzuć
-                                </a>
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                            </ul>
+                        {% else %}
+                            <span class="text-muted">Brak</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="mobile-card-field">
+                    <span class="mobile-card-label">Rejestracja:</span>
+                    <span class="mobile-card-value">{{ profile.user.date_joined|date:"d.m.Y H:i" }}</span>
+                </div>
+                
+                <div class="mobile-card-actions">
+                    <a href="{% url 'approve_user' profile.user.id %}" class="btn btn-success mobile-btn">
+                        <i class="fas fa-check"></i> Zatwierdź
+                    </a>
+                    <a href="{% url 'reject_user' profile.user.id %}" class="btn btn-danger mobile-btn">
+                        <i class="fas fa-times"></i> Odrzuć
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
         </div>
     </div>
 </div>

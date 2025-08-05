@@ -3,7 +3,8 @@
 {% block title %}Logi aktywności | System Helpdesk{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
+<!-- Desktop Header -->
+<div class="d-flex justify-content-between align-items-center mb-4 logs-header-desktop">
     <h2>Logi aktywności</h2>
     <div>
         {% if user.profile.role == 'admin' %}
@@ -13,6 +14,21 @@
         {% endif %}
         <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary btn-ripple">
             <i class="fas fa-arrow-left"></i> Powrót
+        </a>
+    </div>
+</div>
+
+<!-- Mobile Header -->
+<div class="logs-header-mobile mb-4">
+    <h2>Logi aktywności</h2>
+    <div>
+        {% if user.profile.role == 'admin' %}
+        <a href="{% url 'activity_logs_wipe' %}" class="btn btn-danger btn-sm">
+            <i class="fas fa-trash-alt"></i>
+        </a>
+        {% endif %}
+        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-arrow-left"></i>
         </a>
     </div>
 </div>
@@ -84,6 +100,133 @@
     .col-details { width: 23%; }
     .col-ip { width: 15%; }
     .col-actions { width: 8%; }
+    
+    /* Mobile responsive styles */
+    @media (max-width: 576px) {
+        .logs-header-desktop {
+            display: none !important;
+        }
+        
+        .logs-header-mobile {
+            display: flex !important;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .logs-header-mobile h2 {
+            font-size: 1.5rem;
+            margin: 0;
+            flex: 1;
+        }
+        
+        .desktop-table {
+            display: none !important;
+        }
+        
+        .mobile-cards {
+            display: block !important;
+        }
+        
+        .mobile-log-card {
+            background: white;
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            padding: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .mobile-log-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        
+        .mobile-log-datetime {
+            font-weight: 600;
+            color: #495057;
+            font-size: 0.9rem;
+        }
+        
+        .mobile-log-action {
+            font-size: 0.85rem;
+            padding: 4px 8px;
+            border-radius: 4px;
+            background-color: #e9ecef;
+            color: #495057;
+            white-space: nowrap;
+        }
+        
+        .mobile-log-field {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+            min-height: 24px;
+        }
+        
+        .mobile-log-label {
+            font-weight: 500;
+            color: #6c757d;
+            font-size: 0.85rem;
+            margin-right: 10px;
+            min-width: 70px;
+            flex-shrink: 0;
+        }
+        
+        .mobile-log-value {
+            color: #495057;
+            font-size: 0.85rem;
+            text-align: right;
+            flex: 1;
+            word-break: break-word;
+        }
+        
+        .mobile-log-actions {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #dee2e6;
+            text-align: center;
+        }
+        
+        .mobile-log-btn {
+            width: 100%;
+            padding: 10px;
+            font-size: 14px;
+        }
+        
+        /* Action type specific colors */
+        .action-login { background-color: #d4edda; color: #155724; }
+        .action-logout { background-color: #f8d7da; color: #721c24; }
+        .action-failed { background-color: #fff3cd; color: #856404; }
+        .action-error { background-color: #f5c6cb; color: #721c24; }
+        .action-ticket { background-color: #d1ecf1; color: #0c5460; }
+        .action-admin { background-color: #e2e3e5; color: #383d41; }
+    }
+    
+    /* Desktop styles */
+    @media (min-width: 577px) {
+        .logs-header-mobile {
+            display: none !important;
+        }
+        
+        .logs-header-desktop {
+            display: flex !important;
+        }
+        
+        .desktop-table {
+            display: block !important;
+        }
+        
+        .mobile-cards {
+            display: none !important;
+        }
+    }
 </style>
 
 <!-- Lista logów -->
@@ -93,69 +236,138 @@
         <i class="fas fa-history"></i> Lista logów
     </div>
     <div class="card-body">
-        <div class="table-responsive">
-            <table class="table table-hover logs-table">
-                <thead>
-                    <tr>
-                        <th class="col-datetime">Data i czas</th>
-                        <th class="col-user">Użytkownik</th>
-                        <th class="col-action">Akcja</th>
-                        <th class="col-ticket">Zgłoszenie</th>
-                        <th class="col-details">Szczegóły</th>
-                        <th class="col-ip">Adres IP</th>
-                        <th class="col-actions">Akcje</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for log in logs %}
-                    <tr>
-                        <td>{{ log.created_at|date:"d.m.Y H:i:s" }}</td>
-                        <td>
-                            {% if log.user %}
-                                {{ log.user.username }}
-                                {% if log.user.profile.role == 'admin' %}
-                                    <span class="badge bg-danger">Admin</span>
-                                {% elif log.user.profile.role == 'superagent' %}
-                                    <span class="badge bg-warning text-dark">Superagent</span>
-                                {% elif log.user.profile.role == 'agent' %}
-                                    <span class="badge bg-info">Agent</span>
-                                {% elif log.user.profile.role == 'viewer' %}
-                                    <span class="badge bg-dark">Viewer</span>
+        <!-- Desktop Table View -->
+        <div class="desktop-table">
+            <div class="table-responsive">
+                <table class="table table-hover logs-table">
+                    <thead>
+                        <tr>
+                            <th class="col-datetime">Data i czas</th>
+                            <th class="col-user">Użytkownik</th>
+                            <th class="col-action">Akcja</th>
+                            <th class="col-ticket">Zgłoszenie</th>
+                            <th class="col-details">Szczegóły</th>
+                            <th class="col-ip">Adres IP</th>
+                            <th class="col-actions">Akcje</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in logs %}
+                        <tr>
+                            <td>{{ log.created_at|date:"d.m.Y H:i:s" }}</td>
+                            <td>
+                                {% if log.user %}
+                                    {{ log.user.username }}
+                                    {% if log.user.profile.role == 'admin' %}
+                                        <span class="badge bg-danger">Admin</span>
+                                    {% elif log.user.profile.role == 'superagent' %}
+                                        <span class="badge bg-warning text-dark">Superagent</span>
+                                    {% elif log.user.profile.role == 'agent' %}
+                                        <span class="badge bg-info">Agent</span>
+                                    {% elif log.user.profile.role == 'viewer' %}
+                                        <span class="badge bg-dark">Viewer</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Klient</span>
+                                    {% endif %}
                                 {% else %}
-                                    <span class="badge bg-secondary">Klient</span>
+                                    <span class="text-muted">Anonimowy</span>
+                                    {% if log.action_type == 'login_failed' %}
+                                        <span class="badge bg-warning text-dark">Nieudane logowanie</span>
+                                    {% endif %}
                                 {% endif %}
-                            {% else %}
-                                <span class="text-muted">Anonimowy</span>
-                                {% if log.action_type == 'login_failed' %}
-                                    <span class="badge bg-warning text-dark">Nieudane logowanie</span>
+                            </td>
+                            <td>{{ log.get_action_type_display }}</td>
+                            <td>
+                                {% if log.ticket %}
+                                <a href="{% url 'ticket_detail' log.ticket.pk %}">#{{ log.ticket.id }}</a>
+                                {% else %}
+                                -
                                 {% endif %}
-                            {% endif %}
-                        </td>
-                        <td>{{ log.get_action_type_display }}</td>
-                        <td>
-                            {% if log.ticket %}
-                            <a href="{% url 'ticket_detail' log.ticket.pk %}">#{{ log.ticket.id }}</a>
+                            </td>
+                            <td>
+                                {% if log.description %}
+                                <span class="truncate-text" title="{{ log.description }}">{{ log.description }}</span>
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td>{{ log.ip_address|default:"-" }}</td>
+                            <td>
+                                <a href="{% url 'activity_log_detail' log.id %}" class="btn btn-sm btn-info btn-ripple">
+                                    <i class="fas fa-search"></i> Szczegóły
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <!-- Mobile Card View -->
+        <div class="mobile-cards">
+            {% for log in logs %}
+            <div class="mobile-log-card">
+                <div class="mobile-log-header">
+                    <span class="mobile-log-datetime">{{ log.created_at|date:"d.m.Y H:i:s" }}</span>
+                    <span class="mobile-log-action {% if 'login' in log.action_type %}action-login{% elif 'logout' in log.action_type %}action-logout{% elif 'failed' in log.action_type %}action-failed{% elif 'error' in log.action_type %}action-error{% elif 'ticket' in log.action_type %}action-ticket{% else %}action-admin{% endif %}">
+                        {{ log.get_action_type_display }}
+                    </span>
+                </div>
+                
+                <div class="mobile-log-field">
+                    <span class="mobile-log-label">Użytkownik:</span>
+                    <div class="mobile-log-value">
+                        {% if log.user %}
+                            <div>{{ log.user.username }}</div>
+                            {% if log.user.profile.role == 'admin' %}
+                                <span class="badge bg-danger">Admin</span>
+                            {% elif log.user.profile.role == 'superagent' %}
+                                <span class="badge bg-warning text-dark">Superagent</span>
+                            {% elif log.user.profile.role == 'agent' %}
+                                <span class="badge bg-info">Agent</span>
+                            {% elif log.user.profile.role == 'viewer' %}
+                                <span class="badge bg-dark">Viewer</span>
                             {% else %}
-                            -
+                                <span class="badge bg-secondary">Klient</span>
                             {% endif %}
-                        </td>
-                        <td>
-                            {% if log.description %}
-                            <span class="truncate-text" title="{{ log.description }}">{{ log.description }}</span>
-                            {% else %}
-                            -
+                        {% else %}
+                            <span class="text-muted">Anonimowy</span>
+                            {% if log.action_type == 'login_failed' %}
+                                <span class="badge bg-warning text-dark">Nieudane</span>
                             {% endif %}
-                        </td>
-                        <td>{{ log.ip_address|default:"-" }}</td>
-                        <td>
-                            <a href="{% url 'activity_log_detail' log.id %}" class="btn btn-sm btn-info btn-ripple">
-                                <i class="fas fa-search"></i> Szczegóły
-                            </a>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                {% if log.ticket %}
+                <div class="mobile-log-field">
+                    <span class="mobile-log-label">Zgłoszenie:</span>
+                    <span class="mobile-log-value">
+                        <a href="{% url 'ticket_detail' log.ticket.pk %}">#{{ log.ticket.id }}</a>
+                    </span>
+                </div>
+                {% endif %}
+                
+                {% if log.description %}
+                <div class="mobile-log-field">
+                    <span class="mobile-log-label">Szczegóły:</span>
+                    <span class="mobile-log-value">{{ log.description }}</span>
+                </div>
+                {% endif %}
+                
+                <div class="mobile-log-field">
+                    <span class="mobile-log-label">IP:</span>
+                    <span class="mobile-log-value">{{ log.ip_address|default:"-" }}</span>
+                </div>
+                
+                <div class="mobile-log-actions">
+                    <a href="{% url 'activity_log_detail' log.id %}" class="btn btn-info mobile-log-btn">
+                        <i class="fas fa-search"></i> Szczegóły
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
         </div>
     </div>
 </div>
