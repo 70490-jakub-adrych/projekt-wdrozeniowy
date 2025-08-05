@@ -18,7 +18,7 @@ from ..services.email_service import EmailNotificationService
 import importlib
 
 from ..forms import UserRegisterForm, UserProfileForm, CustomAuthenticationForm, GroupSelectionForm, PasswordChangeVerificationForm, EmailVerificationForm
-from ..models import UserProfile, User, EmailVerification, EmailNotificationSettings, Organization
+from ..models import UserProfile, User, EmailVerification, EmailNotificationSettings, Organization, GroupSettings
 from .helpers import log_activity
 from .error_views import forbidden_access
 import random
@@ -150,70 +150,42 @@ def register(request):
                             registration_form.add_error('username', 'Użytkownik z tą nazwą użytkownika już istnieje.')
                             raise IntegrityError("User with this username already exists")
                         
-                        # Create a savepoint before user creation
-                        sid = transaction.savepoint()
-                        
-                        # Log highest user and profile ids before creation
-                        with connection.cursor() as cursor:
-                            cursor.execute("SELECT MAX(id) FROM auth_user")
-                            max_user_id = cursor.fetchone()[0] or 0
-                            cursor.execute("SELECT MAX(id) FROM crm_userprofile")
-                            max_profile_id = cursor.fetchone()[0] or 0
-                            logger.info(f"Before creation: max user_id={max_user_id}, max profile_id={max_profile_id}")
-                        
                         # Create user (inactive until email verification)
                         user = registration_form.save(commit=False)
                         user.is_active = False  # Deactivate until email verification
                         user.save()
                         logger.info(f"Created user with ID={user.id}, username={user.username}, email={user.email}")
                         
-                        # Get next ID that will be used for profile
-                        with connection.cursor() as cursor:
-                            cursor.execute("SELECT AUTO_INCREMENT FROM information_schema.TABLES WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'crm_userprofile'")
-                            next_profile_id = cursor.fetchone()[0]
-                            logger.info(f"Next profile ID will be: {next_profile_id}")
-                            
-                            # Check for orphaned profile with same user_id
-                            cursor.execute(f"SELECT id FROM crm_userprofile WHERE user_id = {user.id}")
-                            conflict_profiles = cursor.fetchall()
-                            if conflict_profiles:
-                                profile_ids = [row[0] for row in conflict_profiles]
-                                logger.error(f"CONFLICT: Found profiles {profile_ids} with user_id={user.id}")
-                                # Delete conflicting profiles
-                                cursor.execute(f"DELETE FROM crm_userprofile WHERE user_id = {user.id}")
-                                logger.info(f"Deleted {cursor.rowcount} conflicting profiles")
-                        
+                        # The UserProfile is automatically created by the post_save signal
+                        # Get the automatically created profile and update it with form data
                         try:
-                            # Create profile with explicit user_id to avoid conflicts
+                            profile = user.profile
+                            # Update profile with form data
+                            profile_form_data = profile_form.cleaned_data
+                            if 'phone' in profile_form_data:
+                                profile.phone = profile_form_data['phone']
+                            profile.is_approved = False
+                            profile.email_verified = False
+                            logger.info(f"Updating existing profile for user_id={user.id}")
+                            profile.save()
+                            logger.info(f"Updated profile with ID={profile.id} for user_id={user.id}")
+                        except UserProfile.DoesNotExist:
+                            # Fallback: if signal somehow failed, create profile manually
+                            logger.warning(f"Profile not found for user_id={user.id}, creating manually")
                             profile = profile_form.save(commit=False)
                             profile.user = user
                             profile.is_approved = False
                             profile.email_verified = False
-                            logger.info(f"Attempting to save profile for user_id={user.id}")
                             profile.save()
-                            logger.info(f"Created profile with ID={profile.id} for user_id={user.id}")
-                        except IntegrityError as e:
-                            # If profile creation fails, roll back to savepoint
-                            transaction.savepoint_rollback(sid)
-                            logger.error(f"Profile creation failed: {str(e)}")
-                            raise
-                        
-                        # Create a new savepoint before verification
-                        sid2 = transaction.savepoint()
+                            logger.info(f"Manually created profile with ID={profile.id} for user_id={user.id}")
                         
                         # Generate verification code
                         verification_code = ''.join([str(random.randint(0, 9)) for _ in range(6)])
-                        try:
-                            verif = EmailVerification.objects.create(
-                                user=user,
-                                verification_code=verification_code
-                            )
-                            logger.info(f"Created verification record with ID={verif.id} for user_id={user.id}")
-                        except IntegrityError as e:
-                            # If verification creation fails, roll back to savepoint
-                            transaction.savepoint_rollback(sid2)
-                            logger.error(f"Verification creation failed: {str(e)}")
-                            raise
+                        verif = EmailVerification.objects.create(
+                            user=user,
+                            verification_code=verification_code
+                        )
+                        logger.info(f"Created verification record with ID={verif.id} for user_id={user.id}")
                         
                         # Send verification email
                         if not EmailNotificationService.send_verification_email(user, verification_code):
