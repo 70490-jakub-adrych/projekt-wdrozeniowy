@@ -478,7 +478,19 @@
                         <div class="timeline-marker"></div>
                         <div class="timeline-content">
                             <h3 class="timeline-title">Utworzono zgłoszenie</h3>
-                            <p>{{ ticket.created_at|date:"d.m.Y H:i" }} - {{ ticket.created_by.username }}</p>
+                            <p>{{ ticket.created_at|date:"d.m.Y H:i" }} - {{ ticket.created_by.username }}
+                            {% if ticket.created_by.profile.role == 'admin' %}
+                                <span class="badge bg-danger">Admin</span>
+                            {% elif ticket.created_by.profile.role == 'superagent' %}
+                                <span class="badge bg-warning text-dark">Superagent</span>
+                            {% elif ticket.created_by.profile.role == 'agent' %}
+                                <span class="badge bg-info">Agent</span>
+                            {% elif ticket.created_by.profile.role == 'viewer' %}
+                                <span class="badge bg-dark">Viewer</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Klient</span>
+                            {% endif %}
+                            </p>
                         </div>
                     </div>
                     
@@ -488,7 +500,19 @@
                             <div class="timeline-marker bg-info"></div>
                             <div class="timeline-content">
                                 <h3 class="timeline-title">Aktualizacja zgłoszenia</h3>
-                                <p>{{ activity.created_at|date:"d.m.Y H:i" }} - {{ activity.user.username }}</p>
+                                <p>{{ activity.created_at|date:"d.m.Y H:i" }} - {{ activity.user.username }}
+                                {% if activity.user.profile.role == 'admin' %}
+                                    <span class="badge bg-danger">Admin</span>
+                                {% elif activity.user.profile.role == 'superagent' %}
+                                    <span class="badge bg-warning text-dark">Superagent</span>
+                                {% elif activity.user.profile.role == 'agent' %}
+                                    <span class="badge bg-info">Agent</span>
+                                {% elif activity.user.profile.role == 'viewer' %}
+                                    <span class="badge bg-dark">Viewer</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Klient</span>
+                                {% endif %}
+                                </p>
                                 {% if activity.description %}<p class="text-muted">{{ activity.description }}</p>{% endif %}
                             </div>
                         </div>
@@ -499,7 +523,19 @@
                             <div class="timeline-marker bg-primary"></div>
                             <div class="timeline-content">
                                 <h3 class="timeline-title">Dodano odpowiedź</h3>
-                                <p>{{ activity.created_at|date:"d.m.Y H:i" }} - {{ activity.user.username }}</p>
+                                <p>{{ activity.created_at|date:"d.m.Y H:i" }} - {{ activity.user.username }}
+                                {% if activity.user.profile.role == 'admin' %}
+                                    <span class="badge bg-danger">Admin</span>
+                                {% elif activity.user.profile.role == 'superagent' %}
+                                    <span class="badge bg-warning text-dark">Superagent</span>
+                                {% elif activity.user.profile.role == 'agent' %}
+                                    <span class="badge bg-info">Agent</span>
+                                {% elif activity.user.profile.role == 'viewer' %}
+                                    <span class="badge bg-dark">Viewer</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Klient</span>
+                                {% endif %}
+                                </p>
                                 {% if activity.description %}<p class="text-muted">{{ activity.description }}</p>{% endif %}
                             </div>
                         </div>
@@ -510,7 +546,19 @@
                             <div class="timeline-marker bg-success"></div>
                             <div class="timeline-content">
                                 <h3 class="timeline-title">Dodano załącznik</h3>
-                                <p>{{ activity.created_at|date:"d.m.Y H:i" }} - {{ activity.user.username }}</p>
+                                <p>{{ activity.created_at|date:"d.m.Y H:i" }} - {{ activity.user.username }}
+                                {% if activity.user.profile.role == 'admin' %}
+                                    <span class="badge bg-danger">Admin</span>
+                                {% elif activity.user.profile.role == 'superagent' %}
+                                    <span class="badge bg-warning text-dark">Superagent</span>
+                                {% elif activity.user.profile.role == 'agent' %}
+                                    <span class="badge bg-info">Agent</span>
+                                {% elif activity.user.profile.role == 'viewer' %}
+                                    <span class="badge bg-dark">Viewer</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Klient</span>
+                                {% endif %}
+                                </p>
                                 {% if activity.description %}<p class="text-muted">{{ activity.description }}</p>{% endif %}
                             </div>
                         </div>
@@ -521,7 +569,19 @@
                             <div class="timeline-marker bg-success"></div>
                             <div class="timeline-content">
                                 <h3 class="timeline-title">Oznaczono jako rozwiązane</h3>
-                                <p>{{ activity.created_at|date:"d.m.Y H:i" }} - {{ activity.user.username }}</p>
+                                <p>{{ activity.created_at|date:"d.m.Y H:i" }} - {{ activity.user.username }}
+                                {% if activity.user.profile.role == 'admin' %}
+                                    <span class="badge bg-danger">Admin</span>
+                                {% elif activity.user.profile.role == 'superagent' %}
+                                    <span class="badge bg-warning text-dark">Superagent</span>
+                                {% elif activity.user.profile.role == 'agent' %}
+                                    <span class="badge bg-info">Agent</span>
+                                {% elif activity.user.profile.role == 'viewer' %}
+                                    <span class="badge bg-dark">Viewer</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Klient</span>
+                                {% endif %}
+                                </p>
                                 {% if activity.description %}<p class="text-muted">{{ activity.description }}</p>{% endif %}
                             </div>
                         </div>
@@ -532,7 +592,19 @@
                             <div class="timeline-marker bg-secondary"></div>
                             <div class="timeline-content">
                                 <h3 class="timeline-title">Zamknięto zgłoszenie</h3>
-                                <p>{{ activity.created_at|date:"d.m.Y H:i" }} - {{ activity.user.username }}</p>
+                                <p>{{ activity.created_at|date:"d.m.Y H:i" }} - {{ activity.user.username }}
+                                {% if activity.user.profile.role == 'admin' %}
+                                    <span class="badge bg-danger">Admin</span>
+                                {% elif activity.user.profile.role == 'superagent' %}
+                                    <span class="badge bg-warning text-dark">Superagent</span>
+                                {% elif activity.user.profile.role == 'agent' %}
+                                    <span class="badge bg-info">Agent</span>
+                                {% elif activity.user.profile.role == 'viewer' %}
+                                    <span class="badge bg-dark">Viewer</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Klient</span>
+                                {% endif %}
+                                </p>
                                 {% if activity.description %}<p class="text-muted">{{ activity.description }}</p>{% endif %}
                             </div>
                         </div>
@@ -543,7 +615,19 @@
                             <div class="timeline-marker bg-warning"></div>
                             <div class="timeline-content">
                                 <h3 class="timeline-title">Ponowne otwarcie zgłoszenia</h3>
-                                <p>{{ activity.created_at|date:"d.m.Y H:i" }} - {{ activity.user.username }}</p>
+                                <p>{{ activity.created_at|date:"d.m.Y H:i" }} - {{ activity.user.username }}
+                                {% if activity.user.profile.role == 'admin' %}
+                                    <span class="badge bg-danger">Admin</span>
+                                {% elif activity.user.profile.role == 'superagent' %}
+                                    <span class="badge bg-warning text-dark">Superagent</span>
+                                {% elif activity.user.profile.role == 'agent' %}
+                                    <span class="badge bg-info">Agent</span>
+                                {% elif activity.user.profile.role == 'viewer' %}
+                                    <span class="badge bg-dark">Viewer</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Klient</span>
+                                {% endif %}
+                                </p>
                                 {% if activity.description %}<p class="text-muted">{{ activity.description }}</p>{% endif %}
                             </div>
                         </div>
