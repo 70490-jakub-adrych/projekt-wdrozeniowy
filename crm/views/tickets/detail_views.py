@@ -42,6 +42,9 @@ def ticket_detail(request, pk):
     comments = ticket.comments.all().order_by('created_at')
     attachments = ticket.attachments.all()
     
+    # Get ticket activities for timeline
+    ticket_activities = ticket.activities.all().order_by('created_at')
+    
     # Check if the ticket is closed
     is_closed = ticket.status == 'closed'
     
@@ -181,6 +184,7 @@ def ticket_detail(request, pk):
         'ticket': ticket,
         'comments': comments,
         'attachments': attachments,
+        'ticket_activities': ticket_activities,
         'comment_form': comment_form,
         'attachment_form': attachment_form,
         'can_edit': can_edit,

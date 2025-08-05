@@ -4,64 +4,74 @@
 
 {% load crispy_forms_tags %}
 
-{% block content %}
-<div class="d-flex justify-content-between align-items-start align-items-md-center mb-4 flex-column flex-md-row">
-    <h2 class="mb-2 mb-md-0">Zgłoszenie #{{ ticket.id }}: {{ ticket.title }}</h2>
-    <!-- Desktop: Keep both buttons together on the right -->
-    <div class="d-none d-md-flex flex-wrap gap-2">
-        <a href="{% url 'ticket_list' %}" class="btn btn-outline-secondary btn-ripple">
-            <i class="fas fa-arrow-left me-1"></i> Powrót
-        </a>
-        {% with user_groups=user.groups.all %}
-            {% if user_groups.exists %}
-                {% with group_settings=user_groups.first.settings %}
-                    {% if group_settings.can_see_edit_button %}
-                    <a href="{% url 'ticket_update' ticket.pk %}" class="btn btn-primary btn-ripple">
-                        <i class="fas fa-edit me-1"></i> Edytuj
-                    </a>
-                    {% elif group_settings.can_edit_own_tickets and ticket.created_by == user %}
-                    <a href="{% url 'ticket_update' ticket.pk %}" class="btn btn-primary btn-ripple">
-                        <i class="fas fa-edit me-1"></i> Edytuj
-                    </a>
-                    {% endif %}
-                {% endwith %}
-            {% else %}
-                {% if user.profile.role == 'admin' %}
-                <a href="{% url 'ticket_update' ticket.pk %}" class="btn btn-primary">
-                    <i class="fas fa-edit me-1"></i> Edytuj
-                </a>
-                {% endif %}
-            {% endif %}
-        {% endwith %}
-    </div>
+{% block extra_css %}
+<style>
+    /* Mobile responsive styles for ticket header */
+    @media (max-width: 576px) {
+        .ticket-header-desktop {
+            display: none !important;
+        }
+        
+        .ticket-header-mobile {
+            display: flex !important;
+        }
+        
+        .ticket-header-mobile h2 {
+            font-size: 1.25rem;
+            margin: 0;
+            flex: 1;
+            margin-right: 10px;
+        }
+        
+        .ticket-header-mobile .btn-return {
+            padding: 8px 12px;
+            font-size: 0.875rem;
+            flex-shrink: 0;
+        }
+        
+        .ticket-header-mobile .btn-return .btn-text {
+            display: none;
+        }
+        
+        .action-buttons-row {
+            margin-top: 15px;
+        }
+    }
     
-    <!-- Mobile: Split layout - Back left, Edit right -->
-    <div class="d-md-none d-flex justify-content-between align-items-center w-100 mt-2">
-        <a href="{% url 'ticket_list' %}" class="btn btn-outline-secondary btn-ripple">
-            <i class="fas fa-arrow-left me-1"></i> Powrót
+    /* Desktop styles */
+    @media (min-width: 577px) {
+        .ticket-header-desktop {
+            display: flex !important;
+        }
+        
+        .ticket-header-mobile {
+            display: none !important;
+        }
+        
+        .btn-return .btn-text {
+            display: inline;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Desktop Header -->
+<div class="d-flex justify-content-between align-items-start align-items-md-center mb-4 flex-column flex-md-row ticket-header-desktop">
+    <h2 class="mb-2 mb-md-0">Zgłoszenie #{{ ticket.id }}: {{ ticket.title }}</h2>
+    <div class="d-flex flex-wrap gap-2">
+        <a href="{% url 'ticket_list' %}" class="btn btn-outline-secondary btn-ripple btn-return">
+            <i class="fas fa-arrow-left me-1"></i><span class="btn-text"> Powrót</span>
         </a>
-        {% with user_groups=user.groups.all %}
-            {% if user_groups.exists %}
-                {% with group_settings=user_groups.first.settings %}
-                    {% if group_settings.can_see_edit_button %}
-                    <a href="{% url 'ticket_update' ticket.pk %}" class="btn btn-primary btn-ripple">
-                        <i class="fas fa-edit me-1"></i> Edytuj
-                    </a>
-                    {% elif group_settings.can_edit_own_tickets and ticket.created_by == user %}
-                    <a href="{% url 'ticket_update' ticket.pk %}" class="btn btn-primary btn-ripple">
-                        <i class="fas fa-edit me-1"></i> Edytuj
-                    </a>
-                    {% endif %}
-                {% endwith %}
-            {% else %}
-                {% if user.profile.role == 'admin' %}
-                <a href="{% url 'ticket_update' ticket.pk %}" class="btn btn-primary">
-                    <i class="fas fa-edit me-1"></i> Edytuj
-                </a>
-                {% endif %}
-            {% endif %}
-        {% endwith %}
     </div>
+</div>
+
+<!-- Mobile Header -->
+<div class="d-flex justify-content-between align-items-center mb-3 ticket-header-mobile">
+    <h2>Zgłoszenie #{{ ticket.id }}: {{ ticket.title }}</h2>
+    <a href="{% url 'ticket_list' %}" class="btn btn-outline-secondary btn-ripple btn-return">
+        <i class="fas fa-arrow-left"></i><span class="btn-text"> Powrót</span>
+    </a>
 </div>
 
 {% if is_closed %}
@@ -97,11 +107,22 @@
 {% endif %}
 
 <!-- Action buttons in their own row -->
-<div class="mb-4">
+<div class="mb-4 action-buttons-row">
     <div class="d-flex flex-wrap gap-2">
     {% with user_groups=user.groups.all %}
         {% if user_groups.exists %}
             {% with group_settings=user_groups.first.settings %}
+                <!-- Edit button -->
+                {% if group_settings.can_see_edit_button %}
+                <a href="{% url 'ticket_update' ticket.pk %}" class="btn btn-primary btn-ripple">
+                    <i class="fas fa-edit me-1"></i> Edytuj
+                </a>
+                {% elif group_settings.can_edit_own_tickets and ticket.created_by == user %}
+                <a href="{% url 'ticket_update' ticket.pk %}" class="btn btn-primary btn-ripple">
+                    <i class="fas fa-edit me-1"></i> Edytuj
+                </a>
+                {% endif %}
+                
                 <!-- Accept (assign) button - only show if not assigned AND user has permission -->
                 {% if not ticket.assigned_to and not is_closed %}
                     {% if group_settings.can_assign_unassigned_tickets %}
@@ -157,6 +178,13 @@
                     {% endif %}
                 {% endif %}
             {% endwith %}
+        {% else %}
+            <!-- Fallback for users without groups (admin role) -->
+            {% if user.profile.role == 'admin' %}
+            <a href="{% url 'ticket_update' ticket.pk %}" class="btn btn-primary">
+                <i class="fas fa-edit me-1"></i> Edytuj
+            </a>
+            {% endif %}
         {% endif %}
     {% endwith %}
     </div>
@@ -378,7 +406,7 @@
                             <div class="timeline-content">
                                 <h3 class="timeline-title">Aktualizacja zgłoszenia</h3>
                                 <p>{{ activity.created_at|date:"d.m.Y H:i" }} - {{ activity.user.username }}</p>
-                                <p class="text-muted">{{ activity.description }}</p>
+                                {% if activity.description %}<p class="text-muted">{{ activity.description }}</p>{% endif %}
                             </div>
                         </div>
                         {% endif %}
@@ -389,6 +417,29 @@
                             <div class="timeline-content">
                                 <h3 class="timeline-title">Dodano odpowiedź</h3>
                                 <p>{{ activity.created_at|date:"d.m.Y H:i" }} - {{ activity.user.username }}</p>
+                                {% if activity.description %}<p class="text-muted">{{ activity.description }}</p>{% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if activity.action_type == 'ticket_attachment_added' %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-success"></div>
+                            <div class="timeline-content">
+                                <h3 class="timeline-title">Dodano załącznik</h3>
+                                <p>{{ activity.created_at|date:"d.m.Y H:i" }} - {{ activity.user.username }}</p>
+                                {% if activity.description %}<p class="text-muted">{{ activity.description }}</p>{% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if activity.action_type == 'ticket_resolved' %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-success"></div>
+                            <div class="timeline-content">
+                                <h3 class="timeline-title">Oznaczono jako rozwiązane</h3>
+                                <p>{{ activity.created_at|date:"d.m.Y H:i" }} - {{ activity.user.username }}</p>
+                                {% if activity.description %}<p class="text-muted">{{ activity.description }}</p>{% endif %}
                             </div>
                         </div>
                         {% endif %}
@@ -399,7 +450,7 @@
                             <div class="timeline-content">
                                 <h3 class="timeline-title">Zamknięto zgłoszenie</h3>
                                 <p>{{ activity.created_at|date:"d.m.Y H:i" }} - {{ activity.user.username }}</p>
-                                <p class="text-muted">{{ activity.description }}</p>
+                                {% if activity.description %}<p class="text-muted">{{ activity.description }}</p>{% endif %}
                             </div>
                         </div>
                         {% endif %}
@@ -410,21 +461,11 @@
                             <div class="timeline-content">
                                 <h3 class="timeline-title">Ponowne otwarcie zgłoszenia</h3>
                                 <p>{{ activity.created_at|date:"d.m.Y H:i" }} - {{ activity.user.username }}</p>
-                                <p class="text-muted">{{ activity.description }}</p>
+                                {% if activity.description %}<p class="text-muted">{{ activity.description }}</p>{% endif %}
                             </div>
                         </div>
                         {% endif %}
                     {% endfor %}
-                    
-                    {% if ticket.resolved_at and ticket.status == 'resolved' %}
-                    <div class="timeline-item">
-                        <div class="timeline-marker bg-success"></div>
-                        <div class="timeline-content">
-                            <h3 class="timeline-title">Rozwiązano zgłoszenie</h3>
-                            <p>{{ ticket.resolved_at|date:"d.m.Y H:i" }}</p>
-                        </div>
-                    </div>
-                    {% endif %}
                     
                     {% if ticket.status == 'closed' and ticket.closed_at %}
                     <div class="timeline-item">
