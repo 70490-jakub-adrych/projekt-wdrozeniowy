@@ -2,6 +2,7 @@
 
 {% block title %}{{ organization.name }} | System Helpdesk{% endblock %}
 
+{% block extra_css %}
 <style>
     /* Mobile responsive styles */
     @media (max-width: 576px) {
@@ -121,6 +122,7 @@
         }
     }
 </style>
+{% endblock %}
 
 {% block content %}
 <!-- Desktop Header -->

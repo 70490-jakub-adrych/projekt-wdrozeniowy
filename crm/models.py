@@ -174,38 +174,53 @@ class UserProfile(models.Model):
 def create_user_profile(sender, instance, created, **kwargs):
     """Automatyczne tworzenie profilu dla nowego użytkownika"""
     if created:
-        # Create profile with role based on user type
-        role = 'admin' if instance.is_superuser else 'client'
-        # Set approved status based on role (admins and superagents are auto-approved)
-        is_approved = True if instance.is_superuser else False
-        UserProfile.objects.create(
-            user=instance, 
-            role=role, 
-            is_approved=is_approved,
-            ga_enabled=False,  # Explicitly set ga_enabled to False for new users
-            email_verified=False  # Also ensure email_verified is explicitly set
-        )
-        
-        # Add user to appropriate group based on role
-        if role == 'admin':
-            group, _ = Group.objects.get_or_create(name='Admin')
-            instance.groups.add(group)
-        elif role == 'superagent':
-            group, _ = Group.objects.get_or_create(name='Superagent')
-            instance.groups.add(group)
-        elif role == 'agent':
-            group, _ = Group.objects.get_or_create(name='Agent')
-            instance.groups.add(group)
-        elif role == 'viewer':
-            group, _ = Group.objects.get_or_create(name='Viewer')
-            instance.groups.add(group)
+        try:
+            # Use get_or_create to avoid duplicates
+            role = 'admin' if instance.is_superuser else 'client'
+            is_approved = True if instance.is_superuser else False
+            
+            profile, created_profile = UserProfile.objects.get_or_create(
+                user=instance,
+                defaults={
+                    'role': role,
+                    'is_approved': is_approved,
+                    'ga_enabled': False,
+                    'email_verified': False
+                }
+            )
+            
+            # Add user to appropriate group based on role (only if profile was just created)
+            if created_profile:
+                if role == 'admin':
+                    group, _ = Group.objects.get_or_create(name='Admin')
+                    instance.groups.add(group)
+                elif role == 'superagent':
+                    group, _ = Group.objects.get_or_create(name='Superagent')
+                    instance.groups.add(group)
+                elif role == 'agent':
+                    group, _ = Group.objects.get_or_create(name='Agent')
+                    instance.groups.add(group)
+                elif role == 'viewer':
+                    group, _ = Group.objects.get_or_create(name='Viewer')
+                    instance.groups.add(group)
+        except Exception as e:
+            # If any error occurs, log it
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Could not create profile for user {instance.username}: {e}")
 
 
 @receiver(post_save, sender=User)
 def save_user_profile(sender, instance, **kwargs):
     """Zapisywanie profilu przy zapisie użytkownika"""
     if hasattr(instance, 'profile'):
-        instance.profile.save()
+        try:
+            instance.profile.save()
+        except Exception as e:
+            # Handle any save errors gracefully
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Could not save profile for user {instance.username}: {e}")
 
 
 @receiver(m2m_changed, sender=User.groups.through)
@@ -462,7 +477,7 @@ class UserPreference(models.Model):
 def create_user_preferences(sender, instance, created, **kwargs):
     """Automatyczne tworzenie preferencji dla nowego użytkownika"""
     if created:
-        UserPreference.objects.create(user=instance)
+        UserPreference.objects.get_or_create(user=instance)
 
 
 class ViewPermission(models.Model):

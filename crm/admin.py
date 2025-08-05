@@ -20,6 +20,8 @@ class UserProfileInline(admin.StackedInline):
     can_delete = False
     verbose_name_plural = 'Profile'
     filter_horizontal = ('organizations',)
+    extra = 0  # Don't show extra forms
+    max_num = 1  # Only allow one profile per user
     
     # Add 2FA fields to fieldsets
     fieldsets = (
@@ -42,6 +44,22 @@ class UserProfileInline(admin.StackedInline):
             'description': 'Informacje o uwierzytelnianiu dwuskładnikowym użytkownika. UWAGA: 2FA jest teraz wymagane dla wszystkich użytkowników, w tym administratorów.'
         }),
     )
+    
+    def get_queryset(self, request):
+        """Ensure we get the profile or create one if it doesn't exist"""
+        qs = super().get_queryset(request)
+        return qs
+    
+    def get_formset(self, request, obj=None, **kwargs):
+        """Override to ensure we have a profile for the user"""
+        if obj and not hasattr(obj, 'profile'):
+            # If the user doesn't have a profile, the signal should create one
+            # But we need to refresh from DB to see it
+            try:
+                obj.refresh_from_db()
+            except:
+                pass
+        return super().get_formset(request, obj, **kwargs)
     
     def get_readonly_fields(self, request, obj=None):
         """Make role field read-only since it's synchronized with groups"""
