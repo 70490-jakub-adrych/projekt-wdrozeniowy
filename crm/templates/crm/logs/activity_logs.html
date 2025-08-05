@@ -43,6 +43,17 @@
             flex: 1;
         }
         
+        .logs-header-mobile .btn-group {
+            display: flex;
+            gap: 8px;
+            flex-shrink: 0;
+        }
+        
+        .logs-header-mobile .btn {
+            padding: 8px 12px;
+            font-size: 0.875rem;
+        }
+        
         .desktop-table {
             display: none !important;
         }
@@ -171,7 +182,7 @@
 <!-- Mobile Header -->
 <div class="logs-header-mobile mb-4">
     <h2>Logi aktywności</h2>
-    <div>
+    <div class="btn-group">
         {% if user.profile.role == 'admin' %}
         <a href="{% url 'activity_logs_wipe' %}" class="btn btn-danger btn-sm">
             <i class="fas fa-trash-alt"></i>
