@@ -616,6 +616,66 @@
         modalElements.forEach(modalEl => {
             new bootstrap.Modal(modalEl);
         });
+        
+        // Scroll position memory functionality
+        const SCROLL_STORAGE_KEY = 'ticketListScrollPosition';
+        
+        // Function to save current scroll position
+        function saveScrollPosition() {
+            const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+            sessionStorage.setItem(SCROLL_STORAGE_KEY, scrollPosition.toString());
+        }
+        
+        // Function to restore scroll position
+        function restoreScrollPosition() {
+            const savedPosition = sessionStorage.getItem(SCROLL_STORAGE_KEY);
+            if (savedPosition !== null) {
+                const position = parseInt(savedPosition, 10);
+                // Use setTimeout to ensure the page is fully loaded
+                setTimeout(() => {
+                    window.scrollTo({
+                        top: position,
+                        behavior: 'instant' // Use 'instant' to avoid animation when restoring
+                    });
+                }, 100);
+            }
+        }
+        
+        // Save scroll position when leaving this page via return buttons
+        const returnButtons = document.querySelectorAll('.btn-return');
+        returnButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                // Don't prevent default - let the navigation happen
+                saveScrollPosition();
+            });
+        });
+        
+        // Save scroll position when page is being unloaded (browser back button, etc.)
+        window.addEventListener('beforeunload', function() {
+            saveScrollPosition();
+        });
+        
+        // Handle browser back/forward navigation
+        window.addEventListener('popstate', function() {
+            saveScrollPosition();
+        });
+        
+        // If we came from ticket list, don't restore scroll (we're on detail page)
+        // The restoration will happen when we return to the list
+        
+        // Optional: Clear scroll position when navigating to other pages
+        // (not ticket list) to prevent wrong restoration
+        window.addEventListener('beforeunload', function() {
+            const currentUrl = window.location.href;
+            const isGoingToTicketList = document.referrer.includes('/tickets/') && 
+                                      !document.referrer.includes('/tickets/') ||
+                                      currentUrl.includes('/tickets/') && !currentUrl.includes('/tickets/');
+            
+            // Only keep scroll position if we're likely going back to ticket list
+            if (!currentUrl.includes('/tickets/')) {
+                sessionStorage.removeItem(SCROLL_STORAGE_KEY);
+            }
+        });
     });
 </script>
 {% endblock %}

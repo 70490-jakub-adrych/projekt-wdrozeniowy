@@ -543,6 +543,58 @@
             
             <!-- JavaScript to ensure exclude_closed is always added to the form -->
             <script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    // Scroll position memory functionality
+                    const SCROLL_STORAGE_KEY = 'ticketListScrollPosition';
+                    
+                    // Function to restore scroll position when returning to ticket list
+                    function restoreScrollPosition() {
+                        const savedPosition = sessionStorage.getItem(SCROLL_STORAGE_KEY);
+                        if (savedPosition !== null) {
+                            const position = parseInt(savedPosition, 10);
+                            // Use setTimeout to ensure the page is fully loaded
+                            setTimeout(() => {
+                                window.scrollTo({
+                                    top: position,
+                                    behavior: 'smooth' // Use smooth scrolling when restoring
+                                });
+                                // Clear the saved position after restoration
+                                sessionStorage.removeItem(SCROLL_STORAGE_KEY);
+                            }, 100);
+                        }
+                    }
+                    
+                    // Function to save scroll position before navigating to ticket detail
+                    function saveScrollPosition() {
+                        const scrollPosition = window.pageYOffset || document.documentElement.scrollTop;
+                        sessionStorage.setItem(SCROLL_STORAGE_KEY, scrollPosition.toString());
+                    }
+                    
+                    // Save scroll position when clicking on ticket links (both desktop and mobile)
+                    const ticketLinks = document.querySelectorAll('a[href*="/tickets/"]:not([href*="/create"]):not([href*="/assign"]):not([href*="/close"]):not([href*="/reopen"]):not([href*="/mark"]):not([href*="/update"])');
+                    ticketLinks.forEach(link => {
+                        link.addEventListener('click', function(e) {
+                            // Only save scroll for ticket detail links
+                            const href = this.getAttribute('href');
+                            if (href && href.match(/\/tickets\/\d+\/$/)) {
+                                saveScrollPosition();
+                            }
+                        });
+                    });
+                    
+                    // Restore scroll position when page loads (if coming back from ticket detail)
+                    restoreScrollPosition();
+                    
+                    // Clear scroll position when navigating away to non-ticket pages
+                    window.addEventListener('beforeunload', function() {
+                        const currentUrl = window.location.href;
+                        if (!currentUrl.includes('/tickets/')) {
+                            sessionStorage.removeItem(SCROLL_STORAGE_KEY);
+                        }
+                    });
+                });
+                
+                // Original form submission logic
                 document.querySelector('.filter-form').addEventListener('submit', function() {
                     // Add hidden input with current checkbox state before submission
                     var isChecked = document.getElementById('exclude_closed_checkbox').checked;
