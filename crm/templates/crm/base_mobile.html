@@ -316,7 +316,26 @@
             white-space: nowrap;
         }
         
+        /* Mobile user navigation - hidden by default */
+        .mobile-user-nav {
+            display: none;
+        }
+        
         /* Mobile-first responsive design */
+        @media (max-width: 991.98px) {
+            /* Show mobile user navigation items */
+            .mobile-user-nav {
+                display: block !important;
+            }
+        }
+        
+        @media (min-width: 992px) {
+            /* Hide mobile user navigation items on desktop */
+            .mobile-user-nav {
+                display: none !important;
+            }
+        }
+        
         @media (max-width: 576px) {
             /* Extra small devices (phones) */
             .container {
@@ -626,7 +645,10 @@
                     </li>
                     
                     <!-- Mobile user display and buttons -->
-                    <li class="nav-item d-lg-none">
+                    <li class="nav-item mobile-user-nav">
+                        <hr class="dropdown-divider mx-3 my-2">
+                    </li>
+                    <li class="nav-item mobile-user-nav">
                         <div class="nav-link d-flex align-items-center justify-content-end pe-3">
                             <span class="me-2 text-white">{{ user.username|truncatechars:8 }}</span>
                             {% if user.profile.role == 'admin' %}
@@ -642,7 +664,7 @@
                             {% endif %}
                         </div>
                     </li>
-                    <li class="nav-item d-lg-none">
+                    <li class="nav-item mobile-user-nav">
                         <a class="nav-link" href="{% if user.profile.ga_enabled %}{% url 'dashboard' %}{% else %}{% url 'setup_2fa' %}{% endif %}">
                             <i class="fas fa-shield-alt"></i> 
                             {% if user.profile.ga_enabled %}
@@ -652,12 +674,12 @@
                             {% endif %}
                         </a>
                     </li>
-                    <li class="nav-item d-lg-none">
+                    <li class="nav-item mobile-user-nav">
                         <a class="nav-link" href="{% url 'password_change' %}">
                             <i class="fas fa-key"></i> Zmiana hasła
                         </a>
                     </li>
-                    <li class="nav-item d-lg-none">
+                    <li class="nav-item mobile-user-nav">
                         <a class="nav-link" href="{% url 'logout' %}">
                             <i class="fas fa-sign-out-alt"></i> Wyloguj
                         </a>
