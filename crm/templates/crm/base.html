@@ -377,6 +377,48 @@
             .mobile-user-nav {
                 display: block !important;
             }
+            
+            /* Mobile navbar column layout */
+            .navbar-nav.me-auto {
+                display: grid !important;
+                grid-template-columns: 1fr 1fr;
+                gap: 0.25rem;
+                padding: 0.5rem 0;
+            }
+            
+            .navbar-nav.me-auto .nav-item {
+                margin: 0;
+            }
+            
+            .navbar-nav.me-auto .nav-link {
+                padding: 0.5rem 0.75rem;
+                font-size: 0.9rem;
+                border-radius: 0.25rem;
+                margin: 0.125rem;
+                background-color: rgba(255, 255, 255, 0.05);
+                transition: all 0.2s ease;
+            }
+            
+            .navbar-nav.me-auto .nav-link:hover {
+                background-color: rgba(255, 255, 255, 0.1);
+                transform: none; /* Remove the translateY effect on mobile */
+            }
+            
+            .navbar-nav.me-auto .nav-link.active {
+                background-color: rgba(52, 152, 219, 0.3);
+            }
+            
+            /* User section styling */
+            .navbar-nav:not(.me-auto) {
+                border-top: 1px solid rgba(255, 255, 255, 0.1);
+                margin-top: 0.5rem;
+                padding-top: 0.5rem;
+            }
+            
+            .navbar-nav:not(.me-auto) .nav-link {
+                padding: 0.4rem 1rem;
+                font-size: 0.9rem;
+            }
         }
         
         @media (min-width: 992px) {
@@ -405,6 +447,20 @@
             .navbar .fas, .navbar .far, .navbar .fab {
                 font-size: 1rem;
                 margin-right: 0.5rem;
+            }
+            
+            /* Override grid for very small screens if needed */
+            .navbar-nav.me-auto .nav-link {
+                padding: 0.4rem 0.6rem !important;
+                font-size: 0.85rem !important;
+            }
+            
+            /* Compact icons on very small screens */
+            .navbar-nav.me-auto .fas, 
+            .navbar-nav.me-auto .far, 
+            .navbar-nav.me-auto .fab {
+                font-size: 0.85rem !important;
+                margin-right: 0.3rem !important;
             }
             
             /* Mobile user display styling */
