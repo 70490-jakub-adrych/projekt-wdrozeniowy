@@ -358,6 +358,33 @@
             white-space: nowrap;
         }
         
+        /* Mobile user navigation - hidden by default */
+        .mobile-user-nav {
+            display: none;
+        }
+        
+        /* Mobile user display outside navbar */
+        .mobile-user-display {
+            font-size: 0.85rem;
+        }
+        
+        .mobile-user-display .badge {
+            font-size: 0.7rem;
+        }
+        
+        /* Show mobile user nav on smaller screens */
+        @media (max-width: 991.98px) {
+            .mobile-user-nav {
+                display: block !important;
+            }
+        }
+        
+        @media (min-width: 992px) {
+            .mobile-user-nav {
+                display: none !important;
+            }
+        }
+        
         /* Mobile-first responsive design */
         @media (max-width: 576px) {
             /* Extra small devices (phones) */
@@ -378,6 +405,16 @@
             .navbar .fas, .navbar .far, .navbar .fab {
                 font-size: 1rem;
                 margin-right: 0.5rem;
+            }
+            
+            /* Mobile user display styling */
+            .mobile-user-display {
+                font-size: 0.8rem;
+            }
+            
+            .mobile-user-display .badge {
+                font-size: 0.65rem;
+                padding: 0.25em 0.5em;
             }
             
             .card {
@@ -677,6 +714,27 @@
             <a class="navbar-brand" href="{% if user.is_authenticated %}{% url 'dashboard' %}{% else %}{% url 'landing_page' %}{% endif %}">
                 <img src="{% static 'crm/img/logo.jpg' %}" alt="BetulaIT Logo">
             </a>
+            
+            <!-- Mobile user info display (outside collapsible area) -->
+            {% if user.is_authenticated %}
+            <div class="d-lg-none mobile-user-display me-2">
+                <div class="d-flex align-items-center">
+                    <span class="text-white me-2">{{ user.username|truncatechars:8 }}</span>
+                    {% if user.profile.role == 'admin' %}
+                        <span class="badge bg-danger">Admin</span>
+                    {% elif user.profile.role == 'superagent' %}
+                        <span class="badge bg-warning text-dark">Superagent</span>
+                    {% elif user.profile.role == 'agent' %}
+                        <span class="badge bg-info text-white">Agent</span>
+                    {% elif user.profile.role == 'viewer' %}
+                        <span class="badge bg-dark">Viewer</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Klient</span>
+                    {% endif %}
+                </div>
+            </div>
+            {% endif %}
+            
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
                     aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
@@ -745,7 +803,8 @@
                 </ul>
                 <ul class="navbar-nav">
                     {% if user.is_authenticated %}
-                    <li class="nav-item dropdown">
+                    <!-- Desktop user dropdown -->
+                    <li class="nav-item dropdown d-none d-lg-block">
                         <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" 
                            data-bs-toggle="dropdown" aria-expanded="false">
                             <div class="d-flex align-items-center">
@@ -806,6 +865,36 @@
                                 <i class="fas fa-sign-out-alt me-2"></i> Wyloguj
                             </a>
                         </div>
+                    </li>
+                    
+                    <!-- Mobile user action buttons -->
+                    <li class="nav-item mobile-user-nav">
+                        <hr class="dropdown-divider mx-3 my-2 text-white">
+                    </li>
+                    <li class="nav-item mobile-user-nav">
+                        <div class="px-3 py-2">
+                            <small class="text-white-50">Konto użytkownika:</small>
+                        </div>
+                    </li>
+                    <li class="nav-item mobile-user-nav">
+                        <a class="nav-link" href="{% if user.profile.ga_enabled %}{% url 'dashboard' %}{% else %}{% url 'setup_2fa' %}{% endif %}">
+                            <i class="fas fa-shield-alt"></i> 
+                            {% if user.profile.ga_enabled %}
+                                2FA (Włączone) <i class="fas fa-check-circle text-success ms-1"></i>
+                            {% else %}
+                                Włącz 2FA <i class="fas fa-exclamation-triangle text-warning ms-1"></i>
+                            {% endif %}
+                        </a>
+                    </li>
+                    <li class="nav-item mobile-user-nav">
+                        <a class="nav-link" href="{% url 'password_change' %}">
+                            <i class="fas fa-key"></i> Zmiana hasła
+                        </a>
+                    </li>
+                    <li class="nav-item mobile-user-nav">
+                        <a class="nav-link" href="{% url 'logout' %}">
+                            <i class="fas fa-sign-out-alt"></i> Wyloguj
+                        </a>
                     </li>
                     {% else %}
                     <li class="nav-item">
@@ -931,8 +1020,8 @@
             
             // Improve mobile navigation
             if (MobileUtils.isMobile()) {
-                // Auto-collapse navbar after clicking a link
-                const navLinks = document.querySelectorAll('.navbar-nav .nav-link');
+                // Auto-collapse navbar after clicking a link, but not for user display
+                const navLinks = document.querySelectorAll('.navbar-nav .nav-link[href]');
                 navLinks.forEach(link => {
                     link.addEventListener('click', function() {
                         const navbar = document.querySelector('.navbar-collapse');
@@ -941,6 +1030,14 @@
                         }
                     });
                 });
+                
+                // Prevent user display from collapsing navbar
+                const userDisplay = document.querySelector('.mobile-user-display');
+                if (userDisplay) {
+                    userDisplay.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                    });
+                }
                 
                 // Enhance dropdown behavior on mobile
                 const dropdownToggles = document.querySelectorAll('.dropdown-toggle');
