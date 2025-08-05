@@ -402,32 +402,33 @@
             font-size: 0.7rem;
         }
         
-        /* Fix navbar collapse issues on mobile */
-        .navbar-collapse {
-            border: none !important;
-            background: transparent !important;
-            box-shadow: none !important;
-        }
-        
-        .navbar-collapse.collapse:not(.show) {
-            display: none !important;
-            height: 0 !important;
-            overflow: hidden !important;
-            border: none !important;
-            background: transparent !important;
-        }
-        
-        .navbar-collapse.collapsing {
-            border: none !important;
-            background: transparent !important;
-            box-shadow: none !important;
-            overflow: hidden !important;
-        }
-        
-        /* Ensure no white bar/border after collapse */
-        .navbar-collapse::after,
-        .navbar-collapse::before {
-            display: none !important;
+        /* Fix navbar collapse issues on mobile only */
+        @media (max-width: 991.98px) {
+            .navbar-collapse {
+                border: none !important;
+                background: transparent !important;
+                box-shadow: none !important;
+            }
+            
+            .navbar-collapse.collapse:not(.show) {
+                height: 0 !important;
+                overflow: hidden !important;
+                border: none !important;
+                background: transparent !important;
+            }
+            
+            .navbar-collapse.collapsing {
+                border: none !important;
+                background: transparent !important;
+                box-shadow: none !important;
+                overflow: hidden !important;
+            }
+            
+            /* Ensure no white bar/border after collapse on mobile */
+            .navbar-collapse::after,
+            .navbar-collapse::before {
+                display: none !important;
+            }
         }
         
         /* Show mobile user nav on smaller screens */
@@ -1196,7 +1197,7 @@
             });
             
             // Improve mobile navigation
-            if (MobileUtils.isMobile()) {
+            if (MobileUtils.isMobile() || window.innerWidth <= 991.98) {
                 // Auto-collapse navbar after clicking a link, but not for user display
                 const navLinks = document.querySelectorAll('.navbar-nav .nav-link[href]');
                 navLinks.forEach(link => {
@@ -1208,9 +1209,9 @@
                     });
                 });
                 
-                // Fix navbar collapse white bar issue
+                // Fix navbar collapse white bar issue (mobile only)
                 const navbarCollapse = document.querySelector('.navbar-collapse');
-                if (navbarCollapse) {
+                if (navbarCollapse && window.innerWidth <= 991.98) {
                     // Listen for collapse events
                     navbarCollapse.addEventListener('hidden.bs.collapse', function() {
                         // Force cleanup after collapse animation
