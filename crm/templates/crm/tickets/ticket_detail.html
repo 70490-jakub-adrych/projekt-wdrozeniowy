@@ -317,11 +317,40 @@
                 </div>
                 <div class="row mb-3">
                     <div class="col-md-3 fw-bold">Zgłaszający:</div>
-                    <div class="col-md-9">{{ ticket.created_by.username }}</div>
+                    <div class="col-md-9">{{ ticket.created_by.username }}
+                    {% if ticket.created_by.profile.role == 'admin' %}
+                        <span class="badge bg-danger">Admin</span>
+                    {% elif ticket.created_by.profile.role == 'superagent' %}
+                        <span class="badge bg-warning text-dark">Superagent</span>
+                    {% elif ticket.created_by.profile.role == 'agent' %}
+                        <span class="badge bg-info">Agent</span>
+                    {% elif ticket.created_by.profile.role == 'viewer' %}
+                        <span class="badge bg-dark">Viewer</span>
+                    {% else %}
+                        <span class="badge bg-secondary">Klient</span>
+                    {% endif %}
+                    </div>
                 </div>
                 <div class="row mb-3">
                     <div class="col-md-3 fw-bold">Przypisane do:</div>
-                    <div class="col-md-9">{% if ticket.assigned_to %}{{ ticket.assigned_to.username }}{% else %}<span class="text-muted">Oczekuje na akceptację</span>{% endif %}</div>
+                    <div class="col-md-9">
+                    {% if ticket.assigned_to %}
+                        {{ ticket.assigned_to.username }}
+                        {% if ticket.assigned_to.profile.role == 'admin' %}
+                            <span class="badge bg-danger">Admin</span>
+                        {% elif ticket.assigned_to.profile.role == 'superagent' %}
+                            <span class="badge bg-warning text-dark">Superagent</span>
+                        {% elif ticket.assigned_to.profile.role == 'agent' %}
+                            <span class="badge bg-info">Agent</span>
+                        {% elif ticket.assigned_to.profile.role == 'viewer' %}
+                            <span class="badge bg-dark">Viewer</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Klient</span>
+                        {% endif %}
+                    {% else %}
+                        <span class="text-muted">Oczekuje na akceptację</span>
+                    {% endif %}
+                    </div>
                 </div>
                 <div class="row mb-3">
                     <div class="col-md-3 fw-bold">Data utworzenia:</div>
