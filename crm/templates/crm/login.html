@@ -3,6 +3,20 @@
 
 {% block title %}Logowanie | System CRM{% endblock %}
 
+{% block extra_css %}
+<style>
+    .card {
+        margin-top: 2rem; /* Add margin from top for PC version */
+    }
+    
+    @media (max-width: 576px) {
+        .card {
+            margin-top: 1rem; /* Smaller margin on mobile */
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-6">

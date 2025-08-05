@@ -1,7 +1,22 @@
 {% extends 'crm/base.html' %}
 {% load crispy_forms_tags %}
+{% load static %}
 
 {% block title %}Rejestracja | System Helpdesk{% endblock %}
+
+{% block extra_css %}
+<style>
+    .card {
+        margin-top: 2rem; /* Add margin from top for PC version */
+    }
+    
+    @media (max-width: 576px) {
+        .card {
+            margin-top: 1rem; /* Smaller margin on mobile */
+        }
+    }
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
@@ -9,7 +24,7 @@
         <div class="card">
             <div class="card-header">Rejestracja</div>
             <div class="card-body">
-                <form method="post">
+                <form method="post" id="registrationForm">
                     {% csrf_token %}
                     <h5>Dane konta</h5>
                     {{ form|crispy }}
@@ -28,4 +43,8 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{% static 'crm/js/password-validation.js' %}"></script>
 {% endblock %}
