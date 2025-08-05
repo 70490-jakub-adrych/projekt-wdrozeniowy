@@ -52,6 +52,89 @@
             display: inline;
         }
     }
+
+    /* Timeline styles */
+    .timeline {
+        position: relative;
+        padding-left: 30px;
+    }
+    
+    .timeline-item {
+        position: relative;
+        margin-bottom: 20px;
+    }
+    
+    .timeline-marker {
+        position: absolute;
+        left: -30px;
+        width: 15px;
+        height: 15px;
+        background-color: #007bff;
+        border-radius: 50%;
+        top: 5px;
+    }
+    
+    .timeline-item:not(:last-child) .timeline-marker::after {
+        content: '';
+        position: absolute;
+        top: 15px;
+        left: 7px;
+        height: 100%;
+        border-left: 1px solid #dee2e6;
+    }
+    
+    .timeline-content {
+        padding-bottom: 10px;
+    }
+    
+    .timeline-title {
+        margin-bottom: 5px;
+        font-size: 16px;
+        font-weight: bold;
+    }
+
+    /* Comment border styles based on user role */
+    .border-left-user-role-admin {
+        border-left: 3px solid #dc3545;
+    }
+    
+    .border-left-user-role-superagent {
+        border-left: 3px solid #ffc107;
+    }
+    
+    .border-left-user-role-agent {
+        border-left: 3px solid #17a2b8;
+    }
+    
+    .border-left-user-role-viewer {
+        border-left: 3px solid #343a40;
+    }
+    
+    .border-left-user-role-client {
+        border-left: 3px solid #6c757d;
+    }
+
+    /* Make action buttons more compact */
+    .btn {
+        padding: 0.375rem 0.75rem;
+        font-size: 0.875rem;
+    }
+    
+    .btn i {
+        font-size: 0.875rem;
+        margin-right: 0.375rem;
+    }
+    
+    /* Compact media elements */
+    .media h5 {
+        font-size: 1rem;
+    }
+    
+    /* More compact timeline */
+    .timeline-title {
+        font-size: 0.95rem;
+        margin-bottom: 3px;
+    }
 </style>
 {% endblock %}
 
@@ -537,90 +620,4 @@
 </script>
 {% endblock %}
 
-<!-- Dodatkowy styl dla linii czasu -->
-{% block extra_css %}
-<style>
-    .timeline {
-        position: relative;
-        padding-left: 30px;
-    }
-    
-    .timeline-item {
-        position: relative;
-        margin-bottom: 20px;
-    }
-    
-    .timeline-marker {
-        position: absolute;
-        left: -30px;
-        width: 15px;
-        height: 15px;
-        background-color: #007bff;
-        border-radius: 50%;
-        top: 5px;
-    }
-    
-    .timeline-item:not(:last-child) .timeline-marker::after {
-        content: '';
-        position: absolute;
-        top: 15px;
-        left: 7px;
-        height: 100%;
-        border-left: 1px solid #dee2e6;
-    }
-    
-    .timeline-content {
-        padding-bottom: 10px;
-    }
-    
-    .timeline-title {
-        margin-bottom: 5px;
-        font-size: 16px;
-        font-weight: bold;
-    }
-
-    /* Comment border styles based on user role */
-    .border-left-user-role-admin {
-        border-left: 3px solid #dc3545;
-    }
-    
-    .border-left-user-role-superagent {
-        border-left: 3px solid #ffc107;
-    }
-    
-    .border-left-user-role-agent {
-        border-left: 3px solid #17a2b8;
-    }
-    
-    .border-left-user-role-viewer {
-        border-left: 3px solid #343a40;
-    }
-    
-    .border-left-user-role-client {
-        border-left: 3px solid #6c757d;
-    }
-
-    /* Make action buttons more compact */
-    .btn {
-        padding: 0.375rem 0.75rem;
-        font-size: 0.875rem;
-    }
-    
-    .btn i {
-        font-size: 0.875rem;
-        margin-right: 0.375rem;
-    }
-    
-    /* Compact media elements */
-    .media h5 {
-        font-size: 1rem;
-    }
-    
-    /* More compact timeline */
-    .timeline-title {
-        font-size: 0.95rem;
-        margin-bottom: 3px;
-    }
-</style>
-{% endblock %}
 {% endblock %}
