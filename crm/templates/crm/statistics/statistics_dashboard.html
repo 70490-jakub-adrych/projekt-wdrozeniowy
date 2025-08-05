@@ -61,13 +61,82 @@
     .performance-poor {
         color: #dc3545;
     }
+    
+    /* Mobile filter styles */
+    .mobile-filter-controls {
+        display: none;
+    }
+    
+    .desktop-filter-card {
+        display: block;
+    }
+    
+    @media (max-width: 576px) {
+        .mobile-filter-controls {
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            margin-top: 0.5rem;
+        }
+        
+        .desktop-filter-card {
+            display: none;
+        }
+        
+        .mobile-filter-modal .modal-dialog {
+            margin: 0;
+        }
+    }
+    
+    /* Statistics header for mobile */
+    .stats-header-mobile {
+        display: none;
+    }
+    
+    .stats-header-desktop {
+        display: block;
+    }
+    
+    @media (max-width: 576px) {
+        .stats-header-mobile {
+            display: block;
+        }
+        
+        .stats-header-desktop {
+            display: none;
+        }
+    }
+</style>
+{% endblock %}
+    }
+    .performance-poor {
+        color: #dc3545;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-start align-items-md-center mb-4 flex-column flex-md-row">
+<!-- Desktop Header -->
+<div class="d-flex justify-content-between align-items-start align-items-md-center mb-4 flex-column flex-md-row stats-header-desktop">
     <h2 class="mb-2 mb-md-0"><i class="fas fa-chart-line me-2"></i> Statystyki zgłoszeń</h2>
-    <!-- Remove the unnecessary return button for a cleaner interface -->
+</div>
+
+<!-- Mobile Header -->
+<div class="stats-header-mobile mb-3">
+    <h2><i class="fas fa-chart-line me-2"></i> Statystyki</h2>
+    <div class="mobile-filter-controls">
+        <button class="btn btn-outline-primary btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#mobileStatsFilterModal">
+            <i class="fas fa-filter me-1"></i> Filtry
+            {% if period != 'month' or org_filter or agent_filter or date_from or date_to %}
+            <span class="badge bg-info ms-1">!</span>
+            {% endif %}
+        </button>
+        {% if period != 'month' or org_filter or agent_filter or date_from or date_to %}
+        <a href="{% url 'statistics_dashboard' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="fas fa-times me-1"></i> Wyczyść
+        </a>
+        {% endif %}
+    </div>
 </div>
 
 <!-- Hidden data elements for JavaScript - add diagnostic information -->
@@ -92,54 +161,137 @@
     <div data-period="{{ period }}"></div>
 </div>
 
-<!-- Filter Section -->
-<div class="filter-section mb-4">
-    <form method="get" id="statsFilterForm">
-        <div class="row">
-            <div class="col-md-2 mb-2">
-                <label for="period">Okres:</label>
-                <select name="period" id="period" class="form-control">
-                    <option value="day" {% if period == 'day' %}selected{% endif %}>Dzień</option>
-                    <option value="week" {% if period == 'week' %}selected{% endif %}>Tydzień</option>
-                    <option value="month" {% if period == 'month' %}selected{% endif %}>Miesiąc</option>
-                    <option value="year" {% if period == 'year' %}selected{% endif %}>Rok</option>
-                </select>
+<!-- Desktop Filter Card -->
+<div class="card mb-4 desktop-filter-card">
+    <div class="card-header p-2 d-flex justify-content-between align-items-center flex-column flex-sm-row">
+        <div class="mb-2 mb-sm-0">
+            <i class="fas fa-filter me-1"></i> Filtry statystyk
+            {% if period != 'month' or org_filter or agent_filter or date_from or date_to %}
+            <span class="badge bg-info ms-2">Aktywne</span>
+            {% endif %}
+        </div>
+        {% if period != 'month' or org_filter or agent_filter or date_from or date_to %}
+        <a href="{% url 'statistics_dashboard' %}" class="btn btn-sm btn-outline-secondary">
+            <i class="fas fa-times me-1"></i> Wyczyść filtry
+        </a>
+        {% endif %}
+    </div>
+    <div class="card-body p-2">
+        <form method="get" id="statsFilterForm">
+            <div class="row">
+                <div class="col-md-2 mb-2">
+                    <label for="period">Okres:</label>
+                    <select name="period" id="period" class="form-control">
+                        <option value="day" {% if period == 'day' %}selected{% endif %}>Dzień</option>
+                        <option value="week" {% if period == 'week' %}selected{% endif %}>Tydzień</option>
+                        <option value="month" {% if period == 'month' %}selected{% endif %}>Miesiąc</option>
+                        <option value="year" {% if period == 'year' %}selected{% endif %}>Rok</option>
+                    </select>
+                </div>
+                <div class="col-md-2 mb-2">
+                    <label for="date_from">Od:</label>
+                    <input type="date" name="date_from" id="date_from" class="form-control" value="{{ date_from|date:'Y-m-d' }}">
+                </div>
+                <div class="col-md-2 mb-2">
+                    <label for="date_to">Do:</label>
+                    <input type="date" name="date_to" id="date_to" class="form-control" value="{{ date_to|date:'Y-m-d' }}">
+                </div>
+                <div class="col-md-2 mb-2">
+                    <label for="organization">Organizacja:</label>
+                    <select name="organization" id="organization" class="form-control">
+                        <option value="">Wszystkie</option>
+                        {% for org in organizations %}
+                        <option value="{{ org.id }}" {% if org_filter == org.id|stringformat:"s" %}selected{% endif %}>{{ org.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2 mb-2">
+                    <label for="agent">Agent:</label>
+                    <select name="agent" id="agent" class="form-control">
+                        <option value="">Wszyscy</option>
+                        {% for agent_profile in agents %}
+                        <option value="{{ agent_profile.user.id }}" {% if agent_filter == agent_profile.user.id|stringformat:"s" %}selected{% endif %}>
+                            {% if agent_profile.user.first_name %}{{ agent_profile.user.first_name }} {{ agent_profile.user.last_name }}{% else %}{{ agent_profile.user.username }}{% endif %}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end mb-2">
+                    <button type="submit" class="btn btn-primary btn-ripple w-100">
+                        <i class="fas fa-search"></i> Zastosuj
+                    </button>
+                </div>
             </div>
-            <div class="col-md-2 mb-2">
-                <label for="date_from">Od:</label>
-                <input type="date" name="date_from" id="date_from" class="form-control" value="{{ date_from|date:'Y-m-d' }}">
+        </form>
+    </div>
+</div>
+
+<!-- Mobile Statistics Filter Modal -->
+<div class="modal fade mobile-filter-modal" id="mobileStatsFilterModal" tabindex="-1" aria-labelledby="mobileStatsFilterModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen-sm-down">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="mobileStatsFilterModalLabel">
+                    <i class="fas fa-filter me-2"></i>Filtry statystyk
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="col-md-2 mb-2">
-                <label for="date_to">Do:</label>
-                <input type="date" name="date_to" id="date_to" class="form-control" value="{{ date_to|date:'Y-m-d' }}">
+            <div class="modal-body">
+                <form method="get" class="mobile-filter-form">
+                    <div class="mb-3">
+                        <label for="mobile_period" class="form-label">Okres</label>
+                        <select name="period" id="mobile_period" class="form-select">
+                            <option value="day" {% if period == 'day' %}selected{% endif %}>Dzień</option>
+                            <option value="week" {% if period == 'week' %}selected{% endif %}>Tydzień</option>
+                            <option value="month" {% if period == 'month' %}selected{% endif %}>Miesiąc</option>
+                            <option value="year" {% if period == 'year' %}selected{% endif %}>Rok</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="mobile_date_from" class="form-label">Data od</label>
+                        <input type="date" name="date_from" id="mobile_date_from" class="form-control" value="{{ date_from|date:'Y-m-d' }}">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="mobile_date_to" class="form-label">Data do</label>
+                        <input type="date" name="date_to" id="mobile_date_to" class="form-control" value="{{ date_to|date:'Y-m-d' }}">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="mobile_organization" class="form-label">Organizacja</label>
+                        <select name="organization" id="mobile_organization" class="form-select">
+                            <option value="" {% if not org_filter %}selected{% endif %}>Wszystkie</option>
+                            {% for org in organizations %}
+                            <option value="{{ org.id }}" {% if org_filter == org.id|stringformat:"s" %}selected{% endif %}>
+                                {{ org.name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="mobile_agent" class="form-label">Agent</label>
+                        <select name="agent" id="mobile_agent" class="form-select">
+                            <option value="" {% if not agent_filter %}selected{% endif %}>Wszyscy</option>
+                            {% for agent_profile in agents %}
+                            <option value="{{ agent_profile.user.id }}" {% if agent_filter == agent_profile.user.id|stringformat:"s" %}selected{% endif %}>
+                                {% if agent_profile.user.first_name %}{{ agent_profile.user.first_name }} {{ agent_profile.user.last_name }}{% else %}{{ agent_profile.user.username }}{% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </form>
             </div>
-            <div class="col-md-2 mb-2">
-                <label for="organization">Organizacja:</label>
-                <select name="organization" id="organization" class="form-control">
-                    <option value="">Wszystkie</option>
-                    {% for org in organizations %}
-                    <option value="{{ org.id }}" {% if org_filter == org.id|stringformat:"s" %}selected{% endif %}>{{ org.name }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-2 mb-2">
-                <label for="agent">Agent:</label>
-                <select name="agent" id="agent" class="form-control">
-                    <option value="">Wszyscy</option>
-                    {% for agent_profile in agents %}
-                    <option value="{{ agent_profile.user.id }}" {% if agent_filter == agent_profile.user.id|stringformat:"s" %}selected{% endif %}>
-                        {% if agent_profile.user.first_name %}{{ agent_profile.user.first_name }} {{ agent_profile.user.last_name }}{% else %}{{ agent_profile.user.username }}{% endif %}
-                    </option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-2 d-flex align-items-end mb-2">
-                <button type="submit" class="btn btn-primary btn-ripple w-100">
-                    <i class="fas fa-filter"></i> Filtruj
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anuluj</button>
+                <a href="{% url 'statistics_dashboard' %}" class="btn btn-outline-secondary">Wyczyść</a>
+                <button type="button" class="btn btn-primary" onclick="document.querySelector('.mobile-filter-form').submit();">
+                    <i class="fas fa-search me-1"></i>Zastosuj filtry
                 </button>
             </div>
         </div>
-    </form>
+    </div>
 </div>
 
 <!-- Summary Row - Match the dashboard's color coding for consistency -->
