@@ -408,6 +408,23 @@
                 background-color: rgba(52, 152, 219, 0.3);
             }
             
+            /* Non-authenticated users navigation styling */
+            .navbar-nav:not(.me-auto) .nav-item .nav-link {
+                padding: 0.6rem 1.5rem !important;
+                margin: 0.25rem 0.5rem !important;
+                background-color: rgba(255, 255, 255, 0.05);
+                border-radius: 0.375rem;
+                min-width: 130px;
+                text-align: center;
+                display: inline-block !important;
+                width: auto !important;
+            }
+            
+            .navbar-nav:not(.me-auto) .nav-item .nav-link:hover {
+                background-color: rgba(255, 255, 255, 0.1);
+                transform: none;
+            }
+            
             /* User section styling */
             .navbar-nav:not(.me-auto) {
                 border-top: 1px solid rgba(255, 255, 255, 0.1);
@@ -501,6 +518,21 @@
             .btn:not(.w-100):not(.btn-block) {
                 width: auto !important;
                 flex: none !important;
+            }
+            
+            /* Fix navigation buttons for non-authenticated users */
+            .navbar-nav .nav-item .nav-link {
+                padding: 0.5rem 1rem !important;
+                margin: 0.25rem !important;
+                width: auto !important;
+                background-color: rgba(255, 255, 255, 0.05);
+                border-radius: 0.25rem;
+                text-align: center;
+                min-width: 120px;
+            }
+            
+            .navbar-nav .nav-item .nav-link:hover {
+                background-color: rgba(255, 255, 255, 0.1);
             }
             
             /* Specific fixes for action buttons */
