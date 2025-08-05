@@ -360,12 +360,19 @@ def statistics_dashboard(request):
         else:
             ap['work_time_stats'] = None
     
+    # Calculate average tickets per agent (sum of all ticket counts / number of agents)
+    avg_tickets_per_agent = 0
+    if agent_performance:
+        total_agent_tickets = sum(ap['ticket_count'] for ap in agent_performance)
+        avg_tickets_per_agent = total_agent_tickets / len(agent_performance) if len(agent_performance) > 0 else 0
+    
     context = {
         'period': period,
         'date_from': date_from,
         'date_to': date_to,
         'total_tickets': total_tickets,
         'assigned_tickets': assigned_tickets,
+        'avg_tickets_per_agent': avg_tickets_per_agent,
         'new_tickets': new_tickets,
         'in_progress_tickets': in_progress_tickets,
         'unresolved_tickets': unresolved_tickets,  # Add this missing key
