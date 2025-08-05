@@ -39,7 +39,8 @@
                     <div class="mb-3 mt-4">
                         <label for="priority" class="form-label">Ustal priorytet zgłoszenia:</label>
                         <div class="mt-2">
-                            <div class="btn-group" role="group" aria-label="Priority selection">
+                            <!-- Desktop: single row button group -->
+                            <div class="btn-group d-none d-md-flex" role="group" aria-label="Priority selection">
                                 <input type="radio" class="btn-check" name="priority" id="priority-low" value="low" {% if ticket.priority == 'low' %}checked{% endif %}>
                                 <label class="btn btn-outline-secondary" for="priority-low">
                                     <span class="badge bg-secondary">Niski</span>
@@ -59,6 +60,36 @@
                                 <label class="btn btn-outline-danger" for="priority-critical">
                                     <span class="badge bg-danger">Krytyczny</span>
                                 </label>
+                            </div>
+                            
+                            <!-- Mobile: 2x2 grid layout -->
+                            <div class="d-md-none">
+                                <div class="row g-2">
+                                    <div class="col-6">
+                                        <input type="radio" class="btn-check" name="priority" id="priority-low-mobile" value="low" {% if ticket.priority == 'low' %}checked{% endif %}>
+                                        <label class="btn btn-outline-secondary w-100" for="priority-low-mobile">
+                                            <span class="badge bg-secondary">Niski</span>
+                                        </label>
+                                    </div>
+                                    <div class="col-6">
+                                        <input type="radio" class="btn-check" name="priority" id="priority-medium-mobile" value="medium" {% if ticket.priority == 'medium' or not ticket.priority %}checked{% endif %}>
+                                        <label class="btn btn-outline-info w-100" for="priority-medium-mobile">
+                                            <span class="badge bg-info">Średni</span>
+                                        </label>
+                                    </div>
+                                    <div class="col-6">
+                                        <input type="radio" class="btn-check" name="priority" id="priority-high-mobile" value="high" {% if ticket.priority == 'high' %}checked{% endif %}>
+                                        <label class="btn btn-outline-warning w-100" for="priority-high-mobile">
+                                            <span class="badge bg-warning text-dark">Wysoki</span>
+                                        </label>
+                                    </div>
+                                    <div class="col-6">
+                                        <input type="radio" class="btn-check" name="priority" id="priority-critical-mobile" value="critical" {% if ticket.priority == 'critical' %}checked{% endif %}>
+                                        <label class="btn btn-outline-danger w-100" for="priority-critical-mobile">
+                                            <span class="badge bg-danger">Krytyczny</span>
+                                        </label>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </div>

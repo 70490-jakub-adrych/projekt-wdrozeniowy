@@ -135,6 +135,7 @@
             display: flex;
             flex-direction: column;
             overflow-x: hidden; /* Prevent horizontal scroll */
+            position: relative; /* Ensure proper positioning context */
         }
         
         .container-fluid {
@@ -148,6 +149,7 @@
             margin: 0;
             padding: 0;
             overflow-x: hidden; /* Prevent horizontal scroll at root level */
+            height: 100%; /* Ensure html takes full height */
         }
         
         /* Prevent any elements from extending beyond viewport */
@@ -167,6 +169,34 @@
             position: relative;
             z-index: 1;
             margin-bottom: 0; /* Ensure no bottom margin */
+        }
+        
+        /* Ensure no extra spacing after footer */
+        .footer::after {
+            content: '';
+            display: block;
+            height: 0;
+            margin: 0;
+            padding: 0;
+        }
+        
+        /* Prevent any default margins on last elements */
+        .footer > *:last-child {
+            margin-bottom: 0 !important;
+        }
+        
+        /* Ensure no whitespace after body */
+        body::after {
+            content: '';
+            display: block;
+            height: 0;
+            margin: 0;
+            padding: 0;
+        }
+        
+        /* Make sure cookie banner doesn't add bottom spacing */
+        #cookie-consent-banner {
+            margin-bottom: 0 !important;
         }
         
         .container {
