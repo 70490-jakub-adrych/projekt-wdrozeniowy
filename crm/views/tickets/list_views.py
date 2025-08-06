@@ -1,7 +1,8 @@
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseForbidden
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from datetime import datetime, timedelta
 import logging
 import json
@@ -151,6 +152,58 @@ def ticket_list(request):
     # Zastosowanie sortowania
     tickets = tickets.order_by(sort_by)
     
+    # Paginacja
+    per_page = request.GET.get('per_page', '20')
+    # Handle mobile per_page parameter
+    if not per_page or per_page == '':
+        per_page = request.GET.get('per_page_mobile', '20')
+    
+    try:
+        per_page = int(per_page)
+        if per_page not in [10, 20, 30, 50, 100]:
+            per_page = 20
+    except (ValueError, TypeError):
+        per_page = 20
+    
+    paginator = Paginator(tickets, per_page)
+    page = request.GET.get('page', 1)
+    
+    try:
+        tickets_page = paginator.page(page)
+    except PageNotAnInteger:
+        tickets_page = paginator.page(1)
+    except EmptyPage:
+        tickets_page = paginator.page(paginator.num_pages)
+    
+    # Przygotuj parametry URL dla zachowania filtrów w paginacji
+    url_params = {}
+    if status_filter:
+        url_params['status'] = status_filter
+    if priority_filter:
+        url_params['priority'] = priority_filter
+    if category_filter:
+        url_params['category'] = category_filter
+    if assigned_filter:
+        url_params['assigned'] = assigned_filter
+    if date_from:
+        url_params['date_from'] = date_from
+    if date_to:
+        url_params['date_to'] = date_to
+    if ticket_id:
+        url_params['ticket_id'] = ticket_id
+    if sort_by != '-created_at':
+        url_params['sort_by'] = sort_by
+    if not exclude_closed:
+        url_params['exclude_closed'] = 'false'
+    if created_by_filter:
+        url_params['created_by'] = created_by_filter
+    if exclude_created_by:
+        url_params['exclude_created_by'] = exclude_created_by
+    if organization_filter:
+        url_params['organization'] = organization_filter
+    if per_page != 20:
+        url_params['per_page'] = per_page
+    
     # Lista dostępnych opcji sortowania dla wyboru w interfejsie
     sort_options = [
         ('-created_at', 'Data utworzenia (najnowsze)'),
@@ -168,7 +221,7 @@ def ticket_list(request):
     ]
     
     context = {
-        'tickets': tickets,
+        'tickets': tickets_page,
         'status_filter': status_filter,
         'priority_filter': priority_filter,
         'category_filter': category_filter,
@@ -184,6 +237,9 @@ def ticket_list(request):
         'exclude_created_by': exclude_created_by,
         'organization_filter': organization_filter,  # Add to context
         'all_organizations': all_organizations,  # Add all organizations for admin filter
+        'per_page': per_page,
+        'url_params': url_params,
+        'total_tickets': paginator.count,
     }
     
     return render(request, 'crm/tickets/ticket_list.html', context)

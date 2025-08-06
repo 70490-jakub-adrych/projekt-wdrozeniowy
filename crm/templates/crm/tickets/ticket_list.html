@@ -301,6 +301,29 @@
             display: none !important;
         }
     }
+    
+    /* Pagination Styles */
+    .pagination-sm .page-link {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+    
+    .pagination .page-item.active .page-link {
+        background-color: #0d6efd;
+        border-color: #0d6efd;
+    }
+    
+    .btn-group .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+    
+    @media (max-width: 767px) {
+        .pagination-sm .page-link {
+            padding: 0.2rem 0.4rem;
+            font-size: 0.8rem;
+        }
+    }
 </style>
 {% endblock %}
 
@@ -528,6 +551,18 @@
                         {% if exclude_created_by %}
                         <input type="hidden" name="exclude_created_by" value="{{ exclude_created_by }}">
                         {% endif %}
+                        
+                        <!-- Per-page selector -->
+                        <div class="col-md-6 col-sm-12 mb-2">
+                            <label for="per_page" class="form-label form-label-sm">Zgłoszeń na stronę:</label>
+                            <select name="per_page" id="per_page" class="form-select form-select-sm" style="width: 120px;">
+                                <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
+                                <option value="20" {% if per_page == 20 %}selected{% endif %}>20</option>
+                                <option value="30" {% if per_page == 30 %}selected{% endif %}>30</option>
+                                <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+                                <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+                            </select>
+                        </div>
                                 
                         <div class="col-md-6 col-sm-12 mb-2 text-end d-flex align-items-end justify-content-end">
                             <button type="submit" class="btn btn-sm btn-primary">
@@ -639,6 +674,20 @@
                     icon.classList.add('fa-caret-down');
                     text.textContent = 'Pokaż filtry';
                 });
+                
+                // Synchronize per-page selectors between desktop and mobile
+                const desktopPerPage = document.getElementById('per_page');
+                const mobilePerPage = document.getElementById('mobile_per_page');
+                
+                if (desktopPerPage && mobilePerPage) {
+                    desktopPerPage.addEventListener('change', function() {
+                        mobilePerPage.value = this.value;
+                    });
+                    
+                    mobilePerPage.addEventListener('change', function() {
+                        desktopPerPage.value = this.value;
+                    });
+                }
             </script>
         </div>
     </div>
@@ -713,6 +762,18 @@
                         </select>
                     </div>
                     {% endif %}
+                    
+                    <!-- Per-page selector -->
+                    <div class="mb-3">
+                        <label for="mobile_per_page" class="form-label">Zgłoszeń na stronę:</label>
+                        <select name="per_page" id="mobile_per_page" class="form-select">
+                            <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
+                            <option value="20" {% if per_page == 20 %}selected{% endif %}>20</option>
+                            <option value="30" {% if per_page == 30 %}selected{% endif %}>30</option>
+                            <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+                            <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+                        </select>
+                    </div>
                     
                     <div class="mb-3">
                         <div class="form-check">
@@ -922,6 +983,87 @@
             {% endfor %}
         </div>
     </div>
+    
+    <!-- Pagination Controls -->
+    {% if tickets_page.has_other_pages %}
+    <div class="card-footer">
+        <div class="d-flex justify-content-between align-items-center flex-column flex-md-row">
+            <!-- Page Info -->
+            <div class="mb-2 mb-md-0">
+                <small class="text-muted">
+                    Strona {{ tickets_page.number }} z {{ tickets_page.paginator.num_pages }} 
+                    ({{ total_tickets }} zgłoszeń)
+                </small>
+            </div>
+            
+            <!-- Desktop Pagination -->
+            <nav aria-label="Paginacja zgłoszeń" class="d-none d-md-block">
+                <ul class="pagination pagination-sm mb-0">
+                    {% if tickets_page.has_previous %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page=1{% for key, value in url_params.items %}&{{ key }}={{ value }}{% endfor %}" aria-label="Pierwsza">
+                                <span aria-hidden="true">&laquo;&laquo;</span>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ tickets_page.previous_page_number }}{% for key, value in url_params.items %}&{{ key }}={{ value }}{% endfor %}" aria-label="Poprzednia">
+                                <span aria-hidden="true">&laquo;</span>
+                            </a>
+                        </li>
+                    {% endif %}
+                    
+                    {% for num in tickets_page.paginator.page_range %}
+                        {% if num == tickets_page.number %}
+                            <li class="page-item active" aria-current="page">
+                                <span class="page-link">{{ num }}</span>
+                            </li>
+                        {% elif num > tickets_page.number|add:'-3' and num < tickets_page.number|add:'3' %}
+                            <li class="page-item">
+                                <a class="page-link" href="?page={{ num }}{% for key, value in url_params.items %}&{{ key }}={{ value }}{% endfor %}">{{ num }}</a>
+                            </li>
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {% if tickets_page.has_next %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ tickets_page.next_page_number }}{% for key, value in url_params.items %}&{{ key }}={{ value }}{% endfor %}" aria-label="Następna">
+                                <span aria-hidden="true">&raquo;</span>
+                            </a>
+                        </li>
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ tickets_page.paginator.num_pages }}{% for key, value in url_params.items %}&{{ key }}={{ value }}{% endfor %}" aria-label="Ostatnia">
+                                <span aria-hidden="true">&raquo;&raquo;</span>
+                            </a>
+                        </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            
+            <!-- Mobile Pagination -->
+            <div class="d-md-none">
+                <div class="btn-group" role="group" aria-label="Paginacja zgłoszeń">
+                    {% if tickets_page.has_previous %}
+                        <a href="?page={{ tickets_page.previous_page_number }}{% for key, value in url_params.items %}&{{ key }}={{ value }}{% endfor %}" 
+                           class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-chevron-left"></i>
+                        </a>
+                    {% endif %}
+                    
+                    <span class="btn btn-outline-secondary btn-sm disabled">
+                        {{ tickets_page.number }} / {{ tickets_page.paginator.num_pages }}
+                    </span>
+                    
+                    {% if tickets_page.has_next %}
+                        <a href="?page={{ tickets_page.next_page_number }}{% for key, value in url_params.items %}&{{ key }}={{ value }}{% endfor %}" 
+                           class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-chevron-right"></i>
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 </div>
 {% else %}
 <div class="alert alert-info">
