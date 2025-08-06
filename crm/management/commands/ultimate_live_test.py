@@ -277,24 +277,30 @@ class Command(BaseCommand):
     
     def run_2fa_system_tests(self):
         """Complete 2FA system testing"""
-        if not self.browser_available:
-            tests = [
-                ('2FA Model Configuration', self.test_2fa_model_config),
-                ('2FA Settings Verification', self.test_2fa_settings_check),
-                ('2FA App Installation Check', self.test_2fa_app_installed)
-            ]
-            self.stdout.write(self.style.WARNING('⚠️  Running limited 2FA tests (browser not available)'))
-        else:
-            tests = [
-                ('2FA Setup Process Complete', self.test_2fa_setup_complete),
-                ('2FA Login Verification', self.test_2fa_login_verification),
-                ('2FA Backup Codes Generation', self.test_2fa_backup_codes),
-                ('2FA Invalid Code Handling', self.test_2fa_invalid_codes),
-                ('2FA Disable Process', self.test_2fa_disable_process),
-                ('2FA QR Code Generation', self.test_2fa_qr_code_generation)
-            ]
+        # Run basic 2FA configuration tests first
+        basic_tests = [
+            ('2FA Model Configuration', self.test_2fa_model_config),
+            ('2FA Settings Verification', self.test_2fa_settings_check),
+            ('2FA App Installation Check', self.test_2fa_app_installed)
+        ]
         
-        self.run_test_category('2FA SYSTEM', tests)
+        # Run enhanced 2FA tests if devices are available (regardless of browser)
+        enhanced_tests = [
+            ('2FA Setup Process Complete', self.test_2fa_setup_complete),
+            ('2FA Login Verification', self.test_2fa_login_verification),
+            ('2FA Backup Codes Generation', self.test_2fa_backup_codes),
+            ('2FA Invalid Code Handling', self.test_2fa_invalid_codes),
+            ('2FA Disable Process', self.test_2fa_disable_process),
+            ('2FA QR Code Generation', self.test_2fa_qr_code_generation)
+        ]
+        
+        # Combine all available tests
+        all_tests = basic_tests + enhanced_tests
+        
+        if not self.browser_available:
+            self.stdout.write(self.style.WARNING('⚠️  Running API-based 2FA tests (browser not available)'))
+        
+        self.run_test_category('2FA SYSTEM', all_tests)
     
     def run_organization_tests(self):
         """Complete organization management testing"""
