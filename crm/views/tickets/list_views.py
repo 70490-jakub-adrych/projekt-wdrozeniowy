@@ -158,12 +158,19 @@ def ticket_list(request):
     if not per_page or per_page == '':
         per_page = request.GET.get('per_page_mobile', '20')
     
+    # Detect mobile devices and limit to 10 per page
+    user_agent = request.META.get('HTTP_USER_AGENT', '').lower()
+    is_mobile = any(mobile in user_agent for mobile in ['mobile', 'android', 'iphone', 'ipad', 'tablet'])
+    
     try:
         per_page = int(per_page)
         if per_page not in [10, 20, 30, 50, 100]:
             per_page = 20
+        # Force mobile to max 10 entries per page
+        if is_mobile and per_page > 10:
+            per_page = 10
     except (ValueError, TypeError):
-        per_page = 20
+        per_page = 10 if is_mobile else 20
     
     paginator = Paginator(tickets, per_page)
     page = request.GET.get('page', 1)
