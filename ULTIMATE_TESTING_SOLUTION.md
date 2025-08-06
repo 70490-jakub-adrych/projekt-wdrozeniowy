@@ -50,15 +50,15 @@ projekt-wdrozeniowy/
 
 ```bash
 # Complete comprehensive testing (recommended)
-python manage.py ultimate_live_test --username=admin --password=yourpass
+python manage.py ultimate_live_test --username=admin --password=yourpass --email=admin@example.com
 
 # Specific categories
-python manage.py ultimate_live_test --username=admin --password=yourpass --test-category=auth
-python manage.py ultimate_live_test --username=admin --password=yourpass --test-category=2fa
-python manage.py ultimate_live_test --username=admin --password=yourpass --test-category=organizations
+python manage.py ultimate_live_test --username=admin --password=yourpass --email=admin@example.com --test-category=auth
+python manage.py ultimate_live_test --username=admin --password=yourpass --email=admin@example.com --test-category=2fa
+python manage.py ultimate_live_test --username=admin --password=yourpass --email=admin@example.com --test-category=organizations
 
 # Quick setup script (easiest)
-python quick_test_setup.py --username=admin --password=yourpass --test-category=all
+python quick_test_setup.py --username=admin --password=yourpass --email=admin@example.com --test-category=all
 ```
 
 ### **Available Test Categories:**

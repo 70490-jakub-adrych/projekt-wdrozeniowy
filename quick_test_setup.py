@@ -107,6 +107,7 @@ def run_tests(credentials, headless=True, cleanup=True, test_category='all'):
         sys.executable, 'manage.py', 'ultimate_live_test',
         f'--username={credentials["username"]}',
         f'--password={credentials["password"]}',
+        f'--email={credentials["email"]}',
         f'--domain={credentials["domain"]}',
         f'--test-category={test_category}'
     ]

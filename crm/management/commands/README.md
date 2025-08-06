@@ -5,7 +5,7 @@
 **This is the unified solution for all live domain testing via SSH.**
 
 ```bash
-python manage.py ultimate_live_test --username=admin --password=yourpass
+python manage.py ultimate_live_test --username=admin --password=yourpass --email=admin@example.com
 ```
 
 ### Features:
