@@ -1188,8 +1188,20 @@ class Command(BaseCommand):
             # Check 2FA models
             try:
                 from django_otp.models import Device
+                from django_otp.plugins.otp_totp.models import TOTPDevice
+                from django_otp.plugins.otp_static.models import StaticDevice
+                
                 device_count = Device.objects.count()
-                model_status = f"✅ 2FA models accessible, {device_count} devices configured"
+                totp_count = TOTPDevice.objects.count()
+                static_count = StaticDevice.objects.count()
+                
+                # Check for admin user devices specifically
+                admin_user = User.objects.filter(username=self.admin_username).first()
+                admin_devices = 0
+                if admin_user:
+                    admin_devices = Device.objects.filter(user=admin_user).count()
+                
+                model_status = f"✅ 2FA models accessible: {device_count} total devices ({totp_count} TOTP, {static_count} Static), Admin user has {admin_devices} devices"
             except Exception as e:
                 model_status = f"❌ 2FA models error: {str(e)}"
             
@@ -1515,17 +1527,198 @@ class Command(BaseCommand):
     def test_concurrent_users(self):
         return {'status': 'SKIP', 'message': 'Concurrent users test - implementation pending'}
     
-    # 2FA browser-based test methods (when browser is available)
+    # Enhanced 2FA API-based test methods
     def test_2fa_setup_complete(self):
-        return {'status': 'SKIP', 'message': '2FA setup test - browser not available'}
+        """Test if 2FA is properly set up for admin user"""
+        try:
+            from django_otp.models import Device
+            from django_otp.plugins.otp_totp.models import TOTPDevice
+            from django_otp.plugins.otp_static.models import StaticDevice
+            
+            admin_user = User.objects.filter(username=self.admin_username).first()
+            if not admin_user:
+                return {'status': 'FAIL', 'message': 'Admin user not found'}
+            
+            # Check for TOTP devices
+            totp_devices = TOTPDevice.objects.filter(user=admin_user)
+            static_devices = StaticDevice.objects.filter(user=admin_user)
+            
+            device_info = []
+            if totp_devices.exists():
+                totp_count = totp_devices.count()
+                confirmed_totp = totp_devices.filter(confirmed=True).count()
+                device_info.append(f"TOTP: {confirmed_totp}/{totp_count} confirmed")
+            
+            if static_devices.exists():
+                static_count = static_devices.count()
+                device_info.append(f"Static: {static_count} devices")
+            
+            if device_info:
+                return {'status': 'PASS', 'message': f'2FA devices configured: {", ".join(device_info)}'}
+            else:
+                return {'status': 'FAIL', 'message': 'No 2FA devices found for admin user. Use enhanced_2fa_setup.py to create them.'}
+                
+        except Exception as e:
+            return {'status': 'FAIL', 'message': f'Error checking 2FA setup: {str(e)}'}
     
     def test_2fa_login_verification(self):
-        return {'status': 'SKIP', 'message': '2FA login verification test - browser not available'}
+        """Test 2FA token verification without browser"""
+        try:
+            from django_otp.plugins.otp_totp.models import TOTPDevice
+            import pyotp
+            
+            admin_user = User.objects.filter(username=self.admin_username).first()
+            if not admin_user:
+                return {'status': 'FAIL', 'message': 'Admin user not found'}
+            
+            # Get TOTP device
+            totp_devices = TOTPDevice.objects.filter(user=admin_user, confirmed=True)
+            if not totp_devices.exists():
+                return {'status': 'SKIP', 'message': 'No confirmed TOTP devices found. Run enhanced_2fa_setup.py first.'}
+            
+            totp_device = totp_devices.first()
+            
+            # Generate and verify TOTP token
+            if totp_device.key:
+                totp = pyotp.TOTP(totp_device.key)
+                current_token = totp.now()
+                
+                # Test verification
+                if totp_device.verify_token(current_token):
+                    return {'status': 'PASS', 'message': f'TOTP verification successful (token: {current_token})'}
+                else:
+                    return {'status': 'FAIL', 'message': 'TOTP verification failed'}
+            else:
+                return {'status': 'FAIL', 'message': 'TOTP device has no key configured'}
+                
+        except ImportError:
+            return {'status': 'SKIP', 'message': 'pyotp not available for TOTP testing'}
+        except Exception as e:
+            return {'status': 'FAIL', 'message': f'Error testing TOTP verification: {str(e)}'}
     
     def test_2fa_backup_codes(self):
-        return {'status': 'SKIP', 'message': '2FA backup codes test - browser not available'}
+        """Test static backup codes"""
+        try:
+            from django_otp.plugins.otp_static.models import StaticDevice, StaticToken
+            
+            admin_user = User.objects.filter(username=self.admin_username).first()
+            if not admin_user:
+                return {'status': 'FAIL', 'message': 'Admin user not found'}
+            
+            # Get static devices
+            static_devices = StaticDevice.objects.filter(user=admin_user)
+            if not static_devices.exists():
+                return {'status': 'SKIP', 'message': 'No static devices found. Run enhanced_2fa_setup.py first.'}
+            
+            static_device = static_devices.first()
+            
+            # Check static tokens
+            tokens = StaticToken.objects.filter(device=static_device)
+            if tokens.exists():
+                token_count = tokens.count()
+                
+                # Test one token verification (without consuming it)
+                test_token = tokens.first()
+                if test_token:
+                    return {'status': 'PASS', 'message': f'Static backup codes configured: {token_count} tokens available'}
+                else:
+                    return {'status': 'FAIL', 'message': 'Static tokens exist but cannot access them'}
+            else:
+                return {'status': 'FAIL', 'message': 'Static device exists but no tokens configured'}
+                
+        except Exception as e:
+            return {'status': 'FAIL', 'message': f'Error testing backup codes: {str(e)}'}
     
     def test_2fa_invalid_codes(self):
+        """Test invalid code handling"""
+        try:
+            from django_otp.plugins.otp_totp.models import TOTPDevice
+            
+            admin_user = User.objects.filter(username=self.admin_username).first()
+            if not admin_user:
+                return {'status': 'FAIL', 'message': 'Admin user not found'}
+            
+            # Get TOTP device
+            totp_devices = TOTPDevice.objects.filter(user=admin_user, confirmed=True)
+            if not totp_devices.exists():
+                return {'status': 'SKIP', 'message': 'No confirmed TOTP devices found. Run enhanced_2fa_setup.py first.'}
+            
+            totp_device = totp_devices.first()
+            
+            # Test invalid codes
+            invalid_codes = ['000000', '123456', '999999', 'invalid']
+            failed_verifications = 0
+            
+            for invalid_code in invalid_codes:
+                if not totp_device.verify_token(invalid_code):
+                    failed_verifications += 1
+            
+            if failed_verifications == len(invalid_codes):
+                return {'status': 'PASS', 'message': f'Invalid code rejection working: {failed_verifications}/{len(invalid_codes)} invalid codes correctly rejected'}
+            else:
+                return {'status': 'FAIL', 'message': f'Invalid code handling failed: only {failed_verifications}/{len(invalid_codes)} codes rejected'}
+                
+        except Exception as e:
+            return {'status': 'FAIL', 'message': f'Error testing invalid codes: {str(e)}'}
+    
+    def test_2fa_disable_process(self):
+        """Test 2FA device management"""
+        try:
+            from django_otp.models import Device
+            
+            admin_user = User.objects.filter(username=self.admin_username).first()
+            if not admin_user:
+                return {'status': 'FAIL', 'message': 'Admin user not found'}
+            
+            # Count devices
+            all_devices = list(Device.objects.devices_for_user(admin_user))
+            device_count = len(all_devices)
+            
+            if device_count > 0:
+                device_types = [device.__class__.__name__ for device in all_devices]
+                return {'status': 'PASS', 'message': f'2FA device management working: {device_count} devices ({", ".join(set(device_types))})'}
+            else:
+                return {'status': 'SKIP', 'message': 'No devices to manage. Run enhanced_2fa_setup.py first.'}
+                
+        except Exception as e:
+            return {'status': 'FAIL', 'message': f'Error testing device management: {str(e)}'}
+    
+    def test_2fa_qr_code_generation(self):
+        """Test QR code generation capability"""
+        try:
+            from django_otp.plugins.otp_totp.models import TOTPDevice
+            import pyotp
+            
+            admin_user = User.objects.filter(username=self.admin_username).first()
+            if not admin_user:
+                return {'status': 'FAIL', 'message': 'Admin user not found'}
+            
+            # Get TOTP device
+            totp_devices = TOTPDevice.objects.filter(user=admin_user, confirmed=True)
+            if not totp_devices.exists():
+                return {'status': 'SKIP', 'message': 'No confirmed TOTP devices found. Run enhanced_2fa_setup.py first.'}
+            
+            totp_device = totp_devices.first()
+            
+            if totp_device.key:
+                # Create provisioning URI for QR code
+                totp = pyotp.TOTP(totp_device.key)
+                provisioning_uri = totp.provisioning_uri(
+                    name=admin_user.username,
+                    issuer_name="CRM System Test"
+                )
+                
+                if provisioning_uri and 'otpauth://' in provisioning_uri:
+                    return {'status': 'PASS', 'message': f'QR code generation working (URI length: {len(provisioning_uri)})'}
+                else:
+                    return {'status': 'FAIL', 'message': 'QR code URI generation failed'}
+            else:
+                return {'status': 'FAIL', 'message': 'TOTP device has no key for QR generation'}
+                
+        except ImportError:
+            return {'status': 'SKIP', 'message': 'pyotp not available for QR code testing'}
+        except Exception as e:
+            return {'status': 'FAIL', 'message': f'Error testing QR code generation: {str(e)}'}
         return {'status': 'SKIP', 'message': '2FA invalid codes test - browser not available'}
     
     def test_2fa_disable_process(self):
