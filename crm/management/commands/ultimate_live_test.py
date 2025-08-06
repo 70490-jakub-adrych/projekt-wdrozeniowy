@@ -1722,7 +1722,18 @@ class Command(BaseCommand):
                 recent_logs = LogEntry.objects.order_by('-action_time')[:3]
                 for log in recent_logs:
                     if log.object_repr:
-                        checks.append(f'✅ Recent: {log.action_flag_name} on {log.object_repr[:30]}')
+                        # Use correct method to get action flag name
+                        action_name = "unknown"
+                        if hasattr(log, 'get_action_flag_display'):
+                            action_name = log.get_action_flag_display()
+                        elif log.action_flag == 1:
+                            action_name = "addition"
+                        elif log.action_flag == 2:
+                            action_name = "change"
+                        elif log.action_flag == 3:
+                            action_name = "deletion"
+                        
+                        checks.append(f'✅ Recent: {action_name} on {log.object_repr[:30]}')
                         break
             
             # Test login endpoint availability
