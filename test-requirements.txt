@@ -1,0 +1,62 @@
+# Testing dependencies for CRM system
+# Install with: pip install -r test-requirements.txt
+
+# Core testing framework (already included with Django)
+# Django test framework is built-in
+
+# Selenium for browser automation testing
+selenium>=4.15.0
+
+# Coverage reporting
+coverage>=7.3.0
+
+# Factory Boy for test data generation (optional but recommended)
+factory-boy>=3.3.0
+
+# Faker for generating fake data in tests
+Faker>=19.0.0
+
+# Mock library for testing (included in Python 3.3+)
+# unittest.mock is built-in for Python 3.3+
+
+# HTTP client for API testing (optional)
+requests>=2.31.0
+
+# Time zone handling for tests
+pytz>=2023.3
+
+# For testing with different database backends (optional)
+# psycopg2-binary>=2.9.7  # PostgreSQL
+# mysqlclient>=2.2.0      # MySQL
+
+# Performance testing (optional)
+# locust>=2.17.0
+
+# HTML parsing for response testing
+beautifulsoup4>=4.12.0
+
+# Image processing for testing file uploads (optional)
+Pillow>=10.0.0
+
+# For testing email functionality
+# premailer>=3.10.0  # Email HTML optimization
+
+# Memory profiling for performance tests (optional)
+# memory-profiler>=0.61.0
+
+# JSON schema validation for API tests (optional)
+# jsonschema>=4.19.0
+
+# Database fixtures and migrations testing (optional)
+# django-migration-testcase>=1.0.0
+
+# Parallel test execution (optional)
+# pytest-django>=4.5.0
+# pytest-xdist>=3.3.0
+
+# For mocking external services in tests
+responses>=0.23.0
+
+# Test report generation (optional)
+# pytest-html>=3.2.0
+# pytest-cov>=4.1.0

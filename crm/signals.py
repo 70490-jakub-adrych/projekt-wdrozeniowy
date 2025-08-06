@@ -54,6 +54,15 @@ def detect_user_approval(sender, instance, **kwargs):
 @receiver(user_logged_in)
 def user_logged_in_handler(sender, request, user, **kwargs):
     """Handle user login - log activity and check 2FA"""
+    # Prevent duplicate login logs within the same request
+    login_logged_key = f"login_logged_{user.id}"
+    if hasattr(request, login_logged_key):
+        # Already logged this user's login in this request
+        return
+    
+    # Mark this user's login as logged for this request
+    setattr(request, login_logged_key, True)
+    
     # Get client IP
     x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
     if x_forwarded_for:
