@@ -6,6 +6,7 @@ from django.conf import settings
 from django.contrib.admin.views.decorators import staff_member_required
 from django.views.decorators.http import require_POST
 from django.utils import timezone
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 from datetime import timedelta
 from collections import defaultdict
 import logging
@@ -39,16 +40,51 @@ def activity_logs(request):
     if user_filter:
         logs = logs.filter(user__username__icontains=user_filter)
     
-    # Ograniczenie do 500 ostatnich wpisów przed grupowaniem
-    logs = logs[:500]
+    # Ograniczenie do 1000 ostatnich wpisów przed grupowaniem (zwiększone dla paginacji)
+    logs = logs[:1000]
     
     # Grupowanie podobnych logów
     grouped_logs = group_similar_logs(logs)
     
+    # Paginacja
+    per_page = request.GET.get('per_page', '15')
+    # Handle mobile per_page parameter
+    if not per_page or per_page == '':
+        per_page = request.GET.get('per_page_mobile', '15')
+    
+    try:
+        per_page = int(per_page)
+        if per_page not in [10, 15, 25, 50, 100]:
+            per_page = 15
+    except (ValueError, TypeError):
+        per_page = 15
+    
+    paginator = Paginator(grouped_logs, per_page)
+    page = request.GET.get('page', 1)
+    
+    try:
+        grouped_logs_page = paginator.page(page)
+    except PageNotAnInteger:
+        grouped_logs_page = paginator.page(1)
+    except EmptyPage:
+        grouped_logs_page = paginator.page(paginator.num_pages)
+    
+    # Przygotuj parametry URL dla zachowania filtrów w paginacji
+    url_params = {}
+    if action_filter:
+        url_params['action'] = action_filter
+    if user_filter:
+        url_params['user'] = user_filter
+    if per_page != 15:
+        url_params['per_page'] = per_page
+    
     context = {
-        'grouped_logs': grouped_logs,
+        'grouped_logs': grouped_logs_page,
         'action_filter': action_filter,
         'user_filter': user_filter,
+        'per_page': per_page,
+        'url_params': url_params,
+        'total_groups': paginator.count,
     }
     
     return render(request, 'crm/logs/activity_logs.html', context)

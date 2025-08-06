@@ -133,6 +133,35 @@
         color: #495057;
     }
     
+    /* Pagination styles */
+    .pagination {
+        margin: 0;
+    }
+    
+    .pagination .page-link {
+        color: #495057;
+        border-color: #dee2e6;
+        padding: 0.375rem 0.75rem;
+    }
+    
+    .pagination .page-item.active .page-link {
+        background-color: #007bff;
+        border-color: #007bff;
+        color: white;
+    }
+    
+    .pagination .page-link:hover {
+        color: #0056b3;
+        background-color: #e9ecef;
+        border-color: #dee2e6;
+    }
+    
+    .pagination .page-item.disabled .page-link {
+        color: #6c757d;
+        background-color: #fff;
+        border-color: #dee2e6;
+    }
+    
     /* Mobile responsive styles */
     @media (max-width: 576px) {
         .logs-header-desktop {
@@ -334,7 +363,7 @@
     <div class="card-body">
         <form method="get">
             <div class="row g-3 align-items-end">
-                <div class="col-md-5">
+                <div class="col-md-4">
                     <label for="action" class="form-label">Akcja:</label>
                     <select name="action" id="action" class="form-select form-select-sm">
                         <option value="" {% if not action_filter %}selected{% endif %}>Wszystkie</option>
@@ -354,11 +383,21 @@
                         <option value="403_error" {% if action_filter == '403_error' %}selected{% endif %}>Błąd 403 - Brak dostępu</option>
                     </select>
                 </div>
-                <div class="col-md-5">
+                <div class="col-md-3">
                     <label for="user" class="form-label">Użytkownik:</label>
                     <input type="text" name="user" id="user" class="form-control form-control-sm" value="{{ user_filter|default:'' }}" placeholder="Nazwa użytkownika">
                 </div>
-                <div class="col-md-2">
+                <div class="col-md-2 d-none d-md-block">
+                    <label for="per_page" class="form-label">Na stronę:</label>
+                    <select name="per_page" id="per_page" class="form-select form-select-sm">
+                        <option value="10" {% if per_page == 10 %}selected{% endif %}>10</option>
+                        <option value="15" {% if per_page == 15 %}selected{% endif %}>15</option>
+                        <option value="25" {% if per_page == 25 %}selected{% endif %}>25</option>
+                        <option value="50" {% if per_page == 50 %}selected{% endif %}>50</option>
+                        <option value="100" {% if per_page == 100 %}selected{% endif %}>100</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
                     <div class="d-grid gap-2 d-md-flex justify-content-md-end">
                         <button type="submit" class="btn btn-sm btn-primary btn-ripple">
                             <i class="fas fa-search me-1"></i> Zastosuj
@@ -369,6 +408,8 @@
                     </div>
                 </div>
             </div>
+            <!-- Hidden field for mobile per_page -->
+            <input type="hidden" name="per_page_mobile" value="{{ per_page }}">
         </form>
     </div>
 </div>
@@ -376,8 +417,16 @@
 <!-- Lista logów -->
 {% if grouped_logs %}
 <div class="card">
-    <div class="card-header">
-        <i class="fas fa-history"></i> Lista logów
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <div>
+            <i class="fas fa-history"></i> Lista logów
+        </div>
+        <div class="text-muted small">
+            {% if grouped_logs.has_other_pages %}
+                Strona {{ grouped_logs.number }} z {{ grouped_logs.paginator.num_pages }}
+            {% endif %}
+            ({{ total_groups }} {% if total_groups == 1 %}grupa{% elif total_groups < 5 %}grupy{% else %}grup{% endif %})
+        </div>
     </div>
     <div class="card-body">
         <!-- Desktop Table View -->
@@ -606,6 +655,112 @@
         </div>
     </div>
 </div>
+
+<!-- Pagination -->
+{% if grouped_logs.has_other_pages %}
+<nav aria-label="Paginacja logów">
+    <div class="row align-items-center mt-4">
+        <div class="col-md-6">
+            <p class="text-muted mb-0">
+                Pokazuje 
+                <strong>{{ grouped_logs.start_index }}-{{ grouped_logs.end_index }}</strong> 
+                z <strong>{{ total_groups }}</strong> grup logów
+            </p>
+        </div>
+        <div class="col-md-6">
+            <ul class="pagination justify-content-end mb-0">
+                {% if grouped_logs.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{% for key, value in url_params.items %}{{ key }}={{ value }}&{% endfor %}page=1">
+                            <i class="fas fa-angle-double-left"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?{% for key, value in url_params.items %}{{ key }}={{ value }}&{% endfor %}page={{ grouped_logs.previous_page_number }}">
+                            <i class="fas fa-angle-left"></i>
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link"><i class="fas fa-angle-double-left"></i></span>
+                    </li>
+                    <li class="page-item disabled">
+                        <span class="page-link"><i class="fas fa-angle-left"></i></span>
+                    </li>
+                {% endif %}
+
+                {% for num in grouped_logs.paginator.page_range %}
+                    {% if num == grouped_logs.number %}
+                        <li class="page-item active">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                    {% elif num > grouped_logs.number|add:'-3' and num < grouped_logs.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?{% for key, value in url_params.items %}{{ key }}={{ value }}&{% endfor %}page={{ num }}">{{ num }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+
+                {% if grouped_logs.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?{% for key, value in url_params.items %}{{ key }}={{ value }}&{% endfor %}page={{ grouped_logs.next_page_number }}">
+                            <i class="fas fa-angle-right"></i>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?{% for key, value in url_params.items %}{{ key }}={{ value }}&{% endfor %}page={{ grouped_logs.paginator.num_pages }}">
+                            <i class="fas fa-angle-double-right"></i>
+                        </a>
+                    </li>
+                {% else %}
+                    <li class="page-item disabled">
+                        <span class="page-link"><i class="fas fa-angle-right"></i></span>
+                    </li>
+                    <li class="page-item disabled">
+                        <span class="page-link"><i class="fas fa-angle-double-right"></i></span>
+                    </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- Mobile Pagination -->
+<div class="d-md-none mt-3">
+    <div class="row">
+        <div class="col-12 text-center mb-2">
+            <small class="text-muted">
+                Strona {{ grouped_logs.number }} z {{ grouped_logs.paginator.num_pages }} 
+                ({{ total_groups }} grup)
+            </small>
+        </div>
+        <div class="col-6">
+            {% if grouped_logs.has_previous %}
+                <a href="?{% for key, value in url_params.items %}{{ key }}={{ value }}&{% endfor %}page={{ grouped_logs.previous_page_number }}" 
+                   class="btn btn-outline-primary btn-sm w-100">
+                    <i class="fas fa-arrow-left me-1"></i> Poprzednia
+                </a>
+            {% else %}
+                <button class="btn btn-outline-secondary btn-sm w-100" disabled>
+                    <i class="fas fa-arrow-left me-1"></i> Poprzednia
+                </button>
+            {% endif %}
+        </div>
+        <div class="col-6">
+            {% if grouped_logs.has_next %}
+                <a href="?{% for key, value in url_params.items %}{{ key }}={{ value }}&{% endfor %}page={{ grouped_logs.next_page_number }}" 
+                   class="btn btn-outline-primary btn-sm w-100">
+                    Następna <i class="fas fa-arrow-right ms-1"></i>
+                </a>
+            {% else %}
+                <button class="btn btn-outline-secondary btn-sm w-100" disabled>
+                    Następna <i class="fas fa-arrow-right ms-1"></i>
+                </button>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
 {% else %}
 <div class="alert alert-info">
     <p>Nie znaleziono logów spełniających wybrane kryteria.</p>
@@ -638,6 +793,23 @@ document.addEventListener('DOMContentLoaded', function() {
     toggles.forEach(toggle => {
         toggle.classList.add('collapsed');
     });
+    
+    // Handle per_page form submission
+    const form = document.querySelector('form[method="get"]');
+    const perPageSelect = document.querySelector('#per_page');
+    const perPageMobileInput = document.querySelector('input[name="per_page_mobile"]');
+    
+    if (form && perPageSelect && perPageMobileInput) {
+        // Update mobile hidden field when desktop select changes
+        perPageSelect.addEventListener('change', function() {
+            perPageMobileInput.value = this.value;
+        });
+        
+        // On mobile, sync the hidden field with current selection
+        if (window.innerWidth <= 576) {
+            perPageMobileInput.value = '{{ per_page }}';
+        }
+    }
 });
 </script>
 {% endblock extra_js %}
