@@ -222,6 +222,7 @@ def ticket_list(request):
     
     context = {
         'tickets': tickets_page,
+        'tickets_page': tickets_page,  # Add this for pagination controls
         'status_filter': status_filter,
         'priority_filter': priority_filter,
         'category_filter': category_filter,
