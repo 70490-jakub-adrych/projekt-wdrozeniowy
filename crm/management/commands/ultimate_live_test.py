@@ -1185,23 +1185,23 @@ class Command(BaseCommand):
             except ImportError:
                 return {'status': 'FAIL', 'message': 'django-otp not installed'}
             
-            # Check 2FA models
+            # Check 2FA models (use specific device types, not abstract Device)
             try:
-                from django_otp.models import Device
                 from django_otp.plugins.otp_totp.models import TOTPDevice
                 from django_otp.plugins.otp_static.models import StaticDevice
                 
-                device_count = Device.objects.count()
                 totp_count = TOTPDevice.objects.count()
                 static_count = StaticDevice.objects.count()
                 
                 # Check for admin user devices specifically
                 admin_user = User.objects.filter(username=self.admin_username).first()
-                admin_devices = 0
+                admin_totp = 0
+                admin_static = 0
                 if admin_user:
-                    admin_devices = Device.objects.filter(user=admin_user).count()
+                    admin_totp = TOTPDevice.objects.filter(user=admin_user).count()
+                    admin_static = StaticDevice.objects.filter(user=admin_user).count()
                 
-                model_status = f"✅ 2FA models accessible: {device_count} total devices ({totp_count} TOTP, {static_count} Static), Admin user has {admin_devices} devices"
+                model_status = f"✅ 2FA models accessible: {totp_count + static_count} total devices ({totp_count} TOTP, {static_count} Static), Admin user has {admin_totp + admin_static} devices"
             except Exception as e:
                 model_status = f"❌ 2FA models error: {str(e)}"
             
@@ -1664,19 +1664,25 @@ class Command(BaseCommand):
     def test_2fa_disable_process(self):
         """Test 2FA device management"""
         try:
-            from django_otp.models import Device
+            from django_otp.plugins.otp_totp.models import TOTPDevice
+            from django_otp.plugins.otp_static.models import StaticDevice
             
             admin_user = User.objects.filter(username=self.admin_username).first()
             if not admin_user:
                 return {'status': 'FAIL', 'message': 'Admin user not found'}
             
-            # Count devices
-            all_devices = list(Device.objects.devices_for_user(admin_user))
-            device_count = len(all_devices)
+            # Count devices using specific device types
+            totp_devices = TOTPDevice.objects.filter(user=admin_user)
+            static_devices = StaticDevice.objects.filter(user=admin_user)
+            device_count = totp_devices.count() + static_devices.count()
             
             if device_count > 0:
-                device_types = [device.__class__.__name__ for device in all_devices]
-                return {'status': 'PASS', 'message': f'2FA device management working: {device_count} devices ({", ".join(set(device_types))})'}
+                device_types = []
+                if totp_devices.exists():
+                    device_types.append('TOTPDevice')
+                if static_devices.exists():
+                    device_types.append('StaticDevice')
+                return {'status': 'PASS', 'message': f'2FA device management working: {device_count} devices ({", ".join(device_types)})'}
             else:
                 return {'status': 'SKIP', 'message': 'No devices to manage. Run enhanced_2fa_setup.py first.'}
                 
