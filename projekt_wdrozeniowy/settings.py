@@ -43,6 +43,11 @@ INSTALLED_APPS = [
     'crispy_forms',
     'crispy_bootstrap4',
     
+    # 2FA/OTP apps
+    'django_otp',
+    'django_otp.plugins.otp_static',
+    'django_otp.plugins.otp_totp',
+    
     # Local apps
     'crm.apps.CrmConfig',  # Use the app config class instead of just the app name
 ]
@@ -53,6 +58,7 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django_otp.middleware.OTPMiddleware',  # Add OTP middleware after auth
     'django.contrib.messages.middleware.MessageMiddleware',  # Moved up - must be before our custom middleware
     'crm.middleware.ViewerRestrictMiddleware',
     'crm.middleware.EmailVerificationMiddleware',
