@@ -299,7 +299,72 @@
         }
     }
 </style>
-{% endblock extra_css %}
+{% endblock %}
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+            min-height: 24px;
+        }
+        
+        .mobile-log-label {
+            font-weight: 500;
+            color: #6c757d;
+            font-size: 0.85rem;
+            margin-right: 10px;
+            min-width: 70px;
+            flex-shrink: 0;
+        }
+        
+        .mobile-log-value {
+            color: #495057;
+            font-size: 0.85rem;
+            text-align: right;
+            flex: 1;
+            word-break: break-word;
+        }
+        
+        .mobile-log-actions {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #dee2e6;
+            text-align: center;
+        }
+        
+        .mobile-log-btn {
+            width: 100%;
+            padding: 10px;
+            font-size: 14px;
+        }
+        
+        /* Action type specific colors */
+        .action-login { background-color: #d4edda; color: #155724; }
+        .action-logout { background-color: #f8d7da; color: #721c24; }
+        .action-failed { background-color: #fff3cd; color: #856404; }
+        .action-error { background-color: #f5c6cb; color: #721c24; }
+        .action-ticket { background-color: #d1ecf1; color: #0c5460; }
+        .action-admin { background-color: #e2e3e5; color: #383d41; }
+    }
+    
+    /* Desktop styles */
+    @media (min-width: 577px) {
+        .logs-header-mobile {
+            display: none !important;
+        }
+        
+        .logs-header-desktop {
+            display: flex !important;
+        }
+        
+        .desktop-table {
+            display: block !important;
+        }
+        
+        .mobile-cards {
+            display: none !important;
+        }
+    }
+</style>
+{% endblock %}
 
 {% block content %}
 <!-- Desktop Header -->
@@ -611,7 +676,7 @@
     <p>Nie znaleziono logów spełniających wybrane kryteria.</p>
 </div>
 {% endif %}
-{% endblock content %}
+{% endblock %}
 
 {% block extra_js %}
 <script>
@@ -640,4 +705,4 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 </script>
-{% endblock extra_js %}
+{% endblock %}
