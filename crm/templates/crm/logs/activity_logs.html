@@ -327,6 +327,29 @@
             display: none !important;
         }
     }
+    
+    /* Pagination Styles */
+    .pagination-sm .page-link {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+    
+    .pagination .page-item.active .page-link {
+        background-color: #0d6efd;
+        border-color: #0d6efd;
+    }
+    
+    .btn-group .btn-sm {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.875rem;
+    }
+    
+    @media (max-width: 767px) {
+        .pagination-sm .page-link {
+            padding: 0.2rem 0.4rem;
+            font-size: 0.8rem;
+        }
+    }
 </style>
 {% endblock extra_css %}
 
@@ -658,105 +681,80 @@
 
 <!-- Pagination -->
 {% if grouped_logs.has_other_pages %}
-<nav aria-label="Paginacja logów">
-    <div class="row align-items-center mt-4">
-        <div class="col-md-6">
-            <p class="text-muted mb-0">
-                Pokazuje 
-                <strong>{{ grouped_logs.start_index }}-{{ grouped_logs.end_index }}</strong> 
-                z <strong>{{ total_groups }}</strong> grup logów
-            </p>
-        </div>
-        <div class="col-md-6">
-            <ul class="pagination justify-content-end mb-0">
-                {% if grouped_logs.has_previous %}
-                    <li class="page-item">
-                        <a class="page-link" href="?{% for key, value in url_params.items %}{{ key }}={{ value }}&{% endfor %}page=1">
-                            <i class="fas fa-angle-double-left"></i>
-                        </a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="?{% for key, value in url_params.items %}{{ key }}={{ value }}&{% endfor %}page={{ grouped_logs.previous_page_number }}">
-                            <i class="fas fa-angle-left"></i>
-                        </a>
-                    </li>
-                {% else %}
-                    <li class="page-item disabled">
-                        <span class="page-link"><i class="fas fa-angle-double-left"></i></span>
-                    </li>
-                    <li class="page-item disabled">
-                        <span class="page-link"><i class="fas fa-angle-left"></i></span>
-                    </li>
-                {% endif %}
-
-                {% for num in grouped_logs.paginator.page_range %}
-                    {% if num == grouped_logs.number %}
-                        <li class="page-item active">
-                            <span class="page-link">{{ num }}</span>
-                        </li>
-                    {% elif num > grouped_logs.number|add:'-3' and num < grouped_logs.number|add:'3' %}
-                        <li class="page-item">
-                            <a class="page-link" href="?{% for key, value in url_params.items %}{{ key }}={{ value }}&{% endfor %}page={{ num }}">{{ num }}</a>
-                        </li>
-                    {% endif %}
-                {% endfor %}
-
-                {% if grouped_logs.has_next %}
-                    <li class="page-item">
-                        <a class="page-link" href="?{% for key, value in url_params.items %}{{ key }}={{ value }}&{% endfor %}page={{ grouped_logs.next_page_number }}">
-                            <i class="fas fa-angle-right"></i>
-                        </a>
-                    </li>
-                    <li class="page-item">
-                        <a class="page-link" href="?{% for key, value in url_params.items %}{{ key }}={{ value }}&{% endfor %}page={{ grouped_logs.paginator.num_pages }}">
-                            <i class="fas fa-angle-double-right"></i>
-                        </a>
-                    </li>
-                {% else %}
-                    <li class="page-item disabled">
-                        <span class="page-link"><i class="fas fa-angle-right"></i></span>
-                    </li>
-                    <li class="page-item disabled">
-                        <span class="page-link"><i class="fas fa-angle-double-right"></i></span>
-                    </li>
-                {% endif %}
-            </ul>
-        </div>
-    </div>
-</nav>
-
-<!-- Mobile Pagination -->
-<div class="d-md-none mt-3">
-    <div class="row">
-        <div class="col-12 text-center mb-2">
+<div class="mt-4">
+    <div class="d-flex justify-content-between align-items-center flex-column flex-md-row">
+        <!-- Page Info -->
+        <div class="mb-2 mb-md-0">
             <small class="text-muted">
                 Strona {{ grouped_logs.number }} z {{ grouped_logs.paginator.num_pages }} 
                 ({{ total_groups }} grup)
             </small>
         </div>
-        <div class="col-6">
-            {% if grouped_logs.has_previous %}
-                <a href="?{% for key, value in url_params.items %}{{ key }}={{ value }}&{% endfor %}page={{ grouped_logs.previous_page_number }}" 
-                   class="btn btn-outline-primary btn-sm w-100">
-                    <i class="fas fa-arrow-left me-1"></i> Poprzednia
-                </a>
-            {% else %}
-                <button class="btn btn-outline-secondary btn-sm w-100" disabled>
-                    <i class="fas fa-arrow-left me-1"></i> Poprzednia
-                </button>
-            {% endif %}
-        </div>
-        <div class="col-6">
-            {% if grouped_logs.has_next %}
-                <a href="?{% for key, value in url_params.items %}{{ key }}={{ value }}&{% endfor %}page={{ grouped_logs.next_page_number }}" 
-                   class="btn btn-outline-primary btn-sm w-100">
-                    Następna <i class="fas fa-arrow-right ms-1"></i>
-                </a>
-            {% else %}
-                <button class="btn btn-outline-secondary btn-sm w-100" disabled>
-                    Następna <i class="fas fa-arrow-right ms-1"></i>
-                </button>
-            {% endif %}
+        
+        <!-- Desktop Pagination -->
+        <nav aria-label="Paginacja logów" class="d-none d-md-block">
+            <ul class="pagination pagination-sm mb-0">
+                {% if grouped_logs.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% for key, value in url_params.items %}&{{ key }}={{ value }}{% endfor %}" aria-label="Pierwsza">
+                            <span aria-hidden="true">&laquo;&laquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ grouped_logs.previous_page_number }}{% for key, value in url_params.items %}&{{ key }}={{ value }}{% endfor %}" aria-label="Poprzednia">
+                            <span aria-hidden="true">&laquo;</span>
+                        </a>
+                    </li>
+                {% endif %}
+                
+                {% for num in grouped_logs.paginator.page_range %}
+                    {% if num == grouped_logs.number %}
+                        <li class="page-item active" aria-current="page">
+                            <span class="page-link">{{ num }}</span>
+                        </li>
+                    {% elif num > grouped_logs.number|add:'-3' and num < grouped_logs.number|add:'3' %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{% for key, value in url_params.items %}&{{ key }}={{ value }}{% endfor %}">{{ num }}</a>
+                        </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if grouped_logs.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ grouped_logs.next_page_number }}{% for key, value in url_params.items %}&{{ key }}={{ value }}{% endfor %}" aria-label="Następna">
+                            <span aria-hidden="true">&raquo;</span>
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ grouped_logs.paginator.num_pages }}{% for key, value in url_params.items %}&{{ key }}={{ value }}{% endfor %}" aria-label="Ostatnia">
+                            <span aria-hidden="true">&raquo;&raquo;</span>
+                        </a>
+                    </li>
+                {% endif %}
+            </ul>
+        </nav>
+        
+        <!-- Mobile Pagination -->
+        <div class="d-md-none">
+            <div class="btn-group" role="group" aria-label="Paginacja logów">
+                {% if grouped_logs.has_previous %}
+                    <a href="?page={{ grouped_logs.previous_page_number }}{% for key, value in url_params.items %}&{{ key }}={{ value }}{% endfor %}" 
+                       class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-chevron-left"></i>
+                    </a>
+                {% endif %}
+                
+                <span class="btn btn-outline-secondary btn-sm disabled">
+                    {{ grouped_logs.number }} / {{ grouped_logs.paginator.num_pages }}
+                </span>
+                
+                {% if grouped_logs.has_next %}
+                    <a href="?page={{ grouped_logs.next_page_number }}{% for key, value in url_params.items %}&{{ key }}={{ value }}{% endfor %}" 
+                       class="btn btn-outline-primary btn-sm">
+                        <i class="fas fa-chevron-right"></i>
+                    </a>
+                {% endif %}
+            </div>
         </div>
     </div>
 </div>
