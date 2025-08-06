@@ -5,6 +5,9 @@ from django.contrib import messages
 from django.conf import settings
 from django.contrib.admin.views.decorators import staff_member_required
 from django.views.decorators.http import require_POST
+from django.utils import timezone
+from datetime import timedelta
+from collections import defaultdict
 import logging
 
 from ..models import ActivityLog
@@ -36,13 +39,79 @@ def activity_logs(request):
     if user_filter:
         logs = logs.filter(user__username__icontains=user_filter)
     
+    # Ograniczenie do 500 ostatnich wpisów przed grupowaniem
+    logs = logs[:500]
+    
+    # Grupowanie podobnych logów
+    grouped_logs = group_similar_logs(logs)
+    
     context = {
-        'logs': logs[:100],  # Ograniczenie do 100 ostatnich wpisów
+        'grouped_logs': grouped_logs,
         'action_filter': action_filter,
         'user_filter': user_filter,
     }
     
     return render(request, 'crm/logs/activity_logs.html', context)
+
+
+def group_similar_logs(logs):
+    """
+    Grupuje podobne logi na podstawie akcji, IP i czasu
+    Zwraca listę słowników z danymi grup
+    """
+    groups = []
+    current_group = None
+    
+    # Akcje które powinny być grupowane
+    GROUPABLE_ACTIONS = ['404_error', '403_error', 'login_failed']
+    
+    for log in logs:
+        should_group = False
+        
+        if current_group and log.action_type in GROUPABLE_ACTIONS:
+            # Sprawdź czy można dodać do aktualnej grupy
+            time_diff = (current_group['logs'][0].created_at - log.created_at).total_seconds()
+            
+            # Grupuj jeśli:
+            # - Ta sama akcja
+            # - Ten sam IP (lub oba brak IP)
+            # - Różnica czasu mniejsza niż 10 sekund
+            # - Ten sam użytkownik (lub oba anonimowi)
+            if (current_group['action_type'] == log.action_type and
+                current_group['ip_address'] == (log.ip_address or None) and
+                time_diff <= 10 and
+                current_group['user_id'] == (log.user.id if log.user else None)):
+                should_group = True
+        
+        if should_group:
+            # Dodaj do aktualnej grupy
+            current_group['logs'].append(log)
+            current_group['count'] = len(current_group['logs'])
+            # Zaktualizuj czas końcowy
+            current_group['time_span'] = (
+                current_group['logs'][0].created_at - 
+                current_group['logs'][-1].created_at
+            ).total_seconds()
+        else:
+            # Rozpocznij nową grupę
+            current_group = {
+                'logs': [log],
+                'count': 1,
+                'action_type': log.action_type,
+                'ip_address': log.ip_address or None,
+                'user_id': log.user.id if log.user else None,
+                'time_span': 0,
+                'is_grouped': False,
+                'main_log': log  # Główny log do wyświetlenia
+            }
+            groups.append(current_group)
+    
+    # Oznacz grupy z więcej niż jednym logiem jako grupowane
+    for group in groups:
+        if group['count'] > 1:
+            group['is_grouped'] = True
+    
+    return groups
 
 
 @login_required

@@ -23,6 +23,116 @@
     .col-ip { width: 15%; }
     .col-actions { width: 8%; }
     
+    /* Grouped log styles */
+    .log-group {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        margin-bottom: 10px;
+        overflow: hidden;
+    }
+    
+    .log-group-header {
+        background: #f8f9fa;
+        padding: 12px 15px;
+        border-bottom: 1px solid #dee2e6;
+        cursor: pointer;
+        transition: background-color 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .log-group-header:hover {
+        background: #e9ecef;
+    }
+    
+    .log-group-main {
+        display: flex;
+        align-items: center;
+        flex: 1;
+        min-width: 0;
+    }
+    
+    .log-group-count {
+        background: #dc3545;
+        color: white;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: bold;
+        margin-right: 10px;
+        flex-shrink: 0;
+    }
+    
+    .log-group-count.single {
+        background: #6c757d;
+    }
+    
+    .log-group-info {
+        flex: 1;
+        min-width: 0;
+        margin-right: 10px;
+    }
+    
+    .log-group-time {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 2px;
+    }
+    
+    .log-group-details {
+        font-size: 0.85rem;
+        color: #6c757d;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    .log-group-toggle {
+        color: #6c757d;
+        transition: transform 0.2s;
+        font-size: 1.2rem;
+        flex-shrink: 0;
+    }
+    
+    .log-group-toggle.collapsed {
+        transform: rotate(-90deg);
+    }
+    
+    .log-group-content {
+        max-height: 0;
+        overflow: hidden;
+        transition: max-height 0.3s ease;
+    }
+    
+    .log-group-content.show {
+        max-height: 1000px;
+    }
+    
+    .log-group-item {
+        padding: 8px 15px;
+        border-bottom: 1px solid #f8f9fa;
+        font-size: 0.85rem;
+    }
+    
+    .log-group-item:last-child {
+        border-bottom: none;
+    }
+    
+    .log-group-item-time {
+        color: #6c757d;
+        margin-right: 10px;
+        font-weight: 500;
+    }
+    
+    .log-group-item-details {
+        color: #495057;
+    }
+    
     /* Mobile responsive styles */
     @media (max-width: 576px) {
         .logs-header-desktop {
@@ -62,6 +172,34 @@
             display: block !important;
         }
         
+        .log-group-header {
+            padding: 10px 12px;
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 8px;
+        }
+        
+        .log-group-main {
+            width: 100%;
+        }
+        
+        .log-group-count {
+            width: 20px;
+            height: 20px;
+            font-size: 0.7rem;
+        }
+        
+        .log-group-details {
+            white-space: normal;
+            overflow: visible;
+            text-overflow: initial;
+        }
+        
+        .log-group-item {
+            padding: 6px 12px;
+            font-size: 0.8rem;
+        }
+        
         .mobile-log-card {
             background: white;
             border: 1px solid #dee2e6;
@@ -97,6 +235,71 @@
         
         .mobile-log-field {
             display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 8px;
+            min-height: 24px;
+        }
+        
+        .mobile-log-label {
+            font-weight: 500;
+            color: #6c757d;
+            font-size: 0.85rem;
+            margin-right: 10px;
+            min-width: 70px;
+            flex-shrink: 0;
+        }
+        
+        .mobile-log-value {
+            color: #495057;
+            font-size: 0.85rem;
+            text-align: right;
+            flex: 1;
+            word-break: break-word;
+        }
+        
+        .mobile-log-actions {
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 1px solid #dee2e6;
+            text-align: center;
+        }
+        
+        .mobile-log-btn {
+            width: 100%;
+            padding: 10px;
+            font-size: 14px;
+        }
+        
+        /* Action type specific colors */
+        .action-login { background-color: #d4edda; color: #155724; }
+        .action-logout { background-color: #f8d7da; color: #721c24; }
+        .action-failed { background-color: #fff3cd; color: #856404; }
+        .action-error { background-color: #f5c6cb; color: #721c24; }
+        .action-ticket { background-color: #d1ecf1; color: #0c5460; }
+        .action-admin { background-color: #e2e3e5; color: #383d41; }
+    }
+    
+    /* Desktop styles */
+    @media (min-width: 577px) {
+        .logs-header-mobile {
+            display: none !important;
+        }
+        
+        .logs-header-desktop {
+            display: flex !important;
+        }
+        
+        .desktop-table {
+            display: block !important;
+        }
+        
+        .mobile-cards {
+            display: none !important;
+        }
+    }
+</style>
+{% endblock %}
             justify-content: space-between;
             align-items: flex-start;
             margin-bottom: 8px;
@@ -236,7 +439,7 @@
 </div>
 
 <!-- Lista logów -->
-{% if logs %}
+{% if grouped_logs %}
 <div class="card">
     <div class="card-header">
         <i class="fas fa-history"></i> Lista logów
@@ -258,52 +461,98 @@
                         </tr>
                     </thead>
                     <tbody>
-                        {% for log in logs %}
-                        <tr>
-                            <td>{{ log.created_at|date:"d.m.Y H:i:s" }}</td>
-                            <td>
-                                {% if log.user %}
-                                    {{ log.user.username }}
-                                    {% if log.user.profile.role == 'admin' %}
-                                        <span class="badge bg-danger">Admin</span>
-                                    {% elif log.user.profile.role == 'superagent' %}
-                                        <span class="badge bg-warning text-dark">Superagent</span>
-                                    {% elif log.user.profile.role == 'agent' %}
-                                        <span class="badge bg-info">Agent</span>
-                                    {% elif log.user.profile.role == 'viewer' %}
-                                        <span class="badge bg-dark">Viewer</span>
-                                    {% else %}
-                                        <span class="badge bg-secondary">Klient</span>
-                                    {% endif %}
-                                {% else %}
-                                    <span class="text-muted">Anonimowy</span>
-                                    {% if log.action_type == 'login_failed' %}
-                                        <span class="badge bg-warning text-dark">Nieudane logowanie</span>
-                                    {% endif %}
-                                {% endif %}
-                            </td>
-                            <td>{{ log.get_action_type_display }}</td>
-                            <td>
-                                {% if log.ticket %}
-                                <a href="{% url 'ticket_detail' log.ticket.pk %}">#{{ log.ticket.id }}</a>
-                                {% else %}
-                                -
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if log.description %}
-                                <span class="truncate-text" title="{{ log.description }}">{{ log.description }}</span>
-                                {% else %}
-                                -
-                                {% endif %}
-                            </td>
-                            <td>{{ log.ip_address|default:"-" }}</td>
-                            <td>
-                                <a href="{% url 'activity_log_detail' log.id %}" class="btn btn-sm btn-info btn-ripple">
-                                    <i class="fas fa-search"></i> Szczegóły
-                                </a>
-                            </td>
-                        </tr>
+                        {% for group in grouped_logs %}
+                            {% if group.is_grouped %}
+                                <!-- Grouped log entry -->
+                                <tr class="log-group-row">
+                                    <td colspan="7" class="p-0">
+                                        <div class="log-group">
+                                            <div class="log-group-header" onclick="toggleLogGroup(this)">
+                                                <div class="log-group-main">
+                                                    <span class="log-group-count">{{ group.count }}</span>
+                                                    <div class="log-group-info">
+                                                        <div class="log-group-time">
+                                                            {{ group.main_log.created_at|date:"d.m.Y H:i:s" }}
+                                                            {% if group.time_span > 0 %}
+                                                                - {{ group.logs.0.created_at|date:"H:i:s" }}
+                                                            {% endif %}
+                                                        </div>
+                                                        <div class="log-group-details">
+                                                            {{ group.main_log.get_action_type_display }}
+                                                            {% if group.main_log.user %} - {{ group.main_log.user.username }}{% else %} - Anonimowy{% endif %}
+                                                            {% if group.main_log.ip_address %} - {{ group.main_log.ip_address }}{% endif %}
+                                                            {% if group.main_log.description %} - {{ group.main_log.description|truncatechars:50 }}{% endif %}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="log-group-toggle">
+                                                    <i class="fas fa-chevron-down"></i>
+                                                </div>
+                                            </div>
+                                            <div class="log-group-content">
+                                                {% for log in group.logs %}
+                                                    <div class="log-group-item">
+                                                        <span class="log-group-item-time">{{ log.created_at|date:"H:i:s" }}</span>
+                                                        <span class="log-group-item-details">
+                                                            {% if log.description %}{{ log.description }}{% else %}{{ log.get_action_type_display }}{% endif %}
+                                                            <a href="{% url 'activity_log_detail' log.id %}" class="btn btn-sm btn-outline-info ms-2">
+                                                                <i class="fas fa-search"></i>
+                                                            </a>
+                                                        </span>
+                                                    </div>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            {% else %}
+                                <!-- Single log entry -->
+                                <tr>
+                                    <td>{{ group.main_log.created_at|date:"d.m.Y H:i:s" }}</td>
+                                    <td>
+                                        {% if group.main_log.user %}
+                                            {{ group.main_log.user.username }}
+                                            {% if group.main_log.user.profile.role == 'admin' %}
+                                                <span class="badge bg-danger">Admin</span>
+                                            {% elif group.main_log.user.profile.role == 'superagent' %}
+                                                <span class="badge bg-warning text-dark">Superagent</span>
+                                            {% elif group.main_log.user.profile.role == 'agent' %}
+                                                <span class="badge bg-info">Agent</span>
+                                            {% elif group.main_log.user.profile.role == 'viewer' %}
+                                                <span class="badge bg-dark">Viewer</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">Klient</span>
+                                            {% endif %}
+                                        {% else %}
+                                            <span class="text-muted">Anonimowy</span>
+                                            {% if group.main_log.action_type == 'login_failed' %}
+                                                <span class="badge bg-warning text-dark">Nieudane logowanie</span>
+                                            {% endif %}
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ group.main_log.get_action_type_display }}</td>
+                                    <td>
+                                        {% if group.main_log.ticket %}
+                                        <a href="{% url 'ticket_detail' group.main_log.ticket.pk %}">#{{ group.main_log.ticket.id }}</a>
+                                        {% else %}
+                                        -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if group.main_log.description %}
+                                        <span class="truncate-text" title="{{ group.main_log.description }}">{{ group.main_log.description }}</span>
+                                        {% else %}
+                                        -
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ group.main_log.ip_address|default:"-" }}</td>
+                                    <td>
+                                        <a href="{% url 'activity_log_detail' group.main_log.id %}" class="btn btn-sm btn-info btn-ripple">
+                                            <i class="fas fa-search"></i> Szczegóły
+                                        </a>
+                                    </td>
+                                </tr>
+                            {% endif %}
                         {% endfor %}
                     </tbody>
                 </table>
@@ -312,67 +561,112 @@
         
         <!-- Mobile Card View -->
         <div class="mobile-cards">
-            {% for log in logs %}
-            <div class="mobile-log-card">
-                <div class="mobile-log-header">
-                    <span class="mobile-log-datetime">{{ log.created_at|date:"d.m.Y H:i:s" }}</span>
-                    <span class="mobile-log-action {% if 'login' in log.action_type %}action-login{% elif 'logout' in log.action_type %}action-logout{% elif 'failed' in log.action_type %}action-failed{% elif 'error' in log.action_type %}action-error{% elif 'ticket' in log.action_type %}action-ticket{% else %}action-admin{% endif %}">
-                        {{ log.get_action_type_display }}
-                    </span>
-                </div>
-                
-                <div class="mobile-log-field">
-                    <span class="mobile-log-label">Użytkownik:</span>
-                    <div class="mobile-log-value">
-                        {% if log.user %}
-                            <div>{{ log.user.username }}</div>
-                            {% if log.user.profile.role == 'admin' %}
-                                <span class="badge bg-danger">Admin</span>
-                            {% elif log.user.profile.role == 'superagent' %}
-                                <span class="badge bg-warning text-dark">Superagent</span>
-                            {% elif log.user.profile.role == 'agent' %}
-                                <span class="badge bg-info">Agent</span>
-                            {% elif log.user.profile.role == 'viewer' %}
-                                <span class="badge bg-dark">Viewer</span>
-                            {% else %}
-                                <span class="badge bg-secondary">Klient</span>
-                            {% endif %}
-                        {% else %}
-                            <span class="text-muted">Anonimowy</span>
-                            {% if log.action_type == 'login_failed' %}
-                                <span class="badge bg-warning text-dark">Nieudane</span>
-                            {% endif %}
-                        {% endif %}
+            {% for group in grouped_logs %}
+                {% if group.is_grouped %}
+                    <!-- Grouped mobile cards -->
+                    <div class="log-group">
+                        <div class="log-group-header" onclick="toggleLogGroup(this)">
+                            <div class="log-group-main">
+                                <span class="log-group-count">{{ group.count }}</span>
+                                <div class="log-group-info">
+                                    <div class="log-group-time">
+                                        {{ group.main_log.created_at|date:"d.m.Y H:i:s" }}
+                                        {% if group.time_span > 0 %}
+                                            - {{ group.logs.0.created_at|date:"H:i:s" }}
+                                        {% endif %}
+                                    </div>
+                                    <div class="log-group-details">
+                                        <strong>{{ group.main_log.get_action_type_display }}</strong>
+                                        {% if group.main_log.user %} | {{ group.main_log.user.username }}{% else %} | Anonimowy{% endif %}
+                                        {% if group.main_log.ip_address %} | {{ group.main_log.ip_address }}{% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="log-group-toggle">
+                                <i class="fas fa-chevron-down"></i>
+                            </div>
+                        </div>
+                        <div class="log-group-content">
+                            {% for log in group.logs %}
+                                <div class="log-group-item">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <span class="log-group-item-time">{{ log.created_at|date:"H:i:s" }}</span>
+                                            {% if log.description %}
+                                                <div class="log-group-item-details">{{ log.description }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <a href="{% url 'activity_log_detail' log.id %}" class="btn btn-sm btn-outline-info">
+                                            <i class="fas fa-search"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
                     </div>
-                </div>
-                
-                {% if log.ticket %}
-                <div class="mobile-log-field">
-                    <span class="mobile-log-label">Zgłoszenie:</span>
-                    <span class="mobile-log-value">
-                        <a href="{% url 'ticket_detail' log.ticket.pk %}">#{{ log.ticket.id }}</a>
-                    </span>
-                </div>
+                {% else %}
+                    <!-- Single mobile card -->
+                    <div class="mobile-log-card">
+                        <div class="mobile-log-header">
+                            <span class="mobile-log-datetime">{{ group.main_log.created_at|date:"d.m.Y H:i:s" }}</span>
+                            <span class="mobile-log-action {% if 'login' in group.main_log.action_type %}action-login{% elif 'logout' in group.main_log.action_type %}action-logout{% elif 'failed' in group.main_log.action_type %}action-failed{% elif 'error' in group.main_log.action_type %}action-error{% elif 'ticket' in group.main_log.action_type %}action-ticket{% else %}action-admin{% endif %}">
+                                {{ group.main_log.get_action_type_display }}
+                            </span>
+                        </div>
+                        
+                        <div class="mobile-log-field">
+                            <span class="mobile-log-label">Użytkownik:</span>
+                            <div class="mobile-log-value">
+                                {% if group.main_log.user %}
+                                    <div>{{ group.main_log.user.username }}</div>
+                                    {% if group.main_log.user.profile.role == 'admin' %}
+                                        <span class="badge bg-danger">Admin</span>
+                                    {% elif group.main_log.user.profile.role == 'superagent' %}
+                                        <span class="badge bg-warning text-dark">Superagent</span>
+                                    {% elif group.main_log.user.profile.role == 'agent' %}
+                                        <span class="badge bg-info">Agent</span>
+                                    {% elif group.main_log.user.profile.role == 'viewer' %}
+                                        <span class="badge bg-dark">Viewer</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">Klient</span>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted">Anonimowy</span>
+                                    {% if group.main_log.action_type == 'login_failed' %}
+                                        <span class="badge bg-warning text-dark">Nieudane</span>
+                                    {% endif %}
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        {% if group.main_log.ticket %}
+                        <div class="mobile-log-field">
+                            <span class="mobile-log-label">Zgłoszenie:</span>
+                            <span class="mobile-log-value">
+                                <a href="{% url 'ticket_detail' group.main_log.ticket.pk %}">#{{ group.main_log.ticket.id }}</a>
+                            </span>
+                        </div>
+                        {% endif %}
+                        
+                        {% if group.main_log.description %}
+                        <div class="mobile-log-field">
+                            <span class="mobile-log-label">Szczegóły:</span>
+                            <span class="mobile-log-value">{{ group.main_log.description }}</span>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="mobile-log-field">
+                            <span class="mobile-log-label">IP:</span>
+                            <span class="mobile-log-value">{{ group.main_log.ip_address|default:"-" }}</span>
+                        </div>
+                        
+                        <div class="mobile-log-actions">
+                            <a href="{% url 'activity_log_detail' group.main_log.id %}" class="btn btn-info mobile-log-btn">
+                                <i class="fas fa-search"></i> Szczegóły
+                            </a>
+                        </div>
+                    </div>
                 {% endif %}
-                
-                {% if log.description %}
-                <div class="mobile-log-field">
-                    <span class="mobile-log-label">Szczegóły:</span>
-                    <span class="mobile-log-value">{{ log.description }}</span>
-                </div>
-                {% endif %}
-                
-                <div class="mobile-log-field">
-                    <span class="mobile-log-label">IP:</span>
-                    <span class="mobile-log-value">{{ log.ip_address|default:"-" }}</span>
-                </div>
-                
-                <div class="mobile-log-actions">
-                    <a href="{% url 'activity_log_detail' log.id %}" class="btn btn-info mobile-log-btn">
-                        <i class="fas fa-search"></i> Szczegóły
-                    </a>
-                </div>
-            </div>
             {% endfor %}
         </div>
     </div>
@@ -382,4 +676,33 @@
     <p>Nie znaleziono logów spełniających wybrane kryteria.</p>
 </div>
 {% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleLogGroup(element) {
+    const content = element.nextElementSibling;
+    const toggle = element.querySelector('.log-group-toggle i');
+    
+    if (content.classList.contains('show')) {
+        // Collapse
+        content.classList.remove('show');
+        toggle.classList.add('collapsed');
+        toggle.className = toggle.className.replace('fa-chevron-up', 'fa-chevron-down');
+    } else {
+        // Expand
+        content.classList.add('show');
+        toggle.classList.remove('collapsed');
+        toggle.className = toggle.className.replace('fa-chevron-down', 'fa-chevron-up');
+    }
+}
+
+// Initialize all collapsible groups as collapsed by default
+document.addEventListener('DOMContentLoaded', function() {
+    const toggles = document.querySelectorAll('.log-group-toggle i');
+    toggles.forEach(toggle => {
+        toggle.classList.add('collapsed');
+    });
+});
+</script>
 {% endblock %}
