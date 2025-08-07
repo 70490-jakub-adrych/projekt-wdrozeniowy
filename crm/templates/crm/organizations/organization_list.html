@@ -165,6 +165,37 @@
             font-size: 0.8rem;
         }
     }
+    
+    /* Mobile Filter Controls */
+    .mobile-filter-controls {
+        display: none;
+    }
+    
+    @media (max-width: 576px) {
+        /* Hide desktop filter card on mobile */
+        .desktop-filter-card {
+            display: none !important;
+        }
+        
+        /* Show mobile filter controls */
+        .mobile-filter-controls {
+            display: flex !important;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        .mobile-filter-controls .btn {
+            font-size: 0.875rem;
+            padding: 0.375rem 0.75rem;
+        }
+        
+        /* Modal for mobile filters */
+        .mobile-filter-modal .modal-dialog {
+            margin: 1rem;
+            max-width: calc(100% - 2rem);
+        }
+    }
 </style>
 {% endblock %}
 
@@ -189,8 +220,23 @@
     {% endif %}
 </div>
 
+<!-- Mobile Filter Controls -->
+<div class="mobile-filter-controls">
+    <button class="btn btn-outline-primary btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#mobileFilterModal">
+        <i class="fas fa-filter me-1"></i> Filtry
+        {% if search_query or sort_by != 'name' %}
+        <span class="badge bg-info ms-1">!</span>
+        {% endif %}
+    </button>
+    {% if search_query or sort_by != 'name' %}
+    <a href="{% url 'organization_list' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="fas fa-times me-1"></i> Wyczyść
+    </a>
+    {% endif %}
+</div>
+
 <!-- Search and Filter Controls -->
-<div class="card mb-3">
+<div class="card mb-3 desktop-filter-card">
     <div class="card-body">
         <form method="get" class="row g-3">
             <div class="col-md-4">
@@ -447,4 +493,45 @@
     {% endif %}
 </div>
 {% endif %}
+
+<!-- Mobile Filter Modal -->
+<div class="modal fade mobile-filter-modal" id="mobileFilterModal" tabindex="-1" aria-labelledby="mobileFilterModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen-sm-down">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="mobileFilterModalLabel">
+                    <i class="fas fa-filter me-2"></i>Filtry organizacji
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form method="get" class="mobile-filter-form">
+                    <div class="mb-3">
+                        <label for="mobile_search" class="form-label">Szukaj</label>
+                        <input type="text" name="search" id="mobile_search" class="form-control" value="{{ search_query|default:'' }}" placeholder="Nazwa, email lub opis organizacji">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="mobile_sort_by" class="form-label">Sortuj według</label>
+                        <select name="sort_by" id="mobile_sort_by" class="form-select">
+                            {% for value, label in sort_options %}
+                            <option value="{{ value }}" {% if sort_by == value %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anuluj</button>
+                <a href="{% url 'organization_list' %}" class="btn btn-outline-secondary">
+                    <i class="fas fa-sync me-1"></i> Resetuj
+                </a>
+                <button type="button" class="btn btn-primary" onclick="document.querySelector('.mobile-filter-form').submit();">
+                    <i class="fas fa-search me-1"></i> Zastosuj filtry
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
