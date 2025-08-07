@@ -237,6 +237,12 @@
 
 <!-- Search and Filter Controls -->
 <div class="card mb-3 desktop-filter-card">
+    <div class="card-header">
+        <i class="fas fa-filter me-2"></i> Filtry
+        {% if search_query or sort_by != 'name' %}
+        <span class="badge bg-info ms-2">Aktywne</span>
+        {% endif %}
+    </div>
     <div class="card-body">
         <form method="get" class="row g-3">
             <div class="col-md-4">
