@@ -28,7 +28,8 @@
     
     /* Mobile-responsive enhancements */
     @media (max-width: 576px) {
-        .d-flex.justify-content-between {
+        /* Hide only the desktop header, not pagination */
+        .d-flex.justify-content-between:not(.pagination-container) {
             display: none !important;
         }
         
@@ -357,7 +358,7 @@
 <!-- Pagination Controls -->
 {% if organizations_page.has_other_pages %}
 <div class="mt-4">
-    <div class="d-flex justify-content-between align-items-center flex-column flex-md-row">
+    <div class="d-flex justify-content-between align-items-center flex-column flex-md-row pagination-container">
         <!-- Page Info -->
         <div class="mb-2 mb-md-0">
             <small class="text-muted">
