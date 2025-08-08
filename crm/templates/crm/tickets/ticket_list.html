@@ -40,6 +40,29 @@
         font-size: 0.9rem;
         padding: 0.25rem 0.5rem;
     }
+
+    /* Multi-select dropdown with checkboxes */
+    .multi-select-dropdown .dropdown-menu {
+        max-height: 260px;
+        overflow-y: auto;
+        min-width: 240px;
+    }
+    .multi-select-dropdown .dropdown-toggle {
+        width: 100%;
+        text-align: left;
+    }
+    .multi-select-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #e9ecef;
+        margin: -0.5rem -0.5rem 0.5rem -0.5rem;
+        padding: 0.5rem;
+    }
+    .multi-select-actions .btn-link {
+        padding: 0;
+        font-size: 0.85rem;
+    }
     
     .active-filter {
         display: inline-block;
@@ -347,11 +370,11 @@
     <div class="mobile-filter-controls">
         <button class="btn btn-outline-primary btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#mobileFilterModal">
             <i class="fas fa-filter me-1"></i> Filtry
-            {% if status_filter or priority_filter or category_filter or assigned_filter or organization_filter or created_by_filter or date_from or date_to %}
+            {% if selected_statuses or selected_priorities or selected_categories or selected_assigned or selected_organizations or created_by_filter or date_from or date_to or ticket_id %}
             <span class="badge bg-info ms-1">!</span>
             {% endif %}
         </button>
-        {% if status_filter or priority_filter or category_filter or assigned_filter or organization_filter or created_by_filter or date_from or date_to %}
+        {% if selected_statuses or selected_priorities or selected_categories or selected_assigned or selected_organizations or created_by_filter or date_from or date_to or ticket_id %}
         <a href="{% url 'ticket_list' %}" class="btn btn-outline-secondary btn-sm">
             <i class="fas fa-times me-1"></i> Wyczyść
         </a>
@@ -364,7 +387,7 @@
     <div class="card-header p-2 d-flex justify-content-between align-items-center flex-column flex-sm-row">
         <div class="mb-2 mb-sm-0">
             <i class="fas fa-filter me-1"></i> Filtry 
-            {% if status_filter or priority_filter or category_filter or assigned_filter or organization_filter or created_by_filter or date_from or date_to %}
+            {% if selected_statuses or selected_priorities or selected_categories or selected_assigned or selected_organizations or created_by_filter or date_from or date_to or ticket_id %}
             <span class="badge bg-info ms-2">Aktywne</span>
             {% endif %}
         </div>
@@ -376,48 +399,46 @@
     
     <!-- Filter summary when collapsed -->
     <div class="card-body p-2 filter-summary">
-        {% if status_filter or priority_filter or category_filter or assigned_filter or organization_filter or created_by_filter or date_from or date_to %}
+        {% if selected_statuses or selected_priorities or selected_categories or selected_assigned or selected_organizations or created_by_filter or date_from or date_to or ticket_id %}
             <div class="active-filters">
-                {% if status_filter %}
-                <span class="active-filter"><strong>Status:</strong> 
-                    {% if status_filter == 'new' %}Nowe
-                    {% elif status_filter == 'in_progress' %}W trakcie
-                    {% elif status_filter == 'unresolved' %}Nierozwiązany
-                    {% elif status_filter == 'resolved' %}Rozwiązane
-                    {% elif status_filter == 'closed' %}Zamknięte{% endif %}
-                </span>
+                {% if selected_statuses %}
+                    <span class="active-filter"><strong>Status:</strong>
+                        {% for code in selected_statuses %}
+                            {% for val,label in status_choices %}{% if val == code %}{{ label }}{% endif %}{% endfor %}{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                    </span>
                 {% endif %}
-                
-                {% if priority_filter %}
-                <span class="active-filter"><strong>Priorytet:</strong> 
-                    {% if priority_filter == 'low' %}Niski
-                    {% elif priority_filter == 'medium' %}Średni
-                    {% elif priority_filter == 'high' %}Wysoki
-                    {% elif priority_filter == 'critical' %}Krytyczny{% endif %}
-                </span>
+
+                {% if selected_priorities %}
+                    <span class="active-filter"><strong>Priorytet:</strong>
+                        {% for code in selected_priorities %}
+                            {% for val,label in priority_choices %}{% if val == code %}{{ label }}{% endif %}{% endfor %}{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                    </span>
                 {% endif %}
-                
-                {% if category_filter %}
-                <span class="active-filter"><strong>Kategoria:</strong> 
-                    {{ ticket.get_category_display }}
-                </span>
+
+                {% if selected_categories %}
+                    <span class="active-filter"><strong>Kategoria:</strong>
+                        {% for code in selected_categories %}
+                            {% for val,label in category_choices %}{% if val == code %}{{ label }}{% endif %}{% endfor %}{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                    </span>
                 {% endif %}
-                
-                {% if assigned_filter %}
-                <span class="active-filter"><strong>Przypisane:</strong> 
-                    {% if assigned_filter == 'me' %}Do mnie
-                    {% elif assigned_filter == 'unassigned' %}Nieprzypisane{% endif %}
-                </span>
+
+                {% if selected_assigned %}
+                    <span class="active-filter"><strong>Przypisane:</strong>
+                        {% for code in selected_assigned %}
+                            {% if code == 'me' %}Do mnie{% elif code == 'unassigned' %}Nieprzypisane{% endif %}{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                    </span>
                 {% endif %}
-                
-                {% if organization_filter %}
-                <span class="active-filter"><strong>Organizacja:</strong> 
-                    {% for org in all_organizations %}
-                        {% if org.id|stringformat:"i" == organization_filter %}
-                            {{ org.name }}
-                        {% endif %}
-                    {% endfor %}
-                </span>
+
+                {% if selected_organizations %}
+                    <span class="active-filter"><strong>Organizacja:</strong>
+                        {% for oid in selected_organizations %}
+                            {% for org in all_organizations %}{% if org.id|stringformat:"i" == oid %}{{ org.name }}{% endif %}{% endfor %}{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                    </span>
                 {% endif %}
                 
                 {% if exclude_closed %}
@@ -442,62 +463,143 @@
             <form method="get" class="filter-form">
                 <div class="container-fluid p-0">
                     <div class="row mb-2">
-                        <!-- Main filters in first row -->
+                        <!-- Main filters in first row (multi-select dropdowns) -->
                         <div class="col-md-3 col-sm-6 mb-2">
-                            <label for="status" class="d-block">Status:</label>
-                            <select name="status" id="status" class="form-control form-control-sm">
-                                <option value="" {% if not status_filter %}selected{% endif %}>Wszystkie</option>
-                                <option value="new" {% if status_filter == 'new' %}selected{% endif %}>Nowe</option>
-                                <option value="in_progress" {% if status_filter == 'in_progress' %}selected{% endif %}>W trakcie</option>
-                                <option value="unresolved" {% if status_filter == 'unresolved' %}selected{% endif %}>Nierozwiązany</option>
-                                <option value="resolved" {% if status_filter == 'resolved' %}selected{% endif %}>Rozwiązane</option>
-                                <option value="closed" {% if status_filter == 'closed' %}selected{% endif %}>Zamknięte</option>
-                            </select>
+                            <label class="d-block">Status:</label>
+                            <div class="dropdown multi-select-dropdown">
+                                <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                                    {% if selected_statuses %}Statusy: {{ selected_statuses|length }} wybr.{% else %}Statusy: Wszystkie{% endif %}
+                                </button>
+                                <div class="dropdown-menu p-2">
+                                    <div class="multi-select-actions">
+                                        <button type="button" class="btn btn-link" onclick="toggleSelectAll(this, 'status', true)">Zaznacz wszystkie</button>
+                                        <button type="button" class="btn btn-link text-danger" onclick="toggleSelectAll(this, 'status', false)">Wyczyść</button>
+                                    </div>
+                                    {% for value,label in status_choices %}
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="status" value="{{ value }}" id="status_{{ value }}" {% if value in selected_statuses %}checked{% endif %}>
+                                        <label class="form-check-label" for="status_{{ value }}">{{ label }}</label>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
                         </div>
                         <div class="col-md-3 col-sm-6 mb-2">
-                            <label for="priority" class="d-block">Priorytet:</label>
-                            <select name="priority" id="priority" class="form-control form-control-sm">
-                                <option value="" {% if not priority_filter %}selected{% endif %}>Wszystkie</option>
-                                <option value="low" {% if priority_filter == 'low' %}selected{% endif %}>Niski</option>
-                                <option value="medium" {% if priority_filter == 'medium' %}selected{% endif %}>Średni</option>
-                                <option value="high" {% if priority_filter == 'high' %}selected{% endif %}>Wysoki</option>
-                                <option value="critical" {% if priority_filter == 'critical' %}selected{% endif %}>Krytyczny</option>
-                            </select>
+                            <label class="d-block">Priorytet:</label>
+                            <div class="dropdown multi-select-dropdown">
+                                <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                                    {% if selected_priorities %}Priorytety: {{ selected_priorities|length }} wybr.{% else %}Priorytety: Wszystkie{% endif %}
+                                </button>
+                                <div class="dropdown-menu p-2">
+                                    <div class="multi-select-actions">
+                                        <button type="button" class="btn btn-link" onclick="toggleSelectAll(this, 'priority', true)">Zaznacz wszystkie</button>
+                                        <button type="button" class="btn btn-link text-danger" onclick="toggleSelectAll(this, 'priority', false)">Wyczyść</button>
+                                    </div>
+                                    {% for value,label in priority_choices %}
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="priority" value="{{ value }}" id="priority_{{ value }}" {% if value in selected_priorities %}checked{% endif %}>
+                                        <label class="form-check-label" for="priority_{{ value }}">{{ label }}</label>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
                         </div>
                         <div class="col-md-3 col-sm-6 mb-2">
-                            <label for="category" class="d-block">Kategoria:</label>
-                            <select name="category" id="category" class="form-control form-control-sm">
-                                <option value="" {% if not category_filter %}selected{% endif %}>Wszystkie</option>
-                                <option value="hardware" {% if category_filter == 'hardware' %}selected{% endif %}>Sprzęt</option>
-                                <option value="software" {% if category_filter == 'software' %}selected{% endif %}>Oprogramowanie</option>
-                                <option value="network" {% if category_filter == 'network' %}selected{% endif %}>Sieć</option>
-                                <option value="account" {% if category_filter == 'account' %}selected{% endif %}>Konto</option>
-                                <option value="other" {% if category_filter == 'other' %}selected{% endif %}>Inne</option>
-                            </select>
+                            <label class="d-block">Kategoria:</label>
+                            <div class="dropdown multi-select-dropdown">
+                                <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                                    {% if selected_categories %}Kategorie: {{ selected_categories|length }} wybr.{% else %}Kategorie: Wszystkie{% endif %}
+                                </button>
+                                <div class="dropdown-menu p-2">
+                                    <div class="multi-select-actions">
+                                        <button type="button" class="btn btn-link" onclick="toggleSelectAll(this, 'category', true)">Zaznacz wszystkie</button>
+                                        <button type="button" class="btn btn-link text-danger" onclick="toggleSelectAll(this, 'category', false)">Wyczyść</button>
+                                    </div>
+                                    {% for value,label in category_choices %}
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="category" value="{{ value }}" id="category_{{ value }}" {% if value in selected_categories %}checked{% endif %}>
+                                        <label class="form-check-label" for="category_{{ value }}">{{ label }}</label>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
                         </div>
                         <div class="col-md-3 col-sm-6 mb-2">
-                            <label for="assigned" class="d-block">Przypisane:</label>
-                            <select name="assigned" id="assigned" class="form-control form-control-sm">
-                                <option value="" {% if not assigned_filter %}selected{% endif %}>Wszystkie</option>
-                                <option value="me" {% if assigned_filter == 'me' %}selected{% endif %}>Do mnie</option>
-                                <option value="unassigned" {% if assigned_filter == 'unassigned' %}selected{% endif %}>Nieprzypisane</option>
-                            </select>
+                            <label class="d-block">Przypisane:</label>
+                            <div class="dropdown multi-select-dropdown">
+                                <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                                    {% if selected_assigned %}Przypisanie: {{ selected_assigned|length }} wybr.{% else %}Przypisanie: Wszystkie{% endif %}
+                                </button>
+                                <div class="dropdown-menu p-2">
+                                    <div class="multi-select-actions">
+                                        <button type="button" class="btn btn-link" onclick="toggleSelectAll(this, 'assigned', true)">Zaznacz wszystkie</button>
+                                        <button type="button" class="btn btn-link text-danger" onclick="toggleSelectAll(this, 'assigned', false)">Wyczyść</button>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="assigned" value="me" id="assigned_me" {% if 'me' in selected_assigned %}checked{% endif %}>
+                                        <label class="form-check-label" for="assigned_me">Do mnie</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="assigned" value="unassigned" id="assigned_unassigned" {% if 'unassigned' in selected_assigned %}checked{% endif %}>
+                                        <label class="form-check-label" for="assigned_unassigned">Nieprzypisane</label>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
+                    </div>
+                    
+                    <!-- Hidden selects for automation/backward compatibility (mirrors checkbox selections) -->
+                    <div style="display:none;">
+                        <select name="status" multiple>
+                            {% for value,label in status_choices %}
+                            <option value="{{ value }}" {% if value in selected_statuses %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                        <select name="priority" multiple>
+                            {% for value,label in priority_choices %}
+                            <option value="{{ value }}" {% if value in selected_priorities %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                        <select name="category" multiple>
+                            {% for value,label in category_choices %}
+                            <option value="{{ value }}" {% if value in selected_categories %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                        <select name="assigned" multiple>
+                            <option value="me" {% if 'me' in selected_assigned %}selected{% endif %}>Do mnie</option>
+                            <option value="unassigned" {% if 'unassigned' in selected_assigned %}selected{% endif %}>Nieprzypisane</option>
+                        </select>
+                        {% if all_organizations %}
+                        <select name="organization" multiple>
+                            {% for org in all_organizations %}
+                            <option value="{{ org.id }}" {% if org.id|stringformat:'i' in selected_organizations %}selected{% endif %}>{{ org.name }}</option>
+                            {% endfor %}
+                        </select>
+                        {% endif %}
                     </div>
                     
                     <div class="row">
                         <!-- Secondary filters in second row -->
                         {% if user.profile.role in 'admin,superagent,agent' and all_organizations %}
                         <div class="col-md-3 col-sm-6 mb-2">
-                            <label for="organization" class="d-block">Organizacja:</label>
-                            <select name="organization" id="organization" class="form-control form-control-sm">
-                                <option value="" {% if not organization_filter %}selected{% endif %}>Wszystkie</option>
-                                {% for org in all_organizations %}
-                                    <option value="{{ org.id }}" {% if organization_filter == org.id|stringformat:"i" %}selected{% endif %}>
-                                        {{ org.name }}
-                                    </option>
-                                {% endfor %}
-                            </select>
+                            <label class="d-block">Organizacja:</label>
+                            <div class="dropdown multi-select-dropdown">
+                                <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                                    {% if selected_organizations %}Organizacje: {{ selected_organizations|length }} wybr.{% else %}Organizacje: Wszystkie{% endif %}
+                                </button>
+                                <div class="dropdown-menu p-2">
+                                    <div class="multi-select-actions">
+                                        <button type="button" class="btn btn-link" onclick="toggleSelectAll(this, 'organization', true)">Zaznacz wszystkie</button>
+                                        <button type="button" class="btn btn-link text-danger" onclick="toggleSelectAll(this, 'organization', false)">Wyczyść</button>
+                                    </div>
+                                    {% for org in all_organizations %}
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="organization" value="{{ org.id }}" id="org_{{ org.id }}" {% if org.id|stringformat:'i' in selected_organizations %}checked{% endif %}>
+                                        <label class="form-check-label" for="org_{{ org.id }}">{{ org.name }}</label>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
                         </div>
                         {% endif %}
                         
@@ -629,6 +731,13 @@
                     });
                 });
                 
+                // Multi-select helper functions
+                function toggleSelectAll(btn, name, check) {
+                    const menu = btn.closest('.dropdown-menu');
+                    const inputs = menu.querySelectorAll('input[type="checkbox"][name="' + name + '"]');
+                    inputs.forEach(i => i.checked = check);
+                }
+
                 // Original form submission logic
                 document.querySelector('.filter-form').addEventListener('submit', function() {
                     // Add hidden input with current checkbox state before submission
@@ -706,60 +815,66 @@
             <div class="modal-body">
                 <form method="get" class="mobile-filter-form">
                     <div class="mb-3">
-                        <label for="mobile_status" class="form-label">Status</label>
-                        <select name="status" id="mobile_status" class="form-select">
-                            <option value="" {% if not status_filter %}selected{% endif %}>Wszystkie</option>
-                            <option value="new" {% if status_filter == 'new' %}selected{% endif %}>Nowe</option>
-                            <option value="in_progress" {% if status_filter == 'in_progress' %}selected{% endif %}>W trakcie</option>
-                            <option value="unresolved" {% if status_filter == 'unresolved' %}selected{% endif %}>Nierozwiązany</option>
-                            <option value="resolved" {% if status_filter == 'resolved' %}selected{% endif %}>Rozwiązane</option>
-                            <option value="closed" {% if status_filter == 'closed' %}selected{% endif %}>Zamknięte</option>
-                        </select>
+                        <label class="form-label">Status</label>
+                        <div class="list-group">
+                            {% for value,label in status_choices %}
+                            <label class="list-group-item d-flex align-items-center">
+                                <input class="form-check-input me-2" type="checkbox" name="status" value="{{ value }}" {% if value in selected_statuses %}checked{% endif %}>
+                                {{ label }}
+                            </label>
+                            {% endfor %}
+                        </div>
                     </div>
                     
                     <div class="mb-3">
-                        <label for="mobile_priority" class="form-label">Priorytet</label>
-                        <select name="priority" id="mobile_priority" class="form-select">
-                            <option value="" {% if not priority_filter %}selected{% endif %}>Wszystkie</option>
-                            <option value="low" {% if priority_filter == 'low' %}selected{% endif %}>Niski</option>
-                            <option value="medium" {% if priority_filter == 'medium' %}selected{% endif %}>Średni</option>
-                            <option value="high" {% if priority_filter == 'high' %}selected{% endif %}>Wysoki</option>
-                            <option value="critical" {% if priority_filter == 'critical' %}selected{% endif %}>Krytyczny</option>
-                        </select>
+                        <label class="form-label">Priorytet</label>
+                        <div class="list-group">
+                            {% for value,label in priority_choices %}
+                            <label class="list-group-item d-flex align-items-center">
+                                <input class="form-check-input me-2" type="checkbox" name="priority" value="{{ value }}" {% if value in selected_priorities %}checked{% endif %}>
+                                {{ label }}
+                            </label>
+                            {% endfor %}
+                        </div>
                     </div>
                     
                     <div class="mb-3">
-                        <label for="mobile_category" class="form-label">Kategoria</label>
-                        <select name="category" id="mobile_category" class="form-select">
-                            <option value="" {% if not category_filter %}selected{% endif %}>Wszystkie</option>
-                            <option value="hardware" {% if category_filter == 'hardware' %}selected{% endif %}>Sprzęt</option>
-                            <option value="software" {% if category_filter == 'software' %}selected{% endif %}>Oprogramowanie</option>
-                            <option value="network" {% if category_filter == 'network' %}selected{% endif %}>Sieć</option>
-                            <option value="security" {% if category_filter == 'security' %}selected{% endif %}>Bezpieczeństwo</option>
-                            <option value="other" {% if category_filter == 'other' %}selected{% endif %}>Inne</option>
-                        </select>
+                        <label class="form-label">Kategoria</label>
+                        <div class="list-group">
+                            {% for value,label in category_choices %}
+                            <label class="list-group-item d-flex align-items-center">
+                                <input class="form-check-input me-2" type="checkbox" name="category" value="{{ value }}" {% if value in selected_categories %}checked{% endif %}>
+                                {{ label }}
+                            </label>
+                            {% endfor %}
+                        </div>
                     </div>
                     
                     {% if user.is_staff %}
                     <div class="mb-3">
                         <label for="mobile_assigned" class="form-label">Przypisanie</label>
-                        <select name="assigned" id="mobile_assigned" class="form-select">
-                            <option value="" {% if not assigned_filter %}selected{% endif %}>Wszystkie</option>
-                            <option value="me" {% if assigned_filter == 'me' %}selected{% endif %}>Przypisane do mnie</option>
-                            <option value="unassigned" {% if assigned_filter == 'unassigned' %}selected{% endif %}>Nieprzypisane</option>
-                        </select>
+                        <div class="list-group">
+                            <label class="list-group-item d-flex align-items-center">
+                                <input class="form-check-input me-2" type="checkbox" name="assigned" value="me" {% if 'me' in selected_assigned %}checked{% endif %}>
+                                Przypisane do mnie
+                            </label>
+                            <label class="list-group-item d-flex align-items-center">
+                                <input class="form-check-input me-2" type="checkbox" name="assigned" value="unassigned" {% if 'unassigned' in selected_assigned %}checked{% endif %}>
+                                Nieprzypisane
+                            </label>
+                        </div>
                     </div>
                     
                     <div class="mb-3">
                         <label for="mobile_organization" class="form-label">Organizacja</label>
-                        <select name="organization" id="mobile_organization" class="form-select">
-                            <option value="" {% if not organization_filter %}selected{% endif %}>Wszystkie</option>
+                        <div class="list-group">
                             {% for org in all_organizations %}
-                            <option value="{{ org.id }}" {% if org.id|stringformat:"i" == organization_filter %}selected{% endif %}>
+                            <label class="list-group-item d-flex align-items-center">
+                                <input class="form-check-input me-2" type="checkbox" name="organization" value="{{ org.id }}" {% if org.id|stringformat:'i' in selected_organizations %}checked{% endif %}>
                                 {{ org.name }}
-                            </option>
+                            </label>
                             {% endfor %}
-                        </select>
+                        </div>
                     </div>
                     {% endif %}
                     
@@ -999,12 +1114,12 @@
             <ul class="pagination pagination-sm mb-0">
                 {% if tickets_page.has_previous %}
                     <li class="page-item">
-                        <a class="page-link" href="?page=1{% for key, value in url_params.items %}&{{ key }}={{ value }}{% endfor %}" aria-label="Pierwsza">
+                        <a class="page-link" href="?page=1{% for key, value in url_params %}&{{ key }}={{ value }}{% endfor %}" aria-label="Pierwsza">
                             <span aria-hidden="true">&laquo;&laquo;</span>
                         </a>
                     </li>
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ tickets_page.previous_page_number }}{% for key, value in url_params.items %}&{{ key }}={{ value }}{% endfor %}" aria-label="Poprzednia">
+                        <a class="page-link" href="?page={{ tickets_page.previous_page_number }}{% for key, value in url_params %}&{{ key }}={{ value }}{% endfor %}" aria-label="Poprzednia">
                             <span aria-hidden="true">&laquo;</span>
                         </a>
                     </li>
@@ -1017,19 +1132,19 @@
                         </li>
                     {% elif num > tickets_page.number|add:'-3' and num < tickets_page.number|add:'3' %}
                         <li class="page-item">
-                            <a class="page-link" href="?page={{ num }}{% for key, value in url_params.items %}&{{ key }}={{ value }}{% endfor %}">{{ num }}</a>
+                            <a class="page-link" href="?page={{ num }}{% for key, value in url_params %}&{{ key }}={{ value }}{% endfor %}">{{ num }}</a>
                         </li>
                     {% endif %}
                 {% endfor %}
                 
                 {% if tickets_page.has_next %}
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ tickets_page.next_page_number }}{% for key, value in url_params.items %}&{{ key }}={{ value }}{% endfor %}" aria-label="Następna">
+                        <a class="page-link" href="?page={{ tickets_page.next_page_number }}{% for key, value in url_params %}&{{ key }}={{ value }}{% endfor %}" aria-label="Następna">
                             <span aria-hidden="true">&raquo;</span>
                         </a>
                     </li>
                     <li class="page-item">
-                        <a class="page-link" href="?page={{ tickets_page.paginator.num_pages }}{% for key, value in url_params.items %}&{{ key }}={{ value }}{% endfor %}" aria-label="Ostatnia">
+                        <a class="page-link" href="?page={{ tickets_page.paginator.num_pages }}{% for key, value in url_params %}&{{ key }}={{ value }}{% endfor %}" aria-label="Ostatnia">
                             <span aria-hidden="true">&raquo;&raquo;</span>
                         </a>
                     </li>
@@ -1041,7 +1156,7 @@
         <div class="d-md-none">
             <div class="btn-group" role="group" aria-label="Paginacja zgłoszeń">
                 {% if tickets_page.has_previous %}
-                    <a href="?page={{ tickets_page.previous_page_number }}{% for key, value in url_params.items %}&{{ key }}={{ value }}{% endfor %}" 
+                    <a href="?page={{ tickets_page.previous_page_number }}{% for key, value in url_params %}&{{ key }}={{ value }}{% endfor %}" 
                        class="btn btn-outline-primary btn-sm">
                         <i class="fas fa-chevron-left"></i>
                     </a>
@@ -1052,7 +1167,7 @@
                 </span>
                 
                 {% if tickets_page.has_next %}
-                    <a href="?page={{ tickets_page.next_page_number }}{% for key, value in url_params.items %}&{{ key }}={{ value }}{% endfor %}" 
+                    <a href="?page={{ tickets_page.next_page_number }}{% for key, value in url_params %}&{{ key }}={{ value }}{% endfor %}" 
                        class="btn btn-outline-primary btn-sm">
                         <i class="fas fa-chevron-right"></i>
                     </a>

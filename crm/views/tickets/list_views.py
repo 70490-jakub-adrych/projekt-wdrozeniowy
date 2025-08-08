@@ -18,11 +18,11 @@ def ticket_list(request):
     user = request.user
     role = user.profile.role
     
-    # Filtrowanie i sortowanie
-    status_filter = request.GET.get('status', '')
-    priority_filter = request.GET.get('priority', '')
-    category_filter = request.GET.get('category', '')
-    assigned_filter = request.GET.get('assigned', '')
+    # Filtrowanie i sortowanie (wspiera multi-select)
+    status_filters = request.GET.getlist('status')
+    priority_filters = request.GET.getlist('priority')
+    category_filters = request.GET.getlist('category')
+    assigned_filters = request.GET.getlist('assigned')  # wartości: 'me', 'unassigned'
     date_from = request.GET.get('date_from', '')
     date_to = request.GET.get('date_to', '')
     ticket_id = request.GET.get('ticket_id', '')
@@ -35,7 +35,8 @@ def ticket_list(request):
     exclude_created_by = request.GET.get('exclude_created_by', '')
     
     # Add organization filter
-    organization_filter = request.GET.get('organization', '')
+    # Może być wiele organizacji
+    organization_filters = request.GET.getlist('organization')
     
     # Get user organizations and log their IDs for debugging
     user_orgs = user.profile.organizations.all()
@@ -76,38 +77,45 @@ def ticket_list(request):
         tickets = Ticket.objects.filter(Q(organization__in=user_orgs) | Q(created_by=user))
         logger.debug(f"Client {user.username} - showing tickets from orgs and created by user")
     
-    # Apply exclude_closed filter by default - but only if status filter isn't explicitly set to 'closed'
-    if exclude_closed and status_filter != 'closed':
+    # Apply exclude_closed filter by default only when brak filtrów statusu
+    if exclude_closed and not status_filters:
         tickets = tickets.exclude(status='closed')
-        logger.debug(f"Excluding closed tickets")
+        logger.debug("Excluding closed tickets by default (no explicit status filters)")
     
     # Debug: Count results before filtering
     initial_count = tickets.count()
     logger.debug(f"Initial ticket count before filters: {initial_count}")
     
-    # Zastosowanie filtrów
-    if status_filter:
-        tickets = tickets.filter(status=status_filter)
-    if priority_filter:
-        tickets = tickets.filter(priority=priority_filter)
-    if category_filter:
-        tickets = tickets.filter(category=category_filter)
+    # Zastosowanie filtrów (multi)
+    if status_filters:
+        tickets = tickets.filter(status__in=status_filters)
+    if priority_filters:
+        tickets = tickets.filter(priority__in=priority_filters)
+    if category_filters:
+        tickets = tickets.filter(category__in=category_filters)
     
-    # Apply organization filter if provided
-    if organization_filter:
-        try:
-            org_id = int(organization_filter)
-            tickets = tickets.filter(organization_id=org_id)
-            logger.debug(f"Filtering tickets by organization ID: {org_id}")
-        except ValueError:
-            # Invalid organization ID format, ignore this filter
-            logger.warning(f"Invalid organization ID format: {organization_filter}")
+    # Apply organization filters if provided (multi)
+    if organization_filters:
+        valid_org_ids = []
+        for org_val in organization_filters:
+            try:
+                valid_org_ids.append(int(org_val))
+            except (TypeError, ValueError):
+                logger.warning(f"Invalid organization ID format ignored: {org_val}")
+        if valid_org_ids:
+            tickets = tickets.filter(organization_id__in=valid_org_ids)
+            logger.debug(f"Filtering tickets by organization IDs: {valid_org_ids}")
     
-    # Filtrowanie po przypisaniu
-    if assigned_filter == 'me':
-        tickets = tickets.filter(assigned_to=user)
-    elif assigned_filter == 'unassigned':
-        tickets = tickets.filter(assigned_to__isnull=True)
+    # Filtrowanie po przypisaniu (multi)
+    if assigned_filters:
+        assigned_q = Q()
+        for a in assigned_filters:
+            if a == 'me':
+                assigned_q |= Q(assigned_to=user)
+            elif a == 'unassigned':
+                assigned_q |= Q(assigned_to__isnull=True)
+        if assigned_q:
+            tickets = tickets.filter(assigned_q)
     # 'all' nie wymaga filtrowania - pokazuje wszystkie zgłoszenia z organizacji agenta
     
     # New filtering options for client dashboard
@@ -182,34 +190,34 @@ def ticket_list(request):
     except EmptyPage:
         tickets_page = paginator.page(paginator.num_pages)
     
-    # Przygotuj parametry URL dla zachowania filtrów w paginacji
-    url_params = {}
-    if status_filter:
-        url_params['status'] = status_filter
-    if priority_filter:
-        url_params['priority'] = priority_filter
-    if category_filter:
-        url_params['category'] = category_filter
-    if assigned_filter:
-        url_params['assigned'] = assigned_filter
+    # Przygotuj parametry URL dla zachowania filtrów w paginacji (pozwala na duplikaty)
+    url_params = []  # lista par (key, value)
+    for v in status_filters:
+        url_params.append(('status', v))
+    for v in priority_filters:
+        url_params.append(('priority', v))
+    for v in category_filters:
+        url_params.append(('category', v))
+    for v in assigned_filters:
+        url_params.append(('assigned', v))
     if date_from:
-        url_params['date_from'] = date_from
+        url_params.append(('date_from', date_from))
     if date_to:
-        url_params['date_to'] = date_to
+        url_params.append(('date_to', date_to))
     if ticket_id:
-        url_params['ticket_id'] = ticket_id
+        url_params.append(('ticket_id', str(ticket_id)))
     if sort_by != '-created_at':
-        url_params['sort_by'] = sort_by
+        url_params.append(('sort_by', sort_by))
     if not exclude_closed:
-        url_params['exclude_closed'] = 'false'
+        url_params.append(('exclude_closed', 'false'))
     if created_by_filter:
-        url_params['created_by'] = created_by_filter
+        url_params.append(('created_by', created_by_filter))
     if exclude_created_by:
-        url_params['exclude_created_by'] = exclude_created_by
-    if organization_filter:
-        url_params['organization'] = organization_filter
+        url_params.append(('exclude_created_by', exclude_created_by))
+    for v in organization_filters:
+        url_params.append(('organization', v))
     if per_page != 20:
-        url_params['per_page'] = per_page
+        url_params.append(('per_page', str(per_page)))
     
     # Lista dostępnych opcji sortowania dla wyboru w interfejsie
     sort_options = [
@@ -227,13 +235,19 @@ def ticket_list(request):
         ('-organization__name', 'Organizacja (Z-A)'),
     ]
     
+    # Choices for templates
+    status_choices = Ticket.STATUS_CHOICES
+    priority_choices = Ticket.PRIORITY_CHOICES
+    category_choices = Ticket.CATEGORY_CHOICES
+
     context = {
         'tickets': tickets_page,
         'tickets_page': tickets_page,  # Add this for pagination controls
-        'status_filter': status_filter,
-        'priority_filter': priority_filter,
-        'category_filter': category_filter,
-        'assigned_filter': assigned_filter,
+        # selected lists for multi-selects
+        'selected_statuses': status_filters,
+        'selected_priorities': priority_filters,
+        'selected_categories': category_filters,
+        'selected_assigned': assigned_filters,
         'date_from': date_from,
         'date_to': date_to,
         'ticket_id': ticket_id,
@@ -243,11 +257,15 @@ def ticket_list(request):
         'exclude_closed': exclude_closed,  # Add the exclude_closed filter to context
         'created_by_filter': created_by_filter,  # Add new filters to context
         'exclude_created_by': exclude_created_by,
-        'organization_filter': organization_filter,  # Add to context
+        'selected_organizations': organization_filters,  # multi
         'all_organizations': all_organizations,  # Add all organizations for admin filter
         'per_page': per_page,
         'url_params': url_params,
         'total_tickets': paginator.count,
+        # pass choices for rendering
+        'status_choices': status_choices,
+        'priority_choices': priority_choices,
+        'category_choices': category_choices,
     }
     
     return render(request, 'crm/tickets/ticket_list.html', context)
