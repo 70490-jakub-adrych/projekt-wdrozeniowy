@@ -391,55 +391,83 @@
         }
     }
 
-    /* Animation classes - disabled by default, only active on hover */
-    .animate-spin,
-    .animate-pulse,
-    .animate-shake,
-    .animate-glitch,
-    .animate-resonate,
-    .animate-float,
-    .animate-bounce {
-        animation: none; /* Disable by default */
+    /* Animation classes - always defined but paused by default */
+    .animate-spin {
+        animation: spin 1s linear infinite;
+        animation-play-state: paused;
     }
 
-    /* Enable animations only on stat card hover */
+    .animate-pulse {
+        animation: pulse 0.8s ease-in-out infinite;
+        animation-play-state: paused;
+    }
+
+    .animate-shake {
+        animation: glitch 0.6s ease-in-out infinite;
+        animation-play-state: paused;
+    }
+
+    .animate-glitch {
+        animation: glitch 0.6s ease-in-out infinite;
+        animation-play-state: paused;
+    }
+
+    .animate-resonate {
+        animation: resonate 0.8s ease-in-out infinite;
+        animation-play-state: paused;
+    }
+
+    .animate-float {
+        animation: float 1.5s ease-in-out infinite;
+        animation-play-state: paused;
+    }
+
+    .animate-bounce {
+        animation: bounce 1s ease-in-out infinite;
+        animation-play-state: paused;
+    }
+
+    /* Resume animations on stat card hover */
     .stat-card:hover .animate-spin {
-        animation: spin 1s linear infinite;
+        animation-play-state: running;
     }
 
     .stat-card:hover .animate-pulse {
-        animation: pulse 0.8s ease-in-out infinite;
+        animation-play-state: running;
     }
 
     .stat-card:hover .animate-shake {
-        animation: glitch 0.6s ease-in-out infinite;
+        animation-play-state: running;
     }
 
     .stat-card:hover .animate-glitch {
-        animation: glitch 0.6s ease-in-out infinite;
+        animation-play-state: running;
     }
 
     .stat-card:hover .animate-resonate {
-        animation: resonate 0.8s ease-in-out infinite;
+        animation-play-state: running;
     }
 
     .stat-card:hover .animate-float {
-        animation: float 1.5s ease-in-out infinite;
+        animation-play-state: running;
     }
 
     .stat-card:hover .animate-bounce {
-        animation: bounce 1s ease-in-out infinite;
+        animation-play-state: running;
     }
 
-    /* Font Awesome spinning animation control */
+    /* Font Awesome spinning animation control with play state */
     .fa-spin {
-        animation: none; /* Disable FontAwesome spin by default */
-    }
-    
-    /* Enable FontAwesome spin only on hover */
-    .stat-card:hover .fa-spin {
         -webkit-animation: fa-spin 1s infinite linear;
         animation: fa-spin 1s infinite linear;
+        -webkit-animation-play-state: paused;
+        animation-play-state: paused;
+    }
+    
+    /* Resume FontAwesome spin on hover */
+    .stat-card:hover .fa-spin {
+        -webkit-animation-play-state: running;
+        animation-play-state: running;
     }
 </style>
 {% endblock %}
