@@ -60,7 +60,6 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django_otp.middleware.OTPMiddleware',  # Add OTP middleware after auth
     'django.contrib.messages.middleware.MessageMiddleware',  # Moved up - must be before our custom middleware
-    'crm.middleware.ImpersonationMiddleware',  # Add impersonation middleware after auth
     'crm.middleware.ViewerRestrictMiddleware',
     'crm.middleware.EmailVerificationMiddleware',
     'crm.middleware.TwoFactorMiddleware',  # Add the new 2FA middleware
@@ -82,7 +81,6 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'crm.context_processors.view_permissions',  # Add this line
                 'crm.context_processors.device_context',  # Add device detection
-                'crm.context_processors.impersonation_context',  # Add impersonation context
             ],
         },
     },

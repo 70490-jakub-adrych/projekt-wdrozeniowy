@@ -18,7 +18,7 @@ from .views.auth_views import (
 )
 from .views.tickets.action_views import (ticket_confirm_solution, ticket_close, ticket_reopen, ticket_mark_resolved)  # Add this import
 from . import views
-from .views import secure_file_views, log_views, impersonation_views  # Add impersonation_views import here
+from .views import secure_file_views, log_views  # Add log_views import here
 from django.contrib.auth import views as auth_views
 from .views.statistics_views import statistics_dashboard, update_agent_work_log, generate_statistics_report
 from .views.tickets.unassignment_views import ticket_unassign
@@ -123,9 +123,5 @@ urlpatterns = [
 
     # API URLs
     path('api/user-contact/<int:user_id>/', user_contact_info, name='user_contact_info'),
-
-    # Admin impersonation
-    path('admin/impersonation/', views.impersonation_views.switch_user_perspective, name='user_impersonation'),
-    path('api/impersonation/status/', views.impersonation_views.get_impersonation_status, name='impersonation_status'),
 
 ]

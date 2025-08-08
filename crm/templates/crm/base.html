@@ -1032,17 +1032,6 @@
                     </li>
                     {% endif %}
                     
-                    {% if user.profile.role == 'admin' %}
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'user_impersonation' %}">
-                            <i class="fas fa-user-secret"></i> Symulacja użytkownika
-                            {% if is_impersonating %}
-                                <span class="badge bg-warning text-dark ml-1">Aktywna</span>
-                            {% endif %}
-                        </a>
-                    </li>
-                    {% endif %}
-                    
                     {% endif %}
                 </ul>
                 <ul class="navbar-nav">
@@ -1184,50 +1173,6 @@
 
         {% block content %}{% endblock %}
     </div>
-
-    <!-- Impersonation Banner -->
-    {% if user.is_authenticated and user.profile.role == 'admin' and is_impersonating %}
-    <div id="impersonation-banner" class="alert alert-warning alert-dismissible fade show m-0 rounded-0 border-0" role="alert">
-        <div class="container">
-            <div class="row align-items-center">
-                <div class="col-auto">
-                    <i class="fas fa-user-secret fa-lg"></i>
-                </div>
-                <div class="col">
-                    <strong>Tryb symulacji aktywny:</strong>
-                    Przeglądasz system jako 
-                    <strong>
-                        {% if impersonated_user.get_full_name %}
-                            {{ impersonated_user.get_full_name }} ({{ impersonated_user.username }})
-                        {% else %}
-                            {{ impersonated_user.username }}
-                        {% endif %}
-                    </strong>
-                    - {{ impersonated_user.profile.get_role_display }}
-                    {% if has_organization_simulation %}
-                        <br><small>
-                            Organizacje: 
-                            {% if simulated_organizations %}
-                                {% for org in simulated_organizations %}{{ org.name }}{% if not forloop.last %}, {% endif %}{% endfor %}
-                            {% else %}
-                                <em>brak dostępu</em>
-                            {% endif %}
-                        </small>
-                    {% endif %}
-                </div>
-                <div class="col-auto">
-                    <form method="post" action="{% url 'user_impersonation' %}" class="d-inline">
-                        {% csrf_token %}
-                        <input type="hidden" name="user_id" value="reset">
-                        <button type="submit" class="btn btn-sm btn-outline-dark">
-                            <i class="fas fa-undo"></i> Zakończ symulację
-                        </button>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
-    {% endif %}
 
     <footer class="footer mt-5">
         <div class="container">
