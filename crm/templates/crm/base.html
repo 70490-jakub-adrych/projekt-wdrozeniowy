@@ -2271,6 +2271,10 @@
                 this.addLoadingIndicator();
                 this.bindNavigation();
                 this.setupPopState();
+                
+                // Make SPANavigator globally available
+                window.SPANavigator = this;
+                console.log('🌐 SPANavigator is now globally available');
             },
             
             addLoadingIndicator: function() {
@@ -3294,8 +3298,20 @@
             console.log('🎨 Base template initializing UI components...');
             
             // Initialize using the SPA navigator's function
-            if (window.spaNavigator && window.spaNavigator.reinitializeUIEnhancements) {
-                window.spaNavigator.reinitializeUIEnhancements();
+            if (window.SPANavigator && window.SPANavigator.reinitializeUIEnhancements) {
+                window.SPANavigator.reinitializeUIEnhancements();
+            } else {
+                console.warn('🔄 SPANavigator not ready yet, will retry after SPANavigator initialization...');
+                
+                // Fallback: wait a bit for SPANavigator to be available
+                setTimeout(() => {
+                    if (window.SPANavigator && window.SPANavigator.reinitializeUIEnhancements) {
+                        console.log('🔄 Retrying UI enhancement initialization...');
+                        window.SPANavigator.reinitializeUIEnhancements();
+                    } else {
+                        console.error('❌ SPANavigator still not available after retry');
+                    }
+                }, 100);
             }
         });
 
@@ -3306,7 +3322,7 @@
             
             // Small delay to ensure DOM is fully updated
             setTimeout(() => {
-                if (window.spaNavigator && window.spaNavigator.reinitializeUIEnhancements) {
+                if (window.SPANavigator && window.SPANavigator.reinitializeUIEnhancements) {
                     // Additional diagnostics
                     const tooltipElements = document.querySelectorAll('[data-bs-toggle="tooltip"]');
                     const popoverElements = document.querySelectorAll('[data-bs-toggle="popover"]');
@@ -3314,10 +3330,11 @@
                     
                     console.log(`🔍 Found ${tooltipElements.length} tooltip elements, ${popoverElements.length} popover elements, ${dropdownElements.length} dropdown elements`);
                     
-                    window.spaNavigator.reinitializeUIEnhancements();
+                    window.SPANavigator.reinitializeUIEnhancements();
                     console.log('✅ UI enhancements reinitialized after SPA navigation');
                 } else {
                     console.error('❌ SPA Navigator not available for UI reinitialization');
+                    console.log('🔍 Available SPANavigator methods:', window.SPANavigator ? Object.keys(window.SPANavigator) : 'SPANavigator not found');
                 }
             }, 50);
         });
@@ -3383,10 +3400,11 @@
             // Re-initialize all components (can be called manually)
             reinitialize: function() {
                 console.log('🔄 BetulaUI: Reinitializing UI components...');
-                if (window.spaNavigator && window.spaNavigator.reinitializeUIEnhancements) {
-                    window.spaNavigator.reinitializeUIEnhancements();
+                if (window.SPANavigator && window.SPANavigator.reinitializeUIEnhancements) {
+                    window.SPANavigator.reinitializeUIEnhancements();
                 } else {
-                    console.warn('BetulaUI: SPA Navigator not available for reinitialization');
+                    console.warn('BetulaUI: SPANavigator not available for reinitialization');
+                    console.log('🔍 Available SPANavigator methods:', window.SPANavigator ? Object.keys(window.SPANavigator) : 'SPANavigator not found');
                 }
             }
         };
