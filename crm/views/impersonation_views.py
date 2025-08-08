@@ -29,8 +29,9 @@ def switch_user_perspective(request):
                 
                 # Log activity
                 log_activity(
-                    request.user, 
+                    request, 
                     'user_impersonation_stop', 
+                    None,
                     f'Zakończono symulację użytkownika ID: {impersonated_user_id}'
                 )
                 
@@ -69,8 +70,9 @@ def switch_user_perspective(request):
                 
                 # Log activity
                 log_activity(
-                    request.user, 
+                    request, 
                     'user_impersonation_start', 
+                    None,
                     f'Rozpoczęto symulację użytkownika: {target_user.username} (ID: {target_user.id}) z organizacjami: {org_names}'
                 )
                 
