@@ -201,10 +201,53 @@
         100% { transform: translate(2px, 2px); }
     }
 
+    @keyframes glitch {
+        0% { transform: translate(0); filter: hue-rotate(0deg); }
+        10% { transform: translate(-2px, 1px); filter: hue-rotate(10deg); }
+        20% { transform: translate(-1px, -1px); filter: hue-rotate(20deg); }
+        30% { transform: translate(2px, 1px); filter: hue-rotate(10deg); }
+        40% { transform: translate(1px, -2px); filter: hue-rotate(0deg); }
+        50% { transform: translate(-1px, 2px); filter: hue-rotate(-10deg); }
+        60% { transform: translate(-2px, 1px); filter: hue-rotate(20deg); }
+        70% { transform: translate(2px, 1px); filter: hue-rotate(10deg); }
+        80% { transform: translate(-1px, -1px); filter: hue-rotate(0deg); }
+        90% { transform: translate(1px, 2px); filter: hue-rotate(-10deg); }
+        100% { transform: translate(0); filter: hue-rotate(0deg); }
+    }
+
+    @keyframes resonate {
+        0% { transform: translateX(0) rotate(0deg); }
+        10% { transform: translateX(-1px) rotate(-1deg); }
+        20% { transform: translateX(2px) rotate(1deg); }
+        30% { transform: translateX(-2px) rotate(-1deg); }
+        40% { transform: translateX(1px) rotate(1deg); }
+        50% { transform: translateX(-1px) rotate(0deg); }
+        60% { transform: translateX(2px) rotate(-1deg); }
+        70% { transform: translateX(-2px) rotate(1deg); }
+        80% { transform: translateX(1px) rotate(-1deg); }
+        90% { transform: translateX(-1px) rotate(1deg); }
+        100% { transform: translateX(0) rotate(0deg); }
+    }
+
     @keyframes float {
         0% { transform: translateY(0); }
         50% { transform: translateY(-5px); }
         100% { transform: translateY(0); }
+    }
+
+    @keyframes bounce {
+        0%, 20%, 53%, 80%, 100% {
+            transform: translate3d(0, 0, 0);
+        }
+        40%, 43% {
+            transform: translate3d(0, -8px, 0);
+        }
+        70% {
+            transform: translate3d(0, -4px, 0);
+        }
+        90% {
+            transform: translate3d(0, -2px, 0);
+        }
     }
 
     /* Mobile-responsive enhancements */
@@ -348,56 +391,83 @@
         }
     }
 
+    /* Animation classes - always defined but paused by default */
     .animate-spin {
-        animation: spin 2s linear infinite;
+        animation: spin 1s linear infinite;
+        animation-play-state: paused;
     }
 
     .animate-pulse {
-        animation: pulse 1.5s ease-in-out infinite;
+        animation: pulse 0.8s ease-in-out infinite;
+        animation-play-state: paused;
     }
 
     .animate-shake {
-        animation: shake 0.5s ease-in-out infinite;
+        animation: glitch 0.6s ease-in-out infinite;
+        animation-play-state: paused;
+    }
+
+    .animate-glitch {
+        animation: glitch 0.6s ease-in-out infinite;
+        animation-play-state: paused;
+    }
+
+    .animate-resonate {
+        animation: resonate 0.8s ease-in-out infinite;
+        animation-play-state: paused;
     }
 
     .animate-float {
-        animation: float 3s ease-in-out infinite;
+        animation: float 1.5s ease-in-out infinite;
+        animation-play-state: paused;
     }
 
-    /* Fix to disable Font Awesome animations until hover */
-    .fa-spin {
-        -webkit-animation: none !important;
-        animation: none !important;
+    .animate-bounce {
+        animation: bounce 1s ease-in-out infinite;
+        animation-play-state: paused;
     }
-    
-    .stat-card:hover .fa-spin {
-        -webkit-animation: fa-spin 2s infinite linear !important;
-        animation: fa-spin 2s infinite linear !important;
-    }
-    
-    /* Remove the existing animation definitions that might be running all the time */
-    .animate-spin, 
-    .animate-pulse, 
-    .animate-shake,
-    .animate-float {
-        animation: none !important;
-    }
-    
-    /* Animation only happens on stat-card hover */
+
+    /* Resume animations on stat card hover */
     .stat-card:hover .animate-spin {
-        animation: spin 2s linear infinite !important;
+        animation-play-state: running;
     }
-    
+
     .stat-card:hover .animate-pulse {
-        animation: pulse 1.5s ease-in-out infinite !important;
+        animation-play-state: running;
     }
-    
+
     .stat-card:hover .animate-shake {
-        animation: shake 0.5s ease-in-out infinite !important;
+        animation-play-state: running;
+    }
+
+    .stat-card:hover .animate-glitch {
+        animation-play-state: running;
+    }
+
+    .stat-card:hover .animate-resonate {
+        animation-play-state: running;
+    }
+
+    .stat-card:hover .animate-float {
+        animation-play-state: running;
+    }
+
+    .stat-card:hover .animate-bounce {
+        animation-play-state: running;
+    }
+
+    /* Font Awesome spinning animation control with play state */
+    .fa-spin {
+        -webkit-animation: fa-spin 1s infinite linear;
+        animation: fa-spin 1s infinite linear;
+        -webkit-animation-play-state: paused;
+        animation-play-state: paused;
     }
     
-    .stat-card:hover .animate-float {
-        animation: float 3s ease-in-out infinite !important;
+    /* Resume FontAwesome spin on hover */
+    .stat-card:hover .fa-spin {
+        -webkit-animation-play-state: running;
+        animation-play-state: running;
     }
 </style>
 {% endblock %}
@@ -508,7 +578,7 @@
                         <div class="stat-card card bg-warning">
                             <a href="{% url 'ticket_list' %}?status=unresolved" class="stat-card-link">
                                 <div class="card-body text-center py-3">
-                                    <div class="stat-card-icon"><i class="fas fa-exclamation-triangle animate-shake"></i></div>
+                                    <div class="stat-card-icon"><i class="fas fa-exclamation-triangle animate-glitch"></i></div>
                                     <div class="stat-card-count animate-counter" data-count="{{ unresolved_tickets }}">{{ unresolved_tickets }}</div>
                                     <div class="stat-card-label">Nierozwiązane</div>
                                 </div>
@@ -520,7 +590,7 @@
                         <div class="stat-card card bg-success text-white">
                             <a href="{% url 'ticket_list' %}?status=resolved" class="stat-card-link text-white">
                                 <div class="card-body text-center py-3">
-                                    <div class="stat-card-icon"><i class="fas fa-check-circle animate-pulse"></i></div>
+                                    <div class="stat-card-icon"><i class="fas fa-check-circle animate-float"></i></div>
                                     <div class="stat-card-count animate-counter" data-count="{{ resolved_tickets }}">{{ resolved_tickets }}</div>
                                     <div class="stat-card-label">Rozwiązane</div>
                                 </div>
@@ -532,7 +602,7 @@
                         <div class="stat-card card bg-secondary text-white">
                             <a href="{% url 'ticket_list' %}?status=closed" class="stat-card-link text-white">
                                 <div class="card-body text-center py-3">
-                                    <div class="stat-card-icon"><i class="fas fa-lock animate-bounce"></i></div>
+                                    <div class="stat-card-icon"><i class="fas fa-lock animate-resonate"></i></div>
                                     <div class="stat-card-count animate-counter" data-count="{{ closed_tickets }}">{{ closed_tickets }}</div>
                                     <div class="stat-card-label">Zamknięte</div>
                                 </div>
@@ -558,7 +628,7 @@
                         <div class="stat-card card bg-warning">
                             <a href="{% url 'ticket_list' %}?status=unresolved" class="stat-card-link">
                                 <div class="card-body text-center py-3">
-                                    <div class="stat-card-icon"><i class="fas fa-exclamation-triangle animate-shake"></i></div>
+                                    <div class="stat-card-icon"><i class="fas fa-exclamation-triangle animate-glitch"></i></div>
                                     <div class="stat-card-count animate-counter" data-count="{{ unresolved_tickets }}">{{ unresolved_tickets }}</div>
                                     <div class="stat-card-label">Nierozwiązane</div>
                                 </div>
@@ -569,7 +639,7 @@
                         <div class="stat-card card bg-success text-white">
                             <a href="{% url 'ticket_list' %}?status=resolved" class="stat-card-link text-white">
                                 <div class="card-body text-center py-3">
-                                    <div class="stat-card-icon"><i class="fas fa-check-circle animate-pulse"></i></div>
+                                    <div class="stat-card-icon"><i class="fas fa-check-circle animate-float"></i></div>
                                     <div class="stat-card-count animate-counter" data-count="{{ resolved_tickets }}">{{ resolved_tickets }}</div>
                                     <div class="stat-card-label">Rozwiązane</div>
                                 </div>
@@ -580,7 +650,7 @@
                         <div class="stat-card card bg-secondary text-white">
                             <a href="{% url 'ticket_list' %}?status=closed" class="stat-card-link text-white">
                                 <div class="card-body text-center py-3">
-                                    <div class="stat-card-icon"><i class="fas fa-lock animate-bounce"></i></div>
+                                    <div class="stat-card-icon"><i class="fas fa-lock animate-resonate"></i></div>
                                     <div class="stat-card-count animate-counter" data-count="{{ closed_tickets }}">{{ closed_tickets }}</div>
                                     <div class="stat-card-label">Zamknięte</div>
                                 </div>
@@ -1121,5 +1191,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'crm/js/ui-enhancements.js' %}"></script>
+<!-- Dashboard-specific JavaScript can go here if needed -->
 {% endblock %}
