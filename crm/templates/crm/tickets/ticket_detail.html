@@ -135,6 +135,43 @@
         font-size: 0.95rem;
         margin-bottom: 3px;
     }
+
+    /* User contact popup styles */
+    .user-name-clickable {
+        cursor: pointer;
+        text-decoration: underline;
+        color: #0066cc !important;
+    }
+    
+    .user-name-clickable:hover {
+        color: #004499 !important;
+        text-decoration: underline;
+    }
+    
+    /* Mobile-specific adjustments for contact popup */
+    @media (max-width: 576px) {
+        .modal-dialog {
+            margin: 0.5rem;
+        }
+        
+        .user-contact-info {
+            font-size: 0.9rem;
+        }
+        
+        /* Make clickable names more obvious on mobile */
+        .user-name-clickable {
+            color: #0066cc !important;
+            font-weight: 500;
+            text-decoration: underline;
+            padding: 2px 4px;
+            border-radius: 3px;
+            background-color: rgba(0, 102, 204, 0.05);
+        }
+        
+        .user-name-clickable:active {
+            background-color: rgba(0, 102, 204, 0.1);
+        }
+    }
 </style>
 {% endblock %}
 
@@ -317,25 +354,44 @@
                 </div>
                 <div class="row mb-3">
                     <div class="col-md-3 fw-bold">Zgłaszający:</div>
-                    <div class="col-md-9">{{ ticket.created_by.username }}
-                    {% if ticket.created_by.profile.role == 'admin' %}
-                        <span class="badge bg-danger">Admin</span>
-                    {% elif ticket.created_by.profile.role == 'superagent' %}
-                        <span class="badge bg-warning text-dark">Superagent</span>
-                    {% elif ticket.created_by.profile.role == 'agent' %}
-                        <span class="badge bg-info">Agent</span>
-                    {% elif ticket.created_by.profile.role == 'viewer' %}
-                        <span class="badge bg-dark">Viewer</span>
-                    {% else %}
-                        <span class="badge bg-secondary">Klient</span>
-                    {% endif %}
+                    <div class="col-md-9">
+                        <span class="user-name-clickable" 
+                              data-user-id="{{ ticket.created_by.id }}" 
+                              data-username="{{ ticket.created_by.username }}"
+                              style="cursor: pointer; text-decoration: underline; color: #0066cc;">
+                            {% if ticket.created_by.first_name or ticket.created_by.last_name %}
+                                {{ ticket.created_by.first_name }} {{ ticket.created_by.last_name }}
+                            {% else %}
+                                {{ ticket.created_by.username }}
+                            {% endif %}
+                        </span>
+                        {% if ticket.created_by.profile.role == 'admin' %}
+                            <span class="badge bg-danger">Admin</span>
+                        {% elif ticket.created_by.profile.role == 'superagent' %}
+                            <span class="badge bg-warning text-dark">Superagent</span>
+                        {% elif ticket.created_by.profile.role == 'agent' %}
+                            <span class="badge bg-info">Agent</span>
+                        {% elif ticket.created_by.profile.role == 'viewer' %}
+                            <span class="badge bg-dark">Viewer</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Klient</span>
+                        {% endif %}
                     </div>
                 </div>
                 <div class="row mb-3">
                     <div class="col-md-3 fw-bold">Przypisane do:</div>
                     <div class="col-md-9">
                     {% if ticket.assigned_to %}
-                        {{ ticket.assigned_to.username }}
+                        <span class="user-name-clickable" 
+                              data-user-id="{{ ticket.assigned_to.id }}" 
+                              data-username="{{ ticket.assigned_to.username }}"
+                              style="cursor: pointer; text-decoration: underline; color: #0066cc;">
+                            {% if ticket.assigned_to.first_name or ticket.assigned_to.last_name %}
+                                {{ ticket.assigned_to.first_name }} {{ ticket.assigned_to.last_name }}
+                            {% else %}
+                                {{ ticket.assigned_to.username }}
+                            {% endif %}
+                        </span>
                         {% if ticket.assigned_to.profile.role == 'admin' %}
                             <span class="badge bg-danger">Admin</span>
                         {% elif ticket.assigned_to.profile.role == 'superagent' %}
@@ -394,7 +450,17 @@
                         <div>
                             <i class="fas fa-file"></i> 
                             <a href="{% url 'serve_attachment' attachment.id %}" target="_blank">{{ attachment.filename }}</a>
-                            <small class="text-muted ms-2">(Dodane przez: {{ attachment.uploaded_by.username }}, {{ attachment.uploaded_at|date:"d.m.Y H:i" }})</small>
+                            <small class="text-muted ms-2">(Dodane przez: 
+                            <span class="user-name-clickable" 
+                                  data-user-id="{{ attachment.uploaded_by.id }}" 
+                                  data-username="{{ attachment.uploaded_by.username }}"
+                                  style="cursor: pointer; text-decoration: underline; color: #0066cc;">
+                                {% if attachment.uploaded_by.first_name or attachment.uploaded_by.last_name %}
+                                    {{ attachment.uploaded_by.first_name }} {{ attachment.uploaded_by.last_name }}
+                                {% else %}
+                                    {{ attachment.uploaded_by.username }}
+                                {% endif %}
+                            </span>, {{ attachment.uploaded_at|date:"d.m.Y H:i" }})</small>
                         </div>
                     </li>
                     {% endfor %}
@@ -414,7 +480,16 @@
                 <div class="media mb-3 p-3 {% if comment.author == ticket.created_by %}bg-light{% endif %} border-left-user-role-{{ comment.author.profile.role }}">
                     <div class="media-body">
                         <h5 class="mt-0">
-                            {{ comment.author.username }}
+                            <span class="user-name-clickable" 
+                                  data-user-id="{{ comment.author.id }}" 
+                                  data-username="{{ comment.author.username }}"
+                                  style="cursor: pointer; text-decoration: underline; color: #0066cc;">
+                                {% if comment.author.first_name or comment.author.last_name %}
+                                    {{ comment.author.first_name }} {{ comment.author.last_name }}
+                                {% else %}
+                                    {{ comment.author.username }}
+                                {% endif %}
+                            </span>
                             {% if comment.author.profile.role == 'admin' %}
                                 <span class="badge bg-danger">Admin</span>
                             {% elif comment.author.profile.role == 'superagent' %}
@@ -507,7 +582,17 @@
                         <div class="timeline-marker"></div>
                         <div class="timeline-content">
                             <h3 class="timeline-title">Utworzono zgłoszenie</h3>
-                            <p>{{ ticket.created_at|date:"d.m.Y H:i" }} - {{ ticket.created_by.username }}
+                            <p>{{ ticket.created_at|date:"d.m.Y H:i" }} - 
+                            <span class="user-name-clickable" 
+                                  data-user-id="{{ ticket.created_by.id }}" 
+                                  data-username="{{ ticket.created_by.username }}"
+                                  style="cursor: pointer; text-decoration: underline; color: #0066cc;">
+                                {% if ticket.created_by.first_name or ticket.created_by.last_name %}
+                                    {{ ticket.created_by.first_name }} {{ ticket.created_by.last_name }}
+                                {% else %}
+                                    {{ ticket.created_by.username }}
+                                {% endif %}
+                            </span>
                             {% if ticket.created_by.profile.role == 'admin' %}
                                 <span class="badge bg-danger">Admin</span>
                             {% elif ticket.created_by.profile.role == 'superagent' %}
@@ -529,7 +614,17 @@
                             <div class="timeline-marker bg-info"></div>
                             <div class="timeline-content">
                                 <h3 class="timeline-title">Aktualizacja zgłoszenia</h3>
-                                <p>{{ activity.created_at|date:"d.m.Y H:i" }} - {{ activity.user.username }}
+                                <p>{{ activity.created_at|date:"d.m.Y H:i" }} - 
+                                <span class="user-name-clickable" 
+                                      data-user-id="{{ activity.user.id }}" 
+                                      data-username="{{ activity.user.username }}"
+                                      style="cursor: pointer; text-decoration: underline; color: #0066cc;">
+                                    {% if activity.user.first_name or activity.user.last_name %}
+                                        {{ activity.user.first_name }} {{ activity.user.last_name }}
+                                    {% else %}
+                                        {{ activity.user.username }}
+                                    {% endif %}
+                                </span>
                                 {% if activity.user.profile.role == 'admin' %}
                                     <span class="badge bg-danger">Admin</span>
                                 {% elif activity.user.profile.role == 'superagent' %}
@@ -552,7 +647,17 @@
                             <div class="timeline-marker bg-primary"></div>
                             <div class="timeline-content">
                                 <h3 class="timeline-title">Dodano odpowiedź</h3>
-                                <p>{{ activity.created_at|date:"d.m.Y H:i" }} - {{ activity.user.username }}
+                                <p>{{ activity.created_at|date:"d.m.Y H:i" }} - 
+                                <span class="user-name-clickable" 
+                                      data-user-id="{{ activity.user.id }}" 
+                                      data-username="{{ activity.user.username }}"
+                                      style="cursor: pointer; text-decoration: underline; color: #0066cc;">
+                                    {% if activity.user.first_name or activity.user.last_name %}
+                                        {{ activity.user.first_name }} {{ activity.user.last_name }}
+                                    {% else %}
+                                        {{ activity.user.username }}
+                                    {% endif %}
+                                </span>
                                 {% if activity.user.profile.role == 'admin' %}
                                     <span class="badge bg-danger">Admin</span>
                                 {% elif activity.user.profile.role == 'superagent' %}
@@ -788,6 +893,109 @@
             if (!currentUrl.includes('/tickets/')) {
                 sessionStorage.removeItem(SCROLL_STORAGE_KEY);
             }
+        });
+    });
+</script>
+
+<!-- User Contact Information Modal -->
+<div class="modal fade" id="userContactModal" tabindex="-1" aria-labelledby="userContactModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="userContactModalLabel">Informacje kontaktowe</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="userContactModalBody">
+                <div class="text-center">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Ładowanie...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // User contact popup functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        const userModal = new bootstrap.Modal(document.getElementById('userContactModal'));
+        
+        // Add click event listeners to all user name elements
+        document.querySelectorAll('.user-name-clickable').forEach(function(element) {
+            element.addEventListener('click', function() {
+                const userId = this.getAttribute('data-user-id');
+                const username = this.getAttribute('data-username');
+                
+                // Update modal title
+                document.getElementById('userContactModalLabel').textContent = 
+                    'Informacje kontaktowe - ' + this.textContent.trim();
+                
+                // Reset modal body to loading state
+                document.getElementById('userContactModalBody').innerHTML = 
+                    '<div class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Ładowanie...</span></div></div>';
+                
+                // Show modal
+                userModal.show();
+                
+                // Fetch user contact information
+                fetch(`/api/user-contact/${userId}/`, {
+                    method: 'GET',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
+                    },
+                    credentials: 'same-origin'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        let html = '<div class="user-contact-info">';
+                        
+                        if (data.full_name) {
+                            html += `<div class="mb-3"><strong>Imię i nazwisko:</strong> ${data.full_name}</div>`;
+                        }
+                        
+                        html += `<div class="mb-3"><strong>Nazwa użytkownika:</strong> ${data.username}</div>`;
+                        
+                        if (data.email) {
+                            html += `<div class="mb-3"><strong>Email:</strong> <a href="mailto:${data.email}">${data.email}</a></div>`;
+                        }
+                        
+                        if (data.phone) {
+                            html += `<div class="mb-3"><strong>Telefon:</strong> <a href="tel:${data.phone}">${data.phone}</a></div>`;
+                        }
+                        
+                        if (data.role) {
+                            html += `<div class="mb-3"><strong>Rola:</strong> ${data.role}</div>`;
+                        }
+                        
+                        if (data.organizations && data.organizations.length > 0) {
+                            html += '<div class="mb-3"><strong>Organizacje:</strong><ul class="mb-0">';
+                            data.organizations.forEach(org => {
+                                html += `<li>${org}</li>`;
+                            });
+                            html += '</ul></div>';
+                        }
+                        
+                        if (!data.email && !data.phone) {
+                            html += '<div class="text-muted">Brak dostępnych informacji kontaktowych</div>';
+                        }
+                        
+                        html += '</div>';
+                        
+                        document.getElementById('userContactModalBody').innerHTML = html;
+                    } else {
+                        document.getElementById('userContactModalBody').innerHTML = 
+                            '<div class="alert alert-warning">Nie udało się pobrać informacji kontaktowych</div>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching user contact info:', error);
+                    document.getElementById('userContactModalBody').innerHTML = 
+                        '<div class="alert alert-danger">Wystąpił błąd podczas pobierania informacji</div>';
+                });
+            });
         });
     });
 </script>

@@ -24,6 +24,7 @@ from .views.statistics_views import statistics_dashboard, update_agent_work_log,
 from .views.tickets.unassignment_views import ticket_unassign
 from .views.tickets.assignment_views import ticket_assign_to_other
 from .views.two_factor_views import setup_2fa, setup_2fa_success, disable_2fa, verify_2fa, recovery_code
+from .views.api_views import user_contact_info
 
 urlpatterns = [
     # Landing and authentication
@@ -119,5 +120,8 @@ urlpatterns = [
     path('2fa/disable/', disable_2fa, name='disable_2fa'),
     path('2fa/verify/', verify_2fa, name='verify_2fa'),
     path('2fa/recovery/', recovery_code, name='recovery_code'),
+
+    # API URLs
+    path('api/user-contact/<int:user_id>/', user_contact_info, name='user_contact_info'),
 
 ]

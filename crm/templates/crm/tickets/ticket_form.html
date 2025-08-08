@@ -122,7 +122,7 @@
                         </h5>
                         
                         <div class="row">
-                            <div class="col-md-8">
+                            <div class="col-md-12">
                                 <div class="mb-3">
                                     {{ attachment_form.file|as_crispy_field }}
                                     <small class="form-text text-muted">
@@ -174,7 +174,7 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="privacyPolicyModalLabel">Polityka prywatności i regulamin dotyczący załączników</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Zamknij"></button>
             </div>
             <div class="modal-body">
                 <h6>Regulamin dotyczący przesyłania załączników</h6>
@@ -208,13 +208,13 @@
 {% block extra_js %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Initialize all modals
+        // Inicjalizuj wszystkie modale
         var myModalEl = document.getElementById('privacyPolicyModal');
         if (myModalEl) {
             new bootstrap.Modal(myModalEl);
         }
         
-        // Category suggestion functionality
+        // Funkcjonalność sugestii kategorii
         const form = document.getElementById('ticketForm');
         const titleInput = document.querySelector('#id_title');
         const descInput = document.querySelector('#id_description');
@@ -226,7 +226,7 @@
         const rejectBtn = document.getElementById('rejectSuggestion');
         const matchDetailsContainer = document.getElementById('matchDetails');
         
-        // Dictionary to map category values to display names
+        // Słownik mapujący wartości kategorii na nazwy wyświetlane
         const categoryNames = {
             'hardware': 'Sprzęt',
             'software': 'Oprogramowanie',
@@ -282,7 +282,7 @@
                     }
                 })
                 .catch(error => {
-                    console.error('Error checking category suggestion:', error);
+                    console.error('Błąd sprawdzania sugestii kategorii:', error);
                 });
             }
             
@@ -319,7 +319,7 @@
             }
         }
         
-        // Client-side validation for attachment and policy checkbox
+        // Walidacja po stronie klienta dla załącznika i checkbox polityki
         const fileInput = document.querySelector('#id_file');
         const policyCheckbox = document.querySelector('#id_accepted_policy');
         const policyField = document.querySelector('.attachment-policy');

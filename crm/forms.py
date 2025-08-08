@@ -90,6 +90,7 @@ class OrganizationForm(forms.ModelForm):
 
 class TicketForm(forms.ModelForm):
     title = forms.CharField(
+        label="Tytuł",
         min_length=8,
         max_length=255,
         error_messages={
@@ -97,6 +98,7 @@ class TicketForm(forms.ModelForm):
         }
     )
     description = forms.CharField(
+        label="Opis",
         min_length=20, 
         widget=forms.Textarea(attrs={'rows': 5}),
         error_messages={
@@ -115,6 +117,7 @@ class TicketForm(forms.ModelForm):
 
 class ModeratorTicketForm(forms.ModelForm):
     title = forms.CharField(
+        label="Tytuł",
         min_length=8,
         max_length=255,
         error_messages={
@@ -122,6 +125,7 @@ class ModeratorTicketForm(forms.ModelForm):
         }
     )
     description = forms.CharField(
+        label="Opis",
         min_length=20, 
         widget=forms.Textarea(attrs={'rows': 5}),
         error_messages={
