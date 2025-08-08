@@ -51,16 +51,16 @@
         
         /* Dark Theme */
         [data-theme="dark"] {
-            /* Dark Theme Colors - Softer contrast */
-            --primary-color: #1e1e2e;
+            /* Dark Theme Colors - More saturated for better visibility */
+            --primary-color: #1a1a2e;
             --secondary-color: #2d3748;
-            --accent-color: #64b5f6; /* Softer blue */
+            --accent-color: #4fc3f7; /* More saturated blue */
             --light-color: #2d3748;
             --dark-color: #0d1117;
-            --success-color: #66bb6a; /* Softer green */
-            --warning-color: #ffb74d; /* Softer orange */
-            --danger-color: #ef5350; /* Softer red */
-            --info-color: #64b5f6; /* Softer blue */
+            --success-color: #4caf50; /* More saturated green */
+            --warning-color: #ff9800; /* More saturated orange */
+            --danger-color: #f44336; /* More saturated red */
+            --info-color: #29b6f6; /* More saturated light blue */
             
             /* Dark Theme UI Colors - Softer backgrounds */
             --bg-color: #121212; /* Softer than pure black */
@@ -68,7 +68,7 @@
             --text-muted: #9e9e9e; /* Better contrast for muted text */
             --border-color: #424242; /* Softer border */
             --card-bg: #1e1e1e; /* Softer card background */
-            --navbar-bg: #1e1e2e;
+            --navbar-bg: #1a1a2e;
             --dropdown-bg: #2c2c2c; /* Softer dropdown */
             --input-bg: #2c2c2c; /* Softer input background */
             --table-bg: #1e1e1e; /* Softer table background */
@@ -402,7 +402,11 @@
             color: #90caf9 !important;
         }
         
-        /* Button overrides with softer colors */
+        /* Button overrides with more saturated colors */
+        [data-theme="dark"] .btn {
+            border: 1px solid transparent;
+        }
+
         [data-theme="dark"] .btn-primary {
             background-color: var(--accent-color) !important;
             border-color: var(--accent-color) !important;
@@ -410,8 +414,8 @@
         }
         
         [data-theme="dark"] .btn-primary:hover {
-            background-color: #42a5f5 !important;
-            border-color: #42a5f5 !important;
+            background-color: #29b6f6 !important;
+            border-color: #29b6f6 !important;
         }
         
         [data-theme="dark"] .btn-secondary {
@@ -428,32 +432,34 @@
         [data-theme="dark"] .btn-success {
             background-color: var(--success-color) !important;
             border-color: var(--success-color) !important;
+            color: white !important;
         }
         
         [data-theme="dark"] .btn-success:hover {
-            background-color: #4caf50 !important;
-            border-color: #4caf50 !important;
+            background-color: #388e3c !important;
+            border-color: #388e3c !important;
         }
         
         [data-theme="dark"] .btn-warning {
             background-color: var(--warning-color) !important;
             border-color: var(--warning-color) !important;
-            color: #333 !important;
+            color: white !important;
         }
         
         [data-theme="dark"] .btn-warning:hover {
-            background-color: #ff9800 !important;
-            border-color: #ff9800 !important;
+            background-color: #f57c00 !important;
+            border-color: #f57c00 !important;
         }
         
         [data-theme="dark"] .btn-danger {
             background-color: var(--danger-color) !important;
             border-color: var(--danger-color) !important;
+            color: white !important;
         }
         
         [data-theme="dark"] .btn-danger:hover {
-            background-color: #f44336 !important;
-            border-color: #f44336 !important;
+            background-color: #d32f2f !important;
+            border-color: #d32f2f !important;
         }
         
         [data-theme="dark"] .btn-info {
@@ -463,8 +469,87 @@
         }
         
         [data-theme="dark"] .btn-info:hover {
-            background-color: #42a5f5 !important;
-            border-color: #42a5f5 !important;
+            background-color: #0288d1 !important;
+            border-color: #0288d1 !important;
+        }
+
+        [data-theme="dark"] .btn-light {
+            background-color: var(--light-color) !important;
+            border-color: var(--light-color) !important;
+            color: white !important;
+        }
+
+        [data-theme="dark"] .btn-dark {
+            background-color: #424242 !important;
+            border-color: #424242 !important;
+            color: white !important;
+        }
+
+        /* Button outline variants for dark theme */
+        [data-theme="dark"] .btn-outline-primary {
+            border-color: var(--accent-color) !important;
+            color: var(--accent-color) !important;
+        }
+
+        [data-theme="dark"] .btn-outline-primary:hover {
+            background-color: var(--accent-color) !important;
+            border-color: var(--accent-color) !important;
+            color: white !important;
+        }
+
+        [data-theme="dark"] .btn-outline-secondary {
+            border-color: #616161 !important;
+            color: #616161 !important;
+        }
+
+        [data-theme="dark"] .btn-outline-secondary:hover {
+            background-color: #616161 !important;
+            border-color: #616161 !important;
+            color: white !important;
+        }
+
+        [data-theme="dark"] .btn-outline-success {
+            border-color: var(--success-color) !important;
+            color: var(--success-color) !important;
+        }
+
+        [data-theme="dark"] .btn-outline-success:hover {
+            background-color: var(--success-color) !important;
+            border-color: var(--success-color) !important;
+            color: white !important;
+        }
+
+        [data-theme="dark"] .btn-outline-danger {
+            border-color: var(--danger-color) !important;
+            color: var(--danger-color) !important;
+        }
+
+        [data-theme="dark"] .btn-outline-danger:hover {
+            background-color: var(--danger-color) !important;
+            border-color: var(--danger-color) !important;
+            color: white !important;
+        }
+
+        [data-theme="dark"] .btn-outline-warning {
+            border-color: var(--warning-color) !important;
+            color: var(--warning-color) !important;
+        }
+
+        [data-theme="dark"] .btn-outline-warning:hover {
+            background-color: var(--warning-color) !important;
+            border-color: var(--warning-color) !important;
+            color: white !important;
+        }
+
+        [data-theme="dark"] .btn-outline-info {
+            border-color: var(--info-color) !important;
+            color: var(--info-color) !important;
+        }
+
+        [data-theme="dark"] .btn-outline-info:hover {
+            background-color: var(--info-color) !important;
+            border-color: var(--info-color) !important;
+            color: white !important;
         }
         
         /* Fix button icons - ensure they inherit button text color */
@@ -485,7 +570,7 @@
         }
         
         [data-theme="dark"] .btn-warning i {
-            color: #333 !important;
+            color: white !important;
         }
         
         [data-theme="dark"] .btn-danger i {
@@ -497,7 +582,7 @@
         }
         
         [data-theme="dark"] .btn-light i {
-            color: var(--text-color) !important;
+            color: white !important;
         }
         
         [data-theme="dark"] .btn-dark i {
@@ -507,6 +592,44 @@
         /* Small button icons */
         [data-theme="dark"] .btn-sm i {
             color: inherit !important;
+        }
+
+        /* Badge styling for dark theme */
+        [data-theme="dark"] .badge {
+            color: #fff !important;
+        }
+
+        [data-theme="dark"] .badge-primary {
+            background-color: var(--accent-color) !important;
+        }
+
+        [data-theme="dark"] .badge-secondary {
+            background-color: #424242 !important;
+        }
+
+        [data-theme="dark"] .badge-success {
+            background-color: var(--success-color) !important;
+        }
+
+        [data-theme="dark"] .badge-danger {
+            background-color: var(--danger-color) !important;
+        }
+
+        [data-theme="dark"] .badge-warning {
+            background-color: var(--warning-color) !important;
+        }
+
+        [data-theme="dark"] .badge-info {
+            background-color: var(--info-color) !important;
+        }
+
+        [data-theme="dark"] .badge-light {
+            background-color: #424242 !important;
+            color: #fff !important;
+        }
+
+        [data-theme="dark"] .badge-dark {
+            background-color: #212121 !important;
         }
         
         /* Action button icons specifically */
@@ -803,6 +926,45 @@
             background-color: var(--card-bg) !important;
             color: var(--text-color) !important;
             border-color: var(--border-color) !important;
+        }
+
+        /* Dashboard stat cards preserve their colored backgrounds in dark mode */
+        [data-theme="dark"] .stat-card.card.bg-primary {
+            background-color: var(--primary-color) !important;
+            color: white !important;
+        }
+
+        [data-theme="dark"] .stat-card.card.bg-info {
+            background-color: var(--info-color) !important;
+            color: white !important;
+        }
+
+        [data-theme="dark"] .stat-card.card.bg-warning {
+            background-color: var(--warning-color) !important;
+            color: white !important;
+        }
+
+        [data-theme="dark"] .stat-card.card.bg-success {
+            background-color: var(--success-color) !important;
+            color: white !important;
+        }
+
+        [data-theme="dark"] .stat-card.card.bg-secondary {
+            background-color: #616161 !important;
+            color: white !important;
+        }
+
+        [data-theme="dark"] .stat-card.card.bg-danger {
+            background-color: var(--danger-color) !important;
+            color: white !important;
+        }
+
+        /* Mobile cards for tickets/organizations dark mode */
+        [data-theme="dark"] .mobile-card,
+        [data-theme="dark"] .dashboard-mobile-card {
+            background-color: var(--card-bg) !important;
+            border-color: var(--border-color) !important;
+            color: var(--text-color) !important;
         }
         
         /* Only override tables that don't have specific background colors */
@@ -2144,16 +2306,40 @@
             
             shouldInterceptLink: function(link) {
                 const href = link.getAttribute('href');
-                // Only intercept internal navigation links, not external or special links
-                return href && 
-                       !href.startsWith('http') && 
-                       !href.startsWith('mailto:') && 
-                       !href.startsWith('tel:') && 
-                       !href.includes('logout') && 
-                       !href.includes('admin') && 
-                       !link.hasAttribute('target') &&
-                       !link.closest('.dropdown-menu') && // Skip dropdown links for now
-                       link.closest('.navbar-nav'); // Only main nav links
+                
+                // Don't intercept external or special links
+                if (!href || 
+                    href.startsWith('http') || 
+                    href.startsWith('mailto:') || 
+                    href.startsWith('tel:') || 
+                    href.includes('logout') || 
+                    href.includes('admin') || 
+                    link.hasAttribute('target')) {
+                    return false;
+                }
+                
+                // Only intercept if it's a main navbar link
+                if (!link.closest('.navbar-nav')) {
+                    return false;
+                }
+                
+                // Get current path and new path
+                const currentPath = window.location.pathname;
+                const newPath = href.startsWith('/') ? href : new URL(href, window.location.origin).pathname;
+                
+                // Define main sections
+                const mainSections = ['/dashboard/', '/tickets/', '/organizations/', '/logs/', '/approvals/', '/statistics/', '/users/'];
+                
+                const getCurrentSection = (path) => {
+                    return mainSections.find(section => path.startsWith(section) || path === section.slice(0, -1));
+                };
+                
+                const currentSection = getCurrentSection(currentPath);
+                const newSection = getCurrentSection(newPath);
+                
+                // Only intercept navigation between different main sections
+                // This prevents transitions for sub-pages like /tickets/create or /tickets/52
+                return currentSection !== newSection;
             },
             
             setupPopState: function() {

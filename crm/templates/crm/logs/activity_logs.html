@@ -421,8 +421,8 @@
 
 {% block content %}
 <!-- Desktop Header -->
-<div class="d-flex justify-content-between align-items-center mb-4 logs-header-desktop d-none d-md-block">
-    <h2>Logi aktywności</h2>
+<div class="d-flex justify-content-between align-items-center mb-4 d-none d-md-flex">
+    <h2 class="mb-0">Logi aktywności</h2>
     <div>
         {% if user.profile.role == 'admin' %}
         <a href="{% url 'activity_logs_wipe' %}" class="btn btn-danger btn-ripple">
