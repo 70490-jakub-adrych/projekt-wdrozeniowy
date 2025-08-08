@@ -244,7 +244,7 @@
                 <hr>
                 <p class="text-center">Całkowita liczba zgłoszeń: <strong>{{ tickets|length }}</strong></p>
                 <div class="text-center">
-                    <a href="{% url 'ticket_create' %}" class="btn btn-primary btn-sm btn-ripple">
+                    <a href="{% url 'ticket_create' %}?organization={{ organization.id }}" class="btn btn-primary btn-sm btn-ripple">
                         <i class="fas fa-plus"></i> Nowe zgłoszenie
                     </a>
                     <a href="{% url 'ticket_list' %}?organization={{ organization.id }}&exclude_closed=true" class="btn btn-outline-secondary btn-sm btn-ripple">

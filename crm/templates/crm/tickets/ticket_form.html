@@ -103,10 +103,16 @@
                         {% if not ticket %}
                         <div class="mb-3">
                             <label for="organization" class="form-label">Organizacja:</label>
+                            {% if selected_organization %}
+                                <div class="alert alert-info py-2 mb-2">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Automatycznie wybrano organizację: <strong>{{ selected_organization.name }}</strong>
+                                </div>
+                            {% endif %}
                             <select name="organization" id="organization" class="form-select" required>
                                 <option value="">-- Wybierz organizację --</option>
                                 {% for org in organizations %}
-                                <option value="{{ org.id }}">{{ org.name }}</option>
+                                <option value="{{ org.id }}" {% if request.GET.organization == org.id|stringformat:"s" %}selected{% endif %}>{{ org.name }}</option>
                                 {% endfor %}
                             </select>
                         </div>

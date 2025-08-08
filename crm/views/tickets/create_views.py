@@ -130,18 +130,42 @@ def ticket_create(request):
             form = TicketForm()
         else:
             form = ClientTicketForm()
+        
+        # Check for organization parameter in URL
+        org_id = request.GET.get('organization')
+        if org_id and user.profile.role in ['admin', 'agent']:
+            try:
+                # Verify the organization exists and user has access
+                organization = Organization.objects.get(id=org_id)
+                if user.profile.role == 'admin' or organization in user.profile.organizations.all():
+                    # Pre-select the organization in the form's initial data
+                    form.initial['organization'] = org_id
+            except (Organization.DoesNotExist, ValueError):
+                # Invalid organization ID, ignore
+                pass
     
     # Dodanie pola wyboru organizacji dla admina, superagenta i agenta
     organizations = []
+    selected_organization = None
+    
     if user.profile.role in ['admin', 'superagent']:
         organizations = Organization.objects.all()
     elif user.profile.role == 'agent':
         organizations = user.profile.organizations.all()
     
+    # Get pre-selected organization info for context
+    org_id = request.GET.get('organization')
+    if org_id:
+        try:
+            selected_organization = Organization.objects.get(id=org_id)
+        except (Organization.DoesNotExist, ValueError):
+            pass
+
     context = {
         'form': form,
         'attachment_form': attachment_form,
         'organizations': organizations,
+        'selected_organization': selected_organization,
         'attachment_enabled': True,
     }
     
