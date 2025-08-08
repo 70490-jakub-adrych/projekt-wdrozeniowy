@@ -1630,6 +1630,67 @@
         .touch-device .dropdown-item:active {
             transform: scale(0.95);
         }
+        
+        /* Dashboard panel list styling - add left margin to li elements */
+        .card .card-body ul li {
+            margin-left: 1rem;
+        }
+        
+        .card .card-body ol li {
+            margin-left: 1rem;
+        }
+        
+        /* Fix SPA navigation mobile responsiveness issues */
+        .spa-content {
+            width: 100%;
+            overflow-x: hidden;
+        }
+        
+        /* Ensure proper container behavior after SPA loads */
+        .container.mt-4 {
+            width: 100% !important;
+            max-width: 100% !important;
+            padding-left: 15px !important;
+            padding-right: 15px !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
+            overflow-x: hidden;
+        }
+        
+        /* Mobile fixes for SPA navigation */
+        @media (max-width: 576px) {
+            .container.mt-4 {
+                padding-left: 10px !important;
+                padding-right: 10px !important;
+            }
+            
+            /* Fix any doubled margins or buttons */
+            .btn + .btn {
+                margin-left: 0.5rem;
+            }
+            
+            /* Prevent button duplication issues */
+            .d-flex.gap-2 .btn {
+                margin: 0.25rem;
+            }
+            
+            /* Fix header spacing after SPA load */
+            .d-flex.justify-content-between {
+                margin-bottom: 1rem;
+            }
+            
+            /* Ensure mobile cards don't break layout */
+            .mobile-card {
+                width: 100%;
+                max-width: 100%;
+                box-sizing: border-box;
+            }
+            
+            /* Fix any margin/padding issues with SPA content */
+            .spa-loaded .container.mt-4 {
+                margin-top: 1rem !important;
+            }
+        }
     </style>
     <!-- Google Fonts - Poppins -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -2001,7 +2062,30 @@
                         // Replace content area
                         const currentContent = document.querySelector('.container.mt-4');
                         if (currentContent) {
+                            // Keep messages area if it exists
+                            const messagesArea = currentContent.querySelector('.toast-container');
+                            
+                            // Clear current content completely
+                            currentContent.innerHTML = '';
+                            
+                            // Add new content
                             currentContent.innerHTML = newContent.innerHTML;
+                            
+                            // Re-add messages area if it was there
+                            if (messagesArea && !currentContent.querySelector('.toast-container')) {
+                                currentContent.insertBefore(messagesArea, currentContent.firstChild);
+                            }
+                            
+                            // Add spa-loaded class for CSS targeting
+                            currentContent.classList.add('spa-loaded');
+                            
+                            // Ensure proper responsive classes are maintained
+                            if (!currentContent.classList.contains('container')) {
+                                currentContent.classList.add('container');
+                            }
+                            if (!currentContent.classList.contains('mt-4')) {
+                                currentContent.classList.add('mt-4');
+                            }
                         }
                         
                         // Update page title
@@ -2015,6 +2099,9 @@
                         
                         // Reinitialize any JavaScript components in new content
                         this.reinitializeComponents();
+                        
+                        // Fix mobile responsiveness after content load
+                        this.fixMobileResponsiveness();
                         
                         // Scroll to top smoothly
                         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -2061,6 +2148,47 @@
                             bsToast.hide();
                         }, 5000);
                     });
+                }
+            },
+            
+            fixMobileResponsiveness: function() {
+                // Fix any mobile responsiveness issues after SPA content load
+                const container = document.querySelector('.container.mt-4');
+                if (container) {
+                    // Ensure proper Bootstrap classes
+                    if (window.innerWidth <= 576) {
+                        // Mobile specific fixes
+                        container.style.paddingLeft = '10px';
+                        container.style.paddingRight = '10px';
+                        
+                        // Fix any doubled buttons or margins
+                        const duplicatedButtons = container.querySelectorAll('.btn + .btn');
+                        duplicatedButtons.forEach(btn => {
+                            if (!btn.style.marginLeft) {
+                                btn.style.marginLeft = '0.5rem';
+                            }
+                        });
+                        
+                        // Fix mobile cards that might be broken
+                        const mobileCards = container.querySelectorAll('.mobile-card');
+                        mobileCards.forEach(card => {
+                            card.style.width = '100%';
+                            card.style.maxWidth = '100%';
+                            card.style.boxSizing = 'border-box';
+                        });
+                    }
+                }
+                
+                // Force re-evaluation of mobile/desktop display classes
+                const mobileElements = document.querySelectorAll('.d-md-none, .d-lg-none');
+                const desktopElements = document.querySelectorAll('.d-none.d-md-block, .d-none.d-lg-block');
+                
+                if (window.innerWidth <= 768) {
+                    mobileElements.forEach(el => el.style.display = 'block');
+                    desktopElements.forEach(el => el.style.display = 'none');
+                } else {
+                    mobileElements.forEach(el => el.style.display = 'none');
+                    desktopElements.forEach(el => el.style.display = 'block');
                 }
             },
             
@@ -2211,6 +2339,11 @@
             
             // Initialize SPA Navigator for seamless navigation
             SPANavigator.init();
+            
+            // Add window resize handler for mobile responsiveness
+            window.addEventListener('resize', function() {
+                SPANavigator.fixMobileResponsiveness();
+            });
             
             // Initialize mobile enhancements
             MobileUtils.initTouchEnhancements();
