@@ -2854,7 +2854,7 @@
                             // Analyze state after initialization
                             this.analyzeBootstrapState('AFTER_INITIALIZATION');
                             
-                            // Then reinitialize other components
+                            // Then reinitialize other components (but NOT Bootstrap ones)
                             this.reinitializeComponents();
                             
                             // Fix mobile responsiveness after content load
@@ -2923,7 +2923,8 @@
                 // Re-initialize UI enhancement features from ui-enhancements.js
                 if (window.BetulaUI && window.BetulaUI.reinitialize) {
                     console.log('SPA: Calling BetulaUI.reinitialize...');
-                    window.BetulaUI.reinitialize();
+                    // DISABLE BetulaUI reinitialize during SPA navigation to prevent triple initialization
+                    console.log('SPA: ⚠️ Skipping BetulaUI.reinitialize to prevent triple initialization');
                 } else {
                     console.log('SPA: BetulaUI not available, will be handled by spaContentLoaded event');
                     // Don't call fallback here - let the spaContentLoaded event handle it
@@ -3624,17 +3625,21 @@
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🎨 Base template initializing UI components...');
             
-            // Initialize using the SPA navigator's function
-            if (window.SPANavigator && window.SPANavigator.reinitializeUIEnhancements) {
-                window.SPANavigator.reinitializeUIEnhancements();
+            // For initial page load, use the standard initialization
+            // Skip the SPA navigator's function to avoid conflicts
+            if (window.SPANavigator && window.SPANavigator.initializeBootstrapComponents) {
+                console.log('🚀 Using SPANavigator for initial Bootstrap initialization...');
+                window.SPANavigator.initializeBootstrapComponents(document);
+                console.log('✅ Initial Bootstrap components initialized');
             } else {
-                console.warn('🔄 SPANavigator not ready yet, will retry after SPANavigator initialization...');
+                console.log('⚠️ SPANavigator not ready, will initialize after SPANavigator loads...');
                 
                 // Fallback: wait a bit for SPANavigator to be available
                 setTimeout(() => {
-                    if (window.SPANavigator && window.SPANavigator.reinitializeUIEnhancements) {
-                        console.log('🔄 Retrying UI enhancement initialization...');
-                        window.SPANavigator.reinitializeUIEnhancements();
+                    if (window.SPANavigator && window.SPANavigator.initializeBootstrapComponents) {
+                        console.log('🔄 Retrying initial Bootstrap initialization...');
+                        window.SPANavigator.initializeBootstrapComponents(document);
+                        console.log('✅ Bootstrap components initialized on retry');
                     } else {
                         console.error('❌ SPANavigator still not available after retry');
                     }
@@ -3646,6 +3651,12 @@
         window.addEventListener('spaContentLoaded', function(event) {
             console.log('🔄 SPA content loaded event detected, reinitializing UI enhancements...');
             console.log('🔍 Bootstrap availability check:', !!window.bootstrap);
+            
+            // DISABLE this event handler to prevent triple initialization
+            console.log('⚠️ DISABLED: Skipping UI enhancement reinitialization to prevent triple initialization');
+            console.log('✅ Bootstrap components are already initialized by SPA navigation flow');
+            
+            return; // Early return to disable this handler
             
             // Longer delay to ensure DOM is fully updated and avoid conflicts
             setTimeout(() => {
