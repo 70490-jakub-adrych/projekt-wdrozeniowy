@@ -160,10 +160,12 @@
         /* Override Bootstrap styles for dark theme */
         [data-theme="dark"] .bg-light {
             background-color: var(--card-bg) !important;
+            color: var(--text-color) !important;
         }
         
         [data-theme="dark"] .bg-white {
             background-color: var(--card-bg) !important;
+            color: var(--text-color) !important;
         }
         
         [data-theme="dark"] .bg-secondary {
@@ -178,12 +180,62 @@
             color: var(--text-color) !important;
         }
         
+        /* Specific Bootstrap table overrides for dark theme */
+        [data-theme="dark"] .table-light {
+            background-color: var(--table-hover-bg) !important;
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] .table-light th,
+        [data-theme="dark"] .table-light td {
+            background-color: var(--table-hover-bg) !important;
+            color: var(--text-color) !important;
+            border-color: var(--table-border-color) !important;
+        }
+        
+        /* Card headers and footers specific overrides */
+        [data-theme="dark"] .card-header.bg-light {
+            background-color: var(--card-bg) !important;
+            color: var(--text-color) !important;
+            border-bottom-color: var(--border-color) !important;
+        }
+        
+        [data-theme="dark"] .card-footer.bg-white {
+            background-color: var(--card-bg) !important;
+            color: var(--text-color) !important;
+            border-top-color: var(--border-color) !important;
+        }
+        
+        /* Force override for any remaining light backgrounds */
+        [data-theme="dark"] .card .bg-light,
+        [data-theme="dark"] .card .bg-white {
+            background-color: var(--card-bg) !important;
+            color: var(--text-color) !important;
+        }
+        
         [data-theme="dark"] .text-muted {
             color: var(--text-muted) !important;
         }
         
         [data-theme="dark"] .text-secondary {
             color: var(--text-muted) !important;
+        }
+        
+        /* Links in dark theme */
+        [data-theme="dark"] a {
+            color: var(--accent-color) !important;
+        }
+        
+        [data-theme="dark"] a:hover {
+            color: #42a5f5 !important;
+        }
+        
+        [data-theme="dark"] .text-decoration-none {
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] .text-decoration-none:hover {
+            color: var(--accent-color) !important;
         }
         
         [data-theme="dark"] .border {
@@ -382,33 +434,52 @@
         }
         
         [data-theme="dark"] .table {
-            background-color: var(--table-bg);
-            color: var(--text-color);
-            border-color: var(--table-border-color);
+            background-color: var(--table-bg) !important;
+            color: var(--text-color) !important;
+            border-color: var(--table-border-color) !important;
         }
         
         [data-theme="dark"] .table th,
         [data-theme="dark"] .table td {
-            border-color: var(--table-border-color);
-            color: var(--text-color);
+            border-color: var(--table-border-color) !important;
+            color: var(--text-color) !important;
+            background-color: transparent !important;
         }
         
         [data-theme="dark"] .table thead th {
-            background-color: var(--card-bg) !important;
+            background-color: var(--table-hover-bg) !important;
             border-color: var(--table-border-color) !important;
             color: var(--text-color) !important;
         }
         
         [data-theme="dark"] .table-hover tbody tr:hover {
-            background-color: var(--table-hover-bg);
+            background-color: var(--table-hover-bg) !important;
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] .table-hover tbody tr:hover td {
+            background-color: var(--table-hover-bg) !important;
+            color: var(--text-color) !important;
         }
         
         [data-theme="dark"] .table-striped tbody tr:nth-of-type(odd) {
-            background-color: rgba(255, 255, 255, 0.03);
+            background-color: rgba(255, 255, 255, 0.03) !important;
         }
         
         [data-theme="dark"] .table-responsive {
             border-color: var(--border-color);
+        }
+        
+        /* Force table to inherit dark theme colors */
+        [data-theme="dark"] .table > :not(caption) > * > * {
+            background-color: transparent !important;
+            color: var(--text-color) !important;
+        }
+        
+        /* Override any Bootstrap table color utilities */
+        [data-theme="dark"] .table .table-light {
+            background-color: var(--table-hover-bg) !important;
+            color: var(--text-color) !important;
         }
         
         /* Pagination */
@@ -599,6 +670,38 @@
         
         [data-theme="dark"] .popover-body {
             color: var(--text-color) !important;
+        }
+        
+        /* High-priority global dark theme overrides */
+        [data-theme="dark"] * {
+            border-color: var(--border-color) !important;
+        }
+        
+        [data-theme="dark"] .card,
+        [data-theme="dark"] .card *:not(.badge):not(.btn):not(.alert) {
+            background-color: var(--card-bg) !important;
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] .table,
+        [data-theme="dark"] .table * {
+            background-color: var(--table-bg) !important;
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] .table thead th,
+        [data-theme="dark"] .table-light,
+        [data-theme="dark"] .table-light * {
+            background-color: var(--table-hover-bg) !important;
+            color: var(--text-color) !important;
+        }
+        
+        /* Force card headers and footers */
+        [data-theme="dark"] .card-header,
+        [data-theme="dark"] .card-footer {
+            background-color: var(--card-bg) !important;
+            color: var(--text-color) !important;
+            border-color: var(--border-color) !important;
         }
         /* Ensure Bootstrap 5 Close button styling */
         .btn-close {
