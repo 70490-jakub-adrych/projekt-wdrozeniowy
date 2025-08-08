@@ -471,7 +471,7 @@
         <form method="get">
             <div class="row g-3 align-items-end">
                 <div class="col-md-4">
-                    <label for="action" class="form-label">Akcja:</label>
+                    <label class="form-label">Akcja:</label>
                     <div class="dropdown multi-select-dropdown">
                         <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
                             {% if selected_actions %}Akcje: {{ selected_actions|length }} wybr.{% else %}Akcje: Wszystkie{% endif %}
@@ -907,7 +907,7 @@
             <div class="modal-body">
                 <form method="get" class="mobile-filter-form">
                     <div class="mb-3">
-                        <label for="mobile_action" class="form-label">Akcja</label>
+                        <label class="form-label">Akcja</label>
                         <div class="list-group">
                             {% for value,label in action_choices %}
                             <label class="list-group-item d-flex align-items-center">

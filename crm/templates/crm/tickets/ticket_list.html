@@ -854,7 +854,7 @@
                     
                     {% if user.is_staff %}
                     <div class="mb-3">
-                        <label for="mobile_assigned" class="form-label">Przypisanie</label>
+                        <label class="form-label">Przypisanie</label>
                         <div class="list-group">
                             <label class="list-group-item d-flex align-items-center">
                                 <input class="form-check-input me-2" type="checkbox" name="assigned" value="me" {% if 'me' in selected_assigned %}checked{% endif %}>
@@ -868,7 +868,7 @@
                     </div>
                     
                     <div class="mb-3">
-                        <label for="mobile_organization" class="form-label">Organizacja</label>
+                        <label class="form-label">Organizacja</label>
                         <div class="list-group">
                             {% for org in all_organizations %}
                             <label class="list-group-item d-flex align-items-center">
