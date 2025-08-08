@@ -1646,10 +1646,9 @@
             overflow-x: hidden;
         }
         
-        /* Ensure proper container behavior after SPA loads */
+        /* Ensure proper container behavior after SPA loads - but respect Bootstrap constraints */
         .container.mt-4 {
-            width: 100% !important;
-            max-width: 100% !important;
+            /* Remove the width and max-width overrides that break Bootstrap */
             padding-left: 15px !important;
             padding-right: 15px !important;
             margin-left: auto !important;
@@ -2155,7 +2154,7 @@
                 // Fix any mobile responsiveness issues after SPA content load
                 const container = document.querySelector('.container.mt-4');
                 if (container) {
-                    // Ensure proper Bootstrap classes
+                    // Ensure proper Bootstrap classes and responsive behavior
                     if (window.innerWidth <= 576) {
                         // Mobile specific fixes
                         container.style.paddingLeft = '10px';
@@ -2168,28 +2167,24 @@
                                 btn.style.marginLeft = '0.5rem';
                             }
                         });
-                        
-                        // Fix mobile cards that might be broken
-                        const mobileCards = container.querySelectorAll('.mobile-card');
-                        mobileCards.forEach(card => {
-                            card.style.width = '100%';
-                            card.style.maxWidth = '100%';
-                            card.style.boxSizing = 'border-box';
-                        });
                     }
                 }
                 
-                // Force re-evaluation of mobile/desktop display classes
-                const mobileElements = document.querySelectorAll('.d-md-none, .d-lg-none');
-                const desktopElements = document.querySelectorAll('.d-none.d-md-block, .d-none.d-lg-block');
-                
-                if (window.innerWidth <= 768) {
-                    mobileElements.forEach(el => el.style.display = 'block');
-                    desktopElements.forEach(el => el.style.display = 'none');
-                } else {
-                    mobileElements.forEach(el => el.style.display = 'none');
-                    desktopElements.forEach(el => el.style.display = 'block');
-                }
+                // REMOVE the problematic display style overrides that cause duplication
+                // Let Bootstrap's responsive classes work naturally
+                const allElements = document.querySelectorAll('*');
+                allElements.forEach(el => {
+                    // Remove any inline display styles we might have added
+                    if (el.style.display && (
+                        el.classList.contains('d-md-none') || 
+                        el.classList.contains('d-lg-none') ||
+                        el.classList.contains('d-none') ||
+                        el.classList.contains('d-md-block') ||
+                        el.classList.contains('d-lg-block')
+                    )) {
+                        el.style.display = '';
+                    }
+                });
             },
             
             showLoading: function() {
