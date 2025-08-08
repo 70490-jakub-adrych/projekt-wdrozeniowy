@@ -949,17 +949,17 @@
             </a>
             
             <!-- Mobile user info display (outside collapsible area) -->
-            {% if effective_user.is_authenticated %}
+            {% if user.is_authenticated %}
             <div class="d-lg-none mobile-user-display me-2">
                 <div class="d-flex align-items-center">
-                    <span class="text-white me-2">{{ effective_user.username|truncatechars:8 }}</span>
-                    {% if effective_user.profile.role == 'admin' %}
+                    <span class="text-white me-2">{{ user.username|truncatechars:8 }}</span>
+                    {% if user.profile.role == 'admin' %}
                         <span class="badge bg-danger">Admin</span>
-                    {% elif effective_user.profile.role == 'superagent' %}
+                    {% elif user.profile.role == 'superagent' %}
                         <span class="badge bg-warning text-dark">Superagent</span>
-                    {% elif effective_user.profile.role == 'agent' %}
+                    {% elif user.profile.role == 'agent' %}
                         <span class="badge bg-info text-white">Agent</span>
-                    {% elif effective_user.profile.role == 'viewer' %}
+                    {% elif user.profile.role == 'viewer' %}
                         <span class="badge bg-dark">Viewer</span>
                     {% else %}
                         <span class="badge bg-secondary">Klient</span>
@@ -974,7 +974,7 @@
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
-                    {% if effective_user.is_authenticated %}
+                    {% if user.is_authenticated %}
                     
                     {% if user_view_permissions.dashboard %}
                     <li class="nav-item">
@@ -1016,7 +1016,7 @@
                     </li>
                     {% endif %}
                     
-                    {% if effective_user.profile.role == 'admin' or effective_user.profile.role == 'superagent' or effective_user.groups.first.settings.show_statistics %}
+                    {% if user.profile.role == 'admin' or user.profile.role == 'superagent' or user.groups.first.settings.show_statistics %}
                     <li class="nav-item">
                         <a class="nav-link {% if request.path|slice:':12' == '/statistics/' %}active{% endif %}" href="{% url 'statistics_dashboard' %}">
                             <i class="fas fa-chart-line"></i> Statystyki
@@ -1035,20 +1035,20 @@
                     {% endif %}
                 </ul>
                 <ul class="navbar-nav">
-                    {% if effective_user.is_authenticated %}
+                    {% if user.is_authenticated %}
                     <!-- Desktop user dropdown -->
                     <li class="nav-item dropdown d-none d-lg-block">
                         <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" 
                            data-bs-toggle="dropdown" aria-expanded="false">
                             <div class="d-flex align-items-center">
-                                <span class="me-2">{{ effective_user.username|truncatechars:10 }}</span>
-                                {% if effective_user.profile.role == 'admin' %}
+                                <span class="me-2">{{ user.username|truncatechars:10 }}</span>
+                                {% if user.profile.role == 'admin' %}
                                     <span class="badge bg-danger">Admin</span>
-                                {% elif effective_user.profile.role == 'superagent' %}
+                                {% elif user.profile.role == 'superagent' %}
                                     <span class="badge bg-warning text-dark">Superagent</span>
-                                {% elif effective_user.profile.role == 'agent' %}
+                                {% elif user.profile.role == 'agent' %}
                                     <span class="badge bg-info text-white">Agent</span>
-                                {% elif effective_user.profile.role == 'viewer' %}
+                                {% elif user.profile.role == 'viewer' %}
                                     <span class="badge bg-dark">Viewer</span>
                                 {% else %}
                                     <span class="badge bg-secondary">Klient</span>
@@ -1058,32 +1058,17 @@
                         <div class="dropdown-menu dropdown-menu-end shadow" aria-labelledby="userDropdown">
                             <!-- Add full username at the top of dropdown -->
                             <div class="dropdown-item bg-light">
-                                <strong>{{ effective_user.username }}</strong>
-                                {% if effective_user.get_full_name %}
-                                <div class="small text-muted">{{ effective_user.get_full_name }}</div>
+                                <strong>{{ user.username }}</strong>
+                                {% if user.get_full_name %}
+                                <div class="small text-muted">{{ user.get_full_name }}</div>
                                 {% endif %}
                             </div>
                             <div class="dropdown-divider"></div>
                             <div class="dropdown-item">
-                                {% if has_organization_simulation %}
-                                    {% if simulated_organizations %}
-                                        <small class="text-muted fw-bold">Symulowane organizacje:</small>
-                                        <ul class="list-unstyled mb-0 mt-1">
-                                            {% for org in simulated_organizations %}
-                                                <li>
-                                                    <a href="{% url 'organization_detail' org.id %}" class="text-primary text-decoration-none">
-                                                        <i class="fas fa-building fa-sm me-1"></i>{{ org.name }}
-                                                    </a>
-                                                </li>
-                                            {% endfor %}
-                                        </ul>
-                                    {% else %}
-                                        <small class="text-muted">Symulacja: brak dostępu do organizacji</small>
-                                    {% endif %}
-                                {% elif effective_user.profile.organizations.exists %}
+                                {% if user.profile.organizations.exists %}
                                     <small class="text-muted fw-bold">Moje organizacje:</small>
                                     <ul class="list-unstyled mb-0 mt-1">
-                                        {% for org in effective_user.profile.organizations.all %}
+                                        {% for org in user.profile.organizations.all %}
                                             <li>
                                                 <a href="{% url 'organization_detail' org.id %}" class="text-primary text-decoration-none">
                                                     <i class="fas fa-building fa-sm me-1"></i>{{ org.name }}
@@ -1162,6 +1147,33 @@
     </nav>
     {% endif %}
 
+    <div class="container mt-4">
+        {% if messages %}
+            {% if not user.is_authenticated or user.profile.role != 'viewer' %}
+                <div class="toast-container position-fixed top-0 end-0 p-3">
+                    {% for message in messages %}
+                        <div class="toast align-items-center border-0 show" role="alert" aria-live="assertive" aria-atomic="true">
+                            <div class="d-flex">
+                                <div class="toast-body d-flex align-items-center">
+                                    <i class="
+                                        {% if message.tags == 'success' %}fas fa-check-circle text-success
+                                        {% elif message.tags == 'error' %}fas fa-exclamation-circle text-danger
+                                        {% elif message.tags == 'warning' %}fas fa-exclamation-triangle text-warning
+                                        {% elif message.tags == 'info' %}fas fa-info-circle text-info
+                                        {% else %}fas fa-bell text-primary{% endif %} me-2"></i>
+                                    {{ message }}
+                                </div>
+                                <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </div>
+
     <!-- Impersonation Banner -->
     {% if user.is_authenticated and user.profile.role == 'admin' and is_impersonating %}
     <div id="impersonation-banner" class="alert alert-warning alert-dismissible fade show m-0 rounded-0 border-0" role="alert">
@@ -1205,33 +1217,6 @@
         </div>
     </div>
     {% endif %}
-
-    <div class="container mt-4">
-        {% if messages %}
-            {% if not user.is_authenticated or user.profile.role != 'viewer' %}
-                <div class="toast-container position-fixed top-0 end-0 p-3">
-                    {% for message in messages %}
-                        <div class="toast align-items-center border-0 show" role="alert" aria-live="assertive" aria-atomic="true">
-                            <div class="d-flex">
-                                <div class="toast-body d-flex align-items-center">
-                                    <i class="
-                                        {% if message.tags == 'success' %}fas fa-check-circle text-success
-                                        {% elif message.tags == 'error' %}fas fa-exclamation-circle text-danger
-                                        {% elif message.tags == 'warning' %}fas fa-exclamation-triangle text-warning
-                                        {% elif message.tags == 'info' %}fas fa-info-circle text-info
-                                        {% else %}fas fa-bell text-primary{% endif %} me-2"></i>
-                                    {{ message }}
-                                </div>
-                                <button type="button" class="btn-close me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-                            </div>
-                        </div>
-                    {% endfor %}
-                </div>
-            {% endif %}
-        {% endif %}
-
-        {% block content %}{% endblock %}
-    </div>
 
     <footer class="footer mt-5">
         <div class="container">
