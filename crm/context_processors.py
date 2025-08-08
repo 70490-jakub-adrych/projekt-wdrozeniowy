@@ -5,15 +5,29 @@ def view_permissions(request):
     """
     Context processor that adds user view permissions to the template context
     """
-    if not request.user.is_authenticated:
+    # Use effective_user if available (for impersonation), otherwise use regular user
+    effective_user = getattr(request, 'effective_user', None)
+    
+    # Fallback: if effective_user not set by middleware, check for impersonation manually
+    if not effective_user and hasattr(request, 'user') and request.user.is_authenticated:
+        if request.user.profile.role == 'admin' and request.session.get('impersonated_user_id'):
+            try:
+                from .models import User
+                effective_user = User.objects.get(id=request.session['impersonated_user_id'])
+            except User.DoesNotExist:
+                effective_user = request.user
+        else:
+            effective_user = request.user
+    
+    if not effective_user or not effective_user.is_authenticated:
         return {'user_view_permissions': {}}
     
     # Start with a default set of denied permissions for all views
     permissions = {view[0]: False for view in ViewPermission.VIEW_CHOICES}
     
     # Get user's groups and their permissions
-    if request.user.groups.exists():
-        user_groups = request.user.groups.all()
+    if effective_user.groups.exists():
+        user_groups = effective_user.groups.all()
         # Get all view permissions from user's groups
         group_permissions = GroupViewPermission.objects.filter(group__in=user_groups)
         
@@ -21,13 +35,13 @@ def view_permissions(request):
             permissions[permission.view.name] = True
     
     # Override with specific user permissions if any
-    user_permissions = UserViewPermission.objects.filter(user=request.user)
+    user_permissions = UserViewPermission.objects.filter(user=effective_user)
     
     for permission in user_permissions:
         permissions[permission.view.name] = permission.is_granted
     
     # Special case for superusers - they get all permissions
-    if request.user.is_superuser:
+    if effective_user.is_superuser:
         for key in permissions:
             permissions[key] = True
     
