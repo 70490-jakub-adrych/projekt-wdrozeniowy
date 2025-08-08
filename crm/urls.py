@@ -125,7 +125,7 @@ urlpatterns = [
     path('api/user-contact/<int:user_id>/', user_contact_info, name='user_contact_info'),
 
     # Admin impersonation
-    path('admin/impersonation/', views.impersonation_views.switch_user_perspective, name='user_impersonation'),
+    path('impersonation/', views.impersonation_views.switch_user_perspective, name='user_impersonation'),
     path('api/impersonation/status/', views.impersonation_views.get_impersonation_status, name='impersonation_status'),
 
 ]
