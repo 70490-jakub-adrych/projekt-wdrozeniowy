@@ -421,7 +421,7 @@
 
 {% block content %}
 <!-- Desktop Header -->
-<div class="d-flex justify-content-between align-items-center mb-4 logs-header-desktop">
+<div class="d-flex justify-content-between align-items-center mb-4 logs-header-desktop d-none d-md-block">
     <h2>Logi aktywności</h2>
     <div>
         {% if user.profile.role == 'admin' %}
@@ -433,7 +433,7 @@
 </div>
 
 <!-- Mobile Header -->
-<div class="logs-header-mobile mb-4">
+<div class="logs-header-mobile mb-4 d-md-none">
     <h2>Logi aktywności</h2>
     <div class="btn-group">
         {% if user.profile.role == 'admin' %}

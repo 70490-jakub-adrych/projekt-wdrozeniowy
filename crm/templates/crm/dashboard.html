@@ -207,6 +207,21 @@
         100% { transform: translateY(0); }
     }
 
+    @keyframes bounce {
+        0%, 20%, 53%, 80%, 100% {
+            transform: translate3d(0, 0, 0);
+        }
+        40%, 43% {
+            transform: translate3d(0, -8px, 0);
+        }
+        70% {
+            transform: translate3d(0, -4px, 0);
+        }
+        90% {
+            transform: translate3d(0, -2px, 0);
+        }
+    }
+
     /* Mobile-responsive enhancements */
     @media (max-width: 576px) {
         /* Stat cards mobile optimization */
@@ -364,40 +379,35 @@
         animation: float 3s ease-in-out infinite;
     }
 
-    /* Fix to disable Font Awesome animations until hover */
+    .animate-bounce {
+        animation: bounce 2s ease-in-out infinite;
+    }
+
+    /* Font Awesome spinning animation control */
     .fa-spin {
-        -webkit-animation: none !important;
-        animation: none !important;
+        -webkit-animation: fa-spin 2s infinite linear;
+        animation: fa-spin 2s infinite linear;
     }
     
-    .stat-card:hover .fa-spin {
-        -webkit-animation: fa-spin 2s infinite linear !important;
-        animation: fa-spin 2s infinite linear !important;
-    }
-    
-    /* Remove the existing animation definitions that might be running all the time */
-    .animate-spin, 
-    .animate-pulse, 
-    .animate-shake,
-    .animate-float {
-        animation: none !important;
-    }
-    
-    /* Animation only happens on stat-card hover */
+    /* Enhanced hover effects for stat cards */
     .stat-card:hover .animate-spin {
-        animation: spin 2s linear infinite !important;
+        animation-duration: 1s !important; /* Speed up on hover */
     }
     
     .stat-card:hover .animate-pulse {
-        animation: pulse 1.5s ease-in-out infinite !important;
+        animation-duration: 0.8s !important; /* Speed up on hover */
     }
     
     .stat-card:hover .animate-shake {
-        animation: shake 0.5s ease-in-out infinite !important;
+        animation-duration: 0.3s !important; /* Speed up on hover */
     }
     
     .stat-card:hover .animate-float {
-        animation: float 3s ease-in-out infinite !important;
+        animation-duration: 1.5s !important; /* Speed up on hover */
+    }
+    
+    .stat-card:hover .animate-bounce {
+        animation-duration: 1s !important; /* Speed up on hover */
     }
 </style>
 {% endblock %}

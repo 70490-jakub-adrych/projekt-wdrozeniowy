@@ -207,21 +207,106 @@
             color: var(--text-muted) !important;
         }
         
-        /* Links in dark theme */
-        [data-theme="dark"] a {
-            color: var(--accent-color) !important;
+        /* Icons should inherit proper colors */
+        [data-theme="dark"] i.fas,
+        [data-theme="dark"] i.far,
+        [data-theme="dark"] i.fab {
+            color: inherit !important;
         }
         
-        [data-theme="dark"] a:hover {
-            color: #42a5f5 !important;
+        /* Success, warning, danger, info text colors */
+        [data-theme="dark"] .text-success {
+            color: var(--success-color) !important;
         }
         
-        [data-theme="dark"] .text-decoration-none {
+        [data-theme="dark"] .text-warning {
+            color: var(--warning-color) !important;
+        }
+        
+        [data-theme="dark"] .text-danger {
+            color: var(--danger-color) !important;
+        }
+        
+        [data-theme="dark"] .text-info {
+            color: var(--info-color) !important;
+        }
+        
+        /* Navbar icon colors */
+        [data-theme="dark"] .navbar i {
+            color: #ffffff !important;
+        }
+        
+        /* Card header icon colors */
+        [data-theme="dark"] .card-header i {
             color: var(--text-color) !important;
         }
         
-        [data-theme="dark"] .text-decoration-none:hover {
+        /* Links in dark theme - Make all links white/light colored */
+        [data-theme="dark"] a {
+            color: #e0e0e0 !important; /* Light gray instead of blue */
+        }
+        
+        [data-theme="dark"] a:hover {
+            color: #ffffff !important; /* Pure white on hover */
+        }
+        
+        /* Navbar links should be white */
+        [data-theme="dark"] .navbar-nav .nav-link {
+            color: #ffffff !important;
+        }
+        
+        [data-theme="dark"] .navbar-nav .nav-link:hover {
+            color: #e0e0e0 !important;
+        }
+        
+        /* Dropdown links in navbar */
+        [data-theme="dark"] .dropdown-menu .dropdown-item {
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] .dropdown-menu .dropdown-item:hover {
             color: var(--accent-color) !important;
+        }
+        
+        /* Brand link should be white */
+        [data-theme="dark"] .navbar-brand {
+            color: #ffffff !important;
+        }
+        
+        /* Card links should be light */
+        [data-theme="dark"] .card a {
+            color: #e0e0e0 !important;
+        }
+        
+        [data-theme="dark"] .card a:hover {
+            color: #ffffff !important;
+        }
+        
+        /* Table links */
+        [data-theme="dark"] .table a {
+            color: #e0e0e0 !important;
+        }
+        
+        [data-theme="dark"] .table a:hover {
+            color: #ffffff !important;
+        }
+        
+        /* Button links and text decoration */
+        [data-theme="dark"] .text-decoration-none {
+            color: #e0e0e0 !important;
+        }
+        
+        [data-theme="dark"] .text-decoration-none:hover {
+            color: #ffffff !important;
+        }
+        
+        /* Footer links */
+        [data-theme="dark"] .footer a {
+            color: #ffffff !important;
+        }
+        
+        [data-theme="dark"] .footer a:hover {
+            color: #e0e0e0 !important;
         }
         
         [data-theme="dark"] .border {
@@ -380,6 +465,58 @@
         [data-theme="dark"] .btn-info:hover {
             background-color: #42a5f5 !important;
             border-color: #42a5f5 !important;
+        }
+        
+        /* Fix button icons - ensure they inherit button text color */
+        [data-theme="dark"] .btn i {
+            color: inherit !important;
+        }
+        
+        [data-theme="dark"] .btn-primary i {
+            color: white !important;
+        }
+        
+        [data-theme="dark"] .btn-secondary i {
+            color: white !important;
+        }
+        
+        [data-theme="dark"] .btn-success i {
+            color: white !important;
+        }
+        
+        [data-theme="dark"] .btn-warning i {
+            color: #333 !important;
+        }
+        
+        [data-theme="dark"] .btn-danger i {
+            color: white !important;
+        }
+        
+        [data-theme="dark"] .btn-info i {
+            color: white !important;
+        }
+        
+        [data-theme="dark"] .btn-light i {
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] .btn-dark i {
+            color: white !important;
+        }
+        
+        /* Small button icons */
+        [data-theme="dark"] .btn-sm i {
+            color: inherit !important;
+        }
+        
+        /* Action button icons specifically */
+        [data-theme="dark"] .action-btn i {
+            color: inherit !important;
+        }
+        
+        /* Table action button icons */
+        [data-theme="dark"] .table .btn i {
+            color: inherit !important;
         }
         
         [data-theme="dark"] .btn-light {
@@ -2151,40 +2288,16 @@
             },
             
             fixMobileResponsiveness: function() {
-                // Fix any mobile responsiveness issues after SPA content load
+                // Minimal mobile responsiveness fixes - let Bootstrap handle visibility
                 const container = document.querySelector('.container.mt-4');
-                if (container) {
-                    // Ensure proper Bootstrap classes and responsive behavior
-                    if (window.innerWidth <= 576) {
-                        // Mobile specific fixes
-                        container.style.paddingLeft = '10px';
-                        container.style.paddingRight = '10px';
-                        
-                        // Fix any doubled buttons or margins
-                        const duplicatedButtons = container.querySelectorAll('.btn + .btn');
-                        duplicatedButtons.forEach(btn => {
-                            if (!btn.style.marginLeft) {
-                                btn.style.marginLeft = '0.5rem';
-                            }
-                        });
-                    }
+                if (container && window.innerWidth <= 576) {
+                    // Only apply essential mobile padding
+                    container.style.paddingLeft = '10px';
+                    container.style.paddingRight = '10px';
                 }
                 
-                // REMOVE the problematic display style overrides that cause duplication
-                // Let Bootstrap's responsive classes work naturally
-                const allElements = document.querySelectorAll('*');
-                allElements.forEach(el => {
-                    // Remove any inline display styles we might have added
-                    if (el.style.display && (
-                        el.classList.contains('d-md-none') || 
-                        el.classList.contains('d-lg-none') ||
-                        el.classList.contains('d-none') ||
-                        el.classList.contains('d-md-block') ||
-                        el.classList.contains('d-lg-block')
-                    )) {
-                        el.style.display = '';
-                    }
-                });
+                // Do NOT override Bootstrap responsive classes - they work correctly now
+                // The d-md-none, d-none d-md-block classes will handle visibility automatically
             },
             
             showLoading: function() {
