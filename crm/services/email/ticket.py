@@ -43,10 +43,14 @@ def notify_ticket_stakeholders(notification_type, ticket, triggered_by=None, **k
         # Get agents from the ticket's organization if notification type is 'created'
         if notification_type == 'created':
             from ...models import UserProfile
-            agent_profiles = UserProfile.objects.filter(
+            agent_qs = UserProfile.objects.filter(
                 organizations=ticket.organization,
                 role__in=['agent', 'superagent']
-            ).exclude(user=triggered_by)
+            )
+            # Exclude creator only if they are not an agent (e.g., client/viewer)
+            if triggered_by and getattr(triggered_by, 'profile', None) and triggered_by.profile.role in ['client', 'viewer']:
+                agent_qs = agent_qs.exclude(user=triggered_by)
+            agent_profiles = agent_qs
             
             for profile in agent_profiles:
                 if profile.user not in stakeholders:
@@ -109,6 +113,11 @@ def send_ticket_notification(notification_type, ticket, user, **kwargs):
         if 'triggered_by' in kwargs and kwargs['triggered_by'] == user:
             logger.debug(f"Skipping notification to {user.username} (triggered by same user)")
             return False
+
+        # Require a valid recipient email
+        if not getattr(user, 'email', None):
+            logger.warning(f"Skipping email notification for user {getattr(user, 'username', 'unknown')} - no email address set")
+            return False
         
         subject_templates = {
             'created': 'Nowe zgłoszenie #{ticket_id}: {ticket_title}',
@@ -146,20 +155,20 @@ def send_ticket_notification(notification_type, ticket, user, **kwargs):
         
         # Log which template we're going to try
         logger.debug(f"Trying to render {notification_type} template for user {user.username}")
-        
+
         # Try to render specific templates for this notification type
         try:
             html_template = f'emails/ticket_{notification_type}.html'
             text_template = f'emails/ticket_{notification_type}.txt'
-            
+
             # Check if template files exist first
             template_dir = os.path.join(settings.BASE_DIR, 'crm', 'templates')
             html_path = os.path.join(template_dir, html_template)
             text_path = os.path.join(template_dir, text_template)
-            
+
             html_exists = os.path.exists(html_path)
             text_exists = os.path.exists(text_path)
-            
+
             if html_exists and text_exists:
                 logger.debug(f"Using specific templates for {notification_type}")
                 html_content = render_to_string(html_template, context)
@@ -169,23 +178,22 @@ def send_ticket_notification(notification_type, ticket, user, **kwargs):
                 logger.warning(f"Specific template for {notification_type} not found at {html_path}, using generic")
                 html_content = render_to_string('emails/ticket_generic.html', context)
                 text_content = render_to_string('emails/ticket_generic.txt', context)
-            
         except Exception as template_error:
             logger.warning(f"Error rendering email template for {notification_type}: {str(template_error)}")
             # Use simple fallback content if template rendering fails
             text_content = f"""
             {context['site_name']} - Powiadomienie o zgłoszeniu #{ticket.id}
-            
+
             Witaj {user.first_name or user.username}!
-            
+
             Nastąpiła zmiana w zgłoszeniu "{ticket.title}" (#{ticket.id}).
-            
+
             Typ zmiany: {notification_type}
-            
+
             Aby zobaczyć szczegóły, odwiedź:
             {ticket_url}
             """
-            
+
             html_content = f"""
             <html>
             <body>
@@ -197,7 +205,7 @@ def send_ticket_notification(notification_type, ticket, user, **kwargs):
             </body>
             </html>
             """
-        
+        # Attempt to send the email
         try:
             logger.debug(f"Sending email to {user.email} subject: {subject}")
             msg = EmailMultiAlternatives(
@@ -208,7 +216,7 @@ def send_ticket_notification(notification_type, ticket, user, **kwargs):
             )
             msg.attach_alternative(html_content, "text/html")
             msg.send()
-            
+
             logger.info(f"Ticket {notification_type} notification sent to {user.email}")
             return True
         except Exception as email_error:

@@ -91,8 +91,11 @@ WSGI_APPLICATION = 'projekt_wdrozeniowy.wsgi.application'  # Uncomment this line
 # Site URL for email links - get from environment or use default
 SITE_URL = config('SITE_URL', default='https://betulait.usermd.net')
 
-# Email settings - read from .env or use default console backend for development
-EMAIL_BACKEND = config('EMAIL_BACKEND', default='django.core.mail.backends.console.EmailBackend')
+# Email backend: console in development, SMTP in production unless overridden by env
+EMAIL_BACKEND = config(
+    'EMAIL_BACKEND',
+    default='django.core.mail.backends.console.EmailBackend' if DEBUG else 'django.core.mail.backends.smtp.EmailBackend'
+)
 EMAIL_HOST = config('EMAIL_HOST', default='')
 EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
 EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
