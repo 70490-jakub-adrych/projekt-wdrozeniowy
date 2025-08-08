@@ -2656,124 +2656,173 @@
             },
             
             reinitializeUIEnhancements: function() {
-                console.log('SPA: Initializing comprehensive UI enhancements...');
+                console.log('SPA: 🔄 Starting comprehensive UI enhancements reinitialization...');
                 
-                // Initialize all tooltips
-                const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]:not(.tooltip-initialized)'));
-                tooltipTriggerList.map(function(tooltipTriggerEl) {
-                    tooltipTriggerEl.classList.add('tooltip-initialized');
-                    return new bootstrap.Tooltip(tooltipTriggerEl, {
-                        animation: true,
-                        delay: { show: 100, hide: 100 }
-                    });
-                });
-
-                // Initialize all popovers
-                const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]:not(.popover-initialized)'));
-                popoverTriggerList.map(function(popoverTriggerEl) {
-                    popoverTriggerEl.classList.add('popover-initialized');
-                    return new bootstrap.Popover(popoverTriggerEl, {
-                        animation: true,
-                        trigger: 'hover focus'
-                    });
-                });
-
-                // Button ripple effect
-                const rippleButtons = document.querySelectorAll('.btn-ripple:not(.ripple-initialized)');
-                rippleButtons.forEach(button => {
-                    button.classList.add('ripple-initialized');
-                    button.addEventListener('click', function(e) {
-                        const rect = button.getBoundingClientRect();
-                        const x = e.clientX - rect.left;
-                        const y = e.clientY - rect.top;
-
-                        const ripple = document.createElement('span');
-                        ripple.className = 'ripple';
-                        ripple.style.left = `${x}px`;
-                        ripple.style.top = `${y}px`;
-
-                        button.appendChild(ripple);
-
-                        setTimeout(() => {
-                            ripple.remove();
-                        }, 600);
-                    });
-                });
-
-                // Enhanced dropdown animation
-                const dropdownToggleList = document.querySelectorAll('.dropdown-toggle:not(.dropdown-initialized)');
-                dropdownToggleList.forEach(dropdown => {
-                    dropdown.classList.add('dropdown-initialized');
-                    dropdown.addEventListener('click', function() {
-                        setTimeout(() => {
-                            const dropdownMenu = dropdown.nextElementSibling;
-                            if (dropdownMenu && dropdownMenu.classList.contains('show')) {
-                                dropdownMenu.classList.add('animated-dropdown');
-                            }
-                        }, 10);
-                    });
-                });
-
-                // Auto-collapsing sidebar on mobile
-                const sidebarToggles = document.querySelectorAll('.sidebar-toggle:not(.sidebar-initialized)');
-                const sidebar = document.querySelector('.sidebar');
-                if (sidebar && window.innerWidth < 992) {
-                    sidebarToggles.forEach(toggle => {
-                        toggle.classList.add('sidebar-initialized');
-                        toggle.addEventListener('click', function() {
-                            sidebar.classList.toggle('expanded');
-                        });
-                    });
-                }
-
-                // Interactive cards
-                const interactiveCards = document.querySelectorAll('.card-interactive:not(.card-initialized)');
-                interactiveCards.forEach(card => {
-                    card.classList.add('card-initialized');
-                    card.addEventListener('mouseenter', function() {
-                        this.classList.add('card-hover-effect');
+                try {
+                    // 1. DISPOSE EXISTING BOOTSTRAP COMPONENTS
+                    console.log('SPA: 🗑️ Disposing existing Bootstrap components...');
+                    
+                    // Dispose all existing tooltips
+                    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+                        const tooltip = bootstrap.Tooltip.getInstance(el);
+                        if (tooltip) {
+                            tooltip.dispose();
+                        }
+                        el.classList.remove('tooltip-initialized');
                     });
                     
-                    card.addEventListener('mouseleave', function() {
-                        this.classList.remove('card-hover-effect');
+                    // Dispose all existing popovers
+                    document.querySelectorAll('[data-bs-toggle="popover"]').forEach(el => {
+                        const popover = bootstrap.Popover.getInstance(el);
+                        if (popover) {
+                            popover.dispose();
+                        }
+                        el.classList.remove('popover-initialized');
                     });
-                });
-
-                // Form validation on the fly
-                const forms = document.querySelectorAll('.needs-live-validation:not(.validation-initialized)');
-                forms.forEach(form => {
-                    form.classList.add('validation-initialized');
-                    const inputs = form.querySelectorAll('input, select, textarea');
-                    inputs.forEach(input => {
-                        input.addEventListener('blur', function() {
-                            if (this.checkValidity()) {
-                                this.classList.remove('is-invalid');
-                                this.classList.add('is-valid');
-                            } else {
-                                this.classList.remove('is-valid');
-                                this.classList.add('is-invalid');
-                            }
+                    
+                    // Dispose all existing dropdowns
+                    document.querySelectorAll('.dropdown-toggle').forEach(el => {
+                        const dropdown = bootstrap.Dropdown.getInstance(el);
+                        if (dropdown) {
+                            dropdown.dispose();
+                        }
+                        el.classList.remove('dropdown-initialized');
+                    });
+                    
+                    // Reset all initialization classes
+                    document.querySelectorAll('.ripple-initialized, .sidebar-initialized, .card-initialized, .validation-initialized, .counter-initialized, .collapsible-initialized').forEach(el => {
+                        el.classList.remove('ripple-initialized', 'sidebar-initialized', 'card-initialized', 'validation-initialized', 'counter-initialized', 'collapsible-initialized');
+                    });
+                    
+                    console.log('SPA: ✅ Bootstrap component disposal completed');
+                    
+                    // 2. REINITIALIZE ALL COMPONENTS
+                    console.log('SPA: 🚀 Reinitializing all UI components...');
+                    
+                    // Initialize all tooltips
+                    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+                    tooltipTriggerList.map(function(tooltipTriggerEl) {
+                        tooltipTriggerEl.classList.add('tooltip-initialized');
+                        return new bootstrap.Tooltip(tooltipTriggerEl, {
+                            animation: true,
+                            delay: { show: 100, hide: 100 }
                         });
                     });
-                });
+                    console.log(`SPA: 📝 Initialized ${tooltipTriggerList.length} tooltips`);
 
-                // Counter animation for statistics
-                const animateCounter = (counterElement, endValue, duration = 1500) => {
-                    const startValue = 0;
-                    const startTime = performance.now();
-                    const updateCounter = (timestamp) => {
-                        const elapsedTime = timestamp - startTime;
-                        if (elapsedTime < duration) {
-                            const progress = elapsedTime / duration;
-                            const currentValue = Math.round(progress * (endValue - startValue) + startValue);
-                            counterElement.textContent = currentValue;
-                            requestAnimationFrame(updateCounter);
-                        } else {
-                            counterElement.textContent = endValue;
-                        }
+                    // Initialize all popovers
+                    const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+                    popoverTriggerList.map(function(popoverTriggerEl) {
+                        popoverTriggerEl.classList.add('popover-initialized');
+                        return new bootstrap.Popover(popoverTriggerEl, {
+                            animation: true,
+                            trigger: 'hover focus'
+                        });
+                    });
+                    console.log(`SPA: 📋 Initialized ${popoverTriggerList.length} popovers`);
+
+                    // Button ripple effect
+                    const rippleButtons = document.querySelectorAll('.btn-ripple');
+                    rippleButtons.forEach(button => {
+                        button.classList.add('ripple-initialized');
+                        button.addEventListener('click', function(e) {
+                            const rect = button.getBoundingClientRect();
+                            const x = e.clientX - rect.left;
+                            const y = e.clientY - rect.top;
+
+                            const ripple = document.createElement('span');
+                            ripple.className = 'ripple';
+                            ripple.style.left = `${x}px`;
+                            ripple.style.top = `${y}px`;
+
+                            button.appendChild(ripple);
+
+                            setTimeout(() => {
+                                ripple.remove();
+                            }, 600);
+                        });
+                    });
+                    console.log(`SPA: 🎉 Initialized ${rippleButtons.length} ripple buttons`);
+
+                    // Enhanced dropdown animation
+                    const dropdownToggleList = document.querySelectorAll('.dropdown-toggle');
+                    dropdownToggleList.forEach(dropdown => {
+                        dropdown.classList.add('dropdown-initialized');
+                        new bootstrap.Dropdown(dropdown); // Reinitialize Bootstrap dropdown
+                        dropdown.addEventListener('click', function() {
+                            setTimeout(() => {
+                                const dropdownMenu = dropdown.nextElementSibling;
+                                if (dropdownMenu && dropdownMenu.classList.contains('show')) {
+                                    dropdownMenu.classList.add('animated-dropdown');
+                                }
+                            }, 10);
+                        });
+                    });
+                    console.log(`SPA: 📋 Initialized ${dropdownToggleList.length} dropdowns`);
+
+                    // Auto-collapsing sidebar on mobile
+                    const sidebarToggles = document.querySelectorAll('.sidebar-toggle');
+                    const sidebar = document.querySelector('.sidebar');
+                    if (sidebar && window.innerWidth < 992) {
+                        sidebarToggles.forEach(toggle => {
+                            toggle.classList.add('sidebar-initialized');
+                            toggle.addEventListener('click', function() {
+                                sidebar.classList.toggle('expanded');
+                            });
+                        });
+                    }
+                    console.log(`SPA: 📱 Initialized ${sidebarToggles.length} sidebar toggles`);
+
+                    // Interactive cards
+                    const interactiveCards = document.querySelectorAll('.card-interactive');
+                    interactiveCards.forEach(card => {
+                        card.classList.add('card-initialized');
+                        card.addEventListener('mouseenter', function() {
+                            this.classList.add('card-hover-effect');
+                        });
+                        
+                        card.addEventListener('mouseleave', function() {
+                            this.classList.remove('card-hover-effect');
+                        });
+                    });
+                    console.log(`SPA: 🃏 Initialized ${interactiveCards.length} interactive cards`);
+
+                    // Form validation on the fly
+                    const forms = document.querySelectorAll('.needs-live-validation');
+                    forms.forEach(form => {
+                        form.classList.add('validation-initialized');
+                        const inputs = form.querySelectorAll('input, select, textarea');
+                        inputs.forEach(input => {
+                            input.addEventListener('blur', function() {
+                                if (this.checkValidity()) {
+                                    this.classList.remove('is-invalid');
+                                    this.classList.add('is-valid');
+                                } else {
+                                    this.classList.remove('is-valid');
+                                    this.classList.add('is-invalid');
+                                }
+                            });
+                        });
+                    });
+                    console.log(`SPA: ✅ Initialized ${forms.length} form validations`);
+
+                    // Counter animation for statistics
+                    const animateCounter = (counterElement, endValue, duration = 1500) => {
+                        const startValue = 0;
+                        const startTime = performance.now();
+                        const updateCounter = (timestamp) => {
+                            const elapsedTime = timestamp - startTime;
+                            if (elapsedTime < duration) {
+                                const progress = elapsedTime / duration;
+                                const currentValue = Math.round(progress * (endValue - startValue) + startValue);
+                                counterElement.textContent = currentValue;
+                                requestAnimationFrame(updateCounter);
+                            } else {
+                                counterElement.textContent = endValue;
+                            }
+                        };
+                        requestAnimationFrame(updateCounter);
                     };
-                    requestAnimationFrame(updateCounter);
-                };
 
                 const counterElements = document.querySelectorAll('.animate-counter:not(.counter-initialized)');
                 const observerOptions = {
@@ -2849,7 +2898,12 @@
                     });
                 });
                 
-                console.log('SPA: Comprehensive UI enhancements initialized');
+                console.log('SPA: ✅ Comprehensive UI enhancements reinitialization completed successfully');
+                console.log('SPA: 🎯 All Bootstrap components and interactive elements are now active');
+                
+                } catch (error) {
+                    console.error('SPA: ❌ Error during UI enhancements reinitialization:', error);
+                }
             },
             
             reinitializeDashboard: function() {
@@ -3243,6 +3297,29 @@
             if (window.spaNavigator && window.spaNavigator.reinitializeUIEnhancements) {
                 window.spaNavigator.reinitializeUIEnhancements();
             }
+        });
+
+        // CRITICAL: Listen for SPA content changes and reinitialize UI enhancements
+        window.addEventListener('spaContentLoaded', function(event) {
+            console.log('🔄 SPA content loaded event detected, reinitializing UI enhancements...');
+            console.log('🔍 Bootstrap availability check:', !!window.bootstrap);
+            
+            // Small delay to ensure DOM is fully updated
+            setTimeout(() => {
+                if (window.spaNavigator && window.spaNavigator.reinitializeUIEnhancements) {
+                    // Additional diagnostics
+                    const tooltipElements = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+                    const popoverElements = document.querySelectorAll('[data-bs-toggle="popover"]');
+                    const dropdownElements = document.querySelectorAll('.dropdown-toggle');
+                    
+                    console.log(`🔍 Found ${tooltipElements.length} tooltip elements, ${popoverElements.length} popover elements, ${dropdownElements.length} dropdown elements`);
+                    
+                    window.spaNavigator.reinitializeUIEnhancements();
+                    console.log('✅ UI enhancements reinitialized after SPA navigation');
+                } else {
+                    console.error('❌ SPA Navigator not available for UI reinitialization');
+                }
+            }, 50);
         });
         
         // Add global BetulaUI utilities
