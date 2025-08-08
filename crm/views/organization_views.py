@@ -13,16 +13,25 @@ from .error_views import organization_not_found, organization_access_forbidden, 
 @login_required
 def organization_list(request):
     """Widok listy organizacji"""
+    # Use effective user for impersonation support
+    from .impersonation_views import get_effective_user, get_effective_organizations
+    
+    effective_user = get_effective_user(request)
+    if not effective_user:
+        effective_user = request.user
+    
+    effective_organizations = get_effective_organizations(request)
+    
     # Clients should not access the organizations list page at all
-    if request.user.profile.role == 'client':
+    if effective_user.profile.role == 'client':
         return forbidden_access(request, "listy organizacji")
     
     # Only admin and superagent can see all organizations
-    if request.user.profile.role in ['admin', 'superagent']:
+    if effective_user.profile.role in ['admin', 'superagent']:
         organizations = Organization.objects.all()
     else:
-        # Agent can only see their organizations
-        organizations = request.user.profile.organizations.all()
+        # Agent can only see their organizations (use effective organizations)
+        organizations = effective_organizations
     
     # Search functionality
     search_query = request.GET.get('search', '')
@@ -105,20 +114,29 @@ def organization_list(request):
 @login_required
 def organization_detail(request, pk):
     """Widok szczegółów organizacji"""
+    # Use effective user for impersonation support
+    from .impersonation_views import get_effective_user, get_effective_organizations
+    
+    effective_user = get_effective_user(request)
+    if not effective_user:
+        effective_user = request.user
+    
+    effective_organizations = get_effective_organizations(request)
+    
     try:
         organization = get_object_or_404(Organization, pk=pk)
     except Http404:
         return organization_not_found(request, pk)
     
-    # Sprawdzenie uprawnień
-    if request.user.profile.role in ['admin', 'superagent']:
+    # Sprawdzenie uprawnień (use effective user)
+    if effective_user.profile.role in ['admin', 'superagent']:
         # Admin i superagent ma dostęp do wszystkich organizacji
         pass
-    elif request.user.profile.role == 'agent':
-        # Agent ma dostęp tylko do swoich organizacji
-        if organization not in request.user.profile.organizations.all():
+    elif effective_user.profile.role == 'agent':
+        # Agent ma dostęp tylko do swoich organizacji (use effective organizations)
+        if organization not in effective_organizations:
             return organization_access_forbidden(request, pk)
-    elif organization not in request.user.profile.organizations.all():
+    elif organization not in effective_organizations:
         # Klient ma dostęp tylko do swoich organizacji
         return organization_access_forbidden(request, pk)
     

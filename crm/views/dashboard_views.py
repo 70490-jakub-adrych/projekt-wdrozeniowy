@@ -10,10 +10,20 @@ from django.contrib.auth.models import Group
 @login_required
 def dashboard(request):
     """Widok panelu głównego"""
-    user = request.user
-    role = user.profile.role
+    # Use effective user for impersonation support
+    from .impersonation_views import get_effective_user, get_effective_organizations
     
-    # Check if user has a profile, create one if not
+    user = request.user  # Keep original user for profile creation
+    
+    effective_user = get_effective_user(request)
+    if not effective_user:
+        effective_user = request.user
+    
+    effective_organizations = get_effective_organizations(request)
+    
+    role = effective_user.profile.role  # Use effective user's role for logic
+    
+    # Check if user has a profile, create one if not (use original user for this)
     try:
         user_profile = user.profile
     except:
@@ -44,8 +54,11 @@ def dashboard(request):
         user.groups.add(user_group)
         
         messages.info(request, message)
+        
+        # Update effective user role after profile creation
+        role = effective_user.profile.role
     
-    # Tickets by status count
+    # Tickets by status count (use effective user)
     if role == 'admin':
         # Admin sees all tickets for statistics
         new_tickets = Ticket.objects.filter(status='new').count()
@@ -54,8 +67,8 @@ def dashboard(request):
         resolved_tickets = Ticket.objects.filter(status='resolved').count()
         closed_tickets = Ticket.objects.filter(status='closed').count()
         
-        # Show only tickets assigned to current admin user
-        assigned_tickets = Ticket.objects.filter(assigned_to=user).exclude(status='closed').order_by('-updated_at')[:5]
+        # Show only tickets assigned to current effective user
+        assigned_tickets = Ticket.objects.filter(assigned_to=effective_user).exclude(status='closed').order_by('-updated_at')[:5]
         # All tickets with no assigned user
         unassigned_tickets = Ticket.objects.filter(assigned_to__isnull=True).exclude(status='closed').order_by('-created_at')[:5]
         # In-progress tickets list for the admin panel
@@ -71,8 +84,8 @@ def dashboard(request):
         pending_approvals = UserProfile.objects.filter(is_approved=False).count()
         
     elif role in ['superagent', 'agent']:  # Handle both superagent and agent in similar way
-        # Get user organizations
-        user_orgs = user.profile.organizations.all()
+        # Get effective organizations
+        user_orgs = effective_organizations
         org_tickets = Ticket.objects.filter(organization__in=user_orgs)
         
         new_tickets = org_tickets.filter(status='new').count()
@@ -82,7 +95,7 @@ def dashboard(request):
         closed_tickets = org_tickets.filter(status='closed').count()
         
         # For both agent and superagent - show tickets assigned to them
-        assigned_tickets = org_tickets.filter(assigned_to=user).exclude(status='closed').order_by('-updated_at')[:5]
+        assigned_tickets = org_tickets.filter(assigned_to=effective_user).exclude(status='closed').order_by('-updated_at')[:5]
         # Show unassigned tickets from their organizations
         unassigned_tickets = org_tickets.filter(assigned_to__isnull=True).exclude(status='closed').order_by('-created_at')[:5]
         
@@ -95,9 +108,9 @@ def dashboard(request):
         # Add recently closed tickets section
         recently_closed_tickets = org_tickets.filter(status='closed').order_by('-closed_at')[:5]
         
-        # Get recent activities
+        # Get recent activities (use effective user for filtering)
         recent_activities = ActivityLog.objects.filter(
-            Q(user=user) | Q(ticket__organization__in=user_orgs)
+            Q(user=effective_user) | Q(ticket__organization__in=user_orgs)
         ).distinct().order_by('-created_at')[:10]
         
         # Check for pending approvals in user's organizations
@@ -106,14 +119,14 @@ def dashboard(request):
             organizations__in=user_orgs
         ).distinct().count()
     else:  # client
-        # Client sees tickets from their organizations or created by them
-        user_orgs = user.profile.organizations.all()
+        # Client sees tickets from their organizations or created by them (use effective user and organizations)
+        user_orgs = effective_organizations
         if user_orgs.exists():
             org_tickets = Ticket.objects.filter(
-                Q(organization__in=user_orgs) | Q(created_by=user)
+                Q(organization__in=user_orgs) | Q(created_by=effective_user)
             ).distinct()
         else:
-            org_tickets = Ticket.objects.filter(created_by=user)
+            org_tickets = Ticket.objects.filter(created_by=effective_user)
         
         new_tickets = org_tickets.filter(status='new').count()
         in_progress_tickets = org_tickets.filter(status='in_progress').count()
@@ -121,12 +134,12 @@ def dashboard(request):
         resolved_tickets = org_tickets.filter(status='resolved').count()
         closed_tickets = org_tickets.filter(status='closed').count()
         
-        # Client's own tickets - exclude closed
-        user_tickets = Ticket.objects.filter(created_by=user).exclude(status='closed').order_by('-created_at')[:5]
+        # Client's own tickets - exclude closed (use effective user)
+        user_tickets = Ticket.objects.filter(created_by=effective_user).exclude(status='closed').order_by('-created_at')[:5]
         
-        # Client sees other tickets from their organization - exclude closed and exclude own tickets
+        # Client sees other tickets from their organization - exclude closed and exclude own tickets (use effective user)
         if user_orgs.exists():
-            org_recent_tickets = org_tickets.exclude(created_by=user).exclude(status='closed').order_by('-created_at')[:5]
+            org_recent_tickets = org_tickets.exclude(created_by=effective_user).exclude(status='closed').order_by('-created_at')[:5]
         else:
             org_recent_tickets = []
         
