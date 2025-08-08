@@ -2405,6 +2405,122 @@
                 this.loadContent(url, true);
             },
             
+            disposeAllBootstrapComponents: function() {
+                console.log('SPA: 🧹 Disposing all Bootstrap components before content replacement...');
+                
+                try {
+                    // Dispose all tooltips globally
+                    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+                        const instance = bootstrap.Tooltip.getInstance(el);
+                        if (instance) {
+                            instance.dispose();
+                        }
+                    });
+                    
+                    // Dispose all popovers globally
+                    document.querySelectorAll('[data-bs-toggle="popover"]').forEach(el => {
+                        const instance = bootstrap.Popover.getInstance(el);
+                        if (instance) {
+                            instance.dispose();
+                        }
+                    });
+                    
+                    // Dispose all dropdowns globally
+                    document.querySelectorAll('.dropdown-toggle').forEach(el => {
+                        const instance = bootstrap.Dropdown.getInstance(el);
+                        if (instance) {
+                            instance.dispose();
+                        }
+                    });
+                    
+                    // Dispose all toasts globally
+                    document.querySelectorAll('.toast').forEach(el => {
+                        const instance = bootstrap.Toast.getInstance(el);
+                        if (instance) {
+                            instance.dispose();
+                        }
+                    });
+                    
+                    // Dispose all modals globally
+                    document.querySelectorAll('.modal').forEach(el => {
+                        const instance = bootstrap.Modal.getInstance(el);
+                        if (instance) {
+                            instance.dispose();
+                        }
+                    });
+                    
+                    // Dispose all collapses globally
+                    document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(el => {
+                        const instance = bootstrap.Collapse.getInstance(el);
+                        if (instance) {
+                            instance.dispose();
+                        }
+                    });
+                    
+                    console.log('SPA: ✅ All Bootstrap components disposed successfully');
+                } catch (error) {
+                    console.error('SPA: ❌ Error during Bootstrap component disposal:', error);
+                }
+            },
+            
+            initializeBootstrapComponents: function(container = document) {
+                console.log('SPA: 🚀 Initializing Bootstrap components in scope:', container === document ? 'document' : 'container');
+                
+                try {
+                    // Initialize tooltips only in the specified container
+                    const tooltips = container.querySelectorAll('[data-bs-toggle="tooltip"]');
+                    tooltips.forEach(tooltip => {
+                        // Don't reinitialize if already initialized
+                        if (!bootstrap.Tooltip.getInstance(tooltip)) {
+                            new bootstrap.Tooltip(tooltip, {
+                                animation: true,
+                                delay: { show: 100, hide: 100 }
+                            });
+                        }
+                    });
+                    console.log(`SPA: 📝 Initialized ${tooltips.length} tooltips`);
+                    
+                    // Initialize popovers only in the specified container
+                    const popovers = container.querySelectorAll('[data-bs-toggle="popover"]');
+                    popovers.forEach(popover => {
+                        if (!bootstrap.Popover.getInstance(popover)) {
+                            new bootstrap.Popover(popover, {
+                                animation: true,
+                                trigger: 'hover focus'
+                            });
+                        }
+                    });
+                    console.log(`SPA: 📋 Initialized ${popovers.length} popovers`);
+                    
+                    // Initialize dropdowns only in the specified container
+                    const dropdowns = container.querySelectorAll('.dropdown-toggle');
+                    dropdowns.forEach(dropdown => {
+                        if (!bootstrap.Dropdown.getInstance(dropdown)) {
+                            new bootstrap.Dropdown(dropdown);
+                        }
+                    });
+                    console.log(`SPA: 🔻 Initialized ${dropdowns.length} dropdowns`);
+                    
+                    // Initialize any new toasts only in the specified container
+                    const toastElements = container.querySelectorAll('.toast');
+                    toastElements.forEach(toast => {
+                        if (!bootstrap.Toast.getInstance(toast)) {
+                            const bsToast = new bootstrap.Toast(toast, {
+                                delay: parseInt(toast.getAttribute('data-delay') || 5000, 10)
+                            });
+                            if (toast.classList.contains('show-on-load')) {
+                                bsToast.show();
+                            }
+                        }
+                    });
+                    console.log(`SPA: 🍞 Initialized ${toastElements.length} toasts`);
+                    
+                    console.log('SPA: ✅ Bootstrap components initialized successfully');
+                } catch (error) {
+                    console.error('SPA: ❌ Error during Bootstrap component initialization:', error);
+                }
+            },
+            
             loadContent: function(url, updateHistory = true) {
                 console.log('SPA: Loading content for URL:', url);
                 this.showLoading();
@@ -2415,6 +2531,9 @@
                 
                 // Apply theme to body immediately to prevent flashing
                 document.body.setAttribute('data-theme', currentTheme);
+                
+                // CRITICAL: Dispose ALL Bootstrap components before any DOM manipulation
+                this.disposeAllBootstrapComponents();
                 
                 // Fetch new content
                 fetch(url, {
@@ -2512,9 +2631,14 @@
                         // Update active nav states
                         this.updateActiveNav(url);
                         
-                        // Reinitialize components after a brief delay to ensure DOM is ready
+                        // CRITICAL: Initialize Bootstrap components ONLY on the new content area after DOM update
                         setTimeout(() => {
                             console.log('SPA: Reinitializing components...');
+                            
+                            // Initialize Bootstrap components ONLY in the content area
+                            this.initializeBootstrapComponents(currentContent);
+                            
+                            // Then reinitialize other components
                             this.reinitializeComponents();
                             
                             // Fix mobile responsiveness after content load
@@ -2576,61 +2700,9 @@
                 // Force Bootstrap CSS re-evaluation by triggering a reflow
                 document.body.offsetHeight;
                 
-                // Reinitialize Bootstrap components
-                if (typeof bootstrap !== 'undefined') {
-                    console.log('SPA: Reinitializing Bootstrap components...');
-                    
-                    // Dispose old tooltips first to prevent memory leaks
-                    const oldTooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-                    oldTooltips.forEach(tooltip => {
-                        const instance = bootstrap.Tooltip.getInstance(tooltip);
-                        if (instance) instance.dispose();
-                    });
-                    
-                    // Initialize new tooltips
-                    const tooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-                    tooltips.forEach(tooltip => new bootstrap.Tooltip(tooltip, {
-                        animation: true,
-                        delay: { show: 100, hide: 100 }
-                    }));
-                    
-                    // Dispose old popovers first
-                    const oldPopovers = document.querySelectorAll('[data-bs-toggle="popover"]');
-                    oldPopovers.forEach(popover => {
-                        const instance = bootstrap.Popover.getInstance(popover);
-                        if (instance) instance.dispose();
-                    });
-                    
-                    // Initialize new popovers
-                    const popovers = document.querySelectorAll('[data-bs-toggle="popover"]');
-                    popovers.forEach(popover => new bootstrap.Popover(popover, {
-                        animation: true,
-                        trigger: 'hover focus'
-                    }));
-                    
-                    // Reinitialize dropdowns
-                    const dropdowns = document.querySelectorAll('.dropdown-toggle');
-                    dropdowns.forEach(dropdown => {
-                        const existingInstance = bootstrap.Dropdown.getInstance(dropdown);
-                        if (existingInstance) existingInstance.dispose();
-                        new bootstrap.Dropdown(dropdown);
-                    });
-                    
-                    // Initialize any new toasts
-                    const toastElements = document.querySelectorAll('.toast:not(.processed)');
-                    toastElements.forEach(toast => {
-                        toast.classList.add('processed');
-                        const bsToast = new bootstrap.Toast(toast, {
-                            autohide: toast.getAttribute('data-autohide') !== 'false',
-                            delay: parseInt(toast.getAttribute('data-delay') || 5000, 10)
-                        });
-                        if (toast.classList.contains('show-on-load')) {
-                            bsToast.show();
-                        }
-                    });
-                } else {
-                    console.warn('SPA: Bootstrap not available for component initialization');
-                }
+                // NOTE: Bootstrap components are already initialized by initializeBootstrapComponents()
+                // We skip Bootstrap component initialization here to avoid conflicts
+                console.log('SPA: Bootstrap components already initialized in scoped container');
                 
                 // Re-initialize UI enhancement features from ui-enhancements.js
                 if (window.BetulaUI && window.BetulaUI.reinitialize) {
@@ -3369,8 +3441,15 @@
                     
                     console.log(`🔍 Found ${tooltipElements.length} tooltip elements, ${popoverElements.length} popover elements, ${dropdownElements.length} dropdown elements`);
                     
-                    window.SPANavigator.reinitializeUIEnhancements();
-                    console.log('✅ UI enhancements reinitialized after SPA navigation');
+                    // NOTE: Skip UI enhancement reinitialization since Bootstrap components
+                    // are now properly handled in the SPA navigation flow
+                    console.log('✅ Skipping UI enhancements reinitialization - handled by SPA navigation');
+                    
+                    // Only reinitialize if BetulaUI specifically requests it
+                    if (event.detail && event.detail.forceReinit) {
+                        window.SPANavigator.reinitializeUIEnhancements();
+                        console.log('✅ UI enhancements force-reinitialized after SPA navigation');
+                    }
                 } else {
                     console.error('❌ SPA Navigator not available for UI reinitialization');
                     console.log('🔍 Available SPANavigator methods:', window.SPANavigator ? Object.keys(window.SPANavigator) : 'SPANavigator not found');
@@ -3439,11 +3518,17 @@
             // Re-initialize all components (can be called manually)
             reinitialize: function() {
                 console.log('🔄 BetulaUI: Reinitializing UI components...');
-                if (window.SPANavigator && window.SPANavigator.reinitializeUIEnhancements) {
-                    // Use a small delay to prevent conflicts with other reinitializations
-                    setTimeout(() => {
-                        window.SPANavigator.reinitializeUIEnhancements();
-                    }, 25);
+                if (window.SPANavigator && window.SPANavigator.initializeBootstrapComponents) {
+                    // Use the proper scoped initialization instead of the problematic global one
+                    const contentContainer = document.querySelector('.container.mt-4');
+                    if (contentContainer) {
+                        console.log('🔄 BetulaUI: Using scoped Bootstrap initialization...');
+                        setTimeout(() => {
+                            window.SPANavigator.initializeBootstrapComponents(contentContainer);
+                        }, 25);
+                    } else {
+                        console.warn('BetulaUI: Content container not found for scoped initialization');
+                    }
                 } else {
                     console.warn('BetulaUI: SPANavigator not available for reinitialization');
                     console.log('🔍 Available SPANavigator methods:', window.SPANavigator ? Object.keys(window.SPANavigator) : 'SPANavigator not found');
