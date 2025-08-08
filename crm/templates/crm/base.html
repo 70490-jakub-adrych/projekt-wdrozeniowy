@@ -51,37 +51,37 @@
         
         /* Dark Theme */
         [data-theme="dark"] {
-            /* Dark Theme Colors */
+            /* Dark Theme Colors - Softer contrast */
             --primary-color: #1e1e2e;
             --secondary-color: #2d3748;
-            --accent-color: #4fd1c7;
+            --accent-color: #64b5f6; /* Softer blue */
             --light-color: #2d3748;
             --dark-color: #0d1117;
-            --success-color: #48bb78;
-            --warning-color: #ed8936;
-            --danger-color: #f56565;
-            --info-color: #4fd1c7;
+            --success-color: #66bb6a; /* Softer green */
+            --warning-color: #ffb74d; /* Softer orange */
+            --danger-color: #ef5350; /* Softer red */
+            --info-color: #64b5f6; /* Softer blue */
             
-            /* Dark Theme UI Colors */
-            --bg-color: #0d1117;
-            --text-color: #f0f6fc;
-            --text-muted: #8b949e;
-            --border-color: #30363d;
-            --card-bg: #161b22;
+            /* Dark Theme UI Colors - Softer backgrounds */
+            --bg-color: #121212; /* Softer than pure black */
+            --text-color: #e0e0e0; /* Softer white */
+            --text-muted: #9e9e9e; /* Better contrast for muted text */
+            --border-color: #424242; /* Softer border */
+            --card-bg: #1e1e1e; /* Softer card background */
             --navbar-bg: #1e1e2e;
-            --dropdown-bg: #21262d;
-            --input-bg: #21262d;
-            --table-bg: #161b22;
-            --table-hover-bg: #21262d;
-            --table-border-color: #30363d;
-            --modal-bg: #161b22;
-            --toast-bg: #21262d;
-            --cookie-banner-bg: #21262d;
-            --cookie-banner-text: #f0f6fc;
+            --dropdown-bg: #2c2c2c; /* Softer dropdown */
+            --input-bg: #2c2c2c; /* Softer input background */
+            --table-bg: #1e1e1e; /* Softer table background */
+            --table-hover-bg: #2c2c2c; /* Softer hover */
+            --table-border-color: #424242; /* Softer table borders */
+            --modal-bg: #1e1e1e; /* Softer modal background */
+            --toast-bg: #2c2c2c; /* Softer toast background */
+            --cookie-banner-bg: #2c2c2c;
+            --cookie-banner-text: #e0e0e0;
             
-            --shadow-sm: 0 .125rem .25rem rgba(0,0,0,.3);
-            --shadow-md: 0 .5rem 1rem rgba(0,0,0,.4);
-            --shadow-lg: 0 1rem 3rem rgba(0,0,0,.5);
+            --shadow-sm: 0 .125rem .25rem rgba(0,0,0,.2);
+            --shadow-md: 0 .5rem 1rem rgba(0,0,0,.3);
+            --shadow-lg: 0 1rem 3rem rgba(0,0,0,.4);
         }
         
         /* Global Theme Styles */
@@ -166,6 +166,14 @@
             background-color: var(--card-bg) !important;
         }
         
+        [data-theme="dark"] .bg-secondary {
+            background-color: #424242 !important;
+        }
+        
+        [data-theme="dark"] .bg-primary {
+            background-color: var(--accent-color) !important;
+        }
+        
         [data-theme="dark"] .text-dark {
             color: var(--text-color) !important;
         }
@@ -174,18 +182,221 @@
             color: var(--text-muted) !important;
         }
         
+        [data-theme="dark"] .text-secondary {
+            color: var(--text-muted) !important;
+        }
+        
         [data-theme="dark"] .border {
             border-color: var(--border-color) !important;
+        }
+        
+        [data-theme="dark"] .border-top {
+            border-top-color: var(--border-color) !important;
+        }
+        
+        [data-theme="dark"] .border-bottom {
+            border-bottom-color: var(--border-color) !important;
+        }
+        
+        [data-theme="dark"] .border-left {
+            border-left-color: var(--border-color) !important;
+        }
+        
+        [data-theme="dark"] .border-right {
+            border-right-color: var(--border-color) !important;
+        }
+        
+        /* Panel and Card components */
+        [data-theme="dark"] .panel,
+        [data-theme="dark"] .panel-default {
+            background-color: var(--card-bg) !important;
+            border-color: var(--border-color) !important;
+        }
+        
+        [data-theme="dark"] .panel-heading,
+        [data-theme="dark"] .panel-header {
+            background-color: var(--card-bg) !important;
+            border-color: var(--border-color) !important;
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] .panel-body {
+            background-color: var(--card-bg) !important;
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] .panel-footer {
+            background-color: var(--card-bg) !important;
+            border-color: var(--border-color) !important;
+            color: var(--text-color) !important;
+        }
+        
+        /* Bootstrap Cards - Additional overrides */
+        [data-theme="dark"] .card,
+        [data-theme="dark"] .card-body,
+        [data-theme="dark"] .card-header,
+        [data-theme="dark"] .card-footer {
+            background-color: var(--card-bg) !important;
+            color: var(--text-color) !important;
+            border-color: var(--border-color) !important;
+        }
+        
+        /* Well components (Bootstrap 3 style) */
+        [data-theme="dark"] .well {
+            background-color: var(--card-bg) !important;
+            border-color: var(--border-color) !important;
+            color: var(--text-color) !important;
+        }
+        
+        /* Alert components with softer colors */
+        [data-theme="dark"] .alert-primary {
+            background-color: rgba(100, 181, 246, 0.15) !important;
+            border-color: rgba(100, 181, 246, 0.3) !important;
+            color: #90caf9 !important;
+        }
+        
+        [data-theme="dark"] .alert-success {
+            background-color: rgba(102, 187, 106, 0.15) !important;
+            border-color: rgba(102, 187, 106, 0.3) !important;
+            color: #a5d6a7 !important;
+        }
+        
+        [data-theme="dark"] .alert-warning {
+            background-color: rgba(255, 183, 77, 0.15) !important;
+            border-color: rgba(255, 183, 77, 0.3) !important;
+            color: #ffcc02 !important;
+        }
+        
+        [data-theme="dark"] .alert-danger {
+            background-color: rgba(239, 83, 80, 0.15) !important;
+            border-color: rgba(239, 83, 80, 0.3) !important;
+            color: #ef9a9a !important;
+        }
+        
+        [data-theme="dark"] .alert-info {
+            background-color: rgba(100, 181, 246, 0.15) !important;
+            border-color: rgba(100, 181, 246, 0.3) !important;
+            color: #90caf9 !important;
+        }
+        
+        /* Button overrides with softer colors */
+        [data-theme="dark"] .btn-primary {
+            background-color: var(--accent-color) !important;
+            border-color: var(--accent-color) !important;
+            color: white !important;
+        }
+        
+        [data-theme="dark"] .btn-primary:hover {
+            background-color: #42a5f5 !important;
+            border-color: #42a5f5 !important;
+        }
+        
+        [data-theme="dark"] .btn-secondary {
+            background-color: #616161 !important;
+            border-color: #616161 !important;
+            color: white !important;
+        }
+        
+        [data-theme="dark"] .btn-secondary:hover {
+            background-color: #757575 !important;
+            border-color: #757575 !important;
+        }
+        
+        [data-theme="dark"] .btn-success {
+            background-color: var(--success-color) !important;
+            border-color: var(--success-color) !important;
+        }
+        
+        [data-theme="dark"] .btn-success:hover {
+            background-color: #4caf50 !important;
+            border-color: #4caf50 !important;
+        }
+        
+        [data-theme="dark"] .btn-warning {
+            background-color: var(--warning-color) !important;
+            border-color: var(--warning-color) !important;
+            color: #333 !important;
+        }
+        
+        [data-theme="dark"] .btn-warning:hover {
+            background-color: #ff9800 !important;
+            border-color: #ff9800 !important;
+        }
+        
+        [data-theme="dark"] .btn-danger {
+            background-color: var(--danger-color) !important;
+            border-color: var(--danger-color) !important;
+        }
+        
+        [data-theme="dark"] .btn-danger:hover {
+            background-color: #f44336 !important;
+            border-color: #f44336 !important;
+        }
+        
+        [data-theme="dark"] .btn-info {
+            background-color: var(--info-color) !important;
+            border-color: var(--info-color) !important;
+            color: white !important;
+        }
+        
+        [data-theme="dark"] .btn-info:hover {
+            background-color: #42a5f5 !important;
+            border-color: #42a5f5 !important;
+        }
+        
+        [data-theme="dark"] .btn-light {
+            background-color: #424242 !important;
+            border-color: #424242 !important;
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] .btn-light:hover {
+            background-color: #616161 !important;
+            border-color: #616161 !important;
+        }
+        
+        [data-theme="dark"] .btn-dark {
+            background-color: #757575 !important;
+            border-color: #757575 !important;
+            color: white !important;
+        }
+        
+        [data-theme="dark"] .btn-outline-primary {
+            color: var(--accent-color) !important;
+            border-color: var(--accent-color) !important;
+        }
+        
+        [data-theme="dark"] .btn-outline-primary:hover {
+            background-color: var(--accent-color) !important;
+            color: white !important;
+        }
+        
+        [data-theme="dark"] .btn-outline-secondary {
+            color: #9e9e9e !important;
+            border-color: #9e9e9e !important;
+        }
+        
+        [data-theme="dark"] .btn-outline-secondary:hover {
+            background-color: #616161 !important;
+            color: white !important;
         }
         
         [data-theme="dark"] .table {
             background-color: var(--table-bg);
             color: var(--text-color);
+            border-color: var(--table-border-color);
         }
         
         [data-theme="dark"] .table th,
         [data-theme="dark"] .table td {
             border-color: var(--table-border-color);
+            color: var(--text-color);
+        }
+        
+        [data-theme="dark"] .table thead th {
+            background-color: var(--card-bg) !important;
+            border-color: var(--table-border-color) !important;
+            color: var(--text-color) !important;
         }
         
         [data-theme="dark"] .table-hover tbody tr:hover {
@@ -193,7 +404,33 @@
         }
         
         [data-theme="dark"] .table-striped tbody tr:nth-of-type(odd) {
-            background-color: rgba(255, 255, 255, 0.05);
+            background-color: rgba(255, 255, 255, 0.03);
+        }
+        
+        [data-theme="dark"] .table-responsive {
+            border-color: var(--border-color);
+        }
+        
+        /* Pagination */
+        [data-theme="dark"] .pagination .page-link {
+            background-color: var(--card-bg) !important;
+            border-color: var(--border-color) !important;
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] .pagination .page-link:hover {
+            background-color: var(--table-hover-bg) !important;
+            color: var(--accent-color) !important;
+        }
+        
+        [data-theme="dark"] .pagination .page-item.active .page-link {
+            background-color: var(--accent-color) !important;
+            border-color: var(--accent-color) !important;
+        }
+        
+        [data-theme="dark"] .pagination .page-item.disabled .page-link {
+            background-color: var(--card-bg) !important;
+            color: var(--text-muted) !important;
         }
         
         [data-theme="dark"] .modal-content {
@@ -217,6 +454,151 @@
         
         [data-theme="dark"] .list-group-item:hover {
             background-color: var(--table-hover-bg);
+        }
+        
+        [data-theme="dark"] .list-group-item.active {
+            background-color: var(--accent-color) !important;
+            border-color: var(--accent-color) !important;
+        }
+        
+        /* Breadcrumb */
+        [data-theme="dark"] .breadcrumb {
+            background-color: var(--card-bg) !important;
+        }
+        
+        [data-theme="dark"] .breadcrumb-item a {
+            color: var(--accent-color) !important;
+        }
+        
+        [data-theme="dark"] .breadcrumb-item.active {
+            color: var(--text-muted) !important;
+        }
+        
+        /* Nav tabs and pills */
+        [data-theme="dark"] .nav-tabs {
+            border-bottom-color: var(--border-color) !important;
+        }
+        
+        [data-theme="dark"] .nav-tabs .nav-link {
+            color: var(--text-color) !important;
+            border-color: transparent !important;
+        }
+        
+        [data-theme="dark"] .nav-tabs .nav-link:hover {
+            border-color: var(--border-color) !important;
+            background-color: var(--table-hover-bg) !important;
+        }
+        
+        [data-theme="dark"] .nav-tabs .nav-link.active {
+            background-color: var(--card-bg) !important;
+            border-color: var(--border-color) var(--border-color) var(--card-bg) !important;
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] .nav-pills .nav-link {
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] .nav-pills .nav-link.active {
+            background-color: var(--accent-color) !important;
+        }
+        
+        /* Progress bars */
+        [data-theme="dark"] .progress {
+            background-color: #424242 !important;
+        }
+        
+        [data-theme="dark"] .progress-bar {
+            background-color: var(--accent-color) !important;
+        }
+        
+        /* Badges with softer colors */
+        [data-theme="dark"] .badge.bg-primary {
+            background-color: var(--accent-color) !important;
+        }
+        
+        [data-theme="dark"] .badge.bg-secondary {
+            background-color: #616161 !important;
+        }
+        
+        [data-theme="dark"] .badge.bg-success {
+            background-color: var(--success-color) !important;
+        }
+        
+        [data-theme="dark"] .badge.bg-warning {
+            background-color: var(--warning-color) !important;
+            color: #333 !important;
+        }
+        
+        [data-theme="dark"] .badge.bg-danger {
+            background-color: var(--danger-color) !important;
+        }
+        
+        [data-theme="dark"] .badge.bg-info {
+            background-color: var(--info-color) !important;
+        }
+        
+        [data-theme="dark"] .badge.bg-light {
+            background-color: #616161 !important;
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] .badge.bg-dark {
+            background-color: #424242 !important;
+        }
+        
+        /* Input groups */
+        [data-theme="dark"] .input-group-text {
+            background-color: var(--card-bg) !important;
+            border-color: var(--border-color) !important;
+            color: var(--text-color) !important;
+        }
+        
+        /* Accordion */
+        [data-theme="dark"] .accordion-item {
+            background-color: var(--card-bg) !important;
+            border-color: var(--border-color) !important;
+        }
+        
+        [data-theme="dark"] .accordion-header button {
+            background-color: var(--card-bg) !important;
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] .accordion-body {
+            background-color: var(--card-bg) !important;
+            color: var(--text-color) !important;
+        }
+        
+        /* Offcanvas */
+        [data-theme="dark"] .offcanvas {
+            background-color: var(--card-bg) !important;
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] .offcanvas-header {
+            border-bottom-color: var(--border-color) !important;
+        }
+        
+        /* Tooltips and Popovers */
+        [data-theme="dark"] .tooltip .tooltip-inner {
+            background-color: #424242 !important;
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] .popover {
+            background-color: var(--card-bg) !important;
+            border-color: var(--border-color) !important;
+        }
+        
+        [data-theme="dark"] .popover-header {
+            background-color: var(--table-hover-bg) !important;
+            border-bottom-color: var(--border-color) !important;
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] .popover-body {
+            color: var(--text-color) !important;
         }
         /* Ensure Bootstrap 5 Close button styling */
         .btn-close {
@@ -1452,6 +1834,7 @@
     <!-- Auto-hide Toast messages and mobile enhancements -->
     <script>
         // Dark Mode Functionality
+        // Theme preference is automatically saved in localStorage and persists across browser sessions
         const ThemeManager = {
             init: function() {
                 this.loadTheme();
@@ -1459,12 +1842,14 @@
             },
             
             loadTheme: function() {
+                // Load saved theme from localStorage, default to 'light' if not set
                 const savedTheme = localStorage.getItem('helpdesk-theme') || 'light';
                 this.setTheme(savedTheme);
             },
             
             setTheme: function(theme) {
                 document.documentElement.setAttribute('data-theme', theme);
+                // Save theme preference to localStorage (persists across browser sessions)
                 localStorage.setItem('helpdesk-theme', theme);
                 
                 // Update desktop icon
