@@ -2269,6 +2269,8 @@
         const SPANavigator = {
             isReinitializing: false, // Flag to prevent multiple simultaneous reinitializations
             lastReinitTime: 0, // Timestamp of last reinitialization
+            navigationCount: 0, // Track number of navigations
+            debugMode: true, // Enable comprehensive debugging
             
             init: function() {
                 this.addLoadingIndicator();
@@ -2278,6 +2280,157 @@
                 // Make SPANavigator globally available
                 window.SPANavigator = this;
                 console.log('🌐 SPANavigator is now globally available');
+                
+                // Initial component state analysis
+                this.analyzeBootstrapState('INITIAL');
+                
+                // Set up testing function
+                this.testBootstrapComponents();
+                
+                // Add global debug helpers
+                window.debugSPA = {
+                    analyze: () => this.analyzeBootstrapState('MANUAL'),
+                    test: () => this.testBootstrapComponents(),
+                    reinit: () => {
+                        const container = document.querySelector('.container.mt-4');
+                        if (container) {
+                            this.disposeAllBootstrapComponents();
+                            this.initializeBootstrapComponents(container);
+                        }
+                    }
+                };
+                
+                console.log('🛠️ Debug helpers available: window.debugSPA.analyze(), window.debugSPA.test(), window.debugSPA.reinit()');
+            },
+            
+            analyzeBootstrapState: function(phase) {
+                if (!this.debugMode) return;
+                
+                console.log(`\n🔍 === BOOTSTRAP STATE ANALYSIS - ${phase} ===`);
+                
+                // Standard Bootstrap components
+                const tooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+                const popovers = document.querySelectorAll('[data-bs-toggle="popover"]');
+                const dropdowns = document.querySelectorAll('.dropdown-toggle');
+                const toasts = document.querySelectorAll('.toast');
+                const modals = document.querySelectorAll('.modal');
+                const collapses = document.querySelectorAll('[data-bs-toggle="collapse"]');
+                
+                // Interactive elements that might need Bootstrap
+                const buttons = document.querySelectorAll('.btn');
+                const forms = document.querySelectorAll('form');
+                const inputs = document.querySelectorAll('.form-control, .form-select');
+                const cards = document.querySelectorAll('.card');
+                const badges = document.querySelectorAll('.badge');
+                const alerts = document.querySelectorAll('.alert');
+                
+                console.log(`📊 Bootstrap Components:`);
+                console.log(`   📝 Tooltips: ${tooltips.length}`);
+                console.log(`   📋 Popovers: ${popovers.length}`);
+                console.log(`   🔻 Dropdowns: ${dropdowns.length}`);
+                console.log(`   🍞 Toasts: ${toasts.length}`);
+                console.log(`   🪟 Modals: ${modals.length}`);
+                console.log(`   📁 Collapses: ${collapses.length}`);
+                
+                console.log(`🎨 UI Elements:`);
+                console.log(`   🔘 Buttons: ${buttons.length}`);
+                console.log(`   📋 Forms: ${forms.length}`);
+                console.log(`   📝 Inputs: ${inputs.length}`);
+                console.log(`   🃏 Cards: ${cards.length}`);
+                console.log(`   🏷️ Badges: ${badges.length}`);
+                console.log(`   ⚠️ Alerts: ${alerts.length}`);
+                
+                let activeTooltips = 0, activePopovers = 0, activeDropdowns = 0, activeToasts = 0, activeModals = 0, activeCollapses = 0;
+                
+                tooltips.forEach(el => {
+                    if (bootstrap.Tooltip.getInstance(el)) activeTooltips++;
+                });
+                
+                popovers.forEach(el => {
+                    if (bootstrap.Popover.getInstance(el)) activePopovers++;
+                });
+                
+                dropdowns.forEach(el => {
+                    if (bootstrap.Dropdown.getInstance(el)) activeDropdowns++;
+                });
+                
+                toasts.forEach(el => {
+                    if (bootstrap.Toast.getInstance(el)) activeToasts++;
+                });
+                
+                modals.forEach(el => {
+                    if (bootstrap.Modal.getInstance(el)) activeModals++;
+                });
+                
+                collapses.forEach(el => {
+                    if (bootstrap.Collapse.getInstance(el)) activeCollapses++;
+                });
+                
+                console.log(`🎯 Active instances:`);
+                console.log(`   📝 Active Tooltips: ${activeTooltips}/${tooltips.length}`);
+                console.log(`   📋 Active Popovers: ${activePopovers}/${popovers.length}`);
+                console.log(`   🔻 Active Dropdowns: ${activeDropdowns}/${dropdowns.length}`);
+                console.log(`   🍞 Active Toasts: ${activeToasts}/${toasts.length}`);
+                console.log(`   🪟 Active Modals: ${activeModals}/${modals.length}`);
+                console.log(`   📁 Active Collapses: ${activeCollapses}/${collapses.length}`);
+                
+                // Check for orphaned elements (elements that should have instances but don't)
+                const orphanedElements = [];
+                if (tooltips.length > activeTooltips) orphanedElements.push(`${tooltips.length - activeTooltips} tooltips`);
+                if (popovers.length > activePopovers) orphanedElements.push(`${popovers.length - activePopovers} popovers`);
+                if (dropdowns.length > activeDropdowns) orphanedElements.push(`${dropdowns.length - activeDropdowns} dropdowns`);
+                
+                if (orphanedElements.length > 0) {
+                    console.warn(`⚠️ Orphaned elements detected: ${orphanedElements.join(', ')}`);
+                }
+                
+                console.log(`🔗 Navigation Count: ${this.navigationCount}`);
+                console.log(`🌍 Current URL: ${window.location.pathname}`);
+                console.log(`=== END ANALYSIS ===\n`);
+            },
+            
+            testBootstrapComponents: function() {
+                console.log('\n🧪 === BOOTSTRAP COMPONENT TEST ===');
+                
+                // Test tooltips
+                const tooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+                console.log(`Testing ${tooltips.length} tooltips...`);
+                let workingTooltips = 0;
+                tooltips.forEach((tooltip, index) => {
+                    try {
+                        const instance = bootstrap.Tooltip.getInstance(tooltip);
+                        if (instance) {
+                            instance.show();
+                            setTimeout(() => instance.hide(), 500);
+                            workingTooltips++;
+                        }
+                    } catch (error) {
+                        console.error(`Tooltip ${index} failed:`, error);
+                    }
+                });
+                
+                // Test dropdowns
+                const dropdowns = document.querySelectorAll('.dropdown-toggle');
+                console.log(`Testing ${dropdowns.length} dropdowns...`);
+                let workingDropdowns = 0;
+                dropdowns.forEach((dropdown, index) => {
+                    try {
+                        const instance = bootstrap.Dropdown.getInstance(dropdown);
+                        if (instance) {
+                            workingDropdowns++;
+                        }
+                    } catch (error) {
+                        console.error(`Dropdown ${index} failed:`, error);
+                    }
+                });
+                
+                console.log(`🎯 Test Results:`);
+                console.log(`   📝 Working Tooltips: ${workingTooltips}/${tooltips.length}`);
+                console.log(`   🔻 Working Dropdowns: ${workingDropdowns}/${dropdowns.length}`);
+                console.log(`=== END TEST ===\n`);
+                
+                // Make test available globally
+                window.testBootstrap = () => this.testBootstrapComponents();
             },
             
             addLoadingIndicator: function() {
@@ -2409,55 +2562,81 @@
                 console.log('SPA: 🧹 Disposing all Bootstrap components before content replacement...');
                 
                 try {
+                    let disposedCount = 0;
+                    
                     // Dispose all tooltips globally
-                    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+                    const tooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+                    console.log(`SPA: 🔍 Found ${tooltips.length} tooltip elements to dispose`);
+                    tooltips.forEach(el => {
                         const instance = bootstrap.Tooltip.getInstance(el);
                         if (instance) {
                             instance.dispose();
+                            disposedCount++;
+                            console.log('SPA: 📝 Disposed tooltip:', el);
                         }
                     });
                     
                     // Dispose all popovers globally
-                    document.querySelectorAll('[data-bs-toggle="popover"]').forEach(el => {
+                    const popovers = document.querySelectorAll('[data-bs-toggle="popover"]');
+                    console.log(`SPA: 🔍 Found ${popovers.length} popover elements to dispose`);
+                    popovers.forEach(el => {
                         const instance = bootstrap.Popover.getInstance(el);
                         if (instance) {
                             instance.dispose();
+                            disposedCount++;
+                            console.log('SPA: 📋 Disposed popover:', el);
                         }
                     });
                     
                     // Dispose all dropdowns globally
-                    document.querySelectorAll('.dropdown-toggle').forEach(el => {
+                    const dropdowns = document.querySelectorAll('.dropdown-toggle');
+                    console.log(`SPA: 🔍 Found ${dropdowns.length} dropdown elements to dispose`);
+                    dropdowns.forEach(el => {
                         const instance = bootstrap.Dropdown.getInstance(el);
                         if (instance) {
                             instance.dispose();
+                            disposedCount++;
+                            console.log('SPA: 🔻 Disposed dropdown:', el);
                         }
                     });
                     
                     // Dispose all toasts globally
-                    document.querySelectorAll('.toast').forEach(el => {
+                    const toasts = document.querySelectorAll('.toast');
+                    console.log(`SPA: 🔍 Found ${toasts.length} toast elements to dispose`);
+                    toasts.forEach(el => {
                         const instance = bootstrap.Toast.getInstance(el);
                         if (instance) {
                             instance.dispose();
+                            disposedCount++;
+                            console.log('SPA: 🍞 Disposed toast:', el);
                         }
                     });
                     
                     // Dispose all modals globally
-                    document.querySelectorAll('.modal').forEach(el => {
+                    const modals = document.querySelectorAll('.modal');
+                    console.log(`SPA: 🔍 Found ${modals.length} modal elements to dispose`);
+                    modals.forEach(el => {
                         const instance = bootstrap.Modal.getInstance(el);
                         if (instance) {
                             instance.dispose();
+                            disposedCount++;
+                            console.log('SPA: 🪟 Disposed modal:', el);
                         }
                     });
                     
                     // Dispose all collapses globally
-                    document.querySelectorAll('[data-bs-toggle="collapse"]').forEach(el => {
+                    const collapses = document.querySelectorAll('[data-bs-toggle="collapse"]');
+                    console.log(`SPA: 🔍 Found ${collapses.length} collapse elements to dispose`);
+                    collapses.forEach(el => {
                         const instance = bootstrap.Collapse.getInstance(el);
                         if (instance) {
                             instance.dispose();
+                            disposedCount++;
+                            console.log('SPA: 📁 Disposed collapse:', el);
                         }
                     });
                     
-                    console.log('SPA: ✅ All Bootstrap components disposed successfully');
+                    console.log(`SPA: ✅ Total Bootstrap components disposed: ${disposedCount}`);
                 } catch (error) {
                     console.error('SPA: ❌ Error during Bootstrap component disposal:', error);
                 }
@@ -2467,63 +2646,91 @@
                 console.log('SPA: 🚀 Initializing Bootstrap components in scope:', container === document ? 'document' : 'container');
                 
                 try {
+                    let initializedCount = 0;
+                    
                     // Initialize tooltips only in the specified container
                     const tooltips = container.querySelectorAll('[data-bs-toggle="tooltip"]');
+                    console.log(`SPA: 🔍 Found ${tooltips.length} tooltip elements to initialize`);
                     tooltips.forEach(tooltip => {
-                        // Don't reinitialize if already initialized
-                        if (!bootstrap.Tooltip.getInstance(tooltip)) {
+                        // Check if already initialized
+                        const existingInstance = bootstrap.Tooltip.getInstance(tooltip);
+                        if (!existingInstance) {
                             new bootstrap.Tooltip(tooltip, {
                                 animation: true,
                                 delay: { show: 100, hide: 100 }
                             });
+                            initializedCount++;
+                            console.log('SPA: 📝 Initialized tooltip:', tooltip);
+                        } else {
+                            console.log('SPA: ⚠️ Tooltip already initialized:', tooltip);
                         }
                     });
-                    console.log(`SPA: 📝 Initialized ${tooltips.length} tooltips`);
                     
                     // Initialize popovers only in the specified container
                     const popovers = container.querySelectorAll('[data-bs-toggle="popover"]');
+                    console.log(`SPA: 🔍 Found ${popovers.length} popover elements to initialize`);
                     popovers.forEach(popover => {
-                        if (!bootstrap.Popover.getInstance(popover)) {
+                        const existingInstance = bootstrap.Popover.getInstance(popover);
+                        if (!existingInstance) {
                             new bootstrap.Popover(popover, {
                                 animation: true,
                                 trigger: 'hover focus'
                             });
+                            initializedCount++;
+                            console.log('SPA: 📋 Initialized popover:', popover);
+                        } else {
+                            console.log('SPA: ⚠️ Popover already initialized:', popover);
                         }
                     });
-                    console.log(`SPA: 📋 Initialized ${popovers.length} popovers`);
                     
                     // Initialize dropdowns only in the specified container
                     const dropdowns = container.querySelectorAll('.dropdown-toggle');
+                    console.log(`SPA: 🔍 Found ${dropdowns.length} dropdown elements to initialize`);
                     dropdowns.forEach(dropdown => {
-                        if (!bootstrap.Dropdown.getInstance(dropdown)) {
+                        const existingInstance = bootstrap.Dropdown.getInstance(dropdown);
+                        if (!existingInstance) {
                             new bootstrap.Dropdown(dropdown);
+                            initializedCount++;
+                            console.log('SPA: 🔻 Initialized dropdown:', dropdown);
+                        } else {
+                            console.log('SPA: ⚠️ Dropdown already initialized:', dropdown);
                         }
                     });
-                    console.log(`SPA: 🔻 Initialized ${dropdowns.length} dropdowns`);
                     
                     // Initialize any new toasts only in the specified container
                     const toastElements = container.querySelectorAll('.toast');
+                    console.log(`SPA: 🔍 Found ${toastElements.length} toast elements to initialize`);
                     toastElements.forEach(toast => {
-                        if (!bootstrap.Toast.getInstance(toast)) {
+                        const existingInstance = bootstrap.Toast.getInstance(toast);
+                        if (!existingInstance) {
                             const bsToast = new bootstrap.Toast(toast, {
                                 delay: parseInt(toast.getAttribute('data-delay') || 5000, 10)
                             });
                             if (toast.classList.contains('show-on-load')) {
                                 bsToast.show();
                             }
+                            initializedCount++;
+                            console.log('SPA: 🍞 Initialized toast:', toast);
+                        } else {
+                            console.log('SPA: ⚠️ Toast already initialized:', toast);
                         }
                     });
-                    console.log(`SPA: 🍞 Initialized ${toastElements.length} toasts`);
                     
-                    console.log('SPA: ✅ Bootstrap components initialized successfully');
+                    console.log(`SPA: ✅ Total Bootstrap components initialized: ${initializedCount}`);
+                    console.log('SPA: 🎯 Bootstrap component initialization completed successfully');
                 } catch (error) {
                     console.error('SPA: ❌ Error during Bootstrap component initialization:', error);
                 }
             },
             
             loadContent: function(url, updateHistory = true) {
+                this.navigationCount++;
+                console.log(`\n🚀 === SPA NAVIGATION #${this.navigationCount} ===`);
                 console.log('SPA: Loading content for URL:', url);
                 this.showLoading();
+                
+                // Analyze state before disposal
+                this.analyzeBootstrapState('BEFORE_DISPOSAL');
                 
                 // Ensure theme is maintained during transition
                 const currentTheme = localStorage.getItem('helpdesk-theme') || 'light';
@@ -2534,6 +2741,9 @@
                 
                 // CRITICAL: Dispose ALL Bootstrap components before any DOM manipulation
                 this.disposeAllBootstrapComponents();
+                
+                // Analyze state after disposal
+                this.analyzeBootstrapState('AFTER_DISPOSAL');
                 
                 // Fetch new content
                 fetch(url, {
@@ -2620,6 +2830,9 @@
                             themeElements.forEach(el => el.setAttribute('data-theme', currentTheme));
                             
                             console.log('SPA: Content replaced successfully');
+                            
+                            // Analyze state after content replacement
+                            this.analyzeBootstrapState('AFTER_CONTENT_REPLACEMENT');
                         });
                         
                         // Update page title
@@ -2638,6 +2851,9 @@
                             // Initialize Bootstrap components ONLY in the content area
                             this.initializeBootstrapComponents(currentContent);
                             
+                            // Analyze state after initialization
+                            this.analyzeBootstrapState('AFTER_INITIALIZATION');
+                            
                             // Then reinitialize other components
                             this.reinitializeComponents();
                             
@@ -2647,7 +2863,7 @@
                             // Scroll to top smoothly
                             window.scrollTo({ top: 0, behavior: 'smooth' });
                             
-                            console.log('SPA: Navigation completed successfully');
+                            console.log(`✅ === SPA NAVIGATION #${this.navigationCount} COMPLETED ===\n`);
                         }, 50);
                     } else {
                         throw new Error('Content container not found in response');
