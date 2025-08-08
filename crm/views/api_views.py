@@ -13,8 +13,16 @@ from django.views.decorators.http import require_http_methods
 def user_contact_info(request, user_id):
     """
     API endpoint to get user contact information for popup display
+    Only accessible to non-client users
     """
     try:
+        # Check if user has permission to view contact information
+        if request.user.profile.role == 'client':
+            return JsonResponse({
+                'success': False,
+                'error': 'Brak uprawnień do przeglądania informacji kontaktowych'
+            }, status=403)
+        
         user = get_object_or_404(User, id=user_id)
         
         # Build full name

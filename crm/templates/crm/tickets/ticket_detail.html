@@ -411,6 +411,7 @@
                 <div class="row mb-3">
                     <div class="col-md-3 fw-bold">Zgłaszający:</div>
                     <div class="col-md-9">
+                        {% if user.profile.role != 'client' %}
                         <span class="user-name-clickable" 
                               data-user-id="{{ ticket.created_by.id }}" 
                               data-username="{{ ticket.created_by.username }}"
@@ -421,6 +422,15 @@
                                 {{ ticket.created_by.username }}
                             {% endif %}
                         </span>
+                        {% else %}
+                        <span>
+                            {% if ticket.created_by.first_name or ticket.created_by.last_name %}
+                                {{ ticket.created_by.first_name }} {{ ticket.created_by.last_name }}
+                            {% else %}
+                                {{ ticket.created_by.username }}
+                            {% endif %}
+                        </span>
+                        {% endif %}
                         {% if ticket.created_by.profile.role == 'admin' %}
                             <span class="badge bg-danger">Admin</span>
                         {% elif ticket.created_by.profile.role == 'superagent' %}
@@ -438,6 +448,7 @@
                     <div class="col-md-3 fw-bold">Przypisane do:</div>
                     <div class="col-md-9">
                     {% if ticket.assigned_to %}
+                        {% if user.profile.role != 'client' %}
                         <span class="user-name-clickable" 
                               data-user-id="{{ ticket.assigned_to.id }}" 
                               data-username="{{ ticket.assigned_to.username }}"
@@ -448,6 +459,15 @@
                                 {{ ticket.assigned_to.username }}
                             {% endif %}
                         </span>
+                        {% else %}
+                        <span>
+                            {% if ticket.assigned_to.first_name or ticket.assigned_to.last_name %}
+                                {{ ticket.assigned_to.first_name }} {{ ticket.assigned_to.last_name }}
+                            {% else %}
+                                {{ ticket.assigned_to.username }}
+                            {% endif %}
+                        </span>
+                        {% endif %}
                         {% if ticket.assigned_to.profile.role == 'admin' %}
                             <span class="badge bg-danger">Admin</span>
                         {% elif ticket.assigned_to.profile.role == 'superagent' %}
@@ -507,6 +527,7 @@
                             <i class="fas fa-file"></i> 
                             <a href="{% url 'serve_attachment' attachment.id %}" target="_blank">{{ attachment.filename }}</a>
                             <small class="text-muted ms-2">(Dodane przez: 
+                            {% if user.profile.role != 'client' %}
                             <span class="user-name-clickable" 
                                   data-user-id="{{ attachment.uploaded_by.id }}" 
                                   data-username="{{ attachment.uploaded_by.username }}"
@@ -516,7 +537,16 @@
                                 {% else %}
                                     {{ attachment.uploaded_by.username }}
                                 {% endif %}
-                            </span>, {{ attachment.uploaded_at|date:"d.m.Y H:i" }})</small>
+                            </span>
+                            {% else %}
+                            <span>
+                                {% if attachment.uploaded_by.first_name or attachment.uploaded_by.last_name %}
+                                    {{ attachment.uploaded_by.first_name }} {{ attachment.uploaded_by.last_name }}
+                                {% else %}
+                                    {{ attachment.uploaded_by.username }}
+                                {% endif %}
+                            </span>
+                            {% endif %}, {{ attachment.uploaded_at|date:"d.m.Y H:i" }})</small>
                         </div>
                     </li>
                     {% endfor %}
@@ -536,6 +566,7 @@
                 <div class="media mb-3 p-3 {% if comment.author == ticket.created_by %}bg-light{% endif %} border-left-user-role-{{ comment.author.profile.role }}">
                     <div class="media-body">
                         <h5 class="mt-0">
+                            {% if user.profile.role != 'client' %}
                             <span class="user-name-clickable" 
                                   data-user-id="{{ comment.author.id }}" 
                                   data-username="{{ comment.author.username }}"
@@ -546,6 +577,15 @@
                                     {{ comment.author.username }}
                                 {% endif %}
                             </span>
+                            {% else %}
+                            <span>
+                                {% if comment.author.first_name or comment.author.last_name %}
+                                    {{ comment.author.first_name }} {{ comment.author.last_name }}
+                                {% else %}
+                                    {{ comment.author.username }}
+                                {% endif %}
+                            </span>
+                            {% endif %}
                             {% if comment.author.profile.role == 'admin' %}
                                 <span class="badge bg-danger">Admin</span>
                             {% elif comment.author.profile.role == 'superagent' %}
@@ -639,6 +679,7 @@
                         <div class="timeline-content">
                             <h3 class="timeline-title">Utworzono zgłoszenie</h3>
                             <p>{{ ticket.created_at|date:"d.m.Y H:i" }} - 
+                            {% if user.profile.role != 'client' %}
                             <span class="user-name-clickable" 
                                   data-user-id="{{ ticket.created_by.id }}" 
                                   data-username="{{ ticket.created_by.username }}"
@@ -649,6 +690,15 @@
                                     {{ ticket.created_by.username }}
                                 {% endif %}
                             </span>
+                            {% else %}
+                            <span>
+                                {% if ticket.created_by.first_name or ticket.created_by.last_name %}
+                                    {{ ticket.created_by.first_name }} {{ ticket.created_by.last_name }}
+                                {% else %}
+                                    {{ ticket.created_by.username }}
+                                {% endif %}
+                            </span>
+                            {% endif %}
                             {% if ticket.created_by.profile.role == 'admin' %}
                                 <span class="badge bg-danger">Admin</span>
                             {% elif ticket.created_by.profile.role == 'superagent' %}
@@ -671,6 +721,7 @@
                             <div class="timeline-content">
                                 <h3 class="timeline-title">Aktualizacja zgłoszenia</h3>
                                 <p>{{ activity.created_at|date:"d.m.Y H:i" }} - 
+                                {% if user.profile.role != 'client' %}
                                 <span class="user-name-clickable" 
                                       data-user-id="{{ activity.user.id }}" 
                                       data-username="{{ activity.user.username }}"
@@ -681,6 +732,15 @@
                                         {{ activity.user.username }}
                                     {% endif %}
                                 </span>
+                                {% else %}
+                                <span>
+                                    {% if activity.user.first_name or activity.user.last_name %}
+                                        {{ activity.user.first_name }} {{ activity.user.last_name }}
+                                    {% else %}
+                                        {{ activity.user.username }}
+                                    {% endif %}
+                                </span>
+                                {% endif %}
                                 {% if activity.user.profile.role == 'admin' %}
                                     <span class="badge bg-danger">Admin</span>
                                 {% elif activity.user.profile.role == 'superagent' %}
@@ -704,6 +764,7 @@
                             <div class="timeline-content">
                                 <h3 class="timeline-title">Dodano odpowiedź</h3>
                                 <p>{{ activity.created_at|date:"d.m.Y H:i" }} - 
+                                {% if user.profile.role != 'client' %}
                                 <span class="user-name-clickable" 
                                       data-user-id="{{ activity.user.id }}" 
                                       data-username="{{ activity.user.username }}"
@@ -714,6 +775,15 @@
                                         {{ activity.user.username }}
                                     {% endif %}
                                 </span>
+                                {% else %}
+                                <span>
+                                    {% if activity.user.first_name or activity.user.last_name %}
+                                        {{ activity.user.first_name }} {{ activity.user.last_name }}
+                                    {% else %}
+                                        {{ activity.user.username }}
+                                    {% endif %}
+                                </span>
+                                {% endif %}
                                 {% if activity.user.profile.role == 'admin' %}
                                     <span class="badge bg-danger">Admin</span>
                                 {% elif activity.user.profile.role == 'superagent' %}
@@ -953,6 +1023,7 @@
     });
 </script>
 
+{% if user.profile.role != 'client' %}
 <!-- User Contact Information Modal -->
 <div class="modal fade" id="userContactModal" tabindex="-1" aria-labelledby="userContactModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
@@ -973,7 +1044,7 @@
 </div>
 
 <script>
-    // User contact popup functionality
+    // User contact popup functionality - only for non-client users
     document.addEventListener('DOMContentLoaded', function() {
         const modalElement = document.getElementById('userContactModal');
         let userModal = null;
@@ -1109,6 +1180,7 @@
         });
     });
 </script>
+{% endif %}
 {% endblock %}
 
 {% endblock %}
