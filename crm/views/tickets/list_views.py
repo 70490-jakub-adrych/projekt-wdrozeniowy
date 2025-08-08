@@ -15,16 +15,7 @@ from ...models import Organization, Ticket
 @login_required
 def ticket_list(request):
     """Widok listy zgłoszeń"""
-    # Use effective user for impersonation support
-    from ..impersonation_views import get_effective_user, get_effective_organizations
-    
-    effective_user = get_effective_user(request)
-    if not effective_user:
-        effective_user = request.user
-    
-    effective_organizations = get_effective_organizations(request)
-    
-    user = effective_user  # Use effective user for all logic
+    user = request.user
     role = user.profile.role
     
     # Filtrowanie i sortowanie (wspiera multi-select)
@@ -47,10 +38,10 @@ def ticket_list(request):
     # Może być wiele organizacji
     organization_filters = request.GET.getlist('organization')
     
-    # Get effective user organizations and log their IDs for debugging
-    user_orgs = effective_organizations
+    # Get user organizations and log their IDs for debugging
+    user_orgs = user.profile.organizations.all()
     org_ids = list(user_orgs.values_list('id', flat=True))
-    logger.debug(f"Effective user {user.username} belongs to organizations: {org_ids}")
+    logger.debug(f"User {user.username} belongs to organizations: {org_ids}")
     
     # For admin users, get all organizations for the filter dropdown
     # For agent users, get only organizations they belong to
