@@ -148,6 +148,44 @@
         text-decoration: underline;
     }
     
+    /* Fix modal backdrop issues */
+    .modal-backdrop {
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 1040;
+        width: 100vw;
+        height: 100vh;
+        background-color: #000;
+    }
+    
+    .modal-backdrop.fade {
+        opacity: 0;
+    }
+    
+    .modal-backdrop.show {
+        opacity: 0.5;
+    }
+    
+    /* Prevent body scroll and margin issues */
+    body.modal-open {
+        overflow: hidden;
+        padding-right: 0 !important;
+    }
+    
+    /* Ensure modal is properly positioned */
+    .modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 1050;
+        width: 100%;
+        height: 100%;
+        overflow-x: hidden;
+        overflow-y: auto;
+        outline: 0;
+    }
+    
     /* Mobile-specific adjustments for contact popup */
     @media (max-width: 576px) {
         .modal-dialog {
@@ -919,11 +957,47 @@
 <script>
     // User contact popup functionality
     document.addEventListener('DOMContentLoaded', function() {
-        const userModal = new bootstrap.Modal(document.getElementById('userContactModal'));
+        const modalElement = document.getElementById('userContactModal');
+        let userModal = null;
+        
+        // Initialize modal with proper configuration
+        if (modalElement) {
+            userModal = new bootstrap.Modal(modalElement, {
+                backdrop: true,
+                keyboard: true,
+                focus: true
+            });
+            
+            // Add event listeners for proper cleanup
+            modalElement.addEventListener('hidden.bs.modal', function () {
+                // Force cleanup of backdrop and body classes
+                const backdrop = document.querySelector('.modal-backdrop');
+                if (backdrop) {
+                    backdrop.remove();
+                }
+                
+                // Remove modal-open class from body and reset padding
+                document.body.classList.remove('modal-open');
+                document.body.style.paddingRight = '';
+                document.body.style.overflow = '';
+                
+                // Reset modal body content
+                document.getElementById('userContactModalBody').innerHTML = 
+                    '<div class="text-center"><div class="spinner-border" role="status"><span class="visually-hidden">Ładowanie...</span></div></div>';
+            });
+            
+            // Handle modal show event
+            modalElement.addEventListener('show.bs.modal', function () {
+                // Ensure proper body class management
+                document.body.classList.add('modal-open');
+            });
+        }
         
         // Add click event listeners to all user name elements
         document.querySelectorAll('.user-name-clickable').forEach(function(element) {
             element.addEventListener('click', function() {
+                if (!userModal) return;
+                
                 const userId = this.getAttribute('data-user-id');
                 const username = this.getAttribute('data-username');
                 
@@ -996,6 +1070,24 @@
                         '<div class="alert alert-danger">Wystąpił błąd podczas pobierania informacji</div>';
                 });
             });
+        });
+        
+        // Add global click handler to close modal when clicking outside
+        document.addEventListener('click', function(event) {
+            if (userModal && modalElement.classList.contains('show')) {
+                // Check if click is outside modal content
+                const modalDialog = modalElement.querySelector('.modal-dialog');
+                if (modalDialog && !modalDialog.contains(event.target) && !event.target.closest('.user-name-clickable')) {
+                    userModal.hide();
+                }
+            }
+        });
+        
+        // Add escape key handler
+        document.addEventListener('keydown', function(event) {
+            if (event.key === 'Escape' && userModal && modalElement.classList.contains('show')) {
+                userModal.hide();
+            }
         });
     });
 </script>
