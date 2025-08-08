@@ -148,6 +148,19 @@
         text-decoration: underline;
     }
     
+    /* Organization link styles */
+    .organization-link {
+        color: #0066cc !important;
+        text-decoration: none !important;
+        font-weight: 600;
+        transition: color 0.2s ease;
+    }
+    
+    .organization-link:hover {
+        color: #004499 !important;
+        text-decoration: underline !important;
+    }
+    
     /* Fix modal backdrop issues */
     .modal-backdrop {
         position: fixed;
@@ -388,7 +401,12 @@
                 </div>
                 <div class="row mb-3">
                     <div class="col-md-3 fw-bold">Organizacja:</div>
-                    <div class="col-md-9">{{ ticket.organization.name }}</div>
+                    <div class="col-md-9">
+                        <a href="{% url 'organization_detail' ticket.organization.pk %}" 
+                           class="organization-link">
+                            {{ ticket.organization.name }}
+                        </a>
+                    </div>
                 </div>
                 <div class="row mb-3">
                     <div class="col-md-3 fw-bold">Zgłaszający:</div>
