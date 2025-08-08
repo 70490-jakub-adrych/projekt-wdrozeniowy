@@ -2267,6 +2267,9 @@
     <script>
         // SPA Navigation System - keeps navbar, footer, theme persistent
         const SPANavigator = {
+            isReinitializing: false, // Flag to prevent multiple simultaneous reinitializations
+            lastReinitTime: 0, // Timestamp of last reinitialization
+            
             init: function() {
                 this.addLoadingIndicator();
                 this.bindNavigation();
@@ -2634,9 +2637,8 @@
                     console.log('SPA: Calling BetulaUI.reinitialize...');
                     window.BetulaUI.reinitialize();
                 } else {
-                    console.log('SPA: BetulaUI not available, using fallback initialization');
-                    // Fallback to manual initialization
-                    this.reinitializeUIEnhancements();
+                    console.log('SPA: BetulaUI not available, will be handled by spaContentLoaded event');
+                    // Don't call fallback here - let the spaContentLoaded event handle it
                 }
                 
                 // Re-initialize any dashboard components (animations, etc.)
@@ -2660,6 +2662,16 @@
             },
             
             reinitializeUIEnhancements: function() {
+                // Prevent multiple rapid reinitializations
+                const now = Date.now();
+                if (this.isReinitializing || (now - this.lastReinitTime) < 200) {
+                    console.log('SPA: ⏳ Skipping UI reinitialization - too recent or already in progress');
+                    return;
+                }
+                
+                this.isReinitializing = true;
+                this.lastReinitTime = now;
+                
                 console.log('SPA: 🔄 Starting comprehensive UI enhancements reinitialization...');
                 
                 try {
@@ -2670,7 +2682,11 @@
                     document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
                         const tooltip = bootstrap.Tooltip.getInstance(el);
                         if (tooltip) {
-                            tooltip.dispose();
+                            try {
+                                tooltip.dispose();
+                            } catch (e) {
+                                console.warn('Failed to dispose tooltip:', e);
+                            }
                         }
                         el.classList.remove('tooltip-initialized');
                     });
@@ -2679,7 +2695,11 @@
                     document.querySelectorAll('[data-bs-toggle="popover"]').forEach(el => {
                         const popover = bootstrap.Popover.getInstance(el);
                         if (popover) {
-                            popover.dispose();
+                            try {
+                                popover.dispose();
+                            } catch (e) {
+                                console.warn('Failed to dispose popover:', e);
+                            }
                         }
                         el.classList.remove('popover-initialized');
                     });
@@ -2688,9 +2708,25 @@
                     document.querySelectorAll('.dropdown-toggle').forEach(el => {
                         const dropdown = bootstrap.Dropdown.getInstance(el);
                         if (dropdown) {
-                            dropdown.dispose();
+                            try {
+                                dropdown.dispose();
+                            } catch (e) {
+                                console.warn('Failed to dispose dropdown:', e);
+                            }
                         }
                         el.classList.remove('dropdown-initialized');
+                    });
+                    
+                    // Dispose all existing toasts
+                    document.querySelectorAll('.toast').forEach(el => {
+                        const toast = bootstrap.Toast.getInstance(el);
+                        if (toast) {
+                            try {
+                                toast.dispose();
+                            } catch (e) {
+                                console.warn('Failed to dispose toast:', e);
+                            }
+                        }
                     });
                     
                     // Reset all initialization classes
@@ -2907,6 +2943,9 @@
                 
                 } catch (error) {
                     console.error('SPA: ❌ Error during UI enhancements reinitialization:', error);
+                } finally {
+                    // Always reset the flag, even if there was an error
+                    this.isReinitializing = false;
                 }
             },
             
@@ -3320,7 +3359,7 @@
             console.log('🔄 SPA content loaded event detected, reinitializing UI enhancements...');
             console.log('🔍 Bootstrap availability check:', !!window.bootstrap);
             
-            // Small delay to ensure DOM is fully updated
+            // Longer delay to ensure DOM is fully updated and avoid conflicts
             setTimeout(() => {
                 if (window.SPANavigator && window.SPANavigator.reinitializeUIEnhancements) {
                     // Additional diagnostics
@@ -3336,7 +3375,7 @@
                     console.error('❌ SPA Navigator not available for UI reinitialization');
                     console.log('🔍 Available SPANavigator methods:', window.SPANavigator ? Object.keys(window.SPANavigator) : 'SPANavigator not found');
                 }
-            }, 50);
+            }, 100); // Increased delay to prevent conflicts
         });
         
         // Add global BetulaUI utilities
@@ -3401,7 +3440,10 @@
             reinitialize: function() {
                 console.log('🔄 BetulaUI: Reinitializing UI components...');
                 if (window.SPANavigator && window.SPANavigator.reinitializeUIEnhancements) {
-                    window.SPANavigator.reinitializeUIEnhancements();
+                    // Use a small delay to prevent conflicts with other reinitializations
+                    setTimeout(() => {
+                        window.SPANavigator.reinitializeUIEnhancements();
+                    }, 25);
                 } else {
                     console.warn('BetulaUI: SPANavigator not available for reinitialization');
                     console.log('🔍 Available SPANavigator methods:', window.SPANavigator ? Object.keys(window.SPANavigator) : 'SPANavigator not found');
