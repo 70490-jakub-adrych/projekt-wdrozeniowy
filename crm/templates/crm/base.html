@@ -85,10 +85,6 @@
         }
         
         /* Global Theme Styles */
-        * {
-            transition: background-color var(--transition-speed), color var(--transition-speed), border-color var(--transition-speed) !important;
-        }
-        
         html {
             margin: 0;
             padding: 0;
@@ -107,6 +103,7 @@
             padding: 0;
             overflow-x: hidden;
             position: relative;
+            transition: background-color var(--transition-speed) ease, color var(--transition-speed) ease;
         }
         
         /* Dark Mode Toggle Button */
@@ -163,18 +160,13 @@
             color: var(--text-color) !important;
         }
         
-        [data-theme="dark"] .bg-white {
+        [data-theme="dark"] .bg-white,
+        [data-theme="dark"] .bg-light {
             background-color: var(--card-bg) !important;
             color: var(--text-color) !important;
         }
         
-        [data-theme="dark"] .bg-secondary {
-            background-color: #424242 !important;
-        }
-        
-        [data-theme="dark"] .bg-primary {
-            background-color: var(--accent-color) !important;
-        }
+        /* Leave colored backgrounds alone - they should stay as-is for status indicators */
         
         [data-theme="dark"] .text-dark {
             color: var(--text-color) !important;
@@ -200,13 +192,7 @@
             border-bottom-color: var(--border-color) !important;
         }
         
-        [data-theme="dark"] .card-footer.bg-white {
-            background-color: var(--card-bg) !important;
-            color: var(--text-color) !important;
-            border-top-color: var(--border-color) !important;
-        }
-        
-        /* Force override for any remaining light backgrounds */
+        [data-theme="dark"] .card-footer.bg-white,
         [data-theme="dark"] .card .bg-light,
         [data-theme="dark"] .card .bg-white {
             background-color: var(--card-bg) !important;
@@ -672,36 +658,20 @@
             color: var(--text-color) !important;
         }
         
-        /* High-priority global dark theme overrides */
-        [data-theme="dark"] * {
+        /* Selective dark theme overrides - preserve Bootstrap component colors */
+        [data-theme="dark"] .card:not(.bg-primary):not(.bg-secondary):not(.bg-success):not(.bg-danger):not(.bg-warning):not(.bg-info):not(.bg-dark),
+        [data-theme="dark"] .card-body:not(.bg-primary):not(.bg-secondary):not(.bg-success):not(.bg-danger):not(.bg-warning):not(.bg-info):not(.bg-dark),
+        [data-theme="dark"] .card-header:not(.bg-primary):not(.bg-secondary):not(.bg-success):not(.bg-danger):not(.bg-warning):not(.bg-info):not(.bg-dark),
+        [data-theme="dark"] .card-footer:not(.bg-primary):not(.bg-secondary):not(.bg-success):not(.bg-danger):not(.bg-warning):not(.bg-info):not(.bg-dark) {
+            background-color: var(--card-bg) !important;
+            color: var(--text-color) !important;
             border-color: var(--border-color) !important;
         }
         
-        [data-theme="dark"] .card,
-        [data-theme="dark"] .card *:not(.badge):not(.btn):not(.alert) {
-            background-color: var(--card-bg) !important;
-            color: var(--text-color) !important;
-        }
-        
-        [data-theme="dark"] .table,
-        [data-theme="dark"] .table * {
+        /* Only override tables that don't have specific background colors */
+        [data-theme="dark"] .table:not(.table-primary):not(.table-secondary):not(.table-success):not(.table-danger):not(.table-warning):not(.table-info) {
             background-color: var(--table-bg) !important;
             color: var(--text-color) !important;
-        }
-        
-        [data-theme="dark"] .table thead th,
-        [data-theme="dark"] .table-light,
-        [data-theme="dark"] .table-light * {
-            background-color: var(--table-hover-bg) !important;
-            color: var(--text-color) !important;
-        }
-        
-        /* Force card headers and footers */
-        [data-theme="dark"] .card-header,
-        [data-theme="dark"] .card-footer {
-            background-color: var(--card-bg) !important;
-            color: var(--text-color) !important;
-            border-color: var(--border-color) !important;
         }
         /* Ensure Bootstrap 5 Close button styling */
         .btn-close {
