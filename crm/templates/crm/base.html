@@ -2568,11 +2568,17 @@
                     const tooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
                     console.log(`SPA: 🔍 Found ${tooltips.length} tooltip elements to dispose`);
                     tooltips.forEach(el => {
-                        const instance = bootstrap.Tooltip.getInstance(el);
-                        if (instance) {
-                            instance.dispose();
-                            disposedCount++;
-                            console.log('SPA: 📝 Disposed tooltip:', el);
+                        try {
+                            const instance = bootstrap.Tooltip.getInstance(el);
+                            if (instance) {
+                                instance.dispose();
+                                disposedCount++;
+                                console.log('SPA: 📝 Disposed tooltip:', el);
+                            } else {
+                                console.log('SPA: 📝 No tooltip instance found for:', el);
+                            }
+                        } catch (e) {
+                            console.log('SPA: 📝 Error disposing tooltip:', e, el);
                         }
                     });
                     
@@ -2580,23 +2586,35 @@
                     const popovers = document.querySelectorAll('[data-bs-toggle="popover"]');
                     console.log(`SPA: 🔍 Found ${popovers.length} popover elements to dispose`);
                     popovers.forEach(el => {
-                        const instance = bootstrap.Popover.getInstance(el);
-                        if (instance) {
-                            instance.dispose();
-                            disposedCount++;
-                            console.log('SPA: 📋 Disposed popover:', el);
+                        try {
+                            const instance = bootstrap.Popover.getInstance(el);
+                            if (instance) {
+                                instance.dispose();
+                                disposedCount++;
+                                console.log('SPA: 📋 Disposed popover:', el);
+                            } else {
+                                console.log('SPA: 📋 No popover instance found for:', el);
+                            }
+                        } catch (e) {
+                            console.log('SPA: 📋 Error disposing popover:', e, el);
                         }
                     });
                     
-                    // Dispose all dropdowns globally
-                    const dropdowns = document.querySelectorAll('.dropdown-toggle');
+                    // Dispose all dropdowns globally - use multiple selectors
+                    const dropdowns = document.querySelectorAll('.dropdown-toggle, [data-bs-toggle="dropdown"]');
                     console.log(`SPA: 🔍 Found ${dropdowns.length} dropdown elements to dispose`);
                     dropdowns.forEach(el => {
-                        const instance = bootstrap.Dropdown.getInstance(el);
-                        if (instance) {
-                            instance.dispose();
-                            disposedCount++;
-                            console.log('SPA: 🔻 Disposed dropdown:', el);
+                        try {
+                            const instance = bootstrap.Dropdown.getInstance(el);
+                            if (instance) {
+                                instance.dispose();
+                                disposedCount++;
+                                console.log('SPA: 🔻 Disposed dropdown:', el);
+                            } else {
+                                console.log('SPA: 🔻 No dropdown instance found for:', el);
+                            }
+                        } catch (e) {
+                            console.log('SPA: 🔻 Error disposing dropdown:', e, el);
                         }
                     });
                     
@@ -2604,11 +2622,17 @@
                     const toasts = document.querySelectorAll('.toast');
                     console.log(`SPA: 🔍 Found ${toasts.length} toast elements to dispose`);
                     toasts.forEach(el => {
-                        const instance = bootstrap.Toast.getInstance(el);
-                        if (instance) {
-                            instance.dispose();
-                            disposedCount++;
-                            console.log('SPA: 🍞 Disposed toast:', el);
+                        try {
+                            const instance = bootstrap.Toast.getInstance(el);
+                            if (instance) {
+                                instance.dispose();
+                                disposedCount++;
+                                console.log('SPA: 🍞 Disposed toast:', el);
+                            } else {
+                                console.log('SPA: 🍞 No toast instance found for:', el);
+                            }
+                        } catch (e) {
+                            console.log('SPA: 🍞 Error disposing toast:', e, el);
                         }
                     });
                     
@@ -2616,11 +2640,17 @@
                     const modals = document.querySelectorAll('.modal');
                     console.log(`SPA: 🔍 Found ${modals.length} modal elements to dispose`);
                     modals.forEach(el => {
-                        const instance = bootstrap.Modal.getInstance(el);
-                        if (instance) {
-                            instance.dispose();
-                            disposedCount++;
-                            console.log('SPA: 🪟 Disposed modal:', el);
+                        try {
+                            const instance = bootstrap.Modal.getInstance(el);
+                            if (instance) {
+                                instance.dispose();
+                                disposedCount++;
+                                console.log('SPA: 🪟 Disposed modal:', el);
+                            } else {
+                                console.log('SPA: 🪟 No modal instance found for:', el);
+                            }
+                        } catch (e) {
+                            console.log('SPA: 🪟 Error disposing modal:', e, el);
                         }
                     });
                     
@@ -2628,11 +2658,17 @@
                     const collapses = document.querySelectorAll('[data-bs-toggle="collapse"]');
                     console.log(`SPA: 🔍 Found ${collapses.length} collapse elements to dispose`);
                     collapses.forEach(el => {
-                        const instance = bootstrap.Collapse.getInstance(el);
-                        if (instance) {
-                            instance.dispose();
-                            disposedCount++;
-                            console.log('SPA: 📁 Disposed collapse:', el);
+                        try {
+                            const instance = bootstrap.Collapse.getInstance(el);
+                            if (instance) {
+                                instance.dispose();
+                                disposedCount++;
+                                console.log('SPA: 📁 Disposed collapse:', el);
+                            } else {
+                                console.log('SPA: 📁 No collapse instance found for:', el);
+                            }
+                        } catch (e) {
+                            console.log('SPA: 📁 Error disposing collapse:', e, el);
                         }
                     });
                     
@@ -2683,7 +2719,7 @@
                         }
                     });
                     
-                    // Initialize dropdowns only in the specified container
+                    // Initialize dropdowns in the specified container
                     const dropdowns = container.querySelectorAll('.dropdown-toggle');
                     console.log(`SPA: 🔍 Found ${dropdowns.length} dropdown elements to initialize`);
                     dropdowns.forEach(dropdown => {
@@ -2696,6 +2732,20 @@
                             console.log('SPA: ⚠️ Dropdown already initialized:', dropdown);
                         }
                     });
+                    
+                    // If we're not initializing the full document, also reinitialize navbar dropdowns
+                    // that were disposed globally but are outside the container scope
+                    if (container !== document) {
+                        const navbarDropdowns = document.querySelectorAll('.navbar .dropdown-toggle');
+                        navbarDropdowns.forEach(dropdown => {
+                            const existingInstance = bootstrap.Dropdown.getInstance(dropdown);
+                            if (!existingInstance) {
+                                new bootstrap.Dropdown(dropdown);
+                                initializedCount++;
+                                console.log('SPA: 🔻 Re-initialized navbar dropdown:', dropdown);
+                            }
+                        });
+                    }
                     
                     // Initialize any new toasts only in the specified container
                     const toastElements = container.querySelectorAll('.toast');
