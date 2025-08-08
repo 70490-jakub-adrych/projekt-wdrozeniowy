@@ -2465,15 +2465,41 @@
                 const currentTheme = localStorage.getItem('helpdesk-theme') || 'light';
                 document.documentElement.setAttribute('data-theme', currentTheme);
                 
+                // Apply theme to all newly loaded content
+                const contentAreas = document.querySelectorAll('.container, .card, .navbar, .footer');
+                contentAreas.forEach(area => {
+                    area.setAttribute('data-theme', currentTheme);
+                });
+                
                 // Reinitialize Bootstrap components
                 if (typeof bootstrap !== 'undefined') {
-                    // Initialize tooltips
-                    const tooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
-                    tooltips.forEach(tooltip => new bootstrap.Tooltip(tooltip));
+                    // Dispose old tooltips first to prevent memory leaks
+                    const oldTooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+                    oldTooltips.forEach(tooltip => {
+                        const instance = bootstrap.Tooltip.getInstance(tooltip);
+                        if (instance) instance.dispose();
+                    });
                     
-                    // Initialize popovers
+                    // Initialize new tooltips
+                    const tooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+                    tooltips.forEach(tooltip => new bootstrap.Tooltip(tooltip, {
+                        animation: true,
+                        delay: { show: 100, hide: 100 }
+                    }));
+                    
+                    // Dispose old popovers first
+                    const oldPopovers = document.querySelectorAll('[data-bs-toggle="popover"]');
+                    oldPopovers.forEach(popover => {
+                        const instance = bootstrap.Popover.getInstance(popover);
+                        if (instance) instance.dispose();
+                    });
+                    
+                    // Initialize new popovers
                     const popovers = document.querySelectorAll('[data-bs-toggle="popover"]');
-                    popovers.forEach(popover => new bootstrap.Popover(popover));
+                    popovers.forEach(popover => new bootstrap.Popover(popover, {
+                        animation: true,
+                        trigger: 'hover focus'
+                    }));
                     
                     // Initialize any new toasts
                     const toastElements = document.querySelectorAll('.toast:not(.processed)');
@@ -2485,6 +2511,9 @@
                         }, 5000);
                     });
                 }
+                
+                // Re-initialize UI enhancement features from ui-enhancements.js
+                this.reinitializeUIEnhancements();
                 
                 // Re-initialize any dashboard components (animations, etc.)
                 this.reinitializeDashboard();
@@ -2498,25 +2527,214 @@
                 }));
             },
             
+            reinitializeUIEnhancements: function() {
+                // Reinitialize button ripple effects
+                const rippleButtons = document.querySelectorAll('.btn-ripple:not(.ripple-initialized)');
+                rippleButtons.forEach(button => {
+                    button.classList.add('ripple-initialized');
+                    button.addEventListener('click', function(e) {
+                        const rect = button.getBoundingClientRect();
+                        const x = e.clientX - rect.left;
+                        const y = e.clientY - rect.top;
+
+                        const ripple = document.createElement('span');
+                        ripple.className = 'ripple';
+                        ripple.style.left = `${x}px`;
+                        ripple.style.top = `${y}px`;
+
+                        button.appendChild(ripple);
+
+                        setTimeout(() => {
+                            ripple.remove();
+                        }, 600);
+                    });
+                });
+                
+                // Reinitialize enhanced dropdown animations
+                const dropdownToggles = document.querySelectorAll('.dropdown-toggle:not(.dropdown-initialized)');
+                dropdownToggles.forEach(dropdown => {
+                    dropdown.classList.add('dropdown-initialized');
+                    dropdown.addEventListener('click', function() {
+                        setTimeout(() => {
+                            const dropdownMenu = dropdown.nextElementSibling;
+                            if (dropdownMenu && dropdownMenu.classList.contains('show')) {
+                                dropdownMenu.classList.add('animated-dropdown');
+                            }
+                        }, 10);
+                    });
+                });
+                
+                // Reinitialize interactive cards
+                const interactiveCards = document.querySelectorAll('.card-interactive:not(.card-initialized)');
+                interactiveCards.forEach(card => {
+                    card.classList.add('card-initialized');
+                    card.addEventListener('mouseenter', function() {
+                        this.classList.add('card-hover-effect');
+                    });
+                    
+                    card.addEventListener('mouseleave', function() {
+                        this.classList.remove('card-hover-effect');
+                    });
+                });
+                
+                // Reinitialize form validation
+                const forms = document.querySelectorAll('.needs-live-validation:not(.validation-initialized)');
+                forms.forEach(form => {
+                    form.classList.add('validation-initialized');
+                    const inputs = form.querySelectorAll('input, select, textarea');
+                    inputs.forEach(input => {
+                        input.addEventListener('blur', function() {
+                            if (this.checkValidity()) {
+                                this.classList.remove('is-invalid');
+                                this.classList.add('is-valid');
+                            } else {
+                                this.classList.remove('is-valid');
+                                this.classList.add('is-invalid');
+                            }
+                        });
+                    });
+                });
+                
+                // Reinitialize counter animations
+                const counterElements = document.querySelectorAll('.animate-counter:not(.counter-initialized)');
+                if (counterElements.length > 0) {
+                    const animateCounter = (counterElement, endValue, duration = 1500) => {
+                        const startValue = 0;
+                        const startTime = performance.now();
+                        const updateCounter = (timestamp) => {
+                            const elapsedTime = timestamp - startTime;
+                            if (elapsedTime < duration) {
+                                const progress = elapsedTime / duration;
+                                const currentValue = Math.round(progress * (endValue - startValue) + startValue);
+                                counterElement.textContent = currentValue;
+                                requestAnimationFrame(updateCounter);
+                            } else {
+                                counterElement.textContent = endValue;
+                            }
+                        };
+                        requestAnimationFrame(updateCounter);
+                    };
+                    
+                    counterElements.forEach(element => {
+                        element.classList.add('counter-initialized');
+                        const endValue = parseInt(element.getAttribute('data-count'), 10);
+                        if (!isNaN(endValue)) {
+                            animateCounter(element, endValue);
+                        }
+                    });
+                }
+                
+                // Reinitialize smooth scroll for anchor links
+                const anchorLinks = document.querySelectorAll('a[href^="#"]:not(.anchor-initialized)');
+                anchorLinks.forEach(anchor => {
+                    anchor.classList.add('anchor-initialized');
+                    anchor.addEventListener('click', function(e) {
+                        const targetId = this.getAttribute('href');
+                        if (targetId === '#') return;
+                        
+                        const targetElement = document.querySelector(targetId);
+                        if (targetElement) {
+                            e.preventDefault();
+                            window.scrollTo({
+                                top: targetElement.offsetTop - 70,
+                                behavior: 'smooth'
+                            });
+                        }
+                    });
+                });
+                
+                // Reinitialize collapsible card headers
+                const collapsibleHeaders = document.querySelectorAll('.card-header-collapsible:not(.collapsible-initialized)');
+                collapsibleHeaders.forEach(header => {
+                    header.classList.add('collapsible-initialized');
+                    header.addEventListener('click', function() {
+                        const cardBody = this.parentElement.querySelector('.card-body');
+                        const icon = this.querySelector('.collapse-icon');
+                        
+                        if (cardBody) {
+                            cardBody.classList.toggle('d-none');
+                            if (icon) {
+                                icon.classList.toggle('fa-chevron-down');
+                                icon.classList.toggle('fa-chevron-up');
+                            }
+                        }
+                    });
+                });
+            },
+            
             reinitializeDashboard: function() {
                 // Dashboard-specific re-initialization
                 const dashboardStatCards = document.querySelectorAll('.stat-card');
                 if (dashboardStatCards.length > 0) {
-                    // Ensure stat cards maintain their hover behavior
+                    // Ensure stat cards maintain their hover behavior and colors
                     dashboardStatCards.forEach(card => {
                         // Force-reapply any custom CSS animations or behaviors
                         card.style.transition = 'all 0.3s ease';
+                        
+                        // Ensure background colors are maintained by re-triggering class application
+                        const colorClasses = ['bg-primary', 'bg-info', 'bg-warning', 'bg-success', 'bg-secondary'];
+                        colorClasses.forEach(colorClass => {
+                            if (card.classList.contains(colorClass)) {
+                                card.classList.remove(colorClass);
+                                // Use requestAnimationFrame to ensure proper re-application
+                                requestAnimationFrame(() => {
+                                    card.classList.add(colorClass);
+                                });
+                            }
+                        });
+                        
+                        // Ensure text color classes are maintained
+                        if (card.classList.contains('text-white')) {
+                            card.classList.remove('text-white');
+                            requestAnimationFrame(() => {
+                                card.classList.add('text-white');
+                            });
+                        }
+                        
+                        // Ensure links within cards maintain their color
+                        const cardLinks = card.querySelectorAll('.stat-card-link');
+                        cardLinks.forEach(link => {
+                            if (link.classList.contains('text-white')) {
+                                link.classList.remove('text-white');
+                                requestAnimationFrame(() => {
+                                    link.classList.add('text-white');
+                                });
+                            }
+                        });
                     });
                 }
                 
                 // Re-initialize any counter animations
                 const counters = document.querySelectorAll('.animate-counter');
                 counters.forEach(counter => {
-                    // Trigger counter animation
+                    // Reset and trigger counter animation
                     counter.style.animation = 'none';
                     setTimeout(() => {
                         counter.style.animation = 'fadeInUp 0.8s ease-out';
                     }, 10);
+                    
+                    // Ensure the counter shows the correct value
+                    const countValue = counter.getAttribute('data-count');
+                    if (countValue) {
+                        counter.textContent = countValue;
+                    }
+                });
+                
+                // Re-initialize dashboard icon animations (ensure they're disabled by default)
+                const animatedIcons = document.querySelectorAll('.stat-card .animate-spin, .stat-card .animate-pulse, .stat-card .animate-shake, .stat-card .animate-float, .stat-card .animate-bounce');
+                animatedIcons.forEach(icon => {
+                    // Ensure animations are disabled by default and only activate on hover
+                    icon.style.animation = 'none';
+                });
+                
+                // Ensure FontAwesome spin is controlled properly
+                const faSpinIcons = document.querySelectorAll('.stat-card .fa-spin');
+                faSpinIcons.forEach(icon => {
+                    icon.classList.remove('fa-spin');
+                    // Re-add the class to ensure it's properly controlled by CSS hover rules
+                    requestAnimationFrame(() => {
+                        icon.classList.add('fa-spin');
+                    });
                 });
             },
             
