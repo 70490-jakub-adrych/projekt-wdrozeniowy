@@ -2564,118 +2564,115 @@
                 try {
                     let disposedCount = 0;
                     
+                    // Enhanced disposal - check multiple ways Bootstrap might be attached
+                    const disposeComponent = (element, componentType, instanceGetter) => {
+                        try {
+                            const instance = instanceGetter(element);
+                            if (instance) {
+                                instance.dispose();
+                                disposedCount++;
+                                console.log(`SPA: ✅ Disposed ${componentType}:`, element);
+                                return true;
+                            } else {
+                                console.log(`SPA: ⚠️ No ${componentType} instance found for:`, element);
+                                return false;
+                            }
+                        } catch (e) {
+                            console.log(`SPA: ❌ Error disposing ${componentType}:`, e, element);
+                            return false;
+                        }
+                    };
+                    
                     // Dispose all tooltips globally
                     const tooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
                     console.log(`SPA: 🔍 Found ${tooltips.length} tooltip elements to dispose`);
-                    tooltips.forEach(el => {
-                        try {
-                            const instance = bootstrap.Tooltip.getInstance(el);
-                            if (instance) {
-                                instance.dispose();
-                                disposedCount++;
-                                console.log('SPA: 📝 Disposed tooltip:', el);
-                            } else {
-                                console.log('SPA: 📝 No tooltip instance found for:', el);
-                            }
-                        } catch (e) {
-                            console.log('SPA: 📝 Error disposing tooltip:', e, el);
-                        }
-                    });
+                    tooltips.forEach(el => disposeComponent(el, 'tooltip', bootstrap.Tooltip.getInstance));
                     
                     // Dispose all popovers globally
                     const popovers = document.querySelectorAll('[data-bs-toggle="popover"]');
-                    console.log(`SPA: 🔍 Found ${popovers.length} popover elements to dispose`);
-                    popovers.forEach(el => {
-                        try {
-                            const instance = bootstrap.Popover.getInstance(el);
-                            if (instance) {
-                                instance.dispose();
-                                disposedCount++;
-                                console.log('SPA: 📋 Disposed popover:', el);
-                            } else {
-                                console.log('SPA: 📋 No popover instance found for:', el);
-                            }
-                        } catch (e) {
-                            console.log('SPA: 📋 Error disposing popover:', e, el);
-                        }
-                    });
+                    console.log(`SPA: � Found ${popovers.length} popover elements to dispose`);
+                    popovers.forEach(el => disposeComponent(el, 'popover', bootstrap.Popover.getInstance));
                     
-                    // Dispose all dropdowns globally - use multiple selectors
+                    // Dispose all dropdowns globally - use comprehensive selectors
                     const dropdowns = document.querySelectorAll('.dropdown-toggle, [data-bs-toggle="dropdown"]');
                     console.log(`SPA: 🔍 Found ${dropdowns.length} dropdown elements to dispose`);
-                    dropdowns.forEach(el => {
-                        try {
-                            const instance = bootstrap.Dropdown.getInstance(el);
-                            if (instance) {
-                                instance.dispose();
-                                disposedCount++;
-                                console.log('SPA: 🔻 Disposed dropdown:', el);
-                            } else {
-                                console.log('SPA: 🔻 No dropdown instance found for:', el);
-                            }
-                        } catch (e) {
-                            console.log('SPA: 🔻 Error disposing dropdown:', e, el);
-                        }
-                    });
+                    dropdowns.forEach(el => disposeComponent(el, 'dropdown', bootstrap.Dropdown.getInstance));
                     
                     // Dispose all toasts globally
                     const toasts = document.querySelectorAll('.toast');
                     console.log(`SPA: 🔍 Found ${toasts.length} toast elements to dispose`);
-                    toasts.forEach(el => {
-                        try {
-                            const instance = bootstrap.Toast.getInstance(el);
-                            if (instance) {
-                                instance.dispose();
-                                disposedCount++;
-                                console.log('SPA: 🍞 Disposed toast:', el);
-                            } else {
-                                console.log('SPA: 🍞 No toast instance found for:', el);
-                            }
-                        } catch (e) {
-                            console.log('SPA: 🍞 Error disposing toast:', e, el);
-                        }
-                    });
+                    toasts.forEach(el => disposeComponent(el, 'toast', bootstrap.Toast.getInstance));
                     
                     // Dispose all modals globally
                     const modals = document.querySelectorAll('.modal');
                     console.log(`SPA: 🔍 Found ${modals.length} modal elements to dispose`);
-                    modals.forEach(el => {
-                        try {
-                            const instance = bootstrap.Modal.getInstance(el);
-                            if (instance) {
-                                instance.dispose();
-                                disposedCount++;
-                                console.log('SPA: 🪟 Disposed modal:', el);
-                            } else {
-                                console.log('SPA: 🪟 No modal instance found for:', el);
-                            }
-                        } catch (e) {
-                            console.log('SPA: 🪟 Error disposing modal:', e, el);
-                        }
-                    });
+                    modals.forEach(el => disposeComponent(el, 'modal', bootstrap.Modal.getInstance));
                     
                     // Dispose all collapses globally
                     const collapses = document.querySelectorAll('[data-bs-toggle="collapse"]');
                     console.log(`SPA: 🔍 Found ${collapses.length} collapse elements to dispose`);
-                    collapses.forEach(el => {
-                        try {
-                            const instance = bootstrap.Collapse.getInstance(el);
-                            if (instance) {
-                                instance.dispose();
-                                disposedCount++;
-                                console.log('SPA: 📁 Disposed collapse:', el);
-                            } else {
-                                console.log('SPA: 📁 No collapse instance found for:', el);
-                            }
-                        } catch (e) {
-                            console.log('SPA: 📁 Error disposing collapse:', e, el);
-                        }
-                    });
+                    collapses.forEach(el => disposeComponent(el, 'collapse', bootstrap.Collapse.getInstance));
+                    
+                    // Additional cleanup - remove any orphaned Bootstrap event listeners
+                    this.cleanupBootstrapEventListeners();
                     
                     console.log(`SPA: ✅ Total Bootstrap components disposed: ${disposedCount}`);
                 } catch (error) {
                     console.error('SPA: ❌ Error during Bootstrap component disposal:', error);
                 }
+            },
+            
+            cleanupBootstrapEventListeners: function() {
+                // Remove any orphaned Bootstrap event listeners that might interfere
+                const elements = document.querySelectorAll('[data-bs-toggle]');
+                elements.forEach(el => {
+                    // Clear any cached data that Bootstrap might have stored
+                    if (el._tooltip) delete el._tooltip;
+                    if (el._popover) delete el._popover;
+                    if (el._dropdown) delete el._dropdown;
+                    if (el._modal) delete el._modal;
+                    if (el._collapse) delete el._collapse;
+                    if (el._toast) delete el._toast;
+                });
+            },
+            
+            executeInlineScripts: function(container) {
+                console.log('SPA: 🔧 Executing inline scripts in new content...');
+                let executedCount = 0;
+                
+                // Find all script tags in the new content
+                const scripts = container.querySelectorAll('script');
+                scripts.forEach(oldScript => {
+                    try {
+                        const newScript = document.createElement('script');
+                        
+                        // Copy attributes
+                        Array.from(oldScript.attributes).forEach(attr => {
+                            newScript.setAttribute(attr.name, attr.value);
+                        });
+                        
+                        if (oldScript.src) {
+                            // External script
+                            newScript.src = oldScript.src;
+                            newScript.onload = () => {
+                                console.log('SPA: ✅ Loaded external script:', oldScript.src);
+                            };
+                        } else {
+                            // Inline script
+                            newScript.textContent = oldScript.textContent;
+                        }
+                        
+                        // Replace old script with new one to execute it
+                        oldScript.parentNode.replaceChild(newScript, oldScript);
+                        executedCount++;
+                        
+                        console.log('SPA: 🔧 Executed script:', oldScript.src || 'inline');
+                    } catch (e) {
+                        console.error('SPA: ❌ Error executing script:', e, oldScript);
+                    }
+                });
+                
+                console.log(`SPA: ✅ Total scripts executed: ${executedCount}`);
             },
             
             initializeBootstrapComponents: function(container = document) {
@@ -2684,86 +2681,100 @@
                 try {
                     let initializedCount = 0;
                     
+                    const initializeComponent = (element, componentType, initializer) => {
+                        try {
+                            const existingInstance = componentType.getInstance(element);
+                            if (!existingInstance) {
+                                const instance = initializer(element);
+                                initializedCount++;
+                                console.log(`SPA: ✅ Initialized ${componentType.name.toLowerCase()}:`, element);
+                                return instance;
+                            } else {
+                                console.log(`SPA: ⚠️ ${componentType.name} already initialized:`, element);
+                                return existingInstance;
+                            }
+                        } catch (e) {
+                            console.error(`SPA: ❌ Error initializing ${componentType.name}:`, e, element);
+                            return null;
+                        }
+                    };
+                    
                     // Initialize tooltips only in the specified container
                     const tooltips = container.querySelectorAll('[data-bs-toggle="tooltip"]');
                     console.log(`SPA: 🔍 Found ${tooltips.length} tooltip elements to initialize`);
                     tooltips.forEach(tooltip => {
-                        // Check if already initialized
-                        const existingInstance = bootstrap.Tooltip.getInstance(tooltip);
-                        if (!existingInstance) {
-                            new bootstrap.Tooltip(tooltip, {
+                        initializeComponent(tooltip, bootstrap.Tooltip, (el) => {
+                            return new bootstrap.Tooltip(el, {
                                 animation: true,
                                 delay: { show: 100, hide: 100 }
                             });
-                            initializedCount++;
-                            console.log('SPA: 📝 Initialized tooltip:', tooltip);
-                        } else {
-                            console.log('SPA: ⚠️ Tooltip already initialized:', tooltip);
-                        }
+                        });
                     });
                     
                     // Initialize popovers only in the specified container
                     const popovers = container.querySelectorAll('[data-bs-toggle="popover"]');
-                    console.log(`SPA: 🔍 Found ${popovers.length} popover elements to initialize`);
+                    console.log(`SPA: � Found ${popovers.length} popover elements to initialize`);
                     popovers.forEach(popover => {
-                        const existingInstance = bootstrap.Popover.getInstance(popover);
-                        if (!existingInstance) {
-                            new bootstrap.Popover(popover, {
+                        initializeComponent(popover, bootstrap.Popover, (el) => {
+                            return new bootstrap.Popover(el, {
                                 animation: true,
                                 trigger: 'hover focus'
                             });
-                            initializedCount++;
-                            console.log('SPA: 📋 Initialized popover:', popover);
-                        } else {
-                            console.log('SPA: ⚠️ Popover already initialized:', popover);
-                        }
+                        });
                     });
                     
                     // Initialize dropdowns in the specified container
-                    const dropdowns = container.querySelectorAll('.dropdown-toggle');
+                    const dropdowns = container.querySelectorAll('.dropdown-toggle, [data-bs-toggle="dropdown"]');
                     console.log(`SPA: 🔍 Found ${dropdowns.length} dropdown elements to initialize`);
                     dropdowns.forEach(dropdown => {
-                        const existingInstance = bootstrap.Dropdown.getInstance(dropdown);
-                        if (!existingInstance) {
-                            new bootstrap.Dropdown(dropdown);
-                            initializedCount++;
-                            console.log('SPA: 🔻 Initialized dropdown:', dropdown);
-                        } else {
-                            console.log('SPA: ⚠️ Dropdown already initialized:', dropdown);
-                        }
+                        initializeComponent(dropdown, bootstrap.Dropdown, (el) => {
+                            return new bootstrap.Dropdown(el);
+                        });
                     });
                     
                     // If we're not initializing the full document, also reinitialize navbar dropdowns
                     // that were disposed globally but are outside the container scope
                     if (container !== document) {
-                        const navbarDropdowns = document.querySelectorAll('.navbar .dropdown-toggle');
+                        const navbarDropdowns = document.querySelectorAll('.navbar .dropdown-toggle, .navbar [data-bs-toggle="dropdown"]');
+                        console.log(`SPA: 🔍 Re-initializing ${navbarDropdowns.length} navbar dropdowns...`);
                         navbarDropdowns.forEach(dropdown => {
-                            const existingInstance = bootstrap.Dropdown.getInstance(dropdown);
-                            if (!existingInstance) {
-                                new bootstrap.Dropdown(dropdown);
-                                initializedCount++;
-                                console.log('SPA: 🔻 Re-initialized navbar dropdown:', dropdown);
-                            }
+                            initializeComponent(dropdown, bootstrap.Dropdown, (el) => {
+                                return new bootstrap.Dropdown(el);
+                            });
                         });
                     }
+                    
+                    // Initialize modals
+                    const modals = container.querySelectorAll('.modal');
+                    console.log(`SPA: 🔍 Found ${modals.length} modal elements to initialize`);
+                    modals.forEach(modal => {
+                        initializeComponent(modal, bootstrap.Modal, (el) => {
+                            return new bootstrap.Modal(el);
+                        });
+                    });
+                    
+                    // Initialize collapses
+                    const collapses = container.querySelectorAll('[data-bs-toggle="collapse"]');
+                    console.log(`SPA: � Found ${collapses.length} collapse elements to initialize`);
+                    collapses.forEach(collapse => {
+                        initializeComponent(collapse, bootstrap.Collapse, (el) => {
+                            return new bootstrap.Collapse(el, { toggle: false });
+                        });
+                    });
                     
                     // Initialize any new toasts only in the specified container
                     const toastElements = container.querySelectorAll('.toast');
                     console.log(`SPA: 🔍 Found ${toastElements.length} toast elements to initialize`);
                     toastElements.forEach(toast => {
-                        const existingInstance = bootstrap.Toast.getInstance(toast);
-                        if (!existingInstance) {
-                            const bsToast = new bootstrap.Toast(toast, {
-                                delay: parseInt(toast.getAttribute('data-delay') || 5000, 10)
+                        initializeComponent(toast, bootstrap.Toast, (el) => {
+                            const bsToast = new bootstrap.Toast(el, {
+                                delay: parseInt(el.getAttribute('data-delay') || 5000, 10)
                             });
-                            if (toast.classList.contains('show-on-load')) {
+                            if (el.classList.contains('show-on-load')) {
                                 bsToast.show();
                             }
-                            initializedCount++;
-                            console.log('SPA: 🍞 Initialized toast:', toast);
-                        } else {
-                            console.log('SPA: ⚠️ Toast already initialized:', toast);
-                        }
+                            return bsToast;
+                        });
                     });
                     
                     console.log(`SPA: ✅ Total Bootstrap components initialized: ${initializedCount}`);
@@ -2881,6 +2892,9 @@
                             
                             console.log('SPA: Content replaced successfully');
                             
+                            // CRITICAL: Execute any inline scripts in the new content
+                            this.executeInlineScripts(currentContent);
+                            
                             // Analyze state after content replacement
                             this.analyzeBootstrapState('AFTER_CONTENT_REPLACEMENT');
                         });
@@ -2898,19 +2912,22 @@
                         setTimeout(() => {
                             console.log('SPA: Reinitializing components...');
                             
-                            // Initialize Bootstrap components ONLY in the content area
+                            // Step 1: Initialize Bootstrap components ONLY in the content area
                             this.initializeBootstrapComponents(currentContent);
                             
-                            // Analyze state after initialization
+                            // Step 2: Analyze state after initialization
                             this.analyzeBootstrapState('AFTER_INITIALIZATION');
                             
-                            // Then reinitialize other components (but NOT Bootstrap ones)
-                            this.reinitializeComponents();
+                            // Step 3: Reinitialize other components that don't conflict with Bootstrap
+                            this.reinitializeNonBootstrapComponents();
                             
-                            // Fix mobile responsiveness after content load
+                            // Step 4: Fix mobile responsiveness after content load
                             this.fixMobileResponsiveness();
                             
-                            // Scroll to top smoothly
+                            // Step 5: Force CSS re-evaluation to ensure styles are applied
+                            this.forceStyleReapplication(currentContent);
+                            
+                            // Step 6: Scroll to top smoothly
                             window.scrollTo({ top: 0, behavior: 'smooth' });
                             
                             console.log(`✅ === SPA NAVIGATION #${this.navigationCount} COMPLETED ===\n`);
@@ -2947,8 +2964,8 @@
                 });
             },
             
-            reinitializeComponents: function() {
-                console.log('SPA: Reinitializing components...');
+            reinitializeNonBootstrapComponents: function() {
+                console.log('SPA: 🔄 Reinitializing non-Bootstrap components...');
                 
                 // Ensure theme is properly applied after content load
                 const currentTheme = localStorage.getItem('helpdesk-theme') || 'light';
@@ -2958,30 +2975,57 @@
                 document.body.setAttribute('data-theme', currentTheme);
                 
                 // Apply theme to all newly loaded content
-                const contentAreas = document.querySelectorAll('.container, .card, .navbar, .footer, .btn, .table, .badge');
-                contentAreas.forEach(area => {
-                    area.setAttribute('data-theme', currentTheme);
+                const newElements = document.querySelectorAll('[data-theme=""], [data-theme="light"], [data-theme="dark"]');
+                newElements.forEach(el => {
+                    el.setAttribute('data-theme', currentTheme);
                 });
                 
-                // Force Bootstrap CSS re-evaluation by triggering a reflow
-                document.body.offsetHeight;
+                // Re-enable any custom form validation
+                this.setupFormValidation();
                 
-                // NOTE: Bootstrap components are already initialized by initializeBootstrapComponents()
-                // We skip Bootstrap component initialization here to avoid conflicts
-                console.log('SPA: Bootstrap components already initialized in scoped container');
+                // Reinitialize any custom UI components (non-Bootstrap)
+                this.initializeCustomComponents();
                 
-                // Re-initialize UI enhancement features from ui-enhancements.js
-                if (window.BetulaUI && window.BetulaUI.reinitialize) {
-                    console.log('SPA: Calling BetulaUI.reinitialize...');
-                    // DISABLE BetulaUI reinitialize during SPA navigation to prevent triple initialization
-                    console.log('SPA: ⚠️ Skipping BetulaUI.reinitialize to prevent triple initialization');
-                } else {
-                    console.log('SPA: BetulaUI not available, will be handled by spaContentLoaded event');
-                    // Don't call fallback here - let the spaContentLoaded event handle it
-                }
+                console.log('SPA: ✅ Non-Bootstrap components reinitialized');
+            },
+            
+            forceStyleReapplication: function(container) {
+                console.log('SPA: 🎨 Forcing style reapplication...');
                 
-                // Re-initialize any dashboard components (animations, etc.)
-                this.reinitializeDashboard();
+                // Force a reflow to ensure all CSS is applied
+                container.offsetHeight;
+                
+                // Ensure Bootstrap CSS classes are properly recognized
+                const bsElements = container.querySelectorAll('.btn, .card, .table, .form-control, .dropdown, .modal');
+                bsElements.forEach(el => {
+                    // Trigger a style recalculation
+                    el.style.display = 'none';
+                    el.offsetHeight; // Force reflow
+                    el.style.display = '';
+                });
+                
+                console.log('SPA: ✅ Style reapplication completed');
+            },
+            
+            setupFormValidation: function() {
+                // Re-setup any custom form validation that might have been lost
+                const forms = document.querySelectorAll('form[data-validate]');
+                forms.forEach(form => {
+                    // Add any custom validation logic here
+                    console.log('SPA: 📝 Setup validation for form:', form);
+                });
+            },
+            
+            initializeCustomComponents: function() {
+                // Initialize any non-Bootstrap custom components
+                console.log('SPA: 🎛️ Initializing custom components...');
+                
+                // Example: Custom date pickers, charts, etc. that aren't Bootstrap
+                // Add your custom component initialization here
+            },
+            
+            reinitializeDashboard: function() {
+                console.log('SPA: 🎛️ Reinitializing dashboard components...');
                 
                 // Re-initialize any form components or interactive elements
                 this.reinitializeInteractiveElements();
@@ -2993,6 +3037,7 @@
                 }, 100);
                 
                 // Trigger a custom event that other scripts can listen to
+                const currentTheme = localStorage.getItem('helpdesk-theme') || 'light';
                 window.dispatchEvent(new CustomEvent('spaContentLoaded', { 
                     detail: { theme: currentTheme } 
                 }));
