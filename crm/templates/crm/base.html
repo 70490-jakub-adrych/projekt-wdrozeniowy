@@ -1998,10 +1998,48 @@
                     const newContent = doc.querySelector('.container.mt-4');
                     
                     if (newContent) {
+                        // Look for a specific content area first, fall back to smart detection
+                        let targetContent = newContent.querySelector('#spa-main-content');
+                        
+                        if (!targetContent) {
+                            // Smart content detection - skip headers and action buttons
+                            const allContent = newContent.innerHTML;
+                            const tempDiv = document.createElement('div');
+                            tempDiv.innerHTML = allContent;
+                            
+                            // Remove common header patterns from the new content
+                            const headers = tempDiv.querySelectorAll('h1, h2, h3, h4');
+                            const actionRows = tempDiv.querySelectorAll('.d-flex.justify-content-between, .d-flex.align-items-center');
+                            
+                            // Remove standalone headers (not inside cards)
+                            headers.forEach(header => {
+                                if (!header.closest('.card')) {
+                                    header.remove();
+                                }
+                            });
+                            
+                            // Remove action button rows (not inside cards)
+                            actionRows.forEach(row => {
+                                if (!row.closest('.card') && (row.querySelector('.btn-danger') || row.querySelector('.btn-primary'))) {
+                                    row.remove();
+                                }
+                            });
+                            
+                            targetContent = tempDiv;
+                        }
+                        
                         // Replace content area
                         const currentContent = document.querySelector('.container.mt-4');
-                        if (currentContent) {
-                            currentContent.innerHTML = newContent.innerHTML;
+                        if (currentContent && targetContent) {
+                            // Keep messages area if it exists
+                            const messagesArea = currentContent.querySelector('.toast-container');
+                            
+                            currentContent.innerHTML = targetContent.innerHTML;
+                            
+                            // Re-add messages area if it was there
+                            if (messagesArea) {
+                                currentContent.insertBefore(messagesArea, currentContent.firstChild);
+                            }
                         }
                         
                         // Update page title
