@@ -35,8 +35,13 @@ def activity_logs(request):
     action_filter = request.GET.get('action', '')
     user_filter = request.GET.get('user', '')
     
-    if action_filter:
+    # Handle multiple action filters (checkbox dropdown)
+    selected_actions = request.GET.getlist('action_multi')
+    if selected_actions:
+        logs = logs.filter(action_type__in=selected_actions)
+    elif action_filter:  # Fallback for single action filter (backward compatibility)
         logs = logs.filter(action_type=action_filter)
+    
     if user_filter:
         logs = logs.filter(user__username__icontains=user_filter)
     
@@ -80,6 +85,8 @@ def activity_logs(request):
     url_params = {}
     if action_filter:
         url_params['action'] = action_filter
+    if selected_actions:
+        url_params['action_multi'] = selected_actions
     if user_filter:
         url_params['user'] = user_filter
     if per_page != 15:
@@ -88,6 +95,8 @@ def activity_logs(request):
     context = {
         'grouped_logs': grouped_logs_page,
         'action_filter': action_filter,
+        'selected_actions': selected_actions,
+        'action_choices': ActivityLog.ACTION_TYPES,
         'user_filter': user_filter,
         'per_page': per_page,
         'url_params': url_params,
