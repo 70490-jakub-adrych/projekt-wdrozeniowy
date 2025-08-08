@@ -1641,7 +1641,7 @@
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container">
             <a class="navbar-brand" href="{% if user.is_authenticated %}{% url 'dashboard' %}{% else %}{% url 'landing_page' %}{% endif %}">
-                <img src="{% static 'crm/img/logo.jpg' %}" alt="BetulaIT Logo">
+                <img src="{% static 'crm/img/logo.png' %}" alt="BetulaIT Logo">
             </a>
             
             <!-- Mobile user info display (outside collapsible area) -->
@@ -1904,6 +1904,188 @@
     <!-- Bootstrap 5 JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
+    <!-- SPA Navigator for seamless navigation -->
+    <script>
+        // SPA Navigation System - keeps navbar, footer, theme persistent
+        const SPANavigator = {
+            init: function() {
+                this.addLoadingIndicator();
+                this.bindNavigation();
+                this.setupPopState();
+            },
+            
+            addLoadingIndicator: function() {
+                // Add loading bar to the page
+                const loadingBar = document.createElement('div');
+                loadingBar.id = 'spa-loading-indicator';
+                loadingBar.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    height: 3px;
+                    background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+                    transform: scaleX(0);
+                    transform-origin: left;
+                    transition: transform 0.3s ease;
+                    z-index: 10000;
+                    opacity: 0;
+                `;
+                document.body.insertBefore(loadingBar, document.body.firstChild);
+            },
+            
+            bindNavigation: function() {
+                // Intercept navigation clicks for main nav links
+                document.addEventListener('click', (e) => {
+                    const link = e.target.closest('a');
+                    if (link && this.shouldInterceptLink(link)) {
+                        e.preventDefault();
+                        this.navigateTo(link.getAttribute('href'));
+                    }
+                });
+            },
+            
+            shouldInterceptLink: function(link) {
+                const href = link.getAttribute('href');
+                // Only intercept internal navigation links, not external or special links
+                return href && 
+                       !href.startsWith('http') && 
+                       !href.startsWith('mailto:') && 
+                       !href.startsWith('tel:') && 
+                       !href.includes('logout') && 
+                       !href.includes('admin') && 
+                       !link.hasAttribute('target') &&
+                       !link.closest('.dropdown-menu') && // Skip dropdown links for now
+                       link.closest('.navbar-nav'); // Only main nav links
+            },
+            
+            setupPopState: function() {
+                // Handle browser back/forward buttons
+                window.addEventListener('popstate', (e) => {
+                    if (e.state && e.state.url) {
+                        this.loadContent(e.state.url, false);
+                    }
+                });
+                
+                // Save current state
+                history.replaceState({ url: window.location.pathname }, '', window.location.pathname);
+            },
+            
+            navigateTo: function(url) {
+                // Update browser history
+                history.pushState({ url: url }, '', url);
+                this.loadContent(url, true);
+            },
+            
+            loadContent: function(url, updateHistory = true) {
+                this.showLoading();
+                
+                // Fetch new content
+                fetch(url, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-SPA-Request': 'true'
+                    }
+                })
+                .then(response => {
+                    if (!response.ok) throw new Error('Network response was not ok');
+                    return response.text();
+                })
+                .then(html => {
+                    // Parse the response to get just the content
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    const newContent = doc.querySelector('.container.mt-4');
+                    
+                    if (newContent) {
+                        // Replace content area
+                        const currentContent = document.querySelector('.container.mt-4');
+                        if (currentContent) {
+                            currentContent.innerHTML = newContent.innerHTML;
+                        }
+                        
+                        // Update page title
+                        const newTitle = doc.querySelector('title');
+                        if (newTitle) {
+                            document.title = newTitle.textContent;
+                        }
+                        
+                        // Update active nav states
+                        this.updateActiveNav(url);
+                        
+                        // Reinitialize any JavaScript components in new content
+                        this.reinitializeComponents();
+                        
+                        // Scroll to top smoothly
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }
+                })
+                .catch(error => {
+                    console.warn('SPA navigation failed, falling back to full page load:', error);
+                    // Fallback to normal navigation
+                    window.location.href = url;
+                })
+                .finally(() => {
+                    this.hideLoading();
+                });
+            },
+            
+            updateActiveNav: function(url) {
+                // Update active states on navigation links
+                document.querySelectorAll('.nav-link').forEach(link => {
+                    link.classList.remove('active');
+                    const linkHref = link.getAttribute('href');
+                    if (linkHref === url || (url.startsWith(linkHref) && linkHref !== '/')) {
+                        link.classList.add('active');
+                    }
+                });
+            },
+            
+            reinitializeComponents: function() {
+                // Reinitialize Bootstrap components
+                if (typeof bootstrap !== 'undefined') {
+                    // Initialize tooltips
+                    const tooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+                    tooltips.forEach(tooltip => new bootstrap.Tooltip(tooltip));
+                    
+                    // Initialize popovers
+                    const popovers = document.querySelectorAll('[data-bs-toggle="popover"]');
+                    popovers.forEach(popover => new bootstrap.Popover(popover));
+                    
+                    // Initialize any new toasts
+                    const toastElements = document.querySelectorAll('.toast:not(.processed)');
+                    toastElements.forEach(toast => {
+                        toast.classList.add('processed');
+                        setTimeout(() => {
+                            const bsToast = new bootstrap.Toast(toast);
+                            bsToast.hide();
+                        }, 5000);
+                    });
+                }
+            },
+            
+            showLoading: function() {
+                const indicator = document.getElementById('spa-loading-indicator');
+                if (indicator) {
+                    indicator.style.opacity = '1';
+                    indicator.style.transform = 'scaleX(1)';
+                }
+            },
+            
+            hideLoading: function() {
+                const indicator = document.getElementById('spa-loading-indicator');
+                if (indicator) {
+                    setTimeout(() => {
+                        indicator.style.transform = 'scaleX(0)';
+                        setTimeout(() => {
+                            indicator.style.opacity = '0';
+                        }, 300);
+                    }, 100);
+                }
+            }
+        };
+    </script>
+    
     <!-- Auto-hide Toast messages and mobile enhancements -->
     <script>
         // Dark Mode Functionality
@@ -2026,6 +2208,9 @@
         document.addEventListener('DOMContentLoaded', function() {
             // Initialize theme manager
             ThemeManager.init();
+            
+            // Initialize SPA Navigator for seamless navigation
+            SPANavigator.init();
             
             // Initialize mobile enhancements
             MobileUtils.initTouchEnhancements();
