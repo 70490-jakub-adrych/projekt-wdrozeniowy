@@ -2316,6 +2316,8 @@
                     href.includes('admin') || 
                     href.includes('download') ||
                     href.includes('export') ||
+                    href.startsWith('javascript:') ||
+                    href.startsWith('#') ||
                     link.hasAttribute('target') ||
                     link.hasAttribute('download')) {
                     return false;
@@ -2329,10 +2331,17 @@
                 
                 // Get current path and new path
                 const currentPath = window.location.pathname;
-                const newPath = href.startsWith('/') ? href : new URL(href, window.location.origin).pathname;
+                let newPath;
                 
-                // Don't intercept if it's the same page
-                if (currentPath === newPath) {
+                try {
+                    newPath = href.startsWith('/') ? href : new URL(href, window.location.origin).pathname;
+                } catch (e) {
+                    console.warn('SPA: Invalid URL:', href);
+                    return false;
+                }
+                
+                // Don't intercept if it's the same page (but allow query parameters)
+                if (currentPath === newPath && !href.includes('?')) {
                     return false;
                 }
                 
@@ -2346,15 +2355,28 @@
                     '/statistics',
                     '/users',
                     '/profile',
-                    '/settings'
+                    '/settings',
+                    '/' // Handle root path (usually dashboard)
                 ];
                 
-                // Check if the new path starts with any SPA-enabled path
-                const isSpaPath = spaEnabledPaths.some(path => 
-                    newPath.startsWith(path + '/') || newPath === path
-                );
+                // Special handling for root path
+                if (newPath === '/' || newPath === '/dashboard' || newPath.startsWith('/dashboard/')) {
+                    console.log('SPA: Intercepting dashboard navigation:', newPath);
+                    return true;
+                }
                 
-                // Intercept if it's a valid SPA path
+                // Check if the new path starts with any SPA-enabled path
+                const isSpaPath = spaEnabledPaths.some(path => {
+                    if (path === '/') return newPath === '/';
+                    return newPath.startsWith(path + '/') || newPath === path;
+                });
+                
+                if (isSpaPath) {
+                    console.log('SPA: Intercepting navigation from', currentPath, 'to', newPath);
+                } else {
+                    console.log('SPA: Not intercepting navigation to', newPath);
+                }
+                
                 return isSpaPath;
             },
             
@@ -2377,64 +2399,102 @@
             },
             
             loadContent: function(url, updateHistory = true) {
+                console.log('SPA: Loading content for URL:', url);
                 this.showLoading();
                 
                 // Ensure theme is maintained during transition
                 const currentTheme = localStorage.getItem('helpdesk-theme') || 'light';
                 document.documentElement.setAttribute('data-theme', currentTheme);
                 
+                // Apply theme to body immediately to prevent flashing
+                document.body.setAttribute('data-theme', currentTheme);
+                
                 // Fetch new content
                 fetch(url, {
                     headers: {
                         'X-Requested-With': 'XMLHttpRequest',
-                        'X-SPA-Request': 'true'
+                        'X-SPA-Request': 'true',
+                        'Cache-Control': 'no-cache'
                     }
                 })
                 .then(response => {
-                    if (!response.ok) throw new Error('Network response was not ok');
+                    console.log('SPA: Response status:', response.status);
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
                     return response.text();
                 })
                 .then(html => {
+                    console.log('SPA: Received HTML, length:', html.length);
+                    
                     // Parse the response to get just the content
                     const parser = new DOMParser();
                     const doc = parser.parseFromString(html, 'text/html');
-                    const newContent = doc.querySelector('.container.mt-4');
+                    
+                    // Try multiple selectors to find content
+                    let newContent = doc.querySelector('.container.mt-4');
+                    if (!newContent) {
+                        newContent = doc.querySelector('main .container');
+                    }
+                    if (!newContent) {
+                        newContent = doc.querySelector('.container');
+                    }
+                    if (!newContent) {
+                        // Extract content block if it exists
+                        const contentBlock = doc.querySelector('[data-content-block]');
+                        if (contentBlock) {
+                            newContent = contentBlock;
+                        }
+                    }
+                    
+                    console.log('SPA: Found content element:', !!newContent);
                     
                     if (newContent) {
-                        // Replace content area
+                        // Get current content container
                         const currentContent = document.querySelector('.container.mt-4');
-                        if (currentContent) {
-                            // Keep messages area if it exists
-                            const messagesArea = currentContent.querySelector('.toast-container');
-                            
-                            // Apply theme to new content before insertion to prevent flash
-                            newContent.setAttribute('data-theme', currentTheme);
-                            
-                            // Clear current content completely
+                        if (!currentContent) {
+                            throw new Error('Current content container not found');
+                        }
+                        
+                        console.log('SPA: Replacing content...');
+                        
+                        // Store current scroll position
+                        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                        
+                        // Keep messages area if it exists
+                        const messagesArea = currentContent.querySelector('.toast-container');
+                        
+                        // Apply theme to new content before insertion
+                        newContent.setAttribute('data-theme', currentTheme);
+                        
+                        // Get the new content HTML
+                        const newContentHTML = newContent.innerHTML;
+                        
+                        // Clear and replace content atomically
+                        requestAnimationFrame(() => {
+                            // Clear current content
                             currentContent.innerHTML = '';
                             
-                            // Add new content
-                            currentContent.innerHTML = newContent.innerHTML;
+                            // Insert new content
+                            currentContent.innerHTML = newContentHTML;
                             
                             // Re-add messages area if it was there
                             if (messagesArea && !currentContent.querySelector('.toast-container')) {
                                 currentContent.insertBefore(messagesArea, currentContent.firstChild);
                             }
                             
-                            // Add spa-loaded class for CSS targeting
-                            currentContent.classList.add('spa-loaded');
+                            // Ensure container classes are maintained
+                            currentContent.classList.add('spa-loaded', 'container', 'mt-4');
                             
-                            // Ensure proper responsive classes are maintained
-                            if (!currentContent.classList.contains('container')) {
-                                currentContent.classList.add('container');
-                            }
-                            if (!currentContent.classList.contains('mt-4')) {
-                                currentContent.classList.add('mt-4');
-                            }
-                            
-                            // Immediately apply theme to new content
+                            // Apply theme attributes to ensure consistency
                             currentContent.setAttribute('data-theme', currentTheme);
-                        }
+                            
+                            // Apply theme to all child elements that might need it
+                            const themeElements = currentContent.querySelectorAll('.card, .navbar, .btn, .table');
+                            themeElements.forEach(el => el.setAttribute('data-theme', currentTheme));
+                            
+                            console.log('SPA: Content replaced successfully');
+                        });
                         
                         // Update page title
                         const newTitle = doc.querySelector('title');
@@ -2445,20 +2505,34 @@
                         // Update active nav states
                         this.updateActiveNav(url);
                         
-                        // Reinitialize any JavaScript components in new content
-                        this.reinitializeComponents();
-                        
-                        // Fix mobile responsiveness after content load
-                        this.fixMobileResponsiveness();
-                        
-                        // Scroll to top smoothly
-                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                        // Reinitialize components after a brief delay to ensure DOM is ready
+                        setTimeout(() => {
+                            console.log('SPA: Reinitializing components...');
+                            this.reinitializeComponents();
+                            
+                            // Fix mobile responsiveness after content load
+                            this.fixMobileResponsiveness();
+                            
+                            // Scroll to top smoothly
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                            
+                            console.log('SPA: Navigation completed successfully');
+                        }, 50);
+                    } else {
+                        throw new Error('Content container not found in response');
                     }
                 })
                 .catch(error => {
-                    console.warn('SPA navigation failed, falling back to full page load:', error);
-                    // Fallback to normal navigation
-                    window.location.href = url;
+                    console.error('SPA navigation failed:', error);
+                    console.log('SPA: Falling back to full page load for URL:', url);
+                    
+                    // Show a brief message before fallback
+                    this.hideLoading();
+                    
+                    // Fallback to normal navigation with a small delay to show the error briefly
+                    setTimeout(() => {
+                        window.location.href = url;
+                    }, 100);
                 })
                 .finally(() => {
                     this.hideLoading();
@@ -2477,18 +2551,28 @@
             },
             
             reinitializeComponents: function() {
+                console.log('SPA: Reinitializing components...');
+                
                 // Ensure theme is properly applied after content load
                 const currentTheme = localStorage.getItem('helpdesk-theme') || 'light';
+                
+                // Apply theme to document root and body
                 document.documentElement.setAttribute('data-theme', currentTheme);
+                document.body.setAttribute('data-theme', currentTheme);
                 
                 // Apply theme to all newly loaded content
-                const contentAreas = document.querySelectorAll('.container, .card, .navbar, .footer');
+                const contentAreas = document.querySelectorAll('.container, .card, .navbar, .footer, .btn, .table, .badge');
                 contentAreas.forEach(area => {
                     area.setAttribute('data-theme', currentTheme);
                 });
                 
+                // Force Bootstrap CSS re-evaluation by triggering a reflow
+                document.body.offsetHeight;
+                
                 // Reinitialize Bootstrap components
                 if (typeof bootstrap !== 'undefined') {
+                    console.log('SPA: Reinitializing Bootstrap components...');
+                    
                     // Dispose old tooltips first to prevent memory leaks
                     const oldTooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
                     oldTooltips.forEach(tooltip => {
@@ -2517,21 +2601,36 @@
                         trigger: 'hover focus'
                     }));
                     
+                    // Reinitialize dropdowns
+                    const dropdowns = document.querySelectorAll('.dropdown-toggle');
+                    dropdowns.forEach(dropdown => {
+                        const existingInstance = bootstrap.Dropdown.getInstance(dropdown);
+                        if (existingInstance) existingInstance.dispose();
+                        new bootstrap.Dropdown(dropdown);
+                    });
+                    
                     // Initialize any new toasts
                     const toastElements = document.querySelectorAll('.toast:not(.processed)');
                     toastElements.forEach(toast => {
                         toast.classList.add('processed');
-                        setTimeout(() => {
-                            const bsToast = new bootstrap.Toast(toast);
-                            bsToast.hide();
-                        }, 5000);
+                        const bsToast = new bootstrap.Toast(toast, {
+                            autohide: toast.getAttribute('data-autohide') !== 'false',
+                            delay: parseInt(toast.getAttribute('data-delay') || 5000, 10)
+                        });
+                        if (toast.classList.contains('show-on-load')) {
+                            bsToast.show();
+                        }
                     });
+                } else {
+                    console.warn('SPA: Bootstrap not available for component initialization');
                 }
                 
                 // Re-initialize UI enhancement features from ui-enhancements.js
                 if (window.BetulaUI && window.BetulaUI.reinitialize) {
+                    console.log('SPA: Calling BetulaUI.reinitialize...');
                     window.BetulaUI.reinitialize();
                 } else {
+                    console.log('SPA: BetulaUI not available, using fallback initialization');
                     // Fallback to manual initialization
                     this.reinitializeUIEnhancements();
                 }
@@ -2542,10 +2641,18 @@
                 // Re-initialize any form components or interactive elements
                 this.reinitializeInteractiveElements();
                 
+                // Force a style recalculation to ensure theme is applied
+                setTimeout(() => {
+                    const computedStyle = window.getComputedStyle(document.body);
+                    console.log('SPA: Final theme check - background color:', computedStyle.backgroundColor);
+                }, 100);
+                
                 // Trigger a custom event that other scripts can listen to
                 window.dispatchEvent(new CustomEvent('spaContentLoaded', { 
                     detail: { theme: currentTheme } 
                 }));
+                
+                console.log('SPA: Component reinitialization completed');
             },
             
             reinitializeUIEnhancements: function() {
