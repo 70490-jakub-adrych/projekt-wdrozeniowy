@@ -2002,28 +2002,39 @@
                         let targetContent = newContent.querySelector('#spa-main-content');
                         
                         if (!targetContent) {
-                            // Smart content detection - skip headers and action buttons
+                            // Smart content detection - only remove page headers, not content headers
                             const allContent = newContent.innerHTML;
                             const tempDiv = document.createElement('div');
                             tempDiv.innerHTML = allContent;
                             
-                            // Remove common header patterns from the new content
-                            const headers = tempDiv.querySelectorAll('h1, h2, h3, h4');
-                            const actionRows = tempDiv.querySelectorAll('.d-flex.justify-content-between, .d-flex.align-items-center');
+                            // Only remove the main page header pattern that causes duplication
+                            // Look for the specific pattern: .d-flex.justify-content-between with h1 or h2 + action buttons
+                            const pageHeaders = tempDiv.querySelectorAll('.d-flex.justify-content-between');
                             
-                            // Remove standalone headers (not inside cards)
-                            headers.forEach(header => {
-                                if (!header.closest('.card')) {
-                                    header.remove();
+                            pageHeaders.forEach(headerRow => {
+                                // Check if this looks like a main page header (has h1/h2 + buttons)
+                                const hasMainHeading = headerRow.querySelector('h1, h2');
+                                const hasActionButtons = headerRow.querySelector('.btn');
+                                const isNotInCard = !headerRow.closest('.card');
+                                
+                                // Remove only if it's a main page header pattern outside cards
+                                if (hasMainHeading && hasActionButtons && isNotInCard) {
+                                    headerRow.remove();
                                 }
                             });
                             
-                            // Remove action button rows (not inside cards)
-                            actionRows.forEach(row => {
-                                if (!row.closest('.card') && (row.querySelector('.btn-danger') || row.querySelector('.btn-primary'))) {
-                                    row.remove();
+                            // Also remove standalone h1/h2 at the very beginning if they look like page titles
+                            const firstElements = tempDiv.children;
+                            for (let i = 0; i < Math.min(3, firstElements.length); i++) {
+                                const element = firstElements[i];
+                                if (element && (element.tagName === 'H1' || element.tagName === 'H2')) {
+                                    // Only remove if it's not inside a card and appears to be a page title
+                                    if (!element.closest('.card') && element.textContent.trim().length > 0) {
+                                        element.remove();
+                                        break; // Only remove the first standalone page title
+                                    }
                                 }
-                            });
+                            }
                             
                             targetContent = tempDiv;
                         }
