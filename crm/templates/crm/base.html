@@ -2314,12 +2314,16 @@
                     href.startsWith('tel:') || 
                     href.includes('logout') || 
                     href.includes('admin') || 
-                    link.hasAttribute('target')) {
+                    href.includes('download') ||
+                    href.includes('export') ||
+                    link.hasAttribute('target') ||
+                    link.hasAttribute('download')) {
                     return false;
                 }
                 
-                // Only intercept if it's a main navbar link
-                if (!link.closest('.navbar-nav')) {
+                // Don't intercept if explicitly marked to skip SPA
+                if (link.hasAttribute('data-no-spa') || 
+                    link.classList.contains('no-spa')) {
                     return false;
                 }
                 
@@ -2327,19 +2331,31 @@
                 const currentPath = window.location.pathname;
                 const newPath = href.startsWith('/') ? href : new URL(href, window.location.origin).pathname;
                 
-                // Define main sections
-                const mainSections = ['/dashboard/', '/tickets/', '/organizations/', '/logs/', '/approvals/', '/statistics/', '/users/'];
+                // Don't intercept if it's the same page
+                if (currentPath === newPath) {
+                    return false;
+                }
                 
-                const getCurrentSection = (path) => {
-                    return mainSections.find(section => path.startsWith(section) || path === section.slice(0, -1));
-                };
+                // Define paths that should use SPA navigation
+                const spaEnabledPaths = [
+                    '/dashboard',
+                    '/tickets',
+                    '/organizations', 
+                    '/logs',
+                    '/approvals',
+                    '/statistics',
+                    '/users',
+                    '/profile',
+                    '/settings'
+                ];
                 
-                const currentSection = getCurrentSection(currentPath);
-                const newSection = getCurrentSection(newPath);
+                // Check if the new path starts with any SPA-enabled path
+                const isSpaPath = spaEnabledPaths.some(path => 
+                    newPath.startsWith(path + '/') || newPath === path
+                );
                 
-                // Only intercept navigation between different main sections
-                // This prevents transitions for sub-pages like /tickets/create or /tickets/52
-                return currentSection !== newSection;
+                // Intercept if it's a valid SPA path
+                return isSpaPath;
             },
             
             setupPopState: function() {
@@ -2513,7 +2529,12 @@
                 }
                 
                 // Re-initialize UI enhancement features from ui-enhancements.js
-                this.reinitializeUIEnhancements();
+                if (window.BetulaUI && window.BetulaUI.reinitialize) {
+                    window.BetulaUI.reinitialize();
+                } else {
+                    // Fallback to manual initialization
+                    this.reinitializeUIEnhancements();
+                }
                 
                 // Re-initialize any dashboard components (animations, etc.)
                 this.reinitializeDashboard();

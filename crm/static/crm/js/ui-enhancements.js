@@ -3,10 +3,12 @@
  * Adds interactive features to Bootstrap 5 components
  */
 
-document.addEventListener('DOMContentLoaded', function() {
+// Initialization function that can be called multiple times
+function initializeUIComponents() {
     // Initialize all tooltips
-    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]:not(.tooltip-initialized)'));
     tooltipTriggerList.map(function(tooltipTriggerEl) {
+        tooltipTriggerEl.classList.add('tooltip-initialized');
         return new bootstrap.Tooltip(tooltipTriggerEl, {
             animation: true,
             delay: { show: 100, hide: 100 }
@@ -14,8 +16,9 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Initialize all popovers
-    const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+    const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]:not(.popover-initialized)'));
     popoverTriggerList.map(function(popoverTriggerEl) {
+        popoverTriggerEl.classList.add('popover-initialized');
         return new bootstrap.Popover(popoverTriggerEl, {
             animation: true,
             trigger: 'hover focus'
@@ -23,8 +26,9 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Button ripple effect
-    const rippleButtons = document.querySelectorAll('.btn-ripple');
+    const rippleButtons = document.querySelectorAll('.btn-ripple:not(.ripple-initialized)');
     rippleButtons.forEach(button => {
+        button.classList.add('ripple-initialized');
         button.addEventListener('click', function(e) {
             const rect = button.getBoundingClientRect();
             const x = e.clientX - rect.left;
@@ -44,8 +48,9 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Enhanced dropdown animation
-    const dropdownToggleList = document.querySelectorAll('.dropdown-toggle');
+    const dropdownToggleList = document.querySelectorAll('.dropdown-toggle:not(.dropdown-initialized)');
     dropdownToggleList.forEach(dropdown => {
+        dropdown.classList.add('dropdown-initialized');
         dropdown.addEventListener('click', function() {
             setTimeout(() => {
                 const dropdownMenu = dropdown.nextElementSibling;
@@ -57,10 +62,11 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Auto-collapsing sidebar on mobile
-    const sidebarToggles = document.querySelectorAll('.sidebar-toggle');
+    const sidebarToggles = document.querySelectorAll('.sidebar-toggle:not(.sidebar-initialized)');
     const sidebar = document.querySelector('.sidebar');
     if (sidebar && window.innerWidth < 992) {
         sidebarToggles.forEach(toggle => {
+            toggle.classList.add('sidebar-initialized');
             toggle.addEventListener('click', function() {
                 sidebar.classList.toggle('expanded');
             });
@@ -68,8 +74,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Interactive cards
-    const interactiveCards = document.querySelectorAll('.card-interactive');
+    const interactiveCards = document.querySelectorAll('.card-interactive:not(.card-initialized)');
     interactiveCards.forEach(card => {
+        card.classList.add('card-initialized');
         card.addEventListener('mouseenter', function() {
             this.classList.add('card-hover-effect');
         });
@@ -80,8 +87,9 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Form validation on the fly
-    const forms = document.querySelectorAll('.needs-live-validation');
+    const forms = document.querySelectorAll('.needs-live-validation:not(.validation-initialized)');
     forms.forEach(form => {
+        form.classList.add('validation-initialized');
         const inputs = form.querySelectorAll('input, select, textarea');
         inputs.forEach(input => {
             input.addEventListener('blur', function() {
@@ -114,7 +122,7 @@ document.addEventListener('DOMContentLoaded', function() {
         requestAnimationFrame(updateCounter);
     };
 
-    const counterElements = document.querySelectorAll('.animate-counter');
+    const counterElements = document.querySelectorAll('.animate-counter:not(.counter-initialized)');
     const observerOptions = {
         threshold: 0.1,
         rootMargin: '0px 0px -50px 0px'
@@ -132,11 +140,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }, observerOptions);
 
     counterElements.forEach(element => {
+        element.classList.add('counter-initialized');
         counterObserver.observe(element);
     });
 
     // Smooth scroll for anchor links
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    document.querySelectorAll('a[href^="#"]:not(.anchor-initialized)').forEach(anchor => {
+        anchor.classList.add('anchor-initialized');
         anchor.addEventListener('click', function(e) {
             const targetId = this.getAttribute('href');
             if (targetId === '#') return;
@@ -153,8 +163,9 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Toast initialization with optional auto-hiding
-    const toastElements = document.querySelectorAll('.toast');
+    const toastElements = document.querySelectorAll('.toast:not(.toast-initialized)');
     toastElements.forEach(toastEl => {
+        toastEl.classList.add('toast-initialized');
         const toast = new bootstrap.Toast(toastEl, {
             autohide: toastEl.getAttribute('data-autohide') !== 'false',
             delay: parseInt(toastEl.getAttribute('data-delay') || 5000, 10)
@@ -166,8 +177,9 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Collapsible card bodies with animation
-    const collapsibleCardHeaders = document.querySelectorAll('.card-header-collapsible');
+    const collapsibleCardHeaders = document.querySelectorAll('.card-header-collapsible:not(.collapsible-initialized)');
     collapsibleCardHeaders.forEach(header => {
+        header.classList.add('collapsible-initialized');
         header.addEventListener('click', function() {
             const cardBody = this.parentElement.querySelector('.card-body');
             const icon = this.querySelector('.collapse-icon');
@@ -181,7 +193,13 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     });
-});
+}
+
+// Initialize on DOMContentLoaded
+document.addEventListener('DOMContentLoaded', initializeUIComponents);
+
+// Re-initialize on SPA content loaded
+window.addEventListener('spaContentLoaded', initializeUIComponents);
 
 // Add global utilities
 window.BetulaUI = {
@@ -239,5 +257,8 @@ window.BetulaUI = {
             button.innerHTML = originalContent;
             button.disabled = false;
         }
-    }
+    },
+    
+    // Re-initialize all components (can be called manually)
+    reinitialize: initializeUIComponents
 };
