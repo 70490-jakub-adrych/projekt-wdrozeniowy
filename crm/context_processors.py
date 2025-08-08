@@ -162,3 +162,50 @@ def device_context(request):
         'device_type': device_type,
         'user_agent': user_agent,
     }
+
+
+def impersonation_context(request):
+    """
+    Context processor that adds impersonation status to templates
+    """
+    if not request.user.is_authenticated:
+        return {'effective_user': None}
+    
+    # For non-admin users, effective_user is just the regular user
+    if request.user.profile.role != 'admin':
+        return {'effective_user': request.user}
+    
+    impersonated_user_id = request.session.get('impersonated_user_id')
+    
+    if impersonated_user_id:
+        try:
+            from .models import User, Organization
+            impersonated_user = User.objects.get(id=impersonated_user_id)
+            
+            # Get simulated organizations
+            impersonated_org_ids = request.session.get('impersonated_organizations', [])
+            simulated_organizations = []
+            if impersonated_org_ids:
+                simulated_organizations = Organization.objects.filter(id__in=impersonated_org_ids)
+            
+            return {
+                'is_impersonating': True,
+                'impersonated_user': impersonated_user,
+                'effective_user': impersonated_user,
+                'simulated_organizations': simulated_organizations,
+                'has_organization_simulation': impersonated_org_ids is not None,
+            }
+        except User.DoesNotExist:
+            # Clean up invalid session
+            keys_to_delete = ['impersonated_user_id', 'original_user_id', 'impersonated_organizations']
+            for key in keys_to_delete:
+                if key in request.session:
+                    del request.session[key]
+    
+    return {
+        'is_impersonating': False,
+        'impersonated_user': None,
+        'effective_user': request.user,
+        'simulated_organizations': [],
+        'has_organization_simulation': False,
+    }

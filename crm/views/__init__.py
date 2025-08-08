@@ -43,6 +43,9 @@ from .ticket_display_views import ticket_display_view, get_tickets_update
 # Import statistics views
 from .statistics_views import statistics_dashboard, update_agent_work_log, generate_statistics_report
 
+# Import impersonation views
+from .impersonation_views import switch_user_perspective, get_impersonation_status, get_effective_user, get_effective_organizations
+
 # Define all exported symbols
 __all__ = [
     'get_client_ip',
@@ -77,5 +80,9 @@ __all__ = [
     'get_tickets_update',
     'statistics_dashboard',
     'update_agent_work_log',
-    'generate_statistics_report'
+    'generate_statistics_report',
+    'switch_user_perspective',
+    'get_impersonation_status',
+    'get_effective_user',
+    'get_effective_organizations'
 ]

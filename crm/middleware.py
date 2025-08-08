@@ -6,8 +6,56 @@ import logging
 from django.conf import settings
 from datetime import datetime
 from django.utils import timezone
+from django.contrib.auth.models import User
 
 logger = logging.getLogger(__name__)
+
+
+class ImpersonationMiddleware:
+    """
+    Middleware that adds effective user and organizations to request for impersonation functionality
+    """
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        # Add effective_user attribute to request
+        if hasattr(request, 'user') and request.user.is_authenticated:
+            if request.user.profile.role == 'admin':
+                impersonated_user_id = request.session.get('impersonated_user_id')
+                if impersonated_user_id:
+                    try:
+                        request.effective_user = User.objects.get(id=impersonated_user_id)
+                        
+                        # Also add effective organizations
+                        impersonated_org_ids = request.session.get('impersonated_organizations')
+                        if impersonated_org_ids is not None:  # Could be empty list
+                            from .models import Organization
+                            request.effective_organizations = Organization.objects.filter(id__in=impersonated_org_ids)
+                        else:
+                            # Use the impersonated user's real organizations
+                            request.effective_organizations = request.effective_user.profile.organizations.all()
+                            
+                    except User.DoesNotExist:
+                        # Clean up invalid session
+                        keys_to_delete = ['impersonated_user_id', 'original_user_id', 'impersonated_organizations']
+                        for key in keys_to_delete:
+                            if key in request.session:
+                                del request.session[key]
+                        request.effective_user = request.user
+                        request.effective_organizations = request.user.profile.organizations.all()
+                else:
+                    request.effective_user = request.user
+                    request.effective_organizations = request.user.profile.organizations.all()
+            else:
+                request.effective_user = request.user
+                request.effective_organizations = request.user.profile.organizations.all()
+        else:
+            request.effective_user = None
+            request.effective_organizations = None
+            
+        return self.get_response(request)
+
 
 class ViewerRestrictMiddleware:
     """
@@ -17,8 +65,11 @@ class ViewerRestrictMiddleware:
         self.get_response = get_response
 
     def __call__(self, request):
-        if request.user.is_authenticated and hasattr(request.user, 'profile'):
-            if request.user.profile.role == 'viewer':
+        # Use effective_user if available (for impersonation), otherwise use regular user
+        effective_user = getattr(request, 'effective_user', request.user) if hasattr(request, 'user') else None
+        
+        if effective_user and effective_user.is_authenticated and hasattr(effective_user, 'profile'):
+            if effective_user.profile.role == 'viewer':
                 allowed_urls = [
                     reverse('ticket_display'),
                     reverse('logout'),
