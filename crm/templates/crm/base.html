@@ -2624,7 +2624,7 @@
             
             cleanupBootstrapEventListeners: function() {
                 // Remove any orphaned Bootstrap event listeners that might interfere
-                const elements = document.querySelectorAll('[data-bs-toggle]');
+                const elements = document.querySelectorAll('[data-bs-toggle], [data-bs-dismiss], [data-bs-target]');
                 elements.forEach(el => {
                     // Clear any cached data that Bootstrap might have stored
                     if (el._tooltip) delete el._tooltip;
@@ -2633,7 +2633,20 @@
                     if (el._modal) delete el._modal;
                     if (el._collapse) delete el._collapse;
                     if (el._toast) delete el._toast;
+                    
+                    // CRITICAL: Clear our custom initialization flags
+                    // This ensures fresh initialization for AJAX-loaded content
+                    if (el._bootstrapInitialized) {
+                        delete el._bootstrapInitialized;
+                        console.log('SPA: 🧹 Cleared Bootstrap initialization flag for:', el);
+                    }
+                    if (el._bootstrapDismissInitialized) {
+                        delete el._bootstrapDismissInitialized;
+                        console.log('SPA: 🧹 Cleared Bootstrap dismiss initialization flag for:', el);
+                    }
                 });
+                
+                console.log(`SPA: ✅ Cleaned up Bootstrap event listeners and flags for ${elements.length} elements`);
             },
             
             executeInlineScripts: function(container) {
@@ -2680,6 +2693,24 @@
                 
                 try {
                     let initializedCount = 0;
+                    
+                    // CRITICAL: Trigger Bootstrap's own auto-initialization for new content
+                    // This replicates what Bootstrap does on DOMContentLoaded
+                    if (container !== document && typeof bootstrap !== 'undefined') {
+                        console.log('SPA: 🔄 Triggering Bootstrap auto-initialization for new content...');
+                        
+                        // Dispatch a custom event to trigger any auto-init listeners
+                        const initEvent = new Event('DOMContentLoaded', { bubbles: true, cancelable: false });
+                        container.dispatchEvent(initEvent);
+                        
+                        // Also manually trigger data-api initialization for the container
+                        if (typeof bootstrap.Tooltip !== 'undefined') {
+                            // Force Bootstrap to scan for new elements with data attributes
+                            container.querySelectorAll('[data-bs-toggle]').forEach(element => {
+                                console.log('SPA: 🔍 Processing Bootstrap data-attribute element:', element);
+                            });
+                        }
+                    }
                     
                     const initializeComponent = (element, componentType, initializer) => {
                         try {
@@ -2778,6 +2809,76 @@
                     });
                     
                     console.log(`SPA: ✅ Total Bootstrap components initialized: ${initializedCount}`);
+                    
+                    // CRITICAL: Apply Bootstrap's full auto-initialization like it does on page load
+                    // This addresses the core issue: Bootstrap auto-init only runs once on initial page load
+                    if (container !== document && typeof bootstrap !== 'undefined') {
+                        console.log('SPA: 🔄 Applying Bootstrap auto-initialization to new content...');
+                        
+                        try {
+                            // Initialize all data-api elements that Bootstrap would auto-initialize
+                            const dataElements = container.querySelectorAll('[data-bs-toggle], [data-bs-dismiss], [data-bs-target], [data-bs-slide], [data-bs-ride]');
+                            console.log(`SPA: 🔍 Found ${dataElements.length} elements with Bootstrap data attributes`);
+                            
+                            // Re-apply Bootstrap's data-api initialization patterns
+                            dataElements.forEach(element => {
+                                const toggle = element.getAttribute('data-bs-toggle');
+                                const dismiss = element.getAttribute('data-bs-dismiss');
+                                
+                                if (toggle && !element._bootstrapInitialized) {
+                                    console.log(`SPA: 🔧 Auto-initializing ${toggle} component:`, element);
+                                    
+                                    // Mark as initialized to prevent duplicate initialization
+                                    element._bootstrapInitialized = true;
+                                    
+                                    // Apply the same initialization Bootstrap does automatically
+                                    switch (toggle) {
+                                        case 'dropdown':
+                                            if (!bootstrap.Dropdown.getInstance(element)) {
+                                                new bootstrap.Dropdown(element);
+                                            }
+                                            break;
+                                        case 'modal':
+                                            if (!bootstrap.Modal.getInstance(element)) {
+                                                new bootstrap.Modal(element);
+                                            }
+                                            break;
+                                        case 'tooltip':
+                                            if (!bootstrap.Tooltip.getInstance(element)) {
+                                                new bootstrap.Tooltip(element);
+                                            }
+                                            break;
+                                        case 'popover':
+                                            if (!bootstrap.Popover.getInstance(element)) {
+                                                new bootstrap.Popover(element);
+                                            }
+                                            break;
+                                        case 'collapse':
+                                            if (!bootstrap.Collapse.getInstance(element)) {
+                                                new bootstrap.Collapse(element);
+                                            }
+                                            break;
+                                        case 'tab':
+                                            if (!bootstrap.Tab.getInstance(element)) {
+                                                new bootstrap.Tab(element);
+                                            }
+                                            break;
+                                    }
+                                }
+                                
+                                if (dismiss && !element._bootstrapDismissInitialized) {
+                                    console.log(`SPA: 🔧 Auto-initializing ${dismiss} dismiss:`, element);
+                                    element._bootstrapDismissInitialized = true;
+                                    // Bootstrap handles dismiss functionality automatically via event delegation
+                                }
+                            });
+                            
+                            console.log('SPA: ✅ Bootstrap auto-initialization completed for new content');
+                        } catch (autoInitError) {
+                            console.error('SPA: ❌ Error during Bootstrap auto-initialization:', autoInitError);
+                        }
+                    }
+                    
                     console.log('SPA: 🎯 Bootstrap component initialization completed successfully');
                 } catch (error) {
                     console.error('SPA: ❌ Error during Bootstrap component initialization:', error);
