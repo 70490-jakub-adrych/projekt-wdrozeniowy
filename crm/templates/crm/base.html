@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
     <style>
         :root {
+            /* Light Theme Colors */
             --primary-color: #191923;
             --secondary-color: #34495e;
             --accent-color: #3498db;
@@ -25,27 +26,971 @@
             --danger-color: #e74c3c;
             --info-color: #3498db;
             
+            /* Light Theme UI Colors */
+            --bg-color: #f8f9fa;
+            --text-color: #212529;
+            --text-muted: #6c757d;
+            --border-color: #dee2e6;
+            --card-bg: #ffffff;
+            --navbar-bg: var(--primary-color);
+            --dropdown-bg: #ffffff;
+            --input-bg: #ffffff;
+            --table-bg: #ffffff;
+            --table-hover-bg: #f8f9fa;
+            --table-border-color: #dee2e6;
+            --modal-bg: #ffffff;
+            --toast-bg: #ffffff;
+            --cookie-banner-bg: #ffffff;
+            --cookie-banner-text: #333333;
+            
             --transition-speed: 0.3s;
             --shadow-sm: 0 .125rem .25rem rgba(0,0,0,.075);
             --shadow-md: 0 .5rem 1rem rgba(0,0,0,.15);
             --shadow-lg: 0 1rem 3rem rgba(0,0,0,.175);
         }
         
+        /* Dark Theme */
+        [data-theme="dark"] {
+            /* Dark Theme Colors - More saturated for better visibility */
+            --primary-color: #1a1a2e;
+            --secondary-color: #2d3748;
+            --accent-color: #4fc3f7; /* More saturated blue */
+            --light-color: #2d3748;
+            --dark-color: #0d1117;
+            --success-color: #4caf50; /* More saturated green */
+            --warning-color: #ff9800; /* More saturated orange */
+            --danger-color: #f44336; /* More saturated red */
+            --info-color: #29b6f6; /* More saturated light blue */
+            
+            /* Dark Theme UI Colors - Softer backgrounds */
+            --bg-color: #121212; /* Softer than pure black */
+            --text-color: #e0e0e0; /* Softer white */
+            --text-muted: #9e9e9e; /* Better contrast for muted text */
+            --border-color: #424242; /* Softer border */
+            --card-bg: #1e1e1e; /* Softer card background */
+            --navbar-bg: #1a1a2e;
+            --dropdown-bg: #2c2c2c; /* Softer dropdown */
+            --input-bg: #2c2c2c; /* Softer input background */
+            --table-bg: #1e1e1e; /* Softer table background */
+            --table-hover-bg: #2c2c2c; /* Softer hover */
+            --table-border-color: #424242; /* Softer table borders */
+            --modal-bg: #1e1e1e; /* Softer modal background */
+            --toast-bg: #2c2c2c; /* Softer toast background */
+            --cookie-banner-bg: #2c2c2c;
+            --cookie-banner-text: #e0e0e0;
+            
+            --shadow-sm: 0 .125rem .25rem rgba(0,0,0,.2);
+            --shadow-md: 0 .5rem 1rem rgba(0,0,0,.3);
+            --shadow-lg: 0 1rem 3rem rgba(0,0,0,.4);
+        }
+        
+        /* Global Theme Styles */
+        html {
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            height: 100%;
+        }
+        
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            font-family: 'Poppins', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+            position: relative;
+            transition: background-color var(--transition-speed) ease, color var(--transition-speed) ease;
+        }
+        
+        /* Dark Mode Toggle Button */
+        #theme-toggle {
+            background: none !important;
+            border: 1px solid rgba(255, 255, 255, 0.3) !important;
+            color: white !important;
+            padding: 0.375rem 0.75rem !important;
+            border-radius: 0.375rem !important;
+            transition: all var(--transition-speed) !important;
+            font-size: 0.9rem;
+        }
+        
+        #theme-toggle:hover {
+            background: rgba(255, 255, 255, 0.1) !important;
+            border-color: rgba(255, 255, 255, 0.5) !important;
+            transform: translateY(-1px);
+        }
+        
+        #theme-toggle:active {
+            transform: translateY(0);
+        }
+        
+        .theme-toggle {
+            position: fixed;
+            top: 50%;
+            right: 20px;
+            transform: translateY(-50%);
+            z-index: 1000;
+            background: var(--accent-color);
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            box-shadow: var(--shadow-md);
+            transition: all var(--transition-speed);
+        }
+        
+        .theme-toggle:hover {
+            transform: translateY(-50%) scale(1.1);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .theme-toggle:active {
+            transform: translateY(-50%) scale(0.95);
+        }
+        
+        /* Override Bootstrap styles for dark theme */
+        [data-theme="dark"] .bg-light {
+            background-color: var(--card-bg) !important;
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] .bg-white,
+        [data-theme="dark"] .bg-light {
+            background-color: var(--card-bg) !important;
+            color: var(--text-color) !important;
+        }
+        
+        /* Leave colored backgrounds alone - they should stay as-is for status indicators */
+        
+        [data-theme="dark"] .text-dark {
+            color: var(--text-color) !important;
+        }
+        
+        /* Specific Bootstrap table overrides for dark theme */
+        [data-theme="dark"] .table-light {
+            background-color: var(--table-hover-bg) !important;
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] .table-light th,
+        [data-theme="dark"] .table-light td {
+            background-color: var(--table-hover-bg) !important;
+            color: var(--text-color) !important;
+            border-color: var(--table-border-color) !important;
+        }
+        
+        /* Card headers and footers specific overrides */
+        [data-theme="dark"] .card-header.bg-light {
+            background-color: var(--card-bg) !important;
+            color: var(--text-color) !important;
+            border-bottom-color: var(--border-color) !important;
+        }
+        
+        [data-theme="dark"] .card-footer.bg-white,
+        [data-theme="dark"] .card .bg-light,
+        [data-theme="dark"] .card .bg-white {
+            background-color: var(--card-bg) !important;
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] .text-muted {
+            color: var(--text-muted) !important;
+        }
+        
+        [data-theme="dark"] .text-secondary {
+            color: var(--text-muted) !important;
+        }
+        
+        /* Icons should inherit proper colors */
+        [data-theme="dark"] i.fas,
+        [data-theme="dark"] i.far,
+        [data-theme="dark"] i.fab {
+            color: inherit !important;
+        }
+        
+        /* Success, warning, danger, info text colors */
+        [data-theme="dark"] .text-success {
+            color: var(--success-color) !important;
+        }
+        
+        [data-theme="dark"] .text-warning {
+            color: var(--warning-color) !important;
+        }
+        
+        [data-theme="dark"] .text-danger {
+            color: var(--danger-color) !important;
+        }
+        
+        [data-theme="dark"] .text-info {
+            color: var(--info-color) !important;
+        }
+        
+        /* Navbar icon colors */
+        [data-theme="dark"] .navbar i {
+            color: #ffffff !important;
+        }
+        
+        /* Card header icon colors */
+        [data-theme="dark"] .card-header i {
+            color: var(--text-color) !important;
+        }
+        
+        /* Links in dark theme - Make all links white/light colored */
+        [data-theme="dark"] a {
+            color: #e0e0e0 !important; /* Light gray instead of blue */
+        }
+        
+        [data-theme="dark"] a:hover {
+            color: #ffffff !important; /* Pure white on hover */
+        }
+        
+        /* Navbar links should be white */
+        [data-theme="dark"] .navbar-nav .nav-link {
+            color: #ffffff !important;
+        }
+        
+        [data-theme="dark"] .navbar-nav .nav-link:hover {
+            color: #e0e0e0 !important;
+        }
+        
+        /* Dropdown links in navbar */
+        [data-theme="dark"] .dropdown-menu .dropdown-item {
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] .dropdown-menu .dropdown-item:hover {
+            color: var(--accent-color) !important;
+        }
+        
+        /* Brand link should be white */
+        [data-theme="dark"] .navbar-brand {
+            color: #ffffff !important;
+        }
+        
+        /* Card links should be light */
+        [data-theme="dark"] .card a {
+            color: #e0e0e0 !important;
+        }
+        
+        [data-theme="dark"] .card a:hover {
+            color: #ffffff !important;
+        }
+        
+        /* Table links */
+        [data-theme="dark"] .table a {
+            color: #e0e0e0 !important;
+        }
+        
+        [data-theme="dark"] .table a:hover {
+            color: #ffffff !important;
+        }
+        
+        /* Button links and text decoration */
+        [data-theme="dark"] .text-decoration-none {
+            color: #e0e0e0 !important;
+        }
+        
+        [data-theme="dark"] .text-decoration-none:hover {
+            color: #ffffff !important;
+        }
+        
+        /* Footer links */
+        [data-theme="dark"] .footer a {
+            color: #ffffff !important;
+        }
+        
+        [data-theme="dark"] .footer a:hover {
+            color: #e0e0e0 !important;
+        }
+        
+        [data-theme="dark"] .border {
+            border-color: var(--border-color) !important;
+        }
+        
+        [data-theme="dark"] .border-top {
+            border-top-color: var(--border-color) !important;
+        }
+        
+        [data-theme="dark"] .border-bottom {
+            border-bottom-color: var(--border-color) !important;
+        }
+        
+        [data-theme="dark"] .border-left {
+            border-left-color: var(--border-color) !important;
+        }
+        
+        [data-theme="dark"] .border-right {
+            border-right-color: var(--border-color) !important;
+        }
+        
+        /* Panel and Card components */
+        [data-theme="dark"] .panel,
+        [data-theme="dark"] .panel-default {
+            background-color: var(--card-bg) !important;
+            border-color: var(--border-color) !important;
+        }
+        
+        [data-theme="dark"] .panel-heading,
+        [data-theme="dark"] .panel-header {
+            background-color: var(--card-bg) !important;
+            border-color: var(--border-color) !important;
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] .panel-body {
+            background-color: var(--card-bg) !important;
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] .panel-footer {
+            background-color: var(--card-bg) !important;
+            border-color: var(--border-color) !important;
+            color: var(--text-color) !important;
+        }
+        
+        /* Bootstrap Cards - Additional overrides */
+        [data-theme="dark"] .card,
+        [data-theme="dark"] .card-body,
+        [data-theme="dark"] .card-header,
+        [data-theme="dark"] .card-footer {
+            background-color: var(--card-bg) !important;
+            color: var(--text-color) !important;
+            border-color: var(--border-color) !important;
+        }
+        
+        /* Well components (Bootstrap 3 style) */
+        [data-theme="dark"] .well {
+            background-color: var(--card-bg) !important;
+            border-color: var(--border-color) !important;
+            color: var(--text-color) !important;
+        }
+        
+        /* Alert components with softer colors */
+        [data-theme="dark"] .alert-primary {
+            background-color: rgba(100, 181, 246, 0.15) !important;
+            border-color: rgba(100, 181, 246, 0.3) !important;
+            color: #90caf9 !important;
+        }
+        
+        [data-theme="dark"] .alert-success {
+            background-color: rgba(102, 187, 106, 0.15) !important;
+            border-color: rgba(102, 187, 106, 0.3) !important;
+            color: #a5d6a7 !important;
+        }
+        
+        [data-theme="dark"] .alert-warning {
+            background-color: rgba(255, 183, 77, 0.15) !important;
+            border-color: rgba(255, 183, 77, 0.3) !important;
+            color: #ffcc02 !important;
+        }
+        
+        [data-theme="dark"] .alert-danger {
+            background-color: rgba(239, 83, 80, 0.15) !important;
+            border-color: rgba(239, 83, 80, 0.3) !important;
+            color: #ef9a9a !important;
+        }
+        
+        [data-theme="dark"] .alert-info {
+            background-color: rgba(100, 181, 246, 0.15) !important;
+            border-color: rgba(100, 181, 246, 0.3) !important;
+            color: #90caf9 !important;
+        }
+        
+        /* Button overrides with more saturated colors */
+        [data-theme="dark"] .btn {
+            border: 1px solid transparent;
+        }
+
+        [data-theme="dark"] .btn-primary {
+            background-color: var(--accent-color) !important;
+            border-color: var(--accent-color) !important;
+            color: white !important;
+        }
+        
+        [data-theme="dark"] .btn-primary:hover {
+            background-color: #29b6f6 !important;
+            border-color: #29b6f6 !important;
+        }
+        
+        [data-theme="dark"] .btn-secondary {
+            background-color: #616161 !important;
+            border-color: #616161 !important;
+            color: white !important;
+        }
+        
+        [data-theme="dark"] .btn-secondary:hover {
+            background-color: #757575 !important;
+            border-color: #757575 !important;
+        }
+        
+        [data-theme="dark"] .btn-success {
+            background-color: var(--success-color) !important;
+            border-color: var(--success-color) !important;
+            color: white !important;
+        }
+        
+        [data-theme="dark"] .btn-success:hover {
+            background-color: #388e3c !important;
+            border-color: #388e3c !important;
+        }
+        
+        [data-theme="dark"] .btn-warning {
+            background-color: var(--warning-color) !important;
+            border-color: var(--warning-color) !important;
+            color: white !important;
+        }
+        
+        [data-theme="dark"] .btn-warning:hover {
+            background-color: #f57c00 !important;
+            border-color: #f57c00 !important;
+        }
+        
+        [data-theme="dark"] .btn-danger {
+            background-color: var(--danger-color) !important;
+            border-color: var(--danger-color) !important;
+            color: white !important;
+        }
+        
+        [data-theme="dark"] .btn-danger:hover {
+            background-color: #d32f2f !important;
+            border-color: #d32f2f !important;
+        }
+        
+        [data-theme="dark"] .btn-info {
+            background-color: var(--info-color) !important;
+            border-color: var(--info-color) !important;
+            color: white !important;
+        }
+        
+        [data-theme="dark"] .btn-info:hover {
+            background-color: #0288d1 !important;
+            border-color: #0288d1 !important;
+        }
+
+        [data-theme="dark"] .btn-light {
+            background-color: var(--light-color) !important;
+            border-color: var(--light-color) !important;
+            color: white !important;
+        }
+
+        [data-theme="dark"] .btn-dark {
+            background-color: #424242 !important;
+            border-color: #424242 !important;
+            color: white !important;
+        }
+
+        /* Button outline variants for dark theme */
+        [data-theme="dark"] .btn-outline-primary {
+            border-color: var(--accent-color) !important;
+            color: var(--accent-color) !important;
+        }
+
+        [data-theme="dark"] .btn-outline-primary:hover {
+            background-color: var(--accent-color) !important;
+            border-color: var(--accent-color) !important;
+            color: white !important;
+        }
+
+        [data-theme="dark"] .btn-outline-secondary {
+            border-color: #616161 !important;
+            color: #616161 !important;
+        }
+
+        [data-theme="dark"] .btn-outline-secondary:hover {
+            background-color: #616161 !important;
+            border-color: #616161 !important;
+            color: white !important;
+        }
+
+        [data-theme="dark"] .btn-outline-success {
+            border-color: var(--success-color) !important;
+            color: var(--success-color) !important;
+        }
+
+        [data-theme="dark"] .btn-outline-success:hover {
+            background-color: var(--success-color) !important;
+            border-color: var(--success-color) !important;
+            color: white !important;
+        }
+
+        [data-theme="dark"] .btn-outline-danger {
+            border-color: var(--danger-color) !important;
+            color: var(--danger-color) !important;
+        }
+
+        [data-theme="dark"] .btn-outline-danger:hover {
+            background-color: var(--danger-color) !important;
+            border-color: var(--danger-color) !important;
+            color: white !important;
+        }
+
+        [data-theme="dark"] .btn-outline-warning {
+            border-color: var(--warning-color) !important;
+            color: var(--warning-color) !important;
+        }
+
+        [data-theme="dark"] .btn-outline-warning:hover {
+            background-color: var(--warning-color) !important;
+            border-color: var(--warning-color) !important;
+            color: white !important;
+        }
+
+        [data-theme="dark"] .btn-outline-info {
+            border-color: var(--info-color) !important;
+            color: var(--info-color) !important;
+        }
+
+        [data-theme="dark"] .btn-outline-info:hover {
+            background-color: var(--info-color) !important;
+            border-color: var(--info-color) !important;
+            color: white !important;
+        }
+        
+        /* Fix button icons - ensure they inherit button text color */
+        [data-theme="dark"] .btn i {
+            color: inherit !important;
+        }
+        
+        [data-theme="dark"] .btn-primary i {
+            color: white !important;
+        }
+        
+        [data-theme="dark"] .btn-secondary i {
+            color: white !important;
+        }
+        
+        [data-theme="dark"] .btn-success i {
+            color: white !important;
+        }
+        
+        [data-theme="dark"] .btn-warning i {
+            color: white !important;
+        }
+        
+        [data-theme="dark"] .btn-danger i {
+            color: white !important;
+        }
+        
+        [data-theme="dark"] .btn-info i {
+            color: white !important;
+        }
+        
+        [data-theme="dark"] .btn-light i {
+            color: white !important;
+        }
+        
+        [data-theme="dark"] .btn-dark i {
+            color: white !important;
+        }
+        
+        /* Small button icons */
+        [data-theme="dark"] .btn-sm i {
+            color: inherit !important;
+        }
+
+        /* Badge styling for dark theme */
+        [data-theme="dark"] .badge {
+            color: #fff !important;
+        }
+
+        [data-theme="dark"] .badge-primary {
+            background-color: var(--accent-color) !important;
+        }
+
+        [data-theme="dark"] .badge-secondary {
+            background-color: #424242 !important;
+        }
+
+        [data-theme="dark"] .badge-success {
+            background-color: var(--success-color) !important;
+        }
+
+        [data-theme="dark"] .badge-danger {
+            background-color: var(--danger-color) !important;
+        }
+
+        [data-theme="dark"] .badge-warning {
+            background-color: var(--warning-color) !important;
+        }
+
+        [data-theme="dark"] .badge-info {
+            background-color: var(--info-color) !important;
+        }
+
+        [data-theme="dark"] .badge-light {
+            background-color: #424242 !important;
+            color: #fff !important;
+        }
+
+        [data-theme="dark"] .badge-dark {
+            background-color: #212121 !important;
+        }
+        
+        /* Action button icons specifically */
+        [data-theme="dark"] .action-btn i {
+            color: inherit !important;
+        }
+        
+        /* Table action button icons */
+        [data-theme="dark"] .table .btn i {
+            color: inherit !important;
+        }
+        
+        [data-theme="dark"] .btn-light {
+            background-color: #424242 !important;
+            border-color: #424242 !important;
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] .btn-light:hover {
+            background-color: #616161 !important;
+            border-color: #616161 !important;
+        }
+        
+        [data-theme="dark"] .btn-dark {
+            background-color: #757575 !important;
+            border-color: #757575 !important;
+            color: white !important;
+        }
+        
+        [data-theme="dark"] .btn-outline-primary {
+            color: var(--accent-color) !important;
+            border-color: var(--accent-color) !important;
+        }
+        
+        [data-theme="dark"] .btn-outline-primary:hover {
+            background-color: var(--accent-color) !important;
+            color: white !important;
+        }
+        
+        [data-theme="dark"] .btn-outline-secondary {
+            color: #9e9e9e !important;
+            border-color: #9e9e9e !important;
+        }
+        
+        [data-theme="dark"] .btn-outline-secondary:hover {
+            background-color: #616161 !important;
+            color: white !important;
+        }
+        
+        [data-theme="dark"] .table {
+            background-color: var(--table-bg) !important;
+            color: var(--text-color) !important;
+            border-color: var(--table-border-color) !important;
+        }
+        
+        [data-theme="dark"] .table th,
+        [data-theme="dark"] .table td {
+            border-color: var(--table-border-color) !important;
+            color: var(--text-color) !important;
+            background-color: transparent !important;
+        }
+        
+        [data-theme="dark"] .table thead th {
+            background-color: var(--table-hover-bg) !important;
+            border-color: var(--table-border-color) !important;
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] .table-hover tbody tr:hover {
+            background-color: var(--table-hover-bg) !important;
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] .table-hover tbody tr:hover td {
+            background-color: var(--table-hover-bg) !important;
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] .table-striped tbody tr:nth-of-type(odd) {
+            background-color: rgba(255, 255, 255, 0.03) !important;
+        }
+        
+        [data-theme="dark"] .table-responsive {
+            border-color: var(--border-color);
+        }
+        
+        /* Force table to inherit dark theme colors */
+        [data-theme="dark"] .table > :not(caption) > * > * {
+            background-color: transparent !important;
+            color: var(--text-color) !important;
+        }
+        
+        /* Override any Bootstrap table color utilities */
+        [data-theme="dark"] .table .table-light {
+            background-color: var(--table-hover-bg) !important;
+            color: var(--text-color) !important;
+        }
+        
+        /* Pagination */
+        [data-theme="dark"] .pagination .page-link {
+            background-color: var(--card-bg) !important;
+            border-color: var(--border-color) !important;
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] .pagination .page-link:hover {
+            background-color: var(--table-hover-bg) !important;
+            color: var(--accent-color) !important;
+        }
+        
+        [data-theme="dark"] .pagination .page-item.active .page-link {
+            background-color: var(--accent-color) !important;
+            border-color: var(--accent-color) !important;
+        }
+        
+        [data-theme="dark"] .pagination .page-item.disabled .page-link {
+            background-color: var(--card-bg) !important;
+            color: var(--text-muted) !important;
+        }
+        
+        [data-theme="dark"] .modal-content {
+            background-color: var(--modal-bg);
+            border-color: var(--border-color);
+        }
+        
+        [data-theme="dark"] .modal-header {
+            border-bottom-color: var(--border-color);
+        }
+        
+        [data-theme="dark"] .modal-footer {
+            border-top-color: var(--border-color);
+        }
+        
+        [data-theme="dark"] .list-group-item {
+            background-color: var(--card-bg);
+            border-color: var(--border-color);
+            color: var(--text-color);
+        }
+        
+        [data-theme="dark"] .list-group-item:hover {
+            background-color: var(--table-hover-bg);
+        }
+        
+        [data-theme="dark"] .list-group-item.active {
+            background-color: var(--accent-color) !important;
+            border-color: var(--accent-color) !important;
+        }
+        
+        /* Breadcrumb */
+        [data-theme="dark"] .breadcrumb {
+            background-color: var(--card-bg) !important;
+        }
+        
+        [data-theme="dark"] .breadcrumb-item a {
+            color: var(--accent-color) !important;
+        }
+        
+        [data-theme="dark"] .breadcrumb-item.active {
+            color: var(--text-muted) !important;
+        }
+        
+        /* Nav tabs and pills */
+        [data-theme="dark"] .nav-tabs {
+            border-bottom-color: var(--border-color) !important;
+        }
+        
+        [data-theme="dark"] .nav-tabs .nav-link {
+            color: var(--text-color) !important;
+            border-color: transparent !important;
+        }
+        
+        [data-theme="dark"] .nav-tabs .nav-link:hover {
+            border-color: var(--border-color) !important;
+            background-color: var(--table-hover-bg) !important;
+        }
+        
+        [data-theme="dark"] .nav-tabs .nav-link.active {
+            background-color: var(--card-bg) !important;
+            border-color: var(--border-color) var(--border-color) var(--card-bg) !important;
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] .nav-pills .nav-link {
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] .nav-pills .nav-link.active {
+            background-color: var(--accent-color) !important;
+        }
+        
+        /* Progress bars */
+        [data-theme="dark"] .progress {
+            background-color: #424242 !important;
+        }
+        
+        [data-theme="dark"] .progress-bar {
+            background-color: var(--accent-color) !important;
+        }
+        
+        /* Badges with softer colors */
+        [data-theme="dark"] .badge.bg-primary {
+            background-color: var(--accent-color) !important;
+        }
+        
+        [data-theme="dark"] .badge.bg-secondary {
+            background-color: #616161 !important;
+        }
+        
+        [data-theme="dark"] .badge.bg-success {
+            background-color: var(--success-color) !important;
+        }
+        
+        [data-theme="dark"] .badge.bg-warning {
+            background-color: var(--warning-color) !important;
+            color: #333 !important;
+        }
+        
+        [data-theme="dark"] .badge.bg-danger {
+            background-color: var(--danger-color) !important;
+        }
+        
+        [data-theme="dark"] .badge.bg-info {
+            background-color: var(--info-color) !important;
+        }
+        
+        [data-theme="dark"] .badge.bg-light {
+            background-color: #616161 !important;
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] .badge.bg-dark {
+            background-color: #424242 !important;
+        }
+        
+        /* Input groups */
+        [data-theme="dark"] .input-group-text {
+            background-color: var(--card-bg) !important;
+            border-color: var(--border-color) !important;
+            color: var(--text-color) !important;
+        }
+        
+        /* Accordion */
+        [data-theme="dark"] .accordion-item {
+            background-color: var(--card-bg) !important;
+            border-color: var(--border-color) !important;
+        }
+        
+        [data-theme="dark"] .accordion-header button {
+            background-color: var(--card-bg) !important;
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] .accordion-body {
+            background-color: var(--card-bg) !important;
+            color: var(--text-color) !important;
+        }
+        
+        /* Offcanvas */
+        [data-theme="dark"] .offcanvas {
+            background-color: var(--card-bg) !important;
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] .offcanvas-header {
+            border-bottom-color: var(--border-color) !important;
+        }
+        
+        /* Tooltips and Popovers */
+        [data-theme="dark"] .tooltip .tooltip-inner {
+            background-color: #424242 !important;
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] .popover {
+            background-color: var(--card-bg) !important;
+            border-color: var(--border-color) !important;
+        }
+        
+        [data-theme="dark"] .popover-header {
+            background-color: var(--table-hover-bg) !important;
+            border-bottom-color: var(--border-color) !important;
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] .popover-body {
+            color: var(--text-color) !important;
+        }
+        
+        /* Selective dark theme overrides - preserve Bootstrap component colors */
+        [data-theme="dark"] .card:not(.bg-primary):not(.bg-secondary):not(.bg-success):not(.bg-danger):not(.bg-warning):not(.bg-info):not(.bg-dark),
+        [data-theme="dark"] .card-body:not(.bg-primary):not(.bg-secondary):not(.bg-success):not(.bg-danger):not(.bg-warning):not(.bg-info):not(.bg-dark),
+        [data-theme="dark"] .card-header:not(.bg-primary):not(.bg-secondary):not(.bg-success):not(.bg-danger):not(.bg-warning):not(.bg-info):not(.bg-dark),
+        [data-theme="dark"] .card-footer:not(.bg-primary):not(.bg-secondary):not(.bg-success):not(.bg-danger):not(.bg-warning):not(.bg-info):not(.bg-dark) {
+            background-color: var(--card-bg) !important;
+            color: var(--text-color) !important;
+            border-color: var(--border-color) !important;
+        }
+
+        /* Dashboard stat cards preserve their colored backgrounds in dark mode */
+        [data-theme="dark"] .stat-card.card.bg-primary {
+            background-color: #0d6efd !important; /* Use Bootstrap's primary blue */
+            color: white !important;
+        }
+
+        [data-theme="dark"] .stat-card.card.bg-info {
+            background-color: var(--info-color) !important;
+            color: white !important;
+        }
+
+        [data-theme="dark"] .stat-card.card.bg-warning {
+            background-color: var(--warning-color) !important;
+            color: white !important;
+        }
+
+        [data-theme="dark"] .stat-card.card.bg-success {
+            background-color: var(--success-color) !important;
+            color: white !important;
+        }
+
+        [data-theme="dark"] .stat-card.card.bg-secondary {
+            background-color: #616161 !important;
+            color: white !important;
+        }
+
+        [data-theme="dark"] .stat-card.card.bg-danger {
+            background-color: var(--danger-color) !important;
+            color: white !important;
+        }
+
+        /* Mobile cards for tickets/organizations dark mode */
+        [data-theme="dark"] .mobile-card,
+        [data-theme="dark"] .dashboard-mobile-card {
+            background-color: var(--card-bg) !important;
+            border-color: var(--border-color) !important;
+            color: var(--text-color) !important;
+        }
+        
+        /* Only override tables that don't have specific background colors */
+        [data-theme="dark"] .table:not(.table-primary):not(.table-secondary):not(.table-success):not(.table-danger):not(.table-warning):not(.table-info) {
+            background-color: var(--table-bg) !important;
+            color: var(--text-color) !important;
+        }
         /* Ensure Bootstrap 5 Close button styling */
         .btn-close {
             box-sizing: content-box;
             width: 1em;
             height: 1em;
             padding: 0.25em;
-            color: #000;
+            color: var(--text-color);
             background: transparent url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23000'%3e%3cpath d='M.293.293a1 1 0 011.414 0L8 6.586 14.293.293a1 1 0 111.414 1.414L9.414 8l6.293 6.293a1 1 0 01-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 01-1.414-1.414L6.586 8 .293 1.707a1 1 0 010-1.414z'/%3e%3c/svg%3e") center/1em auto no-repeat;
             border: 0;
             border-radius: 0.25em;
             opacity: 0.5;
         }
         
+        [data-theme="dark"] .btn-close {
+            background: transparent url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23fff'%3e%3cpath d='M.293.293a1 1 0 011.414 0L8 6.586 14.293.293a1 1 0 111.414 1.414L9.414 8l6.293 6.293a1 1 0 01-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 01-1.414-1.414L6.586 8 .293 1.707a1 1 0 010-1.414z'/%3e%3c/svg%3e") center/1em auto no-repeat;
+        }
+        
         .btn-close:hover {
-            color: #000;
+            color: var(--text-color);
             text-decoration: none;
             opacity: 0.75;
         }
@@ -67,13 +1012,18 @@
             display: flex;
             flex-direction: column;
             font-family: 'Poppins', sans-serif;
-            background-color: #f8f9fa;
+            background-color: var(--bg-color);
+            color: var(--text-color);
         }
         
         .navbar {
-            background-color: var(--primary-color) !important;
+            background-color: var(--navbar-bg) !important;
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             box-shadow: var(--shadow-md);
+        }
+        
+        [data-theme="dark"] .navbar {
+            border-bottom: 1px solid var(--border-color);
         }
         
         .navbar-brand {
@@ -82,7 +1032,7 @@
         }
         
         .navbar-brand img {
-            height: 80px;
+            height: 50px;
             margin-right: 15px;
             object-fit: contain;
             transition: transform var(--transition-speed);
@@ -115,6 +1065,8 @@
             border: none;
             box-shadow: var(--shadow-sm);
             border-radius: 0.5rem;
+            background-color: var(--card-bg);
+            color: var(--text-color);
         }
         
         .card:hover {
@@ -125,6 +1077,9 @@
             border-top-left-radius: 0.5rem !important;
             border-top-right-radius: 0.5rem !important;
             font-weight: 500;
+            background-color: var(--card-bg);
+            border-bottom: 1px solid var(--border-color);
+            color: var(--text-color);
         }
         
         /* Fix footer spacing issues */
@@ -136,6 +1091,8 @@
             flex-direction: column;
             overflow-x: hidden; /* Prevent horizontal scroll */
             position: relative; /* Ensure proper positioning context */
+            background-color: var(--bg-color);
+            color: var(--text-color);
         }
         
         .container-fluid {
@@ -159,7 +1116,7 @@
         
         .footer {
             margin-top: auto;
-            background-color: var(--primary-color);
+            background-color: var(--navbar-bg);
             color: white;
             padding: 1.5rem 0;
             text-align: center;
@@ -169,6 +1126,10 @@
             position: relative;
             z-index: 1;
             margin-bottom: 0; /* Ensure no bottom margin */
+        }
+        
+        [data-theme="dark"] .footer {
+            border-top: 1px solid var(--border-color);
         }
         
         /* Ensure no extra spacing after footer */
@@ -209,15 +1170,23 @@
             border-radius: 0.5rem;
             overflow: hidden;
             animation: fadeIn 0.2s ease-in-out;
+            background-color: var(--dropdown-bg);
+            border: 1px solid var(--border-color);
         }
         
         .dropdown-item {
             transition: background-color var(--transition-speed);
             padding: 0.65rem 1rem;
+            color: var(--text-color);
         }
         
         .dropdown-item:hover {
             background-color: rgba(52, 152, 219, 0.1);
+            color: var(--text-color);
+        }
+        
+        [data-theme="dark"] .dropdown-item:hover {
+            background-color: var(--table-hover-bg);
         }
         
         .nav-link {
@@ -276,12 +1245,28 @@
         
         .form-control {
             border-radius: 0.375rem;
-            border: 1px solid #ced4da;
+            border: 1px solid var(--border-color);
             transition: all var(--transition-speed);
+            background-color: var(--input-bg);
+            color: var(--text-color);
         }
         
         .form-control:focus {
             box-shadow: 0 0 0 0.25rem rgba(52, 152, 219, 0.25);
+            border-color: var(--accent-color);
+            background-color: var(--input-bg);
+            color: var(--text-color);
+        }
+        
+        .form-select {
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            border-color: var(--border-color);
+        }
+        
+        .form-select:focus {
+            background-color: var(--input-bg);
+            color: var(--text-color);
             border-color: var(--accent-color);
         }
         
@@ -293,11 +1278,16 @@
         
         /* Toast notification styling */
         .toast {
-            background-color: #fff;
+            background-color: var(--toast-bg);
             border: none;
             box-shadow: var(--shadow-md);
             border-radius: 0.5rem;
             overflow: hidden;
+            color: var(--text-color);
+        }
+        
+        .toast-body {
+            color: var(--text-color);
         }
         
         /* Cookie Consent Banner Styles */
@@ -307,14 +1297,15 @@
             bottom: 20px;
             left: 20px;
             max-width: 375px;
-            background-color: #fff;
-            color: #333;
+            background-color: var(--cookie-banner-bg);
+            color: var(--cookie-banner-text);
             padding: 20px;
             border-radius: 0.5rem;
             box-shadow: var(--shadow-lg);
             z-index: 9999;
             font-size: 14px;
             line-height: 1.5;
+            border: 1px solid var(--border-color);
         }
         
         #cookie-consent-banner p {
@@ -723,18 +1714,20 @@
             }
             
             .mobile-card {
-                border: 1px solid #dee2e6;
+                border: 1px solid var(--border-color);
                 border-radius: 0.375rem;
                 margin-bottom: 1rem;
                 padding: 1rem;
-                background: white;
+                background: var(--card-bg);
                 box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+                color: var(--text-color);
             }
             
             .mobile-card-title {
                 font-weight: bold;
                 margin-bottom: 0.5rem;
                 font-size: 1.1rem;
+                color: var(--text-color);
             }
             
             .mobile-card-field {
@@ -746,7 +1739,7 @@
             
             .mobile-card-label {
                 font-weight: 600;
-                color: #6c757d;
+                color: var(--text-muted);
                 margin-right: 0.5rem;
             }
             
@@ -881,10 +1874,12 @@
             
             /* Ensure attachment sections look better */
             .attachment-section {
-                background-color: #f8f9fa;
+                background-color: var(--card-bg);
                 padding: 1rem;
                 border-radius: 0.375rem;
                 margin-top: 1rem;
+                border: 1px solid var(--border-color);
+                color: var(--text-color);
             }
             
             .attachment-policy {
@@ -934,6 +1929,66 @@
         .touch-device .dropdown-item:active {
             transform: scale(0.95);
         }
+        
+        /* Dashboard panel list styling - add left margin to li elements */
+        .card .card-body ul li {
+            margin-left: 1rem;
+        }
+        
+        .card .card-body ol li {
+            margin-left: 1rem;
+        }
+        
+        /* Fix SPA navigation mobile responsiveness issues */
+        .spa-content {
+            width: 100%;
+            overflow-x: hidden;
+        }
+        
+        /* Ensure proper container behavior after SPA loads - but respect Bootstrap constraints */
+        .container.mt-4 {
+            /* Remove the width and max-width overrides that break Bootstrap */
+            padding-left: 15px !important;
+            padding-right: 15px !important;
+            margin-left: auto !important;
+            margin-right: auto !important;
+            overflow-x: hidden;
+        }
+        
+        /* Mobile fixes for SPA navigation */
+        @media (max-width: 576px) {
+            .container.mt-4 {
+                padding-left: 10px !important;
+                padding-right: 10px !important;
+            }
+            
+            /* Fix any doubled margins or buttons */
+            .btn + .btn {
+                margin-left: 0.5rem;
+            }
+            
+            /* Prevent button duplication issues */
+            .d-flex.gap-2 .btn {
+                margin: 0.25rem;
+            }
+            
+            /* Fix header spacing after SPA load */
+            .d-flex.justify-content-between {
+                margin-bottom: 1rem;
+            }
+            
+            /* Ensure mobile cards don't break layout */
+            .mobile-card {
+                width: 100%;
+                max-width: 100%;
+                box-sizing: border-box;
+            }
+            
+            /* Fix any margin/padding issues with SPA content */
+            .spa-loaded .container.mt-4 {
+                margin-top: 1rem !important;
+            }
+        }
     </style>
     <!-- Google Fonts - Poppins -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -945,7 +2000,7 @@
     <nav class="navbar navbar-expand-lg navbar-dark">
         <div class="container">
             <a class="navbar-brand" href="{% if user.is_authenticated %}{% url 'dashboard' %}{% else %}{% url 'landing_page' %}{% endif %}">
-                <img src="{% static 'crm/img/logo.jpg' %}" alt="BetulaIT Logo">
+                <img src="{% static 'crm/img/logo.png' %}" alt="BetulaIT Logo">
             </a>
             
             <!-- Mobile user info display (outside collapsible area) -->
@@ -967,6 +2022,12 @@
                 </div>
             </div>
             {% endif %}
+            
+            <!-- Dark Mode Toggle Button -->
+            <button class="btn btn-outline-light btn-sm me-2 d-none d-lg-block" 
+                    type="button" id="theme-toggle" title="Przełącz tryb ciemny">
+                <i class="fas fa-moon" id="theme-icon"></i>
+            </button>
             
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
                     aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
@@ -1110,6 +2171,12 @@
                         </div>
                     </li>
                     <li class="nav-item mobile-user-nav">
+                        <a class="nav-link" href="#" id="mobile-theme-toggle">
+                            <i class="fas fa-moon" id="mobile-theme-icon"></i> 
+                            <span id="mobile-theme-text">Tryb ciemny</span>
+                        </a>
+                    </li>
+                    <li class="nav-item mobile-user-nav">
                         <a class="nav-link" href="{% if user.profile.ga_enabled %}{% url 'dashboard' %}{% else %}{% url 'setup_2fa' %}{% endif %}">
                             <i class="fas fa-shield-alt"></i> 
                             {% if user.profile.ga_enabled %}
@@ -1196,8 +2263,1386 @@
     <!-- Bootstrap 5 JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
+    <!-- SPA Navigator for seamless navigation -->
+    <script>
+        // SPA Navigation System - keeps navbar, footer, theme persistent
+        const SPANavigator = {
+            isReinitializing: false, // Flag to prevent multiple simultaneous reinitializations
+            lastReinitTime: 0, // Timestamp of last reinitialization
+            navigationCount: 0, // Track number of navigations
+            debugMode: true, // Enable comprehensive debugging
+            
+            init: function() {
+                this.addLoadingIndicator();
+                this.bindNavigation();
+                this.setupPopState();
+                
+                // Make SPANavigator globally available
+                window.SPANavigator = this;
+                console.log('🌐 SPANavigator is now globally available');
+                
+                // Initial component state analysis
+                this.analyzeBootstrapState('INITIAL');
+                
+                // Set up testing function
+                this.testBootstrapComponents();
+                
+                // Add global debug helpers
+                window.debugSPA = {
+                    analyze: () => this.analyzeBootstrapState('MANUAL'),
+                    test: () => this.testBootstrapComponents(),
+                    reinit: () => {
+                        const container = document.querySelector('.container.mt-4');
+                        if (container) {
+                            this.disposeAllBootstrapComponents();
+                            this.initializeBootstrapComponents(container);
+                        }
+                    }
+                };
+                
+                console.log('🛠️ Debug helpers available: window.debugSPA.analyze(), window.debugSPA.test(), window.debugSPA.reinit()');
+            },
+            
+            analyzeBootstrapState: function(phase) {
+                if (!this.debugMode) return;
+                
+                console.log(`\n🔍 === BOOTSTRAP STATE ANALYSIS - ${phase} ===`);
+                
+                // Standard Bootstrap components
+                const tooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+                const popovers = document.querySelectorAll('[data-bs-toggle="popover"]');
+                const dropdowns = document.querySelectorAll('.dropdown-toggle');
+                const toasts = document.querySelectorAll('.toast');
+                const modals = document.querySelectorAll('.modal');
+                const collapses = document.querySelectorAll('[data-bs-toggle="collapse"]');
+                
+                // Interactive elements that might need Bootstrap
+                const buttons = document.querySelectorAll('.btn');
+                const forms = document.querySelectorAll('form');
+                const inputs = document.querySelectorAll('.form-control, .form-select');
+                const cards = document.querySelectorAll('.card');
+                const badges = document.querySelectorAll('.badge');
+                const alerts = document.querySelectorAll('.alert');
+                
+                console.log(`📊 Bootstrap Components:`);
+                console.log(`   📝 Tooltips: ${tooltips.length}`);
+                console.log(`   📋 Popovers: ${popovers.length}`);
+                console.log(`   🔻 Dropdowns: ${dropdowns.length}`);
+                console.log(`   🍞 Toasts: ${toasts.length}`);
+                console.log(`   🪟 Modals: ${modals.length}`);
+                console.log(`   📁 Collapses: ${collapses.length}`);
+                
+                console.log(`🎨 UI Elements:`);
+                console.log(`   🔘 Buttons: ${buttons.length}`);
+                console.log(`   📋 Forms: ${forms.length}`);
+                console.log(`   📝 Inputs: ${inputs.length}`);
+                console.log(`   🃏 Cards: ${cards.length}`);
+                console.log(`   🏷️ Badges: ${badges.length}`);
+                console.log(`   ⚠️ Alerts: ${alerts.length}`);
+                
+                let activeTooltips = 0, activePopovers = 0, activeDropdowns = 0, activeToasts = 0, activeModals = 0, activeCollapses = 0;
+                
+                tooltips.forEach(el => {
+                    if (bootstrap.Tooltip.getInstance(el)) activeTooltips++;
+                });
+                
+                popovers.forEach(el => {
+                    if (bootstrap.Popover.getInstance(el)) activePopovers++;
+                });
+                
+                dropdowns.forEach(el => {
+                    if (bootstrap.Dropdown.getInstance(el)) activeDropdowns++;
+                });
+                
+                toasts.forEach(el => {
+                    if (bootstrap.Toast.getInstance(el)) activeToasts++;
+                });
+                
+                modals.forEach(el => {
+                    if (bootstrap.Modal.getInstance(el)) activeModals++;
+                });
+                
+                collapses.forEach(el => {
+                    if (bootstrap.Collapse.getInstance(el)) activeCollapses++;
+                });
+                
+                console.log(`🎯 Active instances:`);
+                console.log(`   📝 Active Tooltips: ${activeTooltips}/${tooltips.length}`);
+                console.log(`   📋 Active Popovers: ${activePopovers}/${popovers.length}`);
+                console.log(`   🔻 Active Dropdowns: ${activeDropdowns}/${dropdowns.length}`);
+                console.log(`   🍞 Active Toasts: ${activeToasts}/${toasts.length}`);
+                console.log(`   🪟 Active Modals: ${activeModals}/${modals.length}`);
+                console.log(`   📁 Active Collapses: ${activeCollapses}/${collapses.length}`);
+                
+                // Check for orphaned elements (elements that should have instances but don't)
+                const orphanedElements = [];
+                if (tooltips.length > activeTooltips) orphanedElements.push(`${tooltips.length - activeTooltips} tooltips`);
+                if (popovers.length > activePopovers) orphanedElements.push(`${popovers.length - activePopovers} popovers`);
+                if (dropdowns.length > activeDropdowns) orphanedElements.push(`${dropdowns.length - activeDropdowns} dropdowns`);
+                
+                if (orphanedElements.length > 0) {
+                    console.warn(`⚠️ Orphaned elements detected: ${orphanedElements.join(', ')}`);
+                }
+                
+                console.log(`🔗 Navigation Count: ${this.navigationCount}`);
+                console.log(`🌍 Current URL: ${window.location.pathname}`);
+                console.log(`=== END ANALYSIS ===\n`);
+            },
+            
+            testBootstrapComponents: function() {
+                console.log('\n🧪 === BOOTSTRAP COMPONENT TEST ===');
+                
+                // Test tooltips
+                const tooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+                console.log(`Testing ${tooltips.length} tooltips...`);
+                let workingTooltips = 0;
+                tooltips.forEach((tooltip, index) => {
+                    try {
+                        const instance = bootstrap.Tooltip.getInstance(tooltip);
+                        if (instance) {
+                            instance.show();
+                            setTimeout(() => instance.hide(), 500);
+                            workingTooltips++;
+                        }
+                    } catch (error) {
+                        console.error(`Tooltip ${index} failed:`, error);
+                    }
+                });
+                
+                // Test dropdowns
+                const dropdowns = document.querySelectorAll('.dropdown-toggle');
+                console.log(`Testing ${dropdowns.length} dropdowns...`);
+                let workingDropdowns = 0;
+                dropdowns.forEach((dropdown, index) => {
+                    try {
+                        const instance = bootstrap.Dropdown.getInstance(dropdown);
+                        if (instance) {
+                            workingDropdowns++;
+                        }
+                    } catch (error) {
+                        console.error(`Dropdown ${index} failed:`, error);
+                    }
+                });
+                
+                console.log(`🎯 Test Results:`);
+                console.log(`   📝 Working Tooltips: ${workingTooltips}/${tooltips.length}`);
+                console.log(`   🔻 Working Dropdowns: ${workingDropdowns}/${dropdowns.length}`);
+                console.log(`=== END TEST ===\n`);
+                
+                // Make test available globally
+                window.testBootstrap = () => this.testBootstrapComponents();
+            },
+            
+            addLoadingIndicator: function() {
+                // Add loading bar to the page
+                const loadingBar = document.createElement('div');
+                loadingBar.id = 'spa-loading-indicator';
+                loadingBar.style.cssText = `
+                    position: fixed;
+                    top: 0;
+                    left: 0;
+                    right: 0;
+                    height: 3px;
+                    background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+                    transform: scaleX(0);
+                    transform-origin: left;
+                    transition: transform 0.3s ease;
+                    z-index: 10000;
+                    opacity: 0;
+                `;
+                document.body.insertBefore(loadingBar, document.body.firstChild);
+            },
+            
+            bindNavigation: function() {
+                // Intercept navigation clicks for main nav links
+                document.addEventListener('click', (e) => {
+                    const link = e.target.closest('a');
+                    if (link && this.shouldInterceptLink(link)) {
+                        e.preventDefault();
+                        this.navigateTo(link.getAttribute('href'));
+                    }
+                });
+            },
+            
+            shouldInterceptLink: function(link) {
+                const href = link.getAttribute('href');
+                
+                // Don't intercept external or special links
+                if (!href || 
+                    href.startsWith('http') || 
+                    href.startsWith('mailto:') || 
+                    href.startsWith('tel:') || 
+                    href.includes('logout') || 
+                    href.includes('admin') || 
+                    href.includes('download') ||
+                    href.includes('export') ||
+                    href.startsWith('javascript:') ||
+                    href.startsWith('#') ||
+                    link.hasAttribute('target') ||
+                    link.hasAttribute('download')) {
+                    return false;
+                }
+                
+                // Don't intercept if explicitly marked to skip SPA
+                if (link.hasAttribute('data-no-spa') || 
+                    link.classList.contains('no-spa')) {
+                    return false;
+                }
+                
+                // Get current path and new path
+                const currentPath = window.location.pathname;
+                let newPath;
+                
+                try {
+                    newPath = href.startsWith('/') ? href : new URL(href, window.location.origin).pathname;
+                } catch (e) {
+                    console.warn('SPA: Invalid URL:', href);
+                    return false;
+                }
+                
+                // Don't intercept if it's the same page (but allow query parameters)
+                if (currentPath === newPath && !href.includes('?')) {
+                    return false;
+                }
+                
+                // Define paths that should use SPA navigation
+                const spaEnabledPaths = [
+                    '/dashboard',
+                    '/tickets',
+                    '/organizations', 
+                    '/logs',
+                    '/approvals',
+                    '/statistics',
+                    '/users',
+                    '/profile',
+                    '/settings',
+                    '/' // Handle root path (usually dashboard)
+                ];
+                
+                // Special handling for root path
+                if (newPath === '/' || newPath === '/dashboard' || newPath.startsWith('/dashboard/')) {
+                    console.log('SPA: Intercepting dashboard navigation:', newPath);
+                    return true;
+                }
+                
+                // Check if the new path starts with any SPA-enabled path
+                const isSpaPath = spaEnabledPaths.some(path => {
+                    if (path === '/') return newPath === '/';
+                    return newPath.startsWith(path + '/') || newPath === path;
+                });
+                
+                if (isSpaPath) {
+                    console.log('SPA: Intercepting navigation from', currentPath, 'to', newPath);
+                } else {
+                    console.log('SPA: Not intercepting navigation to', newPath);
+                }
+                
+                return isSpaPath;
+            },
+            
+            setupPopState: function() {
+                // Handle browser back/forward buttons
+                window.addEventListener('popstate', (e) => {
+                    if (e.state && e.state.url) {
+                        this.loadContent(e.state.url, false);
+                    }
+                });
+                
+                // Save current state
+                history.replaceState({ url: window.location.pathname }, '', window.location.pathname);
+            },
+            
+            navigateTo: function(url) {
+                // Update browser history
+                history.pushState({ url: url }, '', url);
+                this.loadContent(url, true);
+            },
+            
+            disposeAllBootstrapComponents: function() {
+                console.log('SPA: 🧹 Disposing all Bootstrap components before content replacement...');
+                
+                try {
+                    let disposedCount = 0;
+                    
+                    // Enhanced disposal - check multiple ways Bootstrap might be attached
+                    const disposeComponent = (element, componentType, instanceGetter) => {
+                        try {
+                            const instance = instanceGetter(element);
+                            if (instance) {
+                                instance.dispose();
+                                disposedCount++;
+                                console.log(`SPA: ✅ Disposed ${componentType}:`, element);
+                                return true;
+                            } else {
+                                console.log(`SPA: ⚠️ No ${componentType} instance found for:`, element);
+                                return false;
+                            }
+                        } catch (e) {
+                            console.log(`SPA: ❌ Error disposing ${componentType}:`, e, element);
+                            return false;
+                        }
+                    };
+                    
+                    // Dispose all tooltips globally
+                    const tooltips = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+                    console.log(`SPA: 🔍 Found ${tooltips.length} tooltip elements to dispose`);
+                    tooltips.forEach(el => disposeComponent(el, 'tooltip', bootstrap.Tooltip.getInstance));
+                    
+                    // Dispose all popovers globally
+                    const popovers = document.querySelectorAll('[data-bs-toggle="popover"]');
+                    console.log(`SPA: � Found ${popovers.length} popover elements to dispose`);
+                    popovers.forEach(el => disposeComponent(el, 'popover', bootstrap.Popover.getInstance));
+                    
+                    // Dispose all dropdowns globally - use comprehensive selectors
+                    const dropdowns = document.querySelectorAll('.dropdown-toggle, [data-bs-toggle="dropdown"]');
+                    console.log(`SPA: 🔍 Found ${dropdowns.length} dropdown elements to dispose`);
+                    dropdowns.forEach(el => disposeComponent(el, 'dropdown', bootstrap.Dropdown.getInstance));
+                    
+                    // Dispose all toasts globally
+                    const toasts = document.querySelectorAll('.toast');
+                    console.log(`SPA: 🔍 Found ${toasts.length} toast elements to dispose`);
+                    toasts.forEach(el => disposeComponent(el, 'toast', bootstrap.Toast.getInstance));
+                    
+                    // Dispose all modals globally
+                    const modals = document.querySelectorAll('.modal');
+                    console.log(`SPA: 🔍 Found ${modals.length} modal elements to dispose`);
+                    modals.forEach(el => disposeComponent(el, 'modal', bootstrap.Modal.getInstance));
+                    
+                    // Dispose all collapses globally
+                    const collapses = document.querySelectorAll('[data-bs-toggle="collapse"]');
+                    console.log(`SPA: 🔍 Found ${collapses.length} collapse elements to dispose`);
+                    collapses.forEach(el => disposeComponent(el, 'collapse', bootstrap.Collapse.getInstance));
+                    
+                    // Additional cleanup - remove any orphaned Bootstrap event listeners
+                    this.cleanupBootstrapEventListeners();
+                    
+                    console.log(`SPA: ✅ Total Bootstrap components disposed: ${disposedCount}`);
+                } catch (error) {
+                    console.error('SPA: ❌ Error during Bootstrap component disposal:', error);
+                }
+            },
+            
+            cleanupBootstrapEventListeners: function() {
+                // Remove any orphaned Bootstrap event listeners that might interfere
+                const elements = document.querySelectorAll('[data-bs-toggle], [data-bs-dismiss], [data-bs-target]');
+                elements.forEach(el => {
+                    // Clear any cached data that Bootstrap might have stored
+                    if (el._tooltip) delete el._tooltip;
+                    if (el._popover) delete el._popover;
+                    if (el._dropdown) delete el._dropdown;
+                    if (el._modal) delete el._modal;
+                    if (el._collapse) delete el._collapse;
+                    if (el._toast) delete el._toast;
+                    
+                    // CRITICAL: Clear our custom initialization flags
+                    // This ensures fresh initialization for AJAX-loaded content
+                    if (el._bootstrapInitialized) {
+                        delete el._bootstrapInitialized;
+                        console.log('SPA: 🧹 Cleared Bootstrap initialization flag for:', el);
+                    }
+                    if (el._bootstrapDismissInitialized) {
+                        delete el._bootstrapDismissInitialized;
+                        console.log('SPA: 🧹 Cleared Bootstrap dismiss initialization flag for:', el);
+                    }
+                });
+                
+                console.log(`SPA: ✅ Cleaned up Bootstrap event listeners and flags for ${elements.length} elements`);
+            },
+            
+            executeInlineScripts: function(container) {
+                console.log('SPA: 🔧 Executing inline scripts in new content...');
+                let executedCount = 0;
+                
+                // Find all script tags in the new content
+                const scripts = container.querySelectorAll('script');
+                scripts.forEach(oldScript => {
+                    try {
+                        const newScript = document.createElement('script');
+                        
+                        // Copy attributes
+                        Array.from(oldScript.attributes).forEach(attr => {
+                            newScript.setAttribute(attr.name, attr.value);
+                        });
+                        
+                        if (oldScript.src) {
+                            // External script
+                            newScript.src = oldScript.src;
+                            newScript.onload = () => {
+                                console.log('SPA: ✅ Loaded external script:', oldScript.src);
+                            };
+                        } else {
+                            // Inline script
+                            newScript.textContent = oldScript.textContent;
+                        }
+                        
+                        // Replace old script with new one to execute it
+                        oldScript.parentNode.replaceChild(newScript, oldScript);
+                        executedCount++;
+                        
+                        console.log('SPA: 🔧 Executed script:', oldScript.src || 'inline');
+                    } catch (e) {
+                        console.error('SPA: ❌ Error executing script:', e, oldScript);
+                    }
+                });
+                
+                console.log(`SPA: ✅ Total scripts executed: ${executedCount}`);
+            },
+            
+            initializeBootstrapComponents: function(container = document) {
+                console.log('SPA: 🚀 Initializing Bootstrap components in scope:', container === document ? 'document' : 'container');
+                
+                try {
+                    let initializedCount = 0;
+                    
+                    // CRITICAL: Trigger Bootstrap's own auto-initialization for new content
+                    // This replicates what Bootstrap does on DOMContentLoaded
+                    if (container !== document && typeof bootstrap !== 'undefined') {
+                        console.log('SPA: 🔄 Triggering Bootstrap auto-initialization for new content...');
+                        
+                        // Dispatch a custom event to trigger any auto-init listeners
+                        const initEvent = new Event('DOMContentLoaded', { bubbles: true, cancelable: false });
+                        container.dispatchEvent(initEvent);
+                        
+                        // Also manually trigger data-api initialization for the container
+                        if (typeof bootstrap.Tooltip !== 'undefined') {
+                            // Force Bootstrap to scan for new elements with data attributes
+                            container.querySelectorAll('[data-bs-toggle]').forEach(element => {
+                                console.log('SPA: 🔍 Processing Bootstrap data-attribute element:', element);
+                            });
+                        }
+                    }
+                    
+                    const initializeComponent = (element, componentType, initializer) => {
+                        try {
+                            const existingInstance = componentType.getInstance(element);
+                            if (!existingInstance) {
+                                const instance = initializer(element);
+                                initializedCount++;
+                                console.log(`SPA: ✅ Initialized ${componentType.name.toLowerCase()}:`, element);
+                                return instance;
+                            } else {
+                                console.log(`SPA: ⚠️ ${componentType.name} already initialized:`, element);
+                                return existingInstance;
+                            }
+                        } catch (e) {
+                            console.error(`SPA: ❌ Error initializing ${componentType.name}:`, e, element);
+                            return null;
+                        }
+                    };
+                    
+                    // Initialize tooltips only in the specified container
+                    const tooltips = container.querySelectorAll('[data-bs-toggle="tooltip"]');
+                    console.log(`SPA: 🔍 Found ${tooltips.length} tooltip elements to initialize`);
+                    tooltips.forEach(tooltip => {
+                        initializeComponent(tooltip, bootstrap.Tooltip, (el) => {
+                            return new bootstrap.Tooltip(el, {
+                                animation: true,
+                                delay: { show: 100, hide: 100 }
+                            });
+                        });
+                    });
+                    
+                    // Initialize popovers only in the specified container
+                    const popovers = container.querySelectorAll('[data-bs-toggle="popover"]');
+                    console.log(`SPA: � Found ${popovers.length} popover elements to initialize`);
+                    popovers.forEach(popover => {
+                        initializeComponent(popover, bootstrap.Popover, (el) => {
+                            return new bootstrap.Popover(el, {
+                                animation: true,
+                                trigger: 'hover focus'
+                            });
+                        });
+                    });
+                    
+                    // Initialize dropdowns in the specified container
+                    const dropdowns = container.querySelectorAll('.dropdown-toggle, [data-bs-toggle="dropdown"]');
+                    console.log(`SPA: 🔍 Found ${dropdowns.length} dropdown elements to initialize`);
+                    dropdowns.forEach(dropdown => {
+                        initializeComponent(dropdown, bootstrap.Dropdown, (el) => {
+                            return new bootstrap.Dropdown(el);
+                        });
+                    });
+                    
+                    // If we're not initializing the full document, also reinitialize navbar dropdowns
+                    // that were disposed globally but are outside the container scope
+                    if (container !== document) {
+                        const navbarDropdowns = document.querySelectorAll('.navbar .dropdown-toggle, .navbar [data-bs-toggle="dropdown"]');
+                        console.log(`SPA: 🔍 Re-initializing ${navbarDropdowns.length} navbar dropdowns...`);
+                        navbarDropdowns.forEach(dropdown => {
+                            initializeComponent(dropdown, bootstrap.Dropdown, (el) => {
+                                return new bootstrap.Dropdown(el);
+                            });
+                        });
+                    }
+                    
+                    // Initialize modals
+                    const modals = container.querySelectorAll('.modal');
+                    console.log(`SPA: 🔍 Found ${modals.length} modal elements to initialize`);
+                    modals.forEach(modal => {
+                        initializeComponent(modal, bootstrap.Modal, (el) => {
+                            return new bootstrap.Modal(el);
+                        });
+                    });
+                    
+                    // Initialize collapses
+                    const collapses = container.querySelectorAll('[data-bs-toggle="collapse"]');
+                    console.log(`SPA: � Found ${collapses.length} collapse elements to initialize`);
+                    collapses.forEach(collapse => {
+                        initializeComponent(collapse, bootstrap.Collapse, (el) => {
+                            return new bootstrap.Collapse(el, { toggle: false });
+                        });
+                    });
+                    
+                    // Initialize any new toasts only in the specified container
+                    const toastElements = container.querySelectorAll('.toast');
+                    console.log(`SPA: 🔍 Found ${toastElements.length} toast elements to initialize`);
+                    toastElements.forEach(toast => {
+                        initializeComponent(toast, bootstrap.Toast, (el) => {
+                            const bsToast = new bootstrap.Toast(el, {
+                                delay: parseInt(el.getAttribute('data-delay') || 5000, 10)
+                            });
+                            if (el.classList.contains('show-on-load')) {
+                                bsToast.show();
+                            }
+                            return bsToast;
+                        });
+                    });
+                    
+                    console.log(`SPA: ✅ Total Bootstrap components initialized: ${initializedCount}`);
+                    
+                    // CRITICAL: Apply Bootstrap's full auto-initialization like it does on page load
+                    // This addresses the core issue: Bootstrap auto-init only runs once on initial page load
+                    if (container !== document && typeof bootstrap !== 'undefined') {
+                        console.log('SPA: 🔄 Applying Bootstrap auto-initialization to new content...');
+                        
+                        try {
+                            // Initialize all data-api elements that Bootstrap would auto-initialize
+                            const dataElements = container.querySelectorAll('[data-bs-toggle], [data-bs-dismiss], [data-bs-target], [data-bs-slide], [data-bs-ride]');
+                            console.log(`SPA: 🔍 Found ${dataElements.length} elements with Bootstrap data attributes`);
+                            
+                            // Re-apply Bootstrap's data-api initialization patterns
+                            dataElements.forEach(element => {
+                                const toggle = element.getAttribute('data-bs-toggle');
+                                const dismiss = element.getAttribute('data-bs-dismiss');
+                                
+                                if (toggle && !element._bootstrapInitialized) {
+                                    console.log(`SPA: 🔧 Auto-initializing ${toggle} component:`, element);
+                                    
+                                    // Mark as initialized to prevent duplicate initialization
+                                    element._bootstrapInitialized = true;
+                                    
+                                    // Apply the same initialization Bootstrap does automatically
+                                    switch (toggle) {
+                                        case 'dropdown':
+                                            if (!bootstrap.Dropdown.getInstance(element)) {
+                                                new bootstrap.Dropdown(element);
+                                            }
+                                            break;
+                                        case 'modal':
+                                            if (!bootstrap.Modal.getInstance(element)) {
+                                                new bootstrap.Modal(element);
+                                            }
+                                            break;
+                                        case 'tooltip':
+                                            if (!bootstrap.Tooltip.getInstance(element)) {
+                                                new bootstrap.Tooltip(element);
+                                            }
+                                            break;
+                                        case 'popover':
+                                            if (!bootstrap.Popover.getInstance(element)) {
+                                                new bootstrap.Popover(element);
+                                            }
+                                            break;
+                                        case 'collapse':
+                                            if (!bootstrap.Collapse.getInstance(element)) {
+                                                new bootstrap.Collapse(element);
+                                            }
+                                            break;
+                                        case 'tab':
+                                            if (!bootstrap.Tab.getInstance(element)) {
+                                                new bootstrap.Tab(element);
+                                            }
+                                            break;
+                                    }
+                                }
+                                
+                                if (dismiss && !element._bootstrapDismissInitialized) {
+                                    console.log(`SPA: 🔧 Auto-initializing ${dismiss} dismiss:`, element);
+                                    element._bootstrapDismissInitialized = true;
+                                    // Bootstrap handles dismiss functionality automatically via event delegation
+                                }
+                            });
+                            
+                            console.log('SPA: ✅ Bootstrap auto-initialization completed for new content');
+                        } catch (autoInitError) {
+                            console.error('SPA: ❌ Error during Bootstrap auto-initialization:', autoInitError);
+                        }
+                    }
+                    
+                    console.log('SPA: 🎯 Bootstrap component initialization completed successfully');
+                } catch (error) {
+                    console.error('SPA: ❌ Error during Bootstrap component initialization:', error);
+                }
+            },
+            
+            loadContent: function(url, updateHistory = true) {
+                this.navigationCount++;
+                console.log(`\n🚀 === SPA NAVIGATION #${this.navigationCount} ===`);
+                console.log('SPA: Loading content for URL:', url);
+                this.showLoading();
+                
+                // Analyze state before disposal
+                this.analyzeBootstrapState('BEFORE_DISPOSAL');
+                
+                // Ensure theme is maintained during transition
+                const currentTheme = localStorage.getItem('helpdesk-theme') || 'light';
+                document.documentElement.setAttribute('data-theme', currentTheme);
+                
+                // Apply theme to body immediately to prevent flashing
+                document.body.setAttribute('data-theme', currentTheme);
+                
+                // CRITICAL: Dispose ALL Bootstrap components before any DOM manipulation
+                this.disposeAllBootstrapComponents();
+                
+                // Analyze state after disposal
+                this.analyzeBootstrapState('AFTER_DISPOSAL');
+                
+                // Fetch new content
+                fetch(url, {
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-SPA-Request': 'true',
+                        'Cache-Control': 'no-cache'
+                    }
+                })
+                .then(response => {
+                    console.log('SPA: Response status:', response.status);
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    return response.text();
+                })
+                .then(html => {
+                    console.log('SPA: Received HTML, length:', html.length);
+                    
+                    // Parse the response to get just the content
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(html, 'text/html');
+                    
+                    // Try multiple selectors to find content
+                    let newContent = doc.querySelector('.container.mt-4');
+                    if (!newContent) {
+                        newContent = doc.querySelector('main .container');
+                    }
+                    if (!newContent) {
+                        newContent = doc.querySelector('.container');
+                    }
+                    if (!newContent) {
+                        // Extract content block if it exists
+                        const contentBlock = doc.querySelector('[data-content-block]');
+                        if (contentBlock) {
+                            newContent = contentBlock;
+                        }
+                    }
+                    
+                    console.log('SPA: Found content element:', !!newContent);
+                    
+                    if (newContent) {
+                        // Get current content container
+                        const currentContent = document.querySelector('.container.mt-4');
+                        if (!currentContent) {
+                            throw new Error('Current content container not found');
+                        }
+                        
+                        console.log('SPA: Replacing content...');
+                        
+                        // Store current scroll position
+                        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                        
+                        // Keep messages area if it exists
+                        const messagesArea = currentContent.querySelector('.toast-container');
+                        
+                        // Apply theme to new content before insertion
+                        newContent.setAttribute('data-theme', currentTheme);
+                        
+                        // Get the new content HTML
+                        const newContentHTML = newContent.innerHTML;
+                        
+                        // Clear and replace content atomically
+                        requestAnimationFrame(() => {
+                            // Clear current content
+                            currentContent.innerHTML = '';
+                            
+                            // Insert new content
+                            currentContent.innerHTML = newContentHTML;
+                            
+                            // Re-add messages area if it was there
+                            if (messagesArea && !currentContent.querySelector('.toast-container')) {
+                                currentContent.insertBefore(messagesArea, currentContent.firstChild);
+                            }
+                            
+                            // Ensure container classes are maintained
+                            currentContent.classList.add('spa-loaded', 'container', 'mt-4');
+                            
+                            // Apply theme attributes to ensure consistency
+                            currentContent.setAttribute('data-theme', currentTheme);
+                            
+                            // Apply theme to all child elements that might need it
+                            const themeElements = currentContent.querySelectorAll('.card, .navbar, .btn, .table');
+                            themeElements.forEach(el => el.setAttribute('data-theme', currentTheme));
+                            
+                            console.log('SPA: Content replaced successfully');
+                            
+                            // CRITICAL: Execute any inline scripts in the new content
+                            this.executeInlineScripts(currentContent);
+                            
+                            // Analyze state after content replacement
+                            this.analyzeBootstrapState('AFTER_CONTENT_REPLACEMENT');
+                        });
+                        
+                        // Update page title
+                        const newTitle = doc.querySelector('title');
+                        if (newTitle) {
+                            document.title = newTitle.textContent;
+                        }
+                        
+                        // Update active nav states
+                        this.updateActiveNav(url);
+                        
+                        // CRITICAL: Initialize Bootstrap components ONLY on the new content area after DOM update
+                        setTimeout(() => {
+                            console.log('SPA: Reinitializing components...');
+                            
+                            // Step 1: Initialize Bootstrap components ONLY in the content area
+                            this.initializeBootstrapComponents(currentContent);
+                            
+                            // Step 2: Analyze state after initialization
+                            this.analyzeBootstrapState('AFTER_INITIALIZATION');
+                            
+                            // Step 3: Reinitialize other components that don't conflict with Bootstrap
+                            this.reinitializeNonBootstrapComponents();
+                            
+                            // Step 4: Fix mobile responsiveness after content load
+                            this.fixMobileResponsiveness();
+                            
+                            // Step 5: Force CSS re-evaluation to ensure styles are applied
+                            this.forceStyleReapplication(currentContent);
+                            
+                            // Step 6: Scroll to top smoothly
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                            
+                            console.log(`✅ === SPA NAVIGATION #${this.navigationCount} COMPLETED ===\n`);
+                        }, 50);
+                    } else {
+                        throw new Error('Content container not found in response');
+                    }
+                })
+                .catch(error => {
+                    console.error('SPA navigation failed:', error);
+                    console.log('SPA: Falling back to full page load for URL:', url);
+                    
+                    // Show a brief message before fallback
+                    this.hideLoading();
+                    
+                    // Fallback to normal navigation with a small delay to show the error briefly
+                    setTimeout(() => {
+                        window.location.href = url;
+                    }, 100);
+                })
+                .finally(() => {
+                    this.hideLoading();
+                });
+            },
+            
+            updateActiveNav: function(url) {
+                // Update active states on navigation links
+                document.querySelectorAll('.nav-link').forEach(link => {
+                    link.classList.remove('active');
+                    const linkHref = link.getAttribute('href');
+                    if (linkHref === url || (url.startsWith(linkHref) && linkHref !== '/')) {
+                        link.classList.add('active');
+                    }
+                });
+            },
+            
+            reinitializeNonBootstrapComponents: function() {
+                console.log('SPA: 🔄 Reinitializing non-Bootstrap components...');
+                
+                // Ensure theme is properly applied after content load
+                const currentTheme = localStorage.getItem('helpdesk-theme') || 'light';
+                
+                // Apply theme to document root and body
+                document.documentElement.setAttribute('data-theme', currentTheme);
+                document.body.setAttribute('data-theme', currentTheme);
+                
+                // Apply theme to all newly loaded content
+                const newElements = document.querySelectorAll('[data-theme=""], [data-theme="light"], [data-theme="dark"]');
+                newElements.forEach(el => {
+                    el.setAttribute('data-theme', currentTheme);
+                });
+                
+                // Re-enable any custom form validation
+                this.setupFormValidation();
+                
+                // Reinitialize any custom UI components (non-Bootstrap)
+                this.initializeCustomComponents();
+                
+                console.log('SPA: ✅ Non-Bootstrap components reinitialized');
+            },
+            
+            forceStyleReapplication: function(container) {
+                console.log('SPA: 🎨 Forcing style reapplication...');
+                
+                // Force a reflow to ensure all CSS is applied
+                container.offsetHeight;
+                
+                // Ensure Bootstrap CSS classes are properly recognized
+                const bsElements = container.querySelectorAll('.btn, .card, .table, .form-control, .dropdown, .modal');
+                bsElements.forEach(el => {
+                    // Trigger a style recalculation
+                    el.style.display = 'none';
+                    el.offsetHeight; // Force reflow
+                    el.style.display = '';
+                });
+                
+                console.log('SPA: ✅ Style reapplication completed');
+            },
+            
+            setupFormValidation: function() {
+                // Re-setup any custom form validation that might have been lost
+                const forms = document.querySelectorAll('form[data-validate]');
+                forms.forEach(form => {
+                    // Add any custom validation logic here
+                    console.log('SPA: 📝 Setup validation for form:', form);
+                });
+            },
+            
+            initializeCustomComponents: function() {
+                // Initialize any non-Bootstrap custom components
+                console.log('SPA: 🎛️ Initializing custom components...');
+                
+                // Example: Custom date pickers, charts, etc. that aren't Bootstrap
+                // Add your custom component initialization here
+            },
+            
+            reinitializeDashboard: function() {
+                console.log('SPA: 🎛️ Reinitializing dashboard components...');
+                
+                // Re-initialize any form components or interactive elements
+                this.reinitializeInteractiveElements();
+                
+                // Force a style recalculation to ensure theme is applied
+                setTimeout(() => {
+                    const computedStyle = window.getComputedStyle(document.body);
+                    console.log('SPA: Final theme check - background color:', computedStyle.backgroundColor);
+                }, 100);
+                
+                // Trigger a custom event that other scripts can listen to
+                const currentTheme = localStorage.getItem('helpdesk-theme') || 'light';
+                window.dispatchEvent(new CustomEvent('spaContentLoaded', { 
+                    detail: { theme: currentTheme } 
+                }));
+                
+                console.log('SPA: Component reinitialization completed');
+            },
+            
+            reinitializeUIEnhancements: function() {
+                // Prevent multiple rapid reinitializations
+                const now = Date.now();
+                if (this.isReinitializing || (now - this.lastReinitTime) < 200) {
+                    console.log('SPA: ⏳ Skipping UI reinitialization - too recent or already in progress');
+                    return;
+                }
+                
+                this.isReinitializing = true;
+                this.lastReinitTime = now;
+                
+                console.log('SPA: 🔄 Starting comprehensive UI enhancements reinitialization...');
+                
+                try {
+                    // 1. DISPOSE EXISTING BOOTSTRAP COMPONENTS
+                    console.log('SPA: 🗑️ Disposing existing Bootstrap components...');
+                    
+                    // Dispose all existing tooltips
+                    document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(el => {
+                        const tooltip = bootstrap.Tooltip.getInstance(el);
+                        if (tooltip) {
+                            try {
+                                tooltip.dispose();
+                            } catch (e) {
+                                console.warn('Failed to dispose tooltip:', e);
+                            }
+                        }
+                        el.classList.remove('tooltip-initialized');
+                    });
+                    
+                    // Dispose all existing popovers
+                    document.querySelectorAll('[data-bs-toggle="popover"]').forEach(el => {
+                        const popover = bootstrap.Popover.getInstance(el);
+                        if (popover) {
+                            try {
+                                popover.dispose();
+                            } catch (e) {
+                                console.warn('Failed to dispose popover:', e);
+                            }
+                        }
+                        el.classList.remove('popover-initialized');
+                    });
+                    
+                    // Dispose all existing dropdowns
+                    document.querySelectorAll('.dropdown-toggle').forEach(el => {
+                        const dropdown = bootstrap.Dropdown.getInstance(el);
+                        if (dropdown) {
+                            try {
+                                dropdown.dispose();
+                            } catch (e) {
+                                console.warn('Failed to dispose dropdown:', e);
+                            }
+                        }
+                        el.classList.remove('dropdown-initialized');
+                    });
+                    
+                    // Dispose all existing toasts
+                    document.querySelectorAll('.toast').forEach(el => {
+                        const toast = bootstrap.Toast.getInstance(el);
+                        if (toast) {
+                            try {
+                                toast.dispose();
+                            } catch (e) {
+                                console.warn('Failed to dispose toast:', e);
+                            }
+                        }
+                    });
+                    
+                    // Reset all initialization classes
+                    document.querySelectorAll('.ripple-initialized, .sidebar-initialized, .card-initialized, .validation-initialized, .counter-initialized, .collapsible-initialized').forEach(el => {
+                        el.classList.remove('ripple-initialized', 'sidebar-initialized', 'card-initialized', 'validation-initialized', 'counter-initialized', 'collapsible-initialized');
+                    });
+                    
+                    console.log('SPA: ✅ Bootstrap component disposal completed');
+                    
+                    // 2. REINITIALIZE ALL COMPONENTS
+                    console.log('SPA: 🚀 Reinitializing all UI components...');
+                    
+                    // Initialize all tooltips
+                    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+                    tooltipTriggerList.map(function(tooltipTriggerEl) {
+                        tooltipTriggerEl.classList.add('tooltip-initialized');
+                        return new bootstrap.Tooltip(tooltipTriggerEl, {
+                            animation: true,
+                            delay: { show: 100, hide: 100 }
+                        });
+                    });
+                    console.log(`SPA: 📝 Initialized ${tooltipTriggerList.length} tooltips`);
+
+                    // Initialize all popovers
+                    const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+                    popoverTriggerList.map(function(popoverTriggerEl) {
+                        popoverTriggerEl.classList.add('popover-initialized');
+                        return new bootstrap.Popover(popoverTriggerEl, {
+                            animation: true,
+                            trigger: 'hover focus'
+                        });
+                    });
+                    console.log(`SPA: 📋 Initialized ${popoverTriggerList.length} popovers`);
+
+                    // Button ripple effect
+                    const rippleButtons = document.querySelectorAll('.btn-ripple');
+                    rippleButtons.forEach(button => {
+                        button.classList.add('ripple-initialized');
+                        button.addEventListener('click', function(e) {
+                            const rect = button.getBoundingClientRect();
+                            const x = e.clientX - rect.left;
+                            const y = e.clientY - rect.top;
+
+                            const ripple = document.createElement('span');
+                            ripple.className = 'ripple';
+                            ripple.style.left = `${x}px`;
+                            ripple.style.top = `${y}px`;
+
+                            button.appendChild(ripple);
+
+                            setTimeout(() => {
+                                ripple.remove();
+                            }, 600);
+                        });
+                    });
+                    console.log(`SPA: 🎉 Initialized ${rippleButtons.length} ripple buttons`);
+
+                    // Enhanced dropdown animation
+                    const dropdownToggleList = document.querySelectorAll('.dropdown-toggle');
+                    dropdownToggleList.forEach(dropdown => {
+                        dropdown.classList.add('dropdown-initialized');
+                        new bootstrap.Dropdown(dropdown); // Reinitialize Bootstrap dropdown
+                        dropdown.addEventListener('click', function() {
+                            setTimeout(() => {
+                                const dropdownMenu = dropdown.nextElementSibling;
+                                if (dropdownMenu && dropdownMenu.classList.contains('show')) {
+                                    dropdownMenu.classList.add('animated-dropdown');
+                                }
+                            }, 10);
+                        });
+                    });
+                    console.log(`SPA: 📋 Initialized ${dropdownToggleList.length} dropdowns`);
+
+                    // Auto-collapsing sidebar on mobile
+                    const sidebarToggles = document.querySelectorAll('.sidebar-toggle');
+                    const sidebar = document.querySelector('.sidebar');
+                    if (sidebar && window.innerWidth < 992) {
+                        sidebarToggles.forEach(toggle => {
+                            toggle.classList.add('sidebar-initialized');
+                            toggle.addEventListener('click', function() {
+                                sidebar.classList.toggle('expanded');
+                            });
+                        });
+                    }
+                    console.log(`SPA: 📱 Initialized ${sidebarToggles.length} sidebar toggles`);
+
+                    // Interactive cards
+                    const interactiveCards = document.querySelectorAll('.card-interactive');
+                    interactiveCards.forEach(card => {
+                        card.classList.add('card-initialized');
+                        card.addEventListener('mouseenter', function() {
+                            this.classList.add('card-hover-effect');
+                        });
+                        
+                        card.addEventListener('mouseleave', function() {
+                            this.classList.remove('card-hover-effect');
+                        });
+                    });
+                    console.log(`SPA: 🃏 Initialized ${interactiveCards.length} interactive cards`);
+
+                    // Form validation on the fly
+                    const forms = document.querySelectorAll('.needs-live-validation');
+                    forms.forEach(form => {
+                        form.classList.add('validation-initialized');
+                        const inputs = form.querySelectorAll('input, select, textarea');
+                        inputs.forEach(input => {
+                            input.addEventListener('blur', function() {
+                                if (this.checkValidity()) {
+                                    this.classList.remove('is-invalid');
+                                    this.classList.add('is-valid');
+                                } else {
+                                    this.classList.remove('is-valid');
+                                    this.classList.add('is-invalid');
+                                }
+                            });
+                        });
+                    });
+                    console.log(`SPA: ✅ Initialized ${forms.length} form validations`);
+
+                    // Counter animation for statistics
+                    const animateCounter = (counterElement, endValue, duration = 1500) => {
+                        const startValue = 0;
+                        const startTime = performance.now();
+                        const updateCounter = (timestamp) => {
+                            const elapsedTime = timestamp - startTime;
+                            if (elapsedTime < duration) {
+                                const progress = elapsedTime / duration;
+                                const currentValue = Math.round(progress * (endValue - startValue) + startValue);
+                                counterElement.textContent = currentValue;
+                                requestAnimationFrame(updateCounter);
+                            } else {
+                                counterElement.textContent = endValue;
+                            }
+                        };
+                        requestAnimationFrame(updateCounter);
+                    };
+
+                const counterElements = document.querySelectorAll('.animate-counter:not(.counter-initialized)');
+                const observerOptions = {
+                    threshold: 0.1,
+                    rootMargin: '0px 0px -50px 0px'
+                };
+
+                const counterObserver = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            const target = entry.target;
+                            const endValue = parseInt(target.getAttribute('data-count'), 10);
+                            if (!isNaN(endValue)) {
+                                animateCounter(target, endValue);
+                            }
+                            counterObserver.unobserve(target);
+                        }
+                    });
+                }, observerOptions);
+
+                counterElements.forEach(element => {
+                    element.classList.add('counter-initialized');
+                    counterObserver.observe(element);
+                });
+
+                // Smooth scroll for anchor links
+                document.querySelectorAll('a[href^="#"]:not(.anchor-initialized)').forEach(anchor => {
+                    anchor.classList.add('anchor-initialized');
+                    anchor.addEventListener('click', function(e) {
+                        const targetId = this.getAttribute('href');
+                        if (targetId === '#') return;
+                        
+                        const targetElement = document.querySelector(targetId);
+                        if (targetElement) {
+                            e.preventDefault();
+                            window.scrollTo({
+                                top: targetElement.offsetTop - 70,
+                                behavior: 'smooth'
+                            });
+                        }
+                    });
+                });
+
+                // Toast initialization with optional auto-hiding
+                const toastElements = document.querySelectorAll('.toast:not(.toast-initialized)');
+                toastElements.forEach(toastEl => {
+                    toastEl.classList.add('toast-initialized');
+                    const toast = new bootstrap.Toast(toastEl, {
+                        autohide: toastEl.getAttribute('data-autohide') !== 'false',
+                        delay: parseInt(toastEl.getAttribute('data-delay') || 5000, 10)
+                    });
+                    
+                    if (toastEl.classList.contains('show-on-load')) {
+                        toast.show();
+                    }
+                });
+
+                // Collapsible card bodies with animation
+                const collapsibleCardHeaders = document.querySelectorAll('.card-header-collapsible:not(.collapsible-initialized)');
+                collapsibleCardHeaders.forEach(header => {
+                    header.classList.add('collapsible-initialized');
+                    header.addEventListener('click', function() {
+                        const cardBody = this.parentElement.querySelector('.card-body');
+                        const icon = this.querySelector('.collapse-icon');
+                        
+                        if (cardBody) {
+                            cardBody.classList.toggle('d-none');
+                            if (icon) {
+                                icon.classList.toggle('fa-chevron-down');
+                                icon.classList.toggle('fa-chevron-up');
+                            }
+                        }
+                    });
+                });
+                
+                console.log('SPA: ✅ Comprehensive UI enhancements reinitialization completed successfully');
+                console.log('SPA: 🎯 All Bootstrap components and interactive elements are now active');
+                
+                } catch (error) {
+                    console.error('SPA: ❌ Error during UI enhancements reinitialization:', error);
+                } finally {
+                    // Always reset the flag, even if there was an error
+                    this.isReinitializing = false;
+                }
+            },
+            
+            reinitializeDashboard: function() {
+                // Dashboard-specific re-initialization
+                const dashboardStatCards = document.querySelectorAll('.stat-card');
+                if (dashboardStatCards.length > 0) {
+                    // Ensure stat cards maintain their hover behavior and colors
+                    dashboardStatCards.forEach(card => {
+                        // Force-reapply any custom CSS animations or behaviors
+                        card.style.transition = 'all 0.3s ease';
+                        
+                        // Ensure background colors are maintained by re-triggering class application
+                        const colorClasses = ['bg-primary', 'bg-info', 'bg-warning', 'bg-success', 'bg-secondary'];
+                        colorClasses.forEach(colorClass => {
+                            if (card.classList.contains(colorClass)) {
+                                card.classList.remove(colorClass);
+                                // Use requestAnimationFrame to ensure proper re-application
+                                requestAnimationFrame(() => {
+                                    card.classList.add(colorClass);
+                                });
+                            }
+                        });
+                        
+                        // Ensure text color classes are maintained
+                        if (card.classList.contains('text-white')) {
+                            card.classList.remove('text-white');
+                            requestAnimationFrame(() => {
+                                card.classList.add('text-white');
+                            });
+                        }
+                        
+                        // Ensure links within cards maintain their color
+                        const cardLinks = card.querySelectorAll('.stat-card-link');
+                        cardLinks.forEach(link => {
+                            if (link.classList.contains('text-white')) {
+                                link.classList.remove('text-white');
+                                requestAnimationFrame(() => {
+                                    link.classList.add('text-white');
+                                });
+                            }
+                        });
+                    });
+                }
+                
+                // Re-initialize any counter animations
+                const counters = document.querySelectorAll('.animate-counter');
+                counters.forEach(counter => {
+                    // Reset and trigger counter animation
+                    counter.style.animation = 'none';
+                    setTimeout(() => {
+                        counter.style.animation = 'fadeInUp 0.8s ease-out';
+                    }, 10);
+                    
+                    // Ensure the counter shows the correct value
+                    const countValue = counter.getAttribute('data-count');
+                    if (countValue) {
+                        counter.textContent = countValue;
+                    }
+                });
+                
+                // Re-initialize dashboard icon animations (ensure they're disabled by default)
+                const animatedIcons = document.querySelectorAll('.stat-card .animate-spin, .stat-card .animate-pulse, .stat-card .animate-shake, .stat-card .animate-float, .stat-card .animate-bounce');
+                animatedIcons.forEach(icon => {
+                    // Ensure animations are disabled by default and only activate on hover
+                    icon.style.animation = 'none';
+                });
+                
+                // Ensure FontAwesome spin is controlled properly
+                const faSpinIcons = document.querySelectorAll('.stat-card .fa-spin');
+                faSpinIcons.forEach(icon => {
+                    icon.classList.remove('fa-spin');
+                    // Re-add the class to ensure it's properly controlled by CSS hover rules
+                    requestAnimationFrame(() => {
+                        icon.classList.add('fa-spin');
+                    });
+                });
+            },
+            
+            reinitializeInteractiveElements: function() {
+                // Re-initialize any dropdown or filter components
+                const filterDropdowns = document.querySelectorAll('.multi-select-dropdown');
+                filterDropdowns.forEach(dropdown => {
+                    // Re-initialize multi-select functionality if needed
+                    if (window.initializeMultiSelect) {
+                        window.initializeMultiSelect(dropdown);
+                    }
+                });
+                
+                // Re-initialize any custom form elements
+                const customSelects = document.querySelectorAll('select');
+                customSelects.forEach(select => {
+                    // Trigger change event to ensure proper styling
+                    select.dispatchEvent(new Event('change'));
+                });
+                
+                // Re-initialize any table sorting or pagination
+                if (window.initializeTableFeatures) {
+                    window.initializeTableFeatures();
+                }
+            },
+            
+            fixMobileResponsiveness: function() {
+                // Minimal mobile responsiveness fixes - let Bootstrap handle visibility
+                const container = document.querySelector('.container.mt-4');
+                if (container && window.innerWidth <= 576) {
+                    // Only apply essential mobile padding
+                    container.style.paddingLeft = '10px';
+                    container.style.paddingRight = '10px';
+                }
+                
+                // Do NOT override Bootstrap responsive classes - they work correctly now
+                // The d-md-none, d-none d-md-block classes will handle visibility automatically
+            },
+            
+            showLoading: function() {
+                const indicator = document.getElementById('spa-loading-indicator');
+                if (indicator) {
+                    indicator.style.opacity = '1';
+                    indicator.style.transform = 'scaleX(1)';
+                }
+            },
+            
+            hideLoading: function() {
+                const indicator = document.getElementById('spa-loading-indicator');
+                if (indicator) {
+                    setTimeout(() => {
+                        indicator.style.transform = 'scaleX(0)';
+                        setTimeout(() => {
+                            indicator.style.opacity = '0';
+                        }, 300);
+                    }, 100);
+                }
+            }
+        };
+    </script>
+    
     <!-- Auto-hide Toast messages and mobile enhancements -->
     <script>
+        // Dark Mode Functionality
+        // Theme preference is automatically saved in localStorage and persists across browser sessions
+        const ThemeManager = {
+            init: function() {
+                this.loadTheme();
+                this.bindEvents();
+            },
+            
+            loadTheme: function() {
+                // Load saved theme from localStorage, default to 'light' if not set
+                const savedTheme = localStorage.getItem('helpdesk-theme') || 'light';
+                this.setTheme(savedTheme);
+            },
+            
+            setTheme: function(theme) {
+                document.documentElement.setAttribute('data-theme', theme);
+                // Save theme preference to localStorage (persists across browser sessions)
+                localStorage.setItem('helpdesk-theme', theme);
+                
+                // Update desktop icon
+                const desktopIcon = document.getElementById('theme-icon');
+                if (desktopIcon) {
+                    desktopIcon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+                }
+                
+                // Update mobile icon and text
+                const mobileIcon = document.getElementById('mobile-theme-icon');
+                const mobileText = document.getElementById('mobile-theme-text');
+                if (mobileIcon && mobileText) {
+                    mobileIcon.className = theme === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
+                    mobileText.textContent = theme === 'dark' ? 'Tryb jasny' : 'Tryb ciemny';
+                }
+            },
+            
+            toggleTheme: function() {
+                const currentTheme = document.documentElement.getAttribute('data-theme');
+                const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+                this.setTheme(newTheme);
+                
+                // Add subtle animation feedback
+                document.body.style.transition = 'background-color 0.3s ease';
+                setTimeout(() => {
+                    document.body.style.transition = '';
+                }, 300);
+            },
+            
+            bindEvents: function() {
+                // Desktop toggle
+                const desktopToggle = document.getElementById('theme-toggle');
+                if (desktopToggle) {
+                    desktopToggle.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        this.toggleTheme();
+                    });
+                }
+                
+                // Mobile toggle
+                const mobileToggle = document.getElementById('mobile-theme-toggle');
+                if (mobileToggle) {
+                    mobileToggle.addEventListener('click', (e) => {
+                        e.preventDefault();
+                        this.toggleTheme();
+                        
+                        // Auto-collapse mobile menu after theme change
+                        const navbar = document.querySelector('.navbar-collapse');
+                        if (navbar && navbar.classList.contains('show')) {
+                            bootstrap.Collapse.getInstance(navbar).hide();
+                        }
+                    });
+                }
+            }
+        };
+        
         // Mobile device detection and responsive utilities
         const MobileUtils = {
             isMobile: function() {
@@ -1243,6 +3688,17 @@
         };
         
         document.addEventListener('DOMContentLoaded', function() {
+            // Initialize theme manager
+            ThemeManager.init();
+            
+            // Initialize SPA Navigator for seamless navigation
+            SPANavigator.init();
+            
+            // Add window resize handler for mobile responsiveness
+            window.addEventListener('resize', function() {
+                SPANavigator.fixMobileResponsiveness();
+            });
+            
             // Initialize mobile enhancements
             MobileUtils.initTouchEnhancements();
             
@@ -1360,6 +3816,150 @@
                 });
             }
         });
+        
+        // Initialize comprehensive UI enhancements on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🎨 Base template initializing UI components...');
+            
+            // For initial page load, use the standard initialization
+            // Skip the SPA navigator's function to avoid conflicts
+            if (window.SPANavigator && window.SPANavigator.initializeBootstrapComponents) {
+                console.log('🚀 Using SPANavigator for initial Bootstrap initialization...');
+                window.SPANavigator.initializeBootstrapComponents(document);
+                console.log('✅ Initial Bootstrap components initialized');
+            } else {
+                console.log('⚠️ SPANavigator not ready, will initialize after SPANavigator loads...');
+                
+                // Fallback: wait a bit for SPANavigator to be available
+                setTimeout(() => {
+                    if (window.SPANavigator && window.SPANavigator.initializeBootstrapComponents) {
+                        console.log('🔄 Retrying initial Bootstrap initialization...');
+                        window.SPANavigator.initializeBootstrapComponents(document);
+                        console.log('✅ Bootstrap components initialized on retry');
+                    } else {
+                        console.error('❌ SPANavigator still not available after retry');
+                    }
+                }, 100);
+            }
+        });
+
+        // CRITICAL: Listen for SPA content changes and reinitialize UI enhancements
+        window.addEventListener('spaContentLoaded', function(event) {
+            console.log('🔄 SPA content loaded event detected, reinitializing UI enhancements...');
+            console.log('🔍 Bootstrap availability check:', !!window.bootstrap);
+            
+            // DISABLE this event handler to prevent triple initialization
+            console.log('⚠️ DISABLED: Skipping UI enhancement reinitialization to prevent triple initialization');
+            console.log('✅ Bootstrap components are already initialized by SPA navigation flow');
+            
+            return; // Early return to disable this handler
+            
+            // Longer delay to ensure DOM is fully updated and avoid conflicts
+            setTimeout(() => {
+                if (window.SPANavigator && window.SPANavigator.reinitializeUIEnhancements) {
+                    // Additional diagnostics
+                    const tooltipElements = document.querySelectorAll('[data-bs-toggle="tooltip"]');
+                    const popoverElements = document.querySelectorAll('[data-bs-toggle="popover"]');
+                    const dropdownElements = document.querySelectorAll('.dropdown-toggle');
+                    
+                    console.log(`🔍 Found ${tooltipElements.length} tooltip elements, ${popoverElements.length} popover elements, ${dropdownElements.length} dropdown elements`);
+                    
+                    // NOTE: Skip UI enhancement reinitialization since Bootstrap components
+                    // are now properly handled in the SPA navigation flow
+                    console.log('✅ Skipping UI enhancements reinitialization - handled by SPA navigation');
+                    
+                    // Only reinitialize if BetulaUI specifically requests it
+                    if (event.detail && event.detail.forceReinit) {
+                        window.SPANavigator.reinitializeUIEnhancements();
+                        console.log('✅ UI enhancements force-reinitialized after SPA navigation');
+                    }
+                } else {
+                    console.error('❌ SPA Navigator not available for UI reinitialization');
+                    console.log('🔍 Available SPANavigator methods:', window.SPANavigator ? Object.keys(window.SPANavigator) : 'SPANavigator not found');
+                }
+            }, 100); // Increased delay to prevent conflicts
+        });
+        
+        // Add global BetulaUI utilities
+        window.BetulaUI = {
+            // Show toast message programmatically
+            showToast: function(message, type = 'info', autohide = true, delay = 5000) {
+                const toastContainer = document.querySelector('.toast-container');
+                if (!toastContainer) {
+                    console.error('Toast container not found');
+                    return;
+                }
+                
+                const toast = document.createElement('div');
+                toast.className = `toast align-items-center text-white bg-${type} border-0`;
+                toast.setAttribute('role', 'alert');
+                toast.setAttribute('aria-live', 'assertive');
+                toast.setAttribute('aria-atomic', 'true');
+                
+                const toastContent = `
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            ${message}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                `;
+                
+                toast.innerHTML = toastContent;
+                toastContainer.appendChild(toast);
+                
+                const bsToast = new bootstrap.Toast(toast, {
+                    autohide: autohide,
+                    delay: delay
+                });
+                
+                bsToast.show();
+                
+                if (autohide) {
+                    setTimeout(() => {
+                        toast.remove();
+                    }, delay + 500);
+                }
+            },
+            
+            // Add loading spinner to button
+            buttonLoading: function(button, isLoading = true) {
+                if (!button) return;
+                
+                const originalContent = button.getAttribute('data-original-content') || button.innerHTML;
+                
+                if (isLoading) {
+                    button.setAttribute('data-original-content', originalContent);
+                    button.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Ładowanie...';
+                    button.disabled = true;
+                } else {
+                    button.innerHTML = originalContent;
+                    button.disabled = false;
+                }
+            },
+            
+            // Re-initialize all components (can be called manually)
+            reinitialize: function() {
+                console.log('🔄 BetulaUI: Reinitializing UI components...');
+                if (window.SPANavigator && window.SPANavigator.initializeBootstrapComponents) {
+                    // Use the proper scoped initialization instead of the problematic global one
+                    const contentContainer = document.querySelector('.container.mt-4');
+                    if (contentContainer) {
+                        console.log('🔄 BetulaUI: Using scoped Bootstrap initialization...');
+                        setTimeout(() => {
+                            window.SPANavigator.initializeBootstrapComponents(contentContainer);
+                        }, 25);
+                    } else {
+                        console.warn('BetulaUI: Content container not found for scoped initialization');
+                    }
+                } else {
+                    console.warn('BetulaUI: SPANavigator not available for reinitialization');
+                    console.log('🔍 Available SPANavigator methods:', window.SPANavigator ? Object.keys(window.SPANavigator) : 'SPANavigator not found');
+                }
+            }
+        };
+        
+        console.log('✅ Base template UI components and utilities loaded');
     </script>
     
     <!-- Cookie consent JS -->
