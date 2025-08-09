@@ -3,12 +3,10 @@
  * Adds interactive features to Bootstrap 5 components
  */
 
-// Initialization function that can be called multiple times
-function initializeUIComponents() {
+document.addEventListener('DOMContentLoaded', function() {
     // Initialize all tooltips
-    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]:not(.tooltip-initialized)'));
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
     tooltipTriggerList.map(function(tooltipTriggerEl) {
-        tooltipTriggerEl.classList.add('tooltip-initialized');
         return new bootstrap.Tooltip(tooltipTriggerEl, {
             animation: true,
             delay: { show: 100, hide: 100 }
@@ -16,9 +14,8 @@ function initializeUIComponents() {
     });
 
     // Initialize all popovers
-    const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]:not(.popover-initialized)'));
+    const popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
     popoverTriggerList.map(function(popoverTriggerEl) {
-        popoverTriggerEl.classList.add('popover-initialized');
         return new bootstrap.Popover(popoverTriggerEl, {
             animation: true,
             trigger: 'hover focus'
@@ -26,9 +23,8 @@ function initializeUIComponents() {
     });
 
     // Button ripple effect
-    const rippleButtons = document.querySelectorAll('.btn-ripple:not(.ripple-initialized)');
+    const rippleButtons = document.querySelectorAll('.btn-ripple');
     rippleButtons.forEach(button => {
-        button.classList.add('ripple-initialized');
         button.addEventListener('click', function(e) {
             const rect = button.getBoundingClientRect();
             const x = e.clientX - rect.left;
@@ -48,9 +44,8 @@ function initializeUIComponents() {
     });
 
     // Enhanced dropdown animation
-    const dropdownToggleList = document.querySelectorAll('.dropdown-toggle:not(.dropdown-initialized)');
+    const dropdownToggleList = document.querySelectorAll('.dropdown-toggle');
     dropdownToggleList.forEach(dropdown => {
-        dropdown.classList.add('dropdown-initialized');
         dropdown.addEventListener('click', function() {
             setTimeout(() => {
                 const dropdownMenu = dropdown.nextElementSibling;
@@ -62,11 +57,10 @@ function initializeUIComponents() {
     });
 
     // Auto-collapsing sidebar on mobile
-    const sidebarToggles = document.querySelectorAll('.sidebar-toggle:not(.sidebar-initialized)');
+    const sidebarToggles = document.querySelectorAll('.sidebar-toggle');
     const sidebar = document.querySelector('.sidebar');
     if (sidebar && window.innerWidth < 992) {
         sidebarToggles.forEach(toggle => {
-            toggle.classList.add('sidebar-initialized');
             toggle.addEventListener('click', function() {
                 sidebar.classList.toggle('expanded');
             });
@@ -74,9 +68,8 @@ function initializeUIComponents() {
     }
 
     // Interactive cards
-    const interactiveCards = document.querySelectorAll('.card-interactive:not(.card-initialized)');
+    const interactiveCards = document.querySelectorAll('.card-interactive');
     interactiveCards.forEach(card => {
-        card.classList.add('card-initialized');
         card.addEventListener('mouseenter', function() {
             this.classList.add('card-hover-effect');
         });
@@ -87,9 +80,8 @@ function initializeUIComponents() {
     });
 
     // Form validation on the fly
-    const forms = document.querySelectorAll('.needs-live-validation:not(.validation-initialized)');
+    const forms = document.querySelectorAll('.needs-live-validation');
     forms.forEach(form => {
-        form.classList.add('validation-initialized');
         const inputs = form.querySelectorAll('input, select, textarea');
         inputs.forEach(input => {
             input.addEventListener('blur', function() {
@@ -122,7 +114,7 @@ function initializeUIComponents() {
         requestAnimationFrame(updateCounter);
     };
 
-    const counterElements = document.querySelectorAll('.animate-counter:not(.counter-initialized)');
+    const counterElements = document.querySelectorAll('.animate-counter');
     const observerOptions = {
         threshold: 0.1,
         rootMargin: '0px 0px -50px 0px'
@@ -140,13 +132,11 @@ function initializeUIComponents() {
     }, observerOptions);
 
     counterElements.forEach(element => {
-        element.classList.add('counter-initialized');
         counterObserver.observe(element);
     });
 
     // Smooth scroll for anchor links
-    document.querySelectorAll('a[href^="#"]:not(.anchor-initialized)').forEach(anchor => {
-        anchor.classList.add('anchor-initialized');
+    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function(e) {
             const targetId = this.getAttribute('href');
             if (targetId === '#') return;
@@ -163,9 +153,8 @@ function initializeUIComponents() {
     });
 
     // Toast initialization with optional auto-hiding
-    const toastElements = document.querySelectorAll('.toast:not(.toast-initialized)');
+    const toastElements = document.querySelectorAll('.toast');
     toastElements.forEach(toastEl => {
-        toastEl.classList.add('toast-initialized');
         const toast = new bootstrap.Toast(toastEl, {
             autohide: toastEl.getAttribute('data-autohide') !== 'false',
             delay: parseInt(toastEl.getAttribute('data-delay') || 5000, 10)
@@ -177,9 +166,8 @@ function initializeUIComponents() {
     });
 
     // Collapsible card bodies with animation
-    const collapsibleCardHeaders = document.querySelectorAll('.card-header-collapsible:not(.collapsible-initialized)');
+    const collapsibleCardHeaders = document.querySelectorAll('.card-header-collapsible');
     collapsibleCardHeaders.forEach(header => {
-        header.classList.add('collapsible-initialized');
         header.addEventListener('click', function() {
             const cardBody = this.parentElement.querySelector('.card-body');
             const icon = this.querySelector('.collapse-icon');
@@ -193,13 +181,7 @@ function initializeUIComponents() {
             }
         });
     });
-}
-
-// Initialize on DOMContentLoaded
-document.addEventListener('DOMContentLoaded', initializeUIComponents);
-
-// Re-initialize on SPA content loaded
-window.addEventListener('spaContentLoaded', initializeUIComponents);
+});
 
 // Add global utilities
 window.BetulaUI = {
@@ -257,8 +239,5 @@ window.BetulaUI = {
             button.innerHTML = originalContent;
             button.disabled = false;
         }
-    },
-    
-    // Re-initialize all components (can be called manually)
-    reinitialize: initializeUIComponents
+    }
 };

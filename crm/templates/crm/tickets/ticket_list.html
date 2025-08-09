@@ -86,13 +86,6 @@
     .table {
         table-layout: fixed;
         width: 100%;
-        margin-bottom: 0; /* Remove default Bootstrap margin */
-    }
-    
-    /* Add responsive table wrapper */
-    .table-responsive {
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
     }
     
     .table th {
@@ -359,16 +352,9 @@
 
 {% block content %}
 <!-- Desktop Header -->
-<div class="d-flex justify-content-between align-items-center mb-3 d-none d-md-flex">
-    <h2 class="mb-0">Zgłoszenia</h2>
-    <div class="d-flex gap-2 align-items-center">
-        <!-- Desktop Filter Button -->
-        <button class="btn btn-sm btn-outline-secondary btn-ripple" type="button" data-bs-toggle="collapse" data-bs-target="#filterContainer">
-            <i class="fas fa-filter me-1"></i> Filtry
-            {% if selected_statuses or selected_priorities or selected_categories or selected_assigned or selected_organizations or created_by_filter or date_from or date_to or ticket_id %}
-            <span class="badge bg-info ms-1">!</span>
-            {% endif %}
-        </button>
+<div class="d-flex justify-content-between align-items-start align-items-md-center mb-3 flex-column flex-md-row ticket-header-desktop">
+    <h2 class="mb-2 mb-md-0">Zgłoszenia</h2>
+    <div class="d-flex flex-wrap gap-2">
         <a href="{% url 'ticket_create' %}" class="btn btn-primary btn-ripple">
             <i class="fas fa-plus me-1"></i> Nowe zgłoszenie
         </a>
@@ -376,7 +362,7 @@
 </div>
 
 <!-- Mobile Header - 2x1 Matrix -->
-<div class="ticket-header-mobile mb-3 d-md-none">
+<div class="ticket-header-mobile mb-3">
     <h2>Zgłoszenia</h2>
     <a href="{% url 'ticket_create' %}" class="btn btn-primary btn-ripple">
         <i class="fas fa-plus me-1"></i> Nowe zgłoszenie
@@ -397,7 +383,19 @@
 </div>
 
 <!-- Desktop Filter Card -->
-<div class="card mb-2 desktop-filter-card d-none d-md-block">
+<div class="card mb-2 desktop-filter-card">
+    <div class="card-header p-2 d-flex justify-content-between align-items-center flex-column flex-sm-row">
+        <div class="mb-2 mb-sm-0">
+            <i class="fas fa-filter me-1"></i> Filtry 
+            {% if selected_statuses or selected_priorities or selected_categories or selected_assigned or selected_organizations or created_by_filter or date_from or date_to or ticket_id %}
+            <span class="badge bg-info ms-2">Aktywne</span>
+            {% endif %}
+        </div>
+        <button class="btn btn-sm btn-outline-secondary btn-ripple" type="button" data-bs-toggle="collapse" data-bs-target="#filterContainer">
+            <i class="fas fa-caret-down filter-toggle-icon me-1"></i> 
+            <span class="filter-toggle-text">Pokaż filtry</span>
+        </button>
+    </div>
     
     <!-- Filter summary when collapsed -->
     <div class="card-body p-2 filter-summary">
@@ -854,7 +852,7 @@
                     
                     {% if user.is_staff %}
                     <div class="mb-3">
-                        <label class="form-label">Przypisanie</label>
+                        <label for="mobile_assigned" class="form-label">Przypisanie</label>
                         <div class="list-group">
                             <label class="list-group-item d-flex align-items-center">
                                 <input class="form-check-input me-2" type="checkbox" name="assigned" value="me" {% if 'me' in selected_assigned %}checked{% endif %}>
@@ -868,7 +866,7 @@
                     </div>
                     
                     <div class="mb-3">
-                        <label class="form-label">Organizacja</label>
+                        <label for="mobile_organization" class="form-label">Organizacja</label>
                         <div class="list-group">
                             {% for org in all_organizations %}
                             <label class="list-group-item d-flex align-items-center">
@@ -920,8 +918,7 @@
     <div class="card-body p-2">  <!-- Reduced padding in card body -->
         <!-- Desktop Table View -->
         <div class="desktop-table">
-            <div class="table-responsive">
-                <table class="table table-hover table-sm">  <!-- Added table-sm for more compact layout -->
+            <table class="table table-hover table-sm">  <!-- Added table-sm for more compact layout -->
                 <thead>
                     <tr>
                         <th class="col-id">ID</th>
@@ -1008,7 +1005,6 @@
                     {% endfor %}
                 </tbody>
             </table>
-            </div> <!-- Close table-responsive -->
         </div>
         
         <!-- Mobile Card View -->
