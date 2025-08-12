@@ -1081,6 +1081,58 @@
         [data-theme="dark"] .navbar a {
             color: var(--navbar-text) !important;
         }
+
+        /* 4. FORM INPUTS - Dark theme styling */
+        [data-theme="dark"] .form-control,
+        [data-theme="dark"] .form-select,
+        [data-theme="dark"] input[type="text"],
+        [data-theme="dark"] input[type="email"],
+        [data-theme="dark"] input[type="password"],
+        [data-theme="dark"] input[type="date"],
+        [data-theme="dark"] input[type="number"],
+        [data-theme="dark"] textarea {
+            background-color: var(--input-bg) !important;
+            border-color: var(--input-border) !important;
+            color: var(--text-color) !important;
+        }
+
+        /* Date input calendar icon - white in dark mode */
+        [data-theme="dark"] input[type="date"] {
+            color-scheme: dark;
+        }
+
+        /* Placeholder text - white in dark mode */
+        [data-theme="dark"] .form-control::placeholder,
+        [data-theme="dark"] input::placeholder,
+        [data-theme="dark"] textarea::placeholder {
+            color: #adb5bd !important;
+            opacity: 1;
+        }
+
+        /* 5. STATISTICS PANELS - Preserve background colors in dark mode */
+        [data-theme="dark"] .bg-primary {
+            background-color: #0d6efd !important;
+        }
+        
+        [data-theme="dark"] .bg-success {
+            background-color: #198754 !important;
+        }
+        
+        [data-theme="dark"] .bg-danger {
+            background-color: #dc3545 !important;
+        }
+        
+        [data-theme="dark"] .bg-warning {
+            background-color: #ffc107 !important;
+        }
+        
+        [data-theme="dark"] .bg-info {
+            background-color: #0dcaf0 !important;
+        }
+        
+        [data-theme="dark"] .bg-secondary {
+            background-color: #6c757d !important;
+        }
         
         /* Ensure Bootstrap 5 Close button styling */
         .btn-close {
