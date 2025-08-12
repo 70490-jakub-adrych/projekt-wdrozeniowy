@@ -179,10 +179,6 @@
             color: var(--text-color) !important;
         }
         
-        [data-theme="dark"] .badge {
-            color: #ffffff !important;
-        }
-        
         [data-theme="dark"] .list-group-item {
             background-color: var(--card-bg) !important;
             border-color: var(--border-color) !important;
@@ -425,6 +421,72 @@
         .badge.bg-dark {
             background-color: #212529 !important;
             color: #ffffff !important;
+        }
+        
+        /* Dark mode badge overrides - maintain same colors and contrast */
+        [data-theme="dark"] .badge.bg-primary {
+            background-color: #0d6efd !important;
+            color: #ffffff !important;
+        }
+        
+        [data-theme="dark"] .badge.bg-info {
+            background-color: #0dcaf0 !important;
+            color: #000000 !important;
+        }
+        
+        [data-theme="dark"] .badge.bg-warning {
+            background-color: #ffc107 !important;
+            color: #000000 !important;
+        }
+        
+        [data-theme="dark"] .badge.bg-success {
+            background-color: #198754 !important;
+            color: #ffffff !important;
+        }
+        
+        [data-theme="dark"] .badge.bg-danger {
+            background-color: #dc3545 !important;
+            color: #ffffff !important;
+        }
+        
+        [data-theme="dark"] .badge.bg-secondary {
+            background-color: #6c757d !important;
+            color: #ffffff !important;
+        }
+        
+        [data-theme="dark"] .badge.bg-dark {
+            background-color: #212529 !important;
+            color: #ffffff !important;
+        }
+        
+        /* Specific badge text colors that override other rules */
+        [data-theme="dark"] span.badge.bg-warning,
+        [data-theme="dark"] .badge.bg-warning,
+        span.badge.bg-warning,
+        .badge.bg-warning {
+            color: #000000 !important;
+        }
+        
+        [data-theme="dark"] span.badge.bg-info,
+        [data-theme="dark"] .badge.bg-info,
+        span.badge.bg-info,
+        .badge.bg-info {
+            color: #000000 !important;
+        }
+        
+        /* Ensure badges in tables also follow these rules */
+        [data-theme="dark"] table .badge.bg-warning,
+        [data-theme="dark"] tbody .badge.bg-warning,
+        [data-theme="dark"] td .badge.bg-warning {
+            background-color: #ffc107 !important;
+            color: #000000 !important;
+        }
+        
+        [data-theme="dark"] table .badge.bg-info,
+        [data-theme="dark"] tbody .badge.bg-info,
+        [data-theme="dark"] td .badge.bg-info {
+            background-color: #0dcaf0 !important;
+            color: #000000 !important;
         }
         
         /* Status panels - fix the 5 panels (nowe, w trakcie, etc.) */
@@ -885,12 +947,6 @@
         [data-theme="dark"] .navbar .navbar-brand,
         [data-theme="dark"] .navbar .dropdown-item {
             color: var(--navbar-text) !important;
-        }
-        
-        /* Override for badge text in main content */
-        [data-theme="dark"] .container .badge,
-        [data-theme="dark"] .container-fluid .badge {
-            color: #ffffff !important;
         }
         
         /* Button text in forms and main content */
