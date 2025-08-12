@@ -403,7 +403,7 @@
     }
 
     .animate-shake {
-        animation: jitterWarning 0.8s ease-in-out infinite;
+        animation: jitterWarning 2s ease-in-out infinite;
         animation-play-state: paused;
     }
 
@@ -417,15 +417,15 @@
         animation-play-state: paused;
     }
 
-    /* Fix to disable Font Awesome animations until hover */
+    /* Fix to disable Font Awesome animations until hover - PAUSE IN POSITION */
     .fa-spin {
-        -webkit-animation: none !important;
-        animation: none !important;
+        -webkit-animation: fa-spin 2s infinite linear;
+        animation: fa-spin 2s infinite linear;
+        animation-play-state: paused;
     }
     
     .stat-card:hover .fa-spin {
-        -webkit-animation: fa-spin 2s infinite linear !important;
-        animation: fa-spin 2s infinite linear !important;
+        animation-play-state: running !important;
     }
     
     /* Remove the existing animation definitions that might be running all the time */
@@ -449,7 +449,7 @@
     }
     
     .stat-card:hover .animate-shake {
-        animation: jitterWarning 0.8s ease-in-out infinite !important;
+        animation: jitterWarning 2s ease-in-out infinite !important;
         animation-play-state: running !important;
     }
     
