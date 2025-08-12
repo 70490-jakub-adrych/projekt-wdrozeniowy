@@ -883,10 +883,20 @@
             border-color: var(--border-color) !important;
         }
         
-        /* Button and link text fixes for main content (excluding navbar) */
+        /* Button and link text fixes for main content (excluding navbar and warning/info contexts) */
         [data-theme="dark"] .container a:not(.navbar-brand):not(.nav-link):not(.dropdown-item),
         [data-theme="dark"] .container-fluid a:not(.navbar-brand):not(.nav-link):not(.dropdown-item) {
             color: #ffffff !important;
+        }
+        
+        /* Override: Links inside warning/info elements should be black */
+        [data-theme="dark"] .btn-warning a,
+        [data-theme="dark"] .btn-info a,
+        [data-theme="dark"] .bg-warning a,
+        [data-theme="dark"] .bg-info a,
+        [data-theme="dark"] .badge.bg-warning a,
+        [data-theme="dark"] .badge.bg-info a {
+            color: #000000 !important;
         }
         
         [data-theme="dark"] .container a:not(.navbar-brand):not(.nav-link):not(.dropdown-item):hover,
