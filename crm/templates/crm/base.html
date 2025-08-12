@@ -241,6 +241,281 @@
             color: var(--text-color) !important;
         }
         
+        /* Specific table and card overrides for dark mode */
+        [data-theme="dark"] .table-hover {
+            background-color: var(--table-bg) !important;
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] .logs-table {
+            background-color: var(--table-bg) !important;
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] .logs-table th,
+        [data-theme="dark"] .logs-table td {
+            border-color: var(--border-color) !important;
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] .logs-table tbody tr:hover {
+            background-color: var(--table-hover) !important;
+        }
+        
+        [data-theme="dark"] .table-sm {
+            background-color: var(--table-bg) !important;
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] .table-sm th,
+        [data-theme="dark"] .table-sm td {
+            border-color: var(--border-color) !important;
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] .table-light {
+            background-color: var(--table-bg) !important;
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] .table-light th,
+        [data-theme="dark"] .table-light td {
+            background-color: var(--table-bg) !important;
+            border-color: var(--border-color) !important;
+            color: var(--text-color) !important;
+        }
+        
+        /* Card headers and backgrounds */
+        [data-theme="dark"] .card-header {
+            background-color: var(--table-hover) !important;
+            border-color: var(--border-color) !important;
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] .bg-light {
+            background-color: var(--table-hover) !important;
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] .card-body {
+            background-color: var(--card-bg) !important;
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] .p-0 {
+            background-color: var(--card-bg) !important;
+        }
+        
+        /* Stats cards */
+        [data-theme="dark"] .stats-card {
+            background-color: var(--card-bg) !important;
+            border-color: var(--border-color) !important;
+            color: var(--text-color) !important;
+            border: 1px solid var(--border-color) !important;
+        }
+        
+        [data-theme="dark"] .stats-card.bg-light {
+            background-color: var(--card-bg) !important;
+        }
+        
+        /* Status panels - specific overrides for stat-card elements */
+        [data-theme="dark"] .stat-card {
+            border-color: var(--border-color) !important;
+        }
+        
+        /* Ensure stat-card background colors remain vibrant in dark mode */
+        [data-theme="dark"] .stat-card.bg-primary {
+            background-color: #0d6efd !important;
+            color: #ffffff !important;
+        }
+        
+        [data-theme="dark"] .stat-card.bg-info {
+            background-color: #0dcaf0 !important;
+            color: #000000 !important;
+        }
+        
+        [data-theme="dark"] .stat-card.bg-warning {
+            background-color: #ffc107 !important;
+            color: #000000 !important;
+        }
+        
+        [data-theme="dark"] .stat-card.bg-success {
+            background-color: #198754 !important;
+            color: #ffffff !important;
+        }
+        
+        [data-theme="dark"] .stat-card.bg-secondary {
+            background-color: #6c757d !important;
+            color: #ffffff !important;
+        }
+        
+        /* Ensure stat-card links maintain proper colors */
+        [data-theme="dark"] .stat-card-link {
+            color: inherit !important;
+        }
+        
+        [data-theme="dark"] .stat-card-link:hover {
+            color: inherit !important;
+            text-decoration: none !important;
+        }
+        
+        [data-theme="dark"] .stat-card-link.text-white {
+            color: #ffffff !important;
+        }
+        
+        /* Fix status panel colors - ensuring they work in both light and dark mode */
+        /* Status badges - maintain visibility in both themes */
+        .badge.bg-primary {
+            background-color: #0d6efd !important;
+            color: #ffffff !important;
+        }
+        
+        .badge.bg-info {
+            background-color: #0dcaf0 !important;
+            color: #000000 !important;
+        }
+        
+        .badge.bg-warning {
+            background-color: #ffc107 !important;
+            color: #000000 !important;
+        }
+        
+        .badge.bg-success {
+            background-color: #198754 !important;
+            color: #ffffff !important;
+        }
+        
+        .badge.bg-danger {
+            background-color: #dc3545 !important;
+            color: #ffffff !important;
+        }
+        
+        .badge.bg-secondary {
+            background-color: #6c757d !important;
+            color: #ffffff !important;
+        }
+        
+        .badge.bg-dark {
+            background-color: #212529 !important;
+            color: #ffffff !important;
+        }
+        
+        /* Status panels - fix the 5 panels (nowe, w trakcie, etc.) */
+        .status-panel,
+        .status-card {
+            border: 1px solid var(--border-color) !important;
+            background-color: var(--card-bg) !important;
+            color: var(--text-color) !important;
+        }
+        
+        /* Text colors in dark mode */
+        [data-theme="dark"] .text-dark {
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] .text-secondary {
+            color: var(--text-muted) !important;
+        }
+        
+        /* Links in dark mode */
+        [data-theme="dark"] a {
+            color: #4dabf7 !important;
+        }
+        
+        [data-theme="dark"] a:hover {
+            color: #339af0 !important;
+        }
+        
+        /* Progress bars in dark mode */
+        [data-theme="dark"] .progress {
+            background-color: var(--table-hover) !important;
+        }
+        
+        /* Accordion in dark mode */
+        [data-theme="dark"] .accordion-item {
+            background-color: var(--card-bg) !important;
+            border-color: var(--border-color) !important;
+        }
+        
+        [data-theme="dark"] .accordion-button {
+            background-color: var(--table-hover) !important;
+            color: var(--text-color) !important;
+            border-color: var(--border-color) !important;
+        }
+        
+        [data-theme="dark"] .accordion-button:not(.collapsed) {
+            background-color: var(--accent-color) !important;
+            color: #ffffff !important;
+        }
+        
+        [data-theme="dark"] .accordion-body {
+            background-color: var(--card-bg) !important;
+            color: var(--text-color) !important;
+        }
+        
+        /* Offcanvas in dark mode */
+        [data-theme="dark"] .offcanvas {
+            background-color: var(--card-bg) !important;
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] .offcanvas-header {
+            border-bottom-color: var(--border-color) !important;
+        }
+        
+        /* Popover and tooltip in dark mode */
+        [data-theme="dark"] .popover {
+            background-color: var(--card-bg) !important;
+            border-color: var(--border-color) !important;
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] .popover-header {
+            background-color: var(--table-hover) !important;
+            border-bottom-color: var(--border-color) !important;
+        }
+        
+        [data-theme="dark"] .tooltip-inner {
+            background-color: var(--dark-color) !important;
+            color: #ffffff !important;
+        }
+        
+        /* Additional general overrides */
+        [data-theme="dark"] .border {
+            border-color: var(--border-color) !important;
+        }
+        
+        [data-theme="dark"] .border-top {
+            border-top-color: var(--border-color) !important;
+        }
+        
+        [data-theme="dark"] .border-bottom {
+            border-bottom-color: var(--border-color) !important;
+        }
+        
+        [data-theme="dark"] .border-start {
+            border-left-color: var(--border-color) !important;
+        }
+        
+        [data-theme="dark"] .border-end {
+            border-right-color: var(--border-color) !important;
+        }
+        
+        /* Dashboard mobile cards dark mode */
+        [data-theme="dark"] .dashboard-mobile-card {
+            background-color: var(--card-bg) !important;
+            border-color: var(--border-color) !important;
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] .dashboard-mobile-card-header {
+            border-bottom-color: var(--border-color) !important;
+        }
+        
+        [data-theme="dark"] .dashboard-mobile-card-label {
+            color: var(--text-muted) !important;
+        }
+        
         /* Ensure Bootstrap 5 Close button styling */
         .btn-close {
             box-sizing: content-box;
