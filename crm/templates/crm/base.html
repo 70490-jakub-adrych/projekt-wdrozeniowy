@@ -1174,6 +1174,23 @@
         [data-theme="dark"] .active-filters span {
             color: var(--text-color) !important;
         }
+
+        /* Active filter styling - theme aware */
+        .active-filter {
+            display: inline-block;
+            background-color: #e9ecef; /* Light gray for light mode */
+            color: #212529; /* Dark text for light mode */
+            padding: 0.2rem 0.6rem;
+            margin-right: 0.5rem;
+            border-radius: 0.25rem;
+            font-size: 0.85rem;
+            margin-bottom: 0.5rem;
+        }
+
+        [data-theme="dark"] .active-filter {
+            background-color: #444444 !important; /* Your preferred dark gray */
+            color: #ffffff !important; /* White text for dark mode */
+        }
         
         /* Ensure Bootstrap 5 Close button styling */
         .btn-close {
