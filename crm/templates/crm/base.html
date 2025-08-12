@@ -498,8 +498,9 @@
         }
         
         /* Text colors in dark mode */
+        /* Note: .text-dark should remain dark (black) even in dark mode for readability */
         [data-theme="dark"] .text-dark {
-            color: var(--text-color) !important;
+            color: #000000 !important;
         }
         
         [data-theme="dark"] .text-secondary {
