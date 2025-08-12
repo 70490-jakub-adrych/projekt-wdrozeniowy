@@ -910,11 +910,10 @@
         [data-theme="dark"] .quick-action-btn,
         [data-theme="dark"] .btn-primary,
         [data-theme="dark"] .btn-success,
-        [data-theme="dark"] .btn-info,
-        [data-theme="dark"] .btn-warning,
         [data-theme="dark"] .btn-danger {
             color: #ffffff !important;
         }
+        /* Note: .btn-warning and .btn-info removed from here - they need black text */
         
         /* Main content area buttons (excluding navbar) */
         [data-theme="dark"] div.container div a,
@@ -950,7 +949,12 @@
         }
         
         /* Button text in forms and main content */
-        [data-theme="dark"] .btn:not(.navbar .btn):not(.nav .btn) {
+        /* Note: Removed general .btn rule to avoid conflicts with warning/info buttons */
+        [data-theme="dark"] .btn-primary:not(.navbar .btn):not(.nav .btn),
+        [data-theme="dark"] .btn-success:not(.navbar .btn):not(.nav .btn),
+        [data-theme="dark"] .btn-danger:not(.navbar .btn):not(.nav .btn),
+        [data-theme="dark"] .btn-secondary:not(.navbar .btn):not(.nav .btn),
+        [data-theme="dark"] .btn-dark:not(.navbar .btn):not(.nav .btn) {
             color: #ffffff !important;
         }
         
@@ -977,12 +981,11 @@
         /* Ensure primary content buttons have white text */
         [data-theme="dark"] .container .btn-primary,
         [data-theme="dark"] .container .btn-success,
-        [data-theme="dark"] .container .btn-info,
-        [data-theme="dark"] .container .btn-warning,
         [data-theme="dark"] .container .btn-danger,
         [data-theme="dark"] .container .btn-secondary {
             color: #ffffff !important;
         }
+        /* Note: .btn-warning and .btn-info removed - they need black text */
         
         /* Text color for small elements in main content */
         [data-theme="dark"] .container .small,
