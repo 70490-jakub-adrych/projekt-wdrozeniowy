@@ -715,6 +715,111 @@
             color: var(--text-muted) !important;
         }
         
+        /* More comprehensive table row overrides - targeting specific containers */
+        [data-theme="dark"] div.container div table tbody tr,
+        [data-theme="dark"] div.container-fluid div table tbody tr,
+        [data-theme="dark"] .container div table tbody tr,
+        [data-theme="dark"] .container-fluid div table tbody tr {
+            background-color: var(--table-bg) !important;
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] div.container div table tbody tr:hover,
+        [data-theme="dark"] div.container-fluid div table tbody tr:hover,
+        [data-theme="dark"] .container div table tbody tr:hover,
+        [data-theme="dark"] .container-fluid div table tbody tr:hover {
+            background-color: var(--table-hover) !important;
+        }
+        
+        /* Target nested div structures with tables */
+        [data-theme="dark"] div div div div div table tbody tr,
+        [data-theme="dark"] div div div div table tbody tr,
+        [data-theme="dark"] div div div table tbody tr {
+            background-color: var(--table-bg) !important;
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] div div div div div table tbody tr:hover,
+        [data-theme="dark"] div div div div table tbody tr:hover,
+        [data-theme="dark"] div div div table tbody tr:hover {
+            background-color: var(--table-hover) !important;
+        }
+        
+        /* Very specific targeting for deeply nested tables */
+        [data-theme="dark"] body > div > div table tbody tr,
+        [data-theme="dark"] body > div > div > div table tbody tr,
+        [data-theme="dark"] body > div > div > div > div table tbody tr,
+        [data-theme="dark"] body > div > div > div > div > div table tbody tr {
+            background-color: var(--table-bg) !important;
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] body > div > div table tbody tr:hover,
+        [data-theme="dark"] body > div > div > div table tbody tr:hover,
+        [data-theme="dark"] body > div > div > div > div table tbody tr:hover,
+        [data-theme="dark"] body > div > div > div > div > div table tbody tr:hover {
+            background-color: var(--table-hover) !important;
+        }
+        
+        /* All table cells in dark mode - very broad selector */
+        [data-theme="dark"] tbody tr td,
+        [data-theme="dark"] tbody tr th {
+            background-color: inherit !important;
+            color: var(--text-color) !important;
+            border-color: var(--border-color) !important;
+        }
+        
+        /* Force all table rows to inherit dark theme */
+        [data-theme="dark"] tr {
+            background-color: var(--table-bg) !important;
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] tr:hover {
+            background-color: var(--table-hover) !important;
+        }
+        
+        /* Override any Bootstrap striped table styling */
+        [data-theme="dark"] .table-striped tbody tr:nth-of-type(odd) {
+            background-color: var(--table-hover) !important;
+        }
+        
+        [data-theme="dark"] .table-striped tbody tr:nth-of-type(even) {
+            background-color: var(--table-bg) !important;
+        }
+        
+        /* Target elements with inline white backgrounds */
+        [data-theme="dark"] *[style*="background-color: white"],
+        [data-theme="dark"] *[style*="background-color: #fff"],
+        [data-theme="dark"] *[style*="background-color: #ffffff"],
+        [data-theme="dark"] *[style*="background: white"],
+        [data-theme="dark"] *[style*="background: #fff"],
+        [data-theme="dark"] *[style*="background: #ffffff"] {
+            background-color: var(--table-bg) !important;
+            color: var(--text-color) !important;
+        }
+        
+        /* More specific table targeting */
+        [data-theme="dark"] table,
+        [data-theme="dark"] table tbody,
+        [data-theme="dark"] table tbody tr,
+        [data-theme="dark"] table tbody tr td,
+        [data-theme="dark"] table thead,
+        [data-theme="dark"] table thead tr,
+        [data-theme="dark"] table thead tr th {
+            background-color: var(--table-bg) !important;
+            color: var(--text-color) !important;
+            border-color: var(--border-color) !important;
+        }
+        
+        /* Ensure any remaining Bootstrap table classes are overridden */
+        [data-theme="dark"] .table,
+        [data-theme="dark"] .table > :not(caption) > * > * {
+            background-color: var(--table-bg) !important;
+            color: var(--text-color) !important;
+            border-color: var(--border-color) !important;
+        }
+        
         /* Ensure Bootstrap 5 Close button styling */
         .btn-close {
             box-sizing: content-box;
