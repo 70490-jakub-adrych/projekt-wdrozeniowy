@@ -194,11 +194,55 @@
     }
 
     @keyframes shake {
-        0% { transform: translate(0); }
-        25% { transform: translate(-2px, 2px); }
-        50% { transform: translate(2px, -2px); }
-        75% { transform: translate(-2px, -2px); }
-        100% { transform: translate(2px, 2px); }
+        0% { transform: translate(0, 0) rotate(0deg); }
+        10% { transform: translate(-3px, -2px) rotate(-2deg); }
+        20% { transform: translate(3px, 2px) rotate(1deg); }
+        30% { transform: translate(-2px, 2px) rotate(-1deg); }
+        40% { transform: translate(2px, -1px) rotate(2deg); }
+        50% { transform: translate(-1px, 2px) rotate(-2deg); }
+        60% { transform: translate(1px, 1px) rotate(1deg); }
+        70% { transform: translate(-2px, -1px) rotate(-1deg); }
+        80% { transform: translate(2px, 1px) rotate(2deg); }
+        90% { transform: translate(-1px, -2px) rotate(-1deg); }
+        100% { transform: translate(0, 0) rotate(0deg); }
+    }
+
+    @keyframes jitterWarning {
+        0% { transform: rotate(0deg) scale(1) translate(0, 0); }
+        5% { transform: rotate(-3deg) scale(1.05) translate(-1px, 1px); }
+        10% { transform: rotate(4deg) scale(0.95) translate(2px, -1px); }
+        15% { transform: rotate(-2deg) scale(1.1) translate(-1px, -1px); }
+        20% { transform: rotate(3deg) scale(0.9) translate(1px, 2px); }
+        25% { transform: rotate(-4deg) scale(1.05) translate(-2px, 0px); }
+        30% { transform: rotate(2deg) scale(0.95) translate(1px, -1px); }
+        35% { transform: rotate(-1deg) scale(1.1) translate(0px, 1px); }
+        40% { transform: rotate(5deg) scale(0.9) translate(2px, -2px); }
+        45% { transform: rotate(-3deg) scale(1.05) translate(-1px, 1px); }
+        50% { transform: rotate(2deg) scale(0.95) translate(1px, 0px); }
+        55% { transform: rotate(-4deg) scale(1.1) translate(-2px, -1px); }
+        60% { transform: rotate(3deg) scale(0.9) translate(1px, 1px); }
+        65% { transform: rotate(-2deg) scale(1.05) translate(0px, -1px); }
+        70% { transform: rotate(4deg) scale(0.95) translate(2px, 1px); }
+        75% { transform: rotate(-1deg) scale(1.1) translate(-1px, 0px); }
+        80% { transform: rotate(3deg) scale(0.9) translate(1px, -2px); }
+        85% { transform: rotate(-3deg) scale(1.05) translate(-1px, 1px); }
+        90% { transform: rotate(2deg) scale(0.95) translate(0px, 1px); }
+        95% { transform: rotate(-1deg) scale(1.05) translate(1px, -1px); }
+        100% { transform: rotate(0deg) scale(1) translate(0, 0); }
+    }
+
+    @keyframes lockShake {
+        0% { transform: translateX(0) rotate(0deg); }
+        10% { transform: translateX(-2px) rotate(-1deg); }
+        20% { transform: translateX(2px) rotate(1deg); }
+        30% { transform: translateX(-3px) rotate(-1deg); }
+        40% { transform: translateX(3px) rotate(1deg); }
+        50% { transform: translateX(-2px) rotate(-1deg); }
+        60% { transform: translateX(2px) rotate(1deg); }
+        70% { transform: translateX(-3px) rotate(-1deg); }
+        80% { transform: translateX(3px) rotate(1deg); }
+        90% { transform: translateX(-1px) rotate(-1deg); }
+        100% { transform: translateX(0) rotate(0deg); }
     }
 
     @keyframes float {
@@ -350,18 +394,27 @@
 
     .animate-spin {
         animation: spin 2s linear infinite;
+        animation-play-state: paused;
     }
 
     .animate-pulse {
         animation: pulse 1.5s ease-in-out infinite;
+        animation-play-state: paused;
     }
 
     .animate-shake {
-        animation: shake 0.5s ease-in-out infinite;
+        animation: jitterWarning 0.8s ease-in-out infinite;
+        animation-play-state: paused;
     }
 
     .animate-float {
         animation: float 3s ease-in-out infinite;
+        animation-play-state: paused;
+    }
+
+    .animate-bounce {
+        animation: lockShake 1.2s ease-in-out infinite;
+        animation-play-state: paused;
     }
 
     /* Fix to disable Font Awesome animations until hover */
@@ -376,28 +429,38 @@
     }
     
     /* Remove the existing animation definitions that might be running all the time */
-    .animate-spin, 
-    .animate-pulse, 
-    .animate-shake,
-    .animate-float {
-        animation: none !important;
+    .animate-spin:not(.stat-card:hover *), 
+    .animate-pulse:not(.stat-card:hover *), 
+    .animate-shake:not(.stat-card:hover *),
+    .animate-float:not(.stat-card:hover *),
+    .animate-bounce:not(.stat-card:hover *) {
+        animation-play-state: paused !important;
     }
     
     /* Animation only happens on stat-card hover */
     .stat-card:hover .animate-spin {
         animation: spin 2s linear infinite !important;
+        animation-play-state: running !important;
     }
     
     .stat-card:hover .animate-pulse {
         animation: pulse 1.5s ease-in-out infinite !important;
+        animation-play-state: running !important;
     }
     
     .stat-card:hover .animate-shake {
-        animation: shake 0.5s ease-in-out infinite !important;
+        animation: jitterWarning 0.8s ease-in-out infinite !important;
+        animation-play-state: running !important;
     }
     
     .stat-card:hover .animate-float {
         animation: float 3s ease-in-out infinite !important;
+        animation-play-state: running !important;
+    }
+
+    .stat-card:hover .animate-bounce {
+        animation: lockShake 1.2s ease-in-out infinite !important;
+        animation-play-state: running !important;
     }
 </style>
 {% endblock %}
