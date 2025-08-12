@@ -1054,6 +1054,112 @@
             color: #000000 !important;
         }
         
+        /* MAXIMUM SPECIFICITY - Override all conflicting rules */
+        
+        /* Quick action button with warning background */
+        [data-theme="dark"] body > div.container.mt-4 > div:nth-child(2) > div > div > div.card-body.pb-0 > div > div:nth-child(2) > a.btn-warning {
+            color: #000000 !important;
+            background-color: #ffc107 !important;
+        }
+        
+        [data-theme="dark"] a.quick-action-btn.btn-warning,
+        [data-theme="dark"] .quick-action-btn.btn-warning,
+        [data-theme="dark"] .btn.btn-warning {
+            color: #000000 !important;
+            background-color: #ffc107 !important;
+        }
+        
+        /* Exact badge selector from user */
+        [data-theme="dark"] body > div.container.mt-4 > div:nth-child(6) > div.card-body.p-2 > div.desktop-table > table > tbody > tr:nth-child(1) > td:nth-child(6) > span.badge.bg-warning {
+            color: #000000 !important;
+            background-color: #ffc107 !important;
+        }
+        
+        /* Force black text on ALL warning badges regardless of other classes */
+        [data-theme="dark"] span.badge.bg-warning.text-dark,
+        [data-theme="dark"] span.badge.bg-warning,
+        [data-theme="dark"] .badge.bg-warning.text-dark,
+        [data-theme="dark"] .badge.bg-warning {
+            color: #000000 !important;
+            background-color: #ffc107 !important;
+        }
+        
+        /* Override any white text rules for warning elements */
+        [data-theme="dark"] .container .btn-warning,
+        [data-theme="dark"] .container-fluid .btn-warning,
+        [data-theme="dark"] .card-body .btn-warning,
+        [data-theme="dark"] div .btn-warning {
+            color: #000000 !important;
+            background-color: #ffc107 !important;
+        }
+        
+        /* Ultra specific - override any white text that might be applied */
+        [data-theme="dark"] .container a.btn-warning,
+        [data-theme="dark"] .container button.btn-warning,
+        [data-theme="dark"] div a.btn-warning,
+        [data-theme="dark"] div button.btn-warning {
+            color: #000000 !important;
+        }
+        
+        /* Force black text on info badges too */
+        [data-theme="dark"] span.badge.bg-info,
+        [data-theme="dark"] .badge.bg-info {
+            color: #000000 !important;
+            background-color: #0dcaf0 !important;
+        }
+        
+        /* Override any inherited white text colors */
+        [data-theme="dark"] *[class*="btn-warning"] {
+            color: #000000 !important;
+        }
+        
+        [data-theme="dark"] *[class*="bg-warning"] {
+            color: #000000 !important;
+        }
+        
+        [data-theme="dark"] *[class*="bg-info"] {
+            color: #000000 !important;
+        }
+        
+        /* CSS SPECIFICITY HACK - Use ID-like specificity to override everything */
+        [data-theme="dark"] html body div.container.mt-4 div div div.card-body div div a.btn-warning.quick-action-btn,
+        [data-theme="dark"] html body div.container.mt-4 div div.card-body div div a.btn-warning,
+        [data-theme="dark"] html body div.container div div div a.btn-warning,
+        [data-theme="dark"] html body .btn-warning {
+            color: #000000 !important;
+            background-color: #ffc107 !important;
+        }
+        
+        [data-theme="dark"] html body div.container.mt-4 div div.card-body div.desktop-table table tbody tr td span.badge.bg-warning,
+        [data-theme="dark"] html body div.container div.card-body table tbody tr td span.badge.bg-warning,
+        [data-theme="dark"] html body table tbody tr td span.badge.bg-warning,
+        [data-theme="dark"] html body .badge.bg-warning {
+            color: #000000 !important;
+            background-color: #ffc107 !important;
+        }
+        
+        /* Emergency override - use multiple classes to increase specificity */
+        [data-theme="dark"].dark-theme .btn-warning,
+        [data-theme="dark"].dark-theme .badge.bg-warning,
+        [data-theme="dark"].dark-theme span.bg-warning {
+            color: #000000 !important;
+        }
+        
+        /* Last resort - add class to body and use that for maximum specificity */
+        body[data-theme="dark"] .btn-warning,
+        body[data-theme="dark"] .badge.bg-warning,
+        body[data-theme="dark"] span.bg-warning,
+        body[data-theme="dark"] *[class*="bg-warning"] {
+            color: #000000 !important;
+        }
+        
+        body[data-theme="dark"] .btn-info,
+        body[data-theme="dark"] .badge.bg-info,
+        body[data-theme="dark"] span.bg-info,
+        body[data-theme="dark"] *[class*="bg-info"] {
+            color: #000000 !important;
+        }
+        
         /* Ensure Bootstrap 5 Close button styling */
         .btn-close {
             box-sizing: content-box;
