@@ -1604,37 +1604,33 @@
             90% { transform: translateX(-1px) rotate(-1deg); }
         }
 
-        /* Apply animations to navigation icons - CORRECTED SELECTORS */
-        .navbar .nav-link:hover .fa-home {
+        /* Apply animations to navigation icons */
+        .nav-link:hover .fa-home {
             animation: bounce 0.6s ease-in-out;
         }
 
-        .navbar .nav-link:hover .fa-ticket-alt {
+        .nav-link:hover .fa-ticket-alt {
             animation: pulse 0.8s ease-in-out;
         }
 
-        .navbar .nav-link:hover .fa-building {
+        .nav-link:hover .fa-building {
             animation: bounce 0.7s ease-in-out;
         }
 
-        .navbar .nav-link:hover .fa-user-check {
+        .nav-link:hover .fa-user-check {
             animation: pulse 0.6s ease-in-out;
         }
 
-        .navbar .nav-link:hover .fa-history {
+        .nav-link:hover .fa-history {
             animation: rotate 0.8s ease-in-out;
         }
 
-        .navbar .nav-link:hover .fa-chart-line {
+        .nav-link:hover .fa-chart-line {
             animation: bounce 0.5s ease-in-out;
         }
 
-        .navbar .nav-link:hover .fa-cogs {
+        .nav-link:hover .fa-cogs {
             animation: rotate 1s ease-in-out;
-        }
-
-        .theme-toggle:hover .fa-moon {
-            animation: rotate 0.8s ease-in-out;
         }
 
         /* Special animations for warning and lock icons */
@@ -1643,8 +1639,11 @@
             animation-play-state: running;
         }
 
-        .dropdown-item:hover .fa-exclamation-triangle,
-        .nav-link:hover .fa-exclamation-triangle {
+        .fa-exclamation-triangle:hover {
+            animation-play-state: paused;
+        }
+
+        .nav-link:not(:hover) .fa-exclamation-triangle {
             animation-play-state: paused;
         }
 
@@ -1653,20 +1652,22 @@
             animation-play-state: running;
         }
 
-        .dropdown-item:hover .fa-shield-alt,
-        .nav-link:hover .fa-shield-alt {
+        .fa-shield-alt:hover {
             animation-play-state: paused;
         }
 
-        /* Pause all animations when not hovering - CORRECTED */
-        .navbar .nav-link:not(:hover) .fa-home,
-        .navbar .nav-link:not(:hover) .fa-ticket-alt,
-        .navbar .nav-link:not(:hover) .fa-building,
-        .navbar .nav-link:not(:hover) .fa-user-check,
-        .navbar .nav-link:not(:hover) .fa-history,
-        .navbar .nav-link:not(:hover) .fa-chart-line,
-        .navbar .nav-link:not(:hover) .fa-cogs,
-        .theme-toggle:not(:hover) .fa-moon {
+        .nav-link:not(:hover) .fa-shield-alt {
+            animation-play-state: paused;
+        }
+
+        /* Pause all animations when not hovering */
+        .nav-link:not(:hover) .fa-home,
+        .nav-link:not(:hover) .fa-ticket-alt,
+        .nav-link:not(:hover) .fa-building,
+        .nav-link:not(:hover) .fa-user-check,
+        .nav-link:not(:hover) .fa-history,
+        .nav-link:not(:hover) .fa-chart-line,
+        .nav-link:not(:hover) .fa-cogs {
             animation-play-state: paused;
         }
         
