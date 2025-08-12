@@ -883,9 +883,12 @@
             border-color: var(--border-color) !important;
         }
         
-        /* Button and link text fixes for main content (excluding navbar and warning/info contexts) */
-        [data-theme="dark"] .container a:not(.navbar-brand):not(.nav-link):not(.dropdown-item),
-        [data-theme="dark"] .container-fluid a:not(.navbar-brand):not(.nav-link):not(.dropdown-item) {
+        /* Specific link targeting - avoid broad container rules that conflict with warning/info */
+        [data-theme="dark"] .card-body a:not(.btn-warning):not(.btn-info),
+        [data-theme="dark"] .list-group a:not(.btn-warning):not(.btn-info),
+        [data-theme="dark"] .table a:not(.btn-warning):not(.btn-info),
+        [data-theme="dark"] p a:not(.btn-warning):not(.btn-info),
+        [data-theme="dark"] div.content a:not(.btn-warning):not(.btn-info) {
             color: #ffffff !important;
         }
         
@@ -899,8 +902,11 @@
             color: #000000 !important;
         }
         
-        [data-theme="dark"] .container a:not(.navbar-brand):not(.nav-link):not(.dropdown-item):hover,
-        [data-theme="dark"] .container-fluid a:not(.navbar-brand):not(.nav-link):not(.dropdown-item):hover {
+        [data-theme="dark"] .card-body a:not(.btn-warning):not(.btn-info):hover,
+        [data-theme="dark"] .list-group a:not(.btn-warning):not(.btn-info):hover,
+        [data-theme="dark"] .table a:not(.btn-warning):not(.btn-info):hover,
+        [data-theme="dark"] p a:not(.btn-warning):not(.btn-info):hover,
+        [data-theme="dark"] div.content a:not(.btn-warning):not(.btn-info):hover {
             color: #e9ecef !important;
         }
         
