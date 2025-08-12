@@ -820,6 +820,132 @@
             border-color: var(--border-color) !important;
         }
         
+        /* Button and link text fixes for main content (excluding navbar) */
+        [data-theme="dark"] .container a:not(.navbar-brand):not(.nav-link):not(.dropdown-item),
+        [data-theme="dark"] .container-fluid a:not(.navbar-brand):not(.nav-link):not(.dropdown-item) {
+            color: #ffffff !important;
+        }
+        
+        [data-theme="dark"] .container a:not(.navbar-brand):not(.nav-link):not(.dropdown-item):hover,
+        [data-theme="dark"] .container-fluid a:not(.navbar-brand):not(.nav-link):not(.dropdown-item):hover {
+            color: #e9ecef !important;
+        }
+        
+        /* Specific targeting for card body links and buttons */
+        [data-theme="dark"] .card-body a,
+        [data-theme="dark"] .card-body button,
+        [data-theme="dark"] .card-body .btn {
+            color: #ffffff !important;
+        }
+        
+        [data-theme="dark"] .card-body a:hover,
+        [data-theme="dark"] .card-body button:hover,
+        [data-theme="dark"] .card-body .btn:hover {
+            color: #e9ecef !important;
+        }
+        
+        /* Quick action buttons and dashboard elements */
+        [data-theme="dark"] .quick-action-btn,
+        [data-theme="dark"] .btn-primary,
+        [data-theme="dark"] .btn-success,
+        [data-theme="dark"] .btn-info,
+        [data-theme="dark"] .btn-warning,
+        [data-theme="dark"] .btn-danger {
+            color: #ffffff !important;
+        }
+        
+        /* Main content area buttons (excluding navbar) */
+        [data-theme="dark"] div.container div a,
+        [data-theme="dark"] div.container-fluid div a {
+            color: #ffffff !important;
+        }
+        
+        [data-theme="dark"] div.container div a:hover,
+        [data-theme="dark"] div.container-fluid div a:hover {
+            color: #e9ecef !important;
+        }
+        
+        /* Spans within buttons and links in main content */
+        [data-theme="dark"] .container span:not(.navbar-text):not(.nav-item span),
+        [data-theme="dark"] .container-fluid span:not(.navbar-text):not(.nav-item span) {
+            color: inherit !important;
+        }
+        
+        /* Target specific button structures from XPaths */
+        [data-theme="dark"] body > div > div > div > div > div > div > div > a,
+        [data-theme="dark"] body > div > div > div > div > div > div > a,
+        [data-theme="dark"] body > div > div > a > span,
+        [data-theme="dark"] body > div > div > div > a {
+            color: #ffffff !important;
+        }
+        
+        /* Ensure navbar elements remain properly styled */
+        [data-theme="dark"] .navbar a,
+        [data-theme="dark"] .navbar .nav-link,
+        [data-theme="dark"] .navbar .navbar-brand,
+        [data-theme="dark"] .navbar .dropdown-item {
+            color: var(--navbar-text) !important;
+        }
+        
+        /* Override for badge text in main content */
+        [data-theme="dark"] .container .badge,
+        [data-theme="dark"] .container-fluid .badge {
+            color: #ffffff !important;
+        }
+        
+        /* Button text in forms and main content */
+        [data-theme="dark"] .btn:not(.navbar .btn):not(.nav .btn) {
+            color: #ffffff !important;
+        }
+        
+        /* Link text in main content areas */
+        [data-theme="dark"] main a,
+        [data-theme="dark"] .main-content a,
+        [data-theme="dark"] .content a {
+            color: #ffffff !important;
+        }
+        
+        /* Additional specific fixes for button text colors */
+        [data-theme="dark"] .btn-outline-primary:not(.navbar .btn-outline-primary) {
+            color: #ffffff !important;
+            border-color: #4dabf7 !important;
+            background-color: #4dabf7 !important;
+        }
+        
+        [data-theme="dark"] .btn-outline-secondary:not(.navbar .btn-outline-secondary) {
+            color: #ffffff !important;
+            border-color: var(--border-color) !important;
+            background-color: var(--table-hover) !important;
+        }
+        
+        /* Ensure primary content buttons have white text */
+        [data-theme="dark"] .container .btn-primary,
+        [data-theme="dark"] .container .btn-success,
+        [data-theme="dark"] .container .btn-info,
+        [data-theme="dark"] .container .btn-warning,
+        [data-theme="dark"] .container .btn-danger,
+        [data-theme="dark"] .container .btn-secondary {
+            color: #ffffff !important;
+        }
+        
+        /* Text color for small elements in main content */
+        [data-theme="dark"] .container .small,
+        [data-theme="dark"] .container small {
+            color: var(--text-muted) !important;
+        }
+        
+        /* Preserve navbar functionality */
+        [data-theme="dark"] .navbar *,
+        [data-theme="dark"] .navbar a,
+        [data-theme="dark"] .navbar button,
+        [data-theme="dark"] .navbar .btn {
+            color: var(--navbar-text) !important;
+        }
+        
+        [data-theme="dark"] .navbar .theme-toggle {
+            color: var(--text-color) !important;
+        }
+        
         /* Ensure Bootstrap 5 Close button styling */
         .btn-close {
             box-sizing: content-box;
