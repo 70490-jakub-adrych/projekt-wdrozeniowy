@@ -162,3 +162,20 @@ def device_context(request):
         'device_type': device_type,
         'user_agent': user_agent,
     }
+
+
+def theme_context(request):
+    """
+    Add theme information to template context
+    """
+    # Get theme from cookie, default to 'light'
+    theme = request.COOKIES.get('theme', 'light')
+    
+    # Validate theme value
+    if theme not in ['light', 'dark']:
+        theme = 'light'
+    
+    return {
+        'current_theme': theme,
+        'is_dark_theme': theme == 'dark',
+    }

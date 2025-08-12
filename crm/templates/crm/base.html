@@ -15,6 +15,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css">
     <style>
         :root {
+            /* Light theme colors */
             --primary-color: #191923;
             --secondary-color: #34495e;
             --accent-color: #3498db;
@@ -25,10 +26,219 @@
             --danger-color: #e74c3c;
             --info-color: #3498db;
             
+            /* Light theme specific */
+            --bg-color: #f8f9fa;
+            --card-bg: #ffffff;
+            --text-color: #212529;
+            --text-muted: #6c757d;
+            --border-color: #dee2e6;
+            --input-bg: #ffffff;
+            --input-border: #ced4da;
+            --navbar-bg: #191923;
+            --navbar-text: #ffffff;
+            --sidebar-bg: #ffffff;
+            --table-bg: #ffffff;
+            --table-hover: #f5f5f5;
+            --modal-bg: #ffffff;
+            --dropdown-bg: #ffffff;
+            
             --transition-speed: 0.3s;
             --shadow-sm: 0 .125rem .25rem rgba(0,0,0,.075);
             --shadow-md: 0 .5rem 1rem rgba(0,0,0,.15);
             --shadow-lg: 0 1rem 3rem rgba(0,0,0,.175);
+        }
+        
+        /* Dark theme colors */
+        [data-theme="dark"] {
+            --bg-color: #1a1a1a;
+            --card-bg: #2d2d2d;
+            --text-color: #e9ecef;
+            --text-muted: #adb5bd;
+            --border-color: #495057;
+            --input-bg: #2d2d2d;
+            --input-border: #495057;
+            --navbar-bg: #0d1117;
+            --navbar-text: #ffffff;
+            --sidebar-bg: #2d2d2d;
+            --table-bg: #2d2d2d;
+            --table-hover: #3d3d3d;
+            --modal-bg: #2d2d2d;
+            --dropdown-bg: #2d2d2d;
+            
+            --shadow-sm: 0 .125rem .25rem rgba(0,0,0,.3);
+            --shadow-md: 0 .5rem 1rem rgba(0,0,0,.4);
+            --shadow-lg: 0 1rem 3rem rgba(0,0,0,.5);
+        }
+        
+        /* Apply theme colors */
+        body {
+            background-color: var(--bg-color) !important;
+            color: var(--text-color) !important;
+            transition: background-color var(--transition-speed), color var(--transition-speed);
+        }
+        
+        .card {
+            background-color: var(--card-bg) !important;
+            border-color: var(--border-color) !important;
+            color: var(--text-color) !important;
+        }
+        
+        .table {
+            background-color: var(--table-bg) !important;
+            color: var(--text-color) !important;
+        }
+        
+        .table td, .table th {
+            border-color: var(--border-color) !important;
+        }
+        
+        .table-hover tbody tr:hover {
+            background-color: var(--table-hover) !important;
+        }
+        
+        .form-control, .form-select {
+            background-color: var(--input-bg) !important;
+            border-color: var(--input-border) !important;
+            color: var(--text-color) !important;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            background-color: var(--input-bg) !important;
+            border-color: var(--accent-color) !important;
+            color: var(--text-color) !important;
+            box-shadow: 0 0 0 0.2rem rgba(52, 152, 219, 0.25) !important;
+        }
+        
+        .modal-content {
+            background-color: var(--modal-bg) !important;
+            border-color: var(--border-color) !important;
+        }
+        
+        .dropdown-menu {
+            background-color: var(--dropdown-bg) !important;
+            border-color: var(--border-color) !important;
+        }
+        
+        .dropdown-item {
+            color: var(--text-color) !important;
+        }
+        
+        .dropdown-item:hover {
+            background-color: var(--table-hover) !important;
+        }
+        
+        .navbar {
+            background-color: var(--navbar-bg) !important;
+        }
+        
+        .text-muted {
+            color: var(--text-muted) !important;
+        }
+        
+        /* Dark mode toggle button */
+        .theme-toggle {
+            position: relative;
+            background: transparent;
+            border: 1px solid var(--border-color);
+            border-radius: 0.375rem;
+            padding: 0.375rem 0.75rem;
+            color: var(--text-color);
+            transition: all var(--transition-speed);
+            cursor: pointer;
+        }
+        
+        .theme-toggle:hover {
+            background-color: var(--table-hover);
+            border-color: var(--accent-color);
+        }
+        
+        .theme-toggle i {
+            font-size: 1rem;
+        }
+        
+        /* Additional dark mode styles for Bootstrap components */
+        [data-theme="dark"] .btn-close {
+            background: transparent url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='%23ffffff'%3e%3cpath d='M.293.293a1 1 0 011.414 0L8 6.586 14.293.293a1 1 0 111.414 1.414L9.414 8l6.293 6.293a1 1 0 01-1.414 1.414L8 9.414l-6.293 6.293a1 1 0 01-1.414-1.414L6.586 8 .293 1.707a1 1 0 010-1.414z'/%3e%3c/svg%3e") center/1em auto no-repeat;
+        }
+        
+        [data-theme="dark"] .toast {
+            background-color: var(--card-bg) !important;
+            border-color: var(--border-color) !important;
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] .toast-header {
+            background-color: var(--table-hover) !important;
+            color: var(--text-color) !important;
+            border-bottom-color: var(--border-color) !important;
+        }
+        
+        [data-theme="dark"] .alert {
+            background-color: var(--card-bg) !important;
+            border-color: var(--border-color) !important;
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] .badge {
+            color: #ffffff !important;
+        }
+        
+        [data-theme="dark"] .list-group-item {
+            background-color: var(--card-bg) !important;
+            border-color: var(--border-color) !important;
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] .pagination .page-link {
+            background-color: var(--card-bg) !important;
+            border-color: var(--border-color) !important;
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] .pagination .page-link:hover {
+            background-color: var(--table-hover) !important;
+            border-color: var(--accent-color) !important;
+        }
+        
+        [data-theme="dark"] .pagination .page-item.active .page-link {
+            background-color: var(--accent-color) !important;
+            border-color: var(--accent-color) !important;
+        }
+        
+        [data-theme="dark"] .breadcrumb {
+            background-color: var(--table-hover) !important;
+        }
+        
+        [data-theme="dark"] .breadcrumb-item + .breadcrumb-item::before {
+            color: var(--text-muted) !important;
+        }
+        
+        [data-theme="dark"] .nav-tabs .nav-link {
+            color: var(--text-color) !important;
+            background-color: var(--card-bg) !important;
+            border-color: var(--border-color) !important;
+        }
+        
+        [data-theme="dark"] .nav-tabs .nav-link.active {
+            background-color: var(--bg-color) !important;
+            border-color: var(--border-color) !important;
+            border-bottom-color: var(--bg-color) !important;
+        }
+        
+        [data-theme="dark"] .tab-content {
+            background-color: var(--bg-color) !important;
+        }
+        
+        /* Fix button styling in dark mode */
+        [data-theme="dark"] .btn-outline-secondary {
+            color: var(--text-color) !important;
+            border-color: var(--border-color) !important;
+        }
+        
+        [data-theme="dark"] .btn-outline-secondary:hover {
+            background-color: var(--table-hover) !important;
+            border-color: var(--accent-color) !important;
+            color: var(--text-color) !important;
         }
         
         /* Ensure Bootstrap 5 Close button styling */
@@ -939,7 +1149,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     {% block extra_css %}{% endblock %}
 </head>
-<body class="{{ device_type }}-device" data-device-type="{{ device_type }}"{% if is_mobile_device %} data-mobile="true"{% endif %}>
+<body class="{{ device_type }}-device" data-device-type="{{ device_type }}" data-theme="{{ current_theme }}"{% if is_mobile_device %} data-mobile="true"{% endif %}>
     {% if not user.is_authenticated or request.show_navbar != False %}
     <!-- Bootstrap 5 Navbar -->
     <nav class="navbar navbar-expand-lg navbar-dark">
@@ -1035,6 +1245,12 @@
                     {% endif %}
                 </ul>
                 <ul class="navbar-nav">
+                    <!-- Theme Toggle Button -->
+                    <li class="nav-item me-2">
+                        <button class="theme-toggle" onclick="toggleTheme()" title="Przełącz motyw">
+                            <i class="fas fa-moon" id="theme-icon"></i>
+                        </button>
+                    </li>
                     {% if user.is_authenticated %}
                     <!-- Desktop user dropdown -->
                     <li class="nav-item dropdown d-none d-lg-block">
@@ -1195,6 +1411,66 @@
 
     <!-- Bootstrap 5 JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Theme Toggle Script -->
+    <script>
+        // Theme management
+        function getStoredTheme() {
+            return localStorage.getItem('theme') || 'light';
+        }
+        
+        function setStoredTheme(theme) {
+            localStorage.setItem('theme', theme);
+        }
+        
+        function getPreferredTheme() {
+            const storedTheme = getStoredTheme();
+            if (storedTheme) {
+                return storedTheme;
+            }
+            return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        }
+        
+        function setTheme(theme) {
+            document.body.setAttribute('data-theme', theme);
+            updateThemeIcon(theme);
+            setStoredTheme(theme);
+            
+            // Set cookie for Django
+            document.cookie = `theme=${theme}; path=/; max-age=31536000; samesite=lax`;
+        }
+        
+        function updateThemeIcon(theme) {
+            const icon = document.getElementById('theme-icon');
+            if (icon) {
+                if (theme === 'dark') {
+                    icon.className = 'fas fa-sun';
+                } else {
+                    icon.className = 'fas fa-moon';
+                }
+            }
+        }
+        
+        function toggleTheme() {
+            const currentTheme = document.body.getAttribute('data-theme');
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            setTheme(newTheme);
+        }
+        
+        // Initialize theme on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            const preferredTheme = getPreferredTheme();
+            setTheme(preferredTheme);
+        });
+        
+        // Listen for system theme changes
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
+            const storedTheme = getStoredTheme();
+            if (!storedTheme) {
+                setTheme(e.matches ? 'dark' : 'light');
+            }
+        });
+    </script>
     
     <!-- Auto-hide Toast messages and mobile enhancements -->
     <script>

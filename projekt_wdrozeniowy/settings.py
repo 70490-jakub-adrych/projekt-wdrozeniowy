@@ -81,6 +81,7 @@ TEMPLATES = [
                 'django.contrib.messages.context_processors.messages',
                 'crm.context_processors.view_permissions',  # Add this line
                 'crm.context_processors.device_context',  # Add device detection
+                'crm.context_processors.theme_context',  # Add theme detection
             ],
         },
     },

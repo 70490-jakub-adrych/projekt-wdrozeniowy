@@ -62,3 +62,38 @@ def user_contact_info(request, user_id):
             'success': False,
             'error': str(e)
         }, status=500)
+
+
+@require_http_methods(["POST"])
+def toggle_theme(request):
+    """
+    API endpoint to toggle user theme preference
+    """
+    try:
+        theme = request.POST.get('theme', 'light')
+        
+        # Validate theme value
+        if theme not in ['light', 'dark']:
+            theme = 'light'
+        
+        # Create response and set cookie
+        response = JsonResponse({
+            'success': True,
+            'theme': theme
+        })
+        
+        # Set theme cookie with 1 year expiration
+        response.set_cookie(
+            'theme', 
+            theme, 
+            max_age=31536000,  # 1 year
+            samesite='Lax'
+        )
+        
+        return response
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
