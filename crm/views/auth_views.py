@@ -971,6 +971,42 @@ class EnhancedPasswordResetConfirmView(PasswordResetConfirmView):
         
         return super().dispatch(*args, **kwargs)
     
+    def get_context_data(self, **kwargs):
+        """Add debugging for password reset validation"""
+        context = super().get_context_data(**kwargs)
+        
+        # Debug logging
+        uidb64 = self.kwargs.get('uidb64')
+        token = self.kwargs.get('token')
+        logger.info(f"Password reset attempt - uidb64: {uidb64}, token: {token}")
+        logger.info(f"validlink status: {context.get('validlink', 'Not set')}")
+        
+        if not context.get('validlink', False):
+            logger.warning(f"Invalid password reset link - uidb64: {uidb64}, token: {token}")
+            
+            # Additional debugging
+            from django.utils.http import urlsafe_base64_decode
+            from django.utils.encoding import force_str
+            from django.contrib.auth.tokens import default_token_generator
+            from django.contrib.auth import get_user_model
+            
+            try:
+                uid = force_str(urlsafe_base64_decode(uidb64))
+                user = get_user_model().objects.get(pk=uid)
+                logger.info(f"User found: {user.username} (ID: {user.pk})")
+                
+                # Check if token is valid
+                token_valid = default_token_generator.check_token(user, token)
+                logger.info(f"Token validation result: {token_valid}")
+                
+                # Check if user is active
+                logger.info(f"User is active: {user.is_active}")
+                
+            except (ValueError, TypeError, OverflowError, get_user_model().DoesNotExist) as e:
+                logger.error(f"Error during debugging - {str(e)}")
+        
+        return context
+    
     def form_valid(self, form):
         """Override to track user when form is submitted"""
         user = form.user
