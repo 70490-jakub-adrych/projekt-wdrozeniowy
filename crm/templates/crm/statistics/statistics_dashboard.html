@@ -394,8 +394,9 @@
                 <h5 class="card-title mb-0">Wskaźniki wydajności</h5>
             </div>
             <div class="card-body">
-                <div class="row">
-                    <div class="col-md-4 mb-3">
+                <div class="row g-3">
+                    <!-- Pierwszy rząd -->
+                    <div class="col-12 col-md-6">
                         <div class="stats-card bg-light p-3 rounded text-center h-100">
                             <h5 class="text-muted">Średni czas rozwiązania</h5>
                             <h2 class="mb-0 
@@ -411,7 +412,7 @@
                             <small class="text-muted">Czas od zgłoszenia do rozwiązania</small>
                         </div>
                     </div>
-                    <div class="col-md-4 mb-3">
+                    <div class="col-12 col-md-6">
                         <div class="stats-card bg-light p-3 rounded text-center h-100">
                             <h5 class="text-muted">Średni rzeczywisty czas wykonania</h5>
                             <h2 class="mb-0 
@@ -435,7 +436,9 @@
                             </small>
                         </div>
                     </div>
-                    <div class="col-md-4 mb-3">
+                    
+                    <!-- Drugi rząd -->
+                    <div class="col-12 col-md-6">
                         <div class="stats-card bg-light p-3 rounded text-center h-100">
                             <h5 class="text-muted">Wskaźnik rozwiązania</h5>
                             {% if total_tickets > 0 %}
@@ -451,7 +454,7 @@
                             {% endif %}
                         </div>
                     </div>
-                    <div class="col-md-4 mb-3">
+                    <div class="col-12 col-md-6">
                         <div class="stats-card bg-light p-3 rounded text-center h-100">
                             <h5 class="text-muted">Obciążenie agentów</h5>
                             {% if avg_tickets_per_agent %}

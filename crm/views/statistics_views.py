@@ -339,43 +339,6 @@ def statistics_dashboard(request):
             except UserProfile.DoesNotExist:
                 pass
     
-    # In your statistics_dashboard view, before returning the context:
-    agent_work_time_processed = []
-    for ap in agent_performance:
-        agent_id = ap.get('agent_id')
-        if agent_id in agent_work_time_stats:
-            ap['work_time_stats'] = agent_work_time_stats[agent_id]
-        else:
-            ap['work_time_stats'] = None
-        agent_work_time_processed.append(ap)
-
-    # Replace agent_performance in your context with the processed version
-    context = {
-        'period': period,
-        'date_from': date_from,
-        'date_to': date_to,
-        'total_tickets': total_tickets,
-        'new_tickets': new_tickets,
-        'in_progress_tickets': in_progress_tickets,
-        'unresolved_tickets': unresolved_tickets,  # Add this missing key
-        'resolved_tickets': resolved_tickets,
-        'closed_tickets': closed_tickets,
-        'avg_resolution_hours': avg_resolution_hours,
-        'avg_actual_hours': avg_actual_hours,
-        'tickets_with_actual_time': tickets_with_actual_time,
-        'tickets_with_actual_time_percentage': tickets_with_actual_time_percentage,
-        'priority_distribution': list(priority_distribution),
-        'category_distribution': list(category_distribution),
-        'tickets_by_date': list(tickets_by_date),
-        'agent_performance': agent_performance,
-        'organizations': organizations,
-        'agents': agents,
-        'org_filter': org_filter,
-        'agent_filter': agent_filter,
-        'agent_work_time_stats': agent_work_time_stats,
-        'debug_unresolved_count': unresolved_count,  # Keep this for debugging
-    }
-    
     # Format data for JSON serialization in charts
     priority_data = list(priority_distribution)
     category_data = list(category_distribution)
@@ -415,10 +378,13 @@ def statistics_dashboard(request):
         'resolved_tickets': resolved_tickets,
         'closed_tickets': closed_tickets,
         'avg_resolution_hours': avg_resolution_hours,
+        'avg_actual_hours': avg_actual_hours,
+        'tickets_with_actual_time': tickets_with_actual_time,
+        'tickets_with_actual_time_percentage': tickets_with_actual_time_percentage,
         'priority_distribution': priority_data,
         'category_distribution': category_data,
         'tickets_by_date': tickets_by_date_data,
-        'agent_performance': agent_work_time_processed,
+        'agent_performance': agent_performance,
         'organizations': organizations,
         'agents': agents,
         'org_filter': org_filter,
