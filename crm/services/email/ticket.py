@@ -40,22 +40,59 @@ def notify_ticket_stakeholders(notification_type, ticket, triggered_by=None, **k
             stakeholders.append(ticket.assigned_to)
             logger.debug(f"Added assignee {ticket.assigned_to.username} to stakeholders")
         
-        # Get agents from the ticket's organization if notification type is 'created'
+        # Notify appropriate users based on role and notification type
+        from ...models import UserProfile
+        
+        # For 'created' - notify agents about new unassigned tickets in their organization
+        # For 'assigned' - notify the assigned agent
+        # For other types - notify agents working on the ticket
+        
         if notification_type == 'created':
-            from ...models import UserProfile
-            agent_qs = UserProfile.objects.filter(
-                organizations=ticket.organization,
-                role__in=['agent', 'superagent']
+            # Superagents and admins get notified about ALL new tickets
+            superagents_and_admins = UserProfile.objects.filter(
+                role__in=['superagent', 'admin']
             )
-            # Exclude creator only if they are not an agent (e.g., client/viewer)
-            if triggered_by and getattr(triggered_by, 'profile', None) and triggered_by.profile.role in ['client', 'viewer']:
-                agent_qs = agent_qs.exclude(user=triggered_by)
-            agent_profiles = agent_qs
-            
-            for profile in agent_profiles:
-                if profile.user not in stakeholders:
+            for profile in superagents_and_admins:
+                if profile.user not in stakeholders and profile.user != triggered_by:
                     stakeholders.append(profile.user)
-                    logger.debug(f"Added agent {profile.user.username} to stakeholders")
+                    logger.debug(f"Added {profile.role} {profile.user.username} to stakeholders (all tickets)")
+            
+            # Regular agents get notified only about tickets in their organizations
+            agents_in_org = UserProfile.objects.filter(
+                organizations=ticket.organization,
+                role='agent'
+            )
+            for profile in agents_in_org:
+                if profile.user not in stakeholders and profile.user != triggered_by:
+                    stakeholders.append(profile.user)
+                    logger.debug(f"Added agent {profile.user.username} to stakeholders (organization ticket)")
+        
+        elif notification_type in ['status_changed', 'commented', 'updated', 'closed', 'reopened']:
+            # For updates to existing tickets, notify based on assignment
+            if ticket.assigned_to:
+                # If assigned, notify the assigned agent (unless they're the one triggering)
+                # Already handled above in assigned_to check
+                pass
+            else:
+                # If unassigned, notify agents who can see it
+                # Superagents and admins see all tickets
+                superagents_and_admins = UserProfile.objects.filter(
+                    role__in=['superagent', 'admin']
+                )
+                for profile in superagents_and_admins:
+                    if profile.user not in stakeholders and profile.user != triggered_by:
+                        stakeholders.append(profile.user)
+                        logger.debug(f"Added {profile.role} {profile.user.username} to stakeholders (unassigned ticket)")
+                
+                # Regular agents in the ticket's organization
+                agents_in_org = UserProfile.objects.filter(
+                    organizations=ticket.organization,
+                    role='agent'
+                )
+                for profile in agents_in_org:
+                    if profile.user not in stakeholders and profile.user != triggered_by:
+                        stakeholders.append(profile.user)
+                        logger.debug(f"Added agent {profile.user.username} to stakeholders (organization unassigned ticket)")
         
         # Send notifications to each stakeholder
         results = []
