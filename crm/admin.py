@@ -399,11 +399,26 @@ class OrganizationAdmin(admin.ModelAdmin):
 
 @admin.register(Ticket)
 class TicketAdmin(admin.ModelAdmin):
-    list_display = ('title', 'organization', 'status', 'priority', 'category', 'created_by', 'assigned_to', 'created_at')
+    list_display = ('title', 'organization', 'status', 'priority', 'category', 'created_by', 'assigned_to', 'actual_resolution_time', 'created_at')
     list_filter = ('status', 'priority', 'category', 'organization')
     search_fields = ('title', 'description', 'created_by__username', 'assigned_to__username')
     date_hierarchy = 'created_at'
     inlines = [TicketCommentInline, TicketAttachmentInline]
+    
+    fieldsets = (
+        ('Podstawowe informacje', {
+            'fields': ('title', 'description', 'organization', 'category', 'priority', 'status')
+        }),
+        ('Przypisanie', {
+            'fields': ('created_by', 'assigned_to')
+        }),
+        ('Daty i czas', {
+            'fields': ('created_at', 'updated_at', 'resolved_at', 'closed_at', 'actual_resolution_time'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    readonly_fields = ('created_at', 'updated_at')
 
 
 @admin.register(TicketComment)

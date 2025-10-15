@@ -311,6 +311,14 @@ class Ticket(models.Model):
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Data aktualizacji")
     resolved_at = models.DateTimeField(null=True, blank=True, verbose_name="Data rozwiązania")
     closed_at = models.DateTimeField(null=True, blank=True, verbose_name="Data zamknięcia")
+    actual_resolution_time = models.DecimalField(
+        max_digits=6, 
+        decimal_places=2, 
+        null=True, 
+        blank=True, 
+        verbose_name="Rzeczywisty czas wykonania (godziny)",
+        help_text="Podaj rzeczywisty czas poświęcony na wykonanie zgłoszenia w godzinach"
+    )
     
     def __str__(self):
         return self.title

@@ -19,6 +19,30 @@
                 <p class="text-muted">Zamknięcie zgłoszenia oznacza, że sprawa została rozwiązana i nie wymaga dalszych działań.</p>
                 <form method="post">
                     {% csrf_token %}
+                    
+                    {% if show_time_field %}
+                    <div class="mb-3">
+                        <label for="actual_resolution_time" class="form-label">
+                            <i class="fas fa-clock"></i> Rzeczywisty czas wykonania (w godzinach)
+                            <span class="text-danger">*</span>
+                        </label>
+                        <input 
+                            type="number" 
+                            class="form-control" 
+                            id="actual_resolution_time" 
+                            name="actual_resolution_time" 
+                            step="0.25" 
+                            min="0.25"
+                            max="1000"
+                            placeholder="np. 2.5"
+                            required>
+                        <div class="form-text">
+                            Podaj rzeczywisty czas poświęcony na wykonanie zgłoszenia (np. 2.5 dla 2 godzin i 30 minut).
+                            Minimum 0.25 godziny (15 minut).
+                        </div>
+                    </div>
+                    {% endif %}
+                    
                     <div class="d-flex flex-wrap gap-2">
                         <button type="submit" class="btn btn-secondary">
                             <i class="fas fa-lock"></i> Zamknij zgłoszenie

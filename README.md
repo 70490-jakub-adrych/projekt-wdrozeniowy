@@ -48,6 +48,9 @@ python manage.py migrate
 # Tworzenie danych demonstracyjnych
 python manage.py setup_demo_data
 
+# Konfiguracja automatycznych kopii zapasowych (opcjonalne)
+python manage.py backup_database
+
 # Uruchomienie serwera
 python manage.py runserver
 ```
@@ -159,3 +162,45 @@ Na hostingach takich jak mydevil.net, gdzie nie można użyć WebSocket/Channels
 - Nie jest wymagany WebSocket, Channels ani serwer ASGI.
 - Działa na każdym hostingu obsługującym klasyczne Django (WSGI).
 - Viewer widzi zawsze aktualną listę zgłoszeń bez przeładowania strony.
+
+## Automatyczne kopie zapasowe bazy danych
+
+System zawiera wbudowane narzędzia do tworzenia kopii zapasowych bazy danych.
+
+### Ręczne tworzenie kopii zapasowej
+```bash
+# Kopia zapasowa MySQL (zalecaną)
+python manage.py backup_database --format=sql
+
+# Kopia zapasowa Django (uniwersalna)
+python manage.py backup_database --format=json
+
+# Sprawdzenie statusu kopii zapasowych
+python manage.py backup_status
+```
+
+### Automatyczne kopie zapasowe na mydevil.net
+
+1. **Zaloguj się do panelu mydevil.net**
+2. **Przejdź do sekcji "Cron"**
+3. **Dodaj nowe zadanie cron z następującymi parametrami:**
+
+   - **Komenda**: `cd ~/domains/betulait.usermd.net/public_python && python manage.py backup_database --format=sql --rotate=7`
+   - **Częstotliwość**: Codziennie o 2:00 (lub dowolna godzina nocna)
+   - **Czas**: `0 2 * * *`
+
+4. **Opcjonalnie dodaj drugie zadanie dla kopii JSON:**
+   - **Komenda**: `cd ~/domains/betulait.usermd.net/public_python && python manage.py backup_database --format=json --rotate=7 --prefix=json_backup`
+   - **Częstotliwość**: Codziennie o 2:30
+   - **Czas**: `30 2 * * *`
+
+### Przywracanie z kopii zapasowej
+```bash
+# Wyświetl dostępne kopie zapasowe
+python manage.py backup_status
+
+# Przywróć z konkretnej kopii (UWAGA: zastąpi obecne dane!)
+python manage.py restore_database backups/database/backup_mysql_YYYYMMDD_HHMMSS.sql.gz
+```
+
+**Kopie zapasowe są zapisywane w katalogu `backups/database/` i automatycznie kompresowane.**

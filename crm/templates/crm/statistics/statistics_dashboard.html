@@ -408,6 +408,31 @@
                                     Brak danych
                                 {% endif %}
                             </h2>
+                            <small class="text-muted">Czas od zgłoszenia do rozwiązania</small>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="stats-card bg-light p-3 rounded text-center h-100">
+                            <h5 class="text-muted">Średni rzeczywisty czas wykonania</h5>
+                            <h2 class="mb-0 
+                                {% if avg_actual_hours %}
+                                    {% if avg_actual_hours < 2 %}performance-good
+                                    {% elif avg_actual_hours < 5 %}performance-medium
+                                    {% else %}performance-poor{% endif %}
+                                {% endif %}">
+                                {% if avg_actual_hours %}
+                                    {{ avg_actual_hours|floatformat:2 }} godz.
+                                {% else %}
+                                    Brak danych
+                                {% endif %}
+                            </h2>
+                            <small class="text-muted">
+                                {% if tickets_with_actual_time > 0 %}
+                                    {{ tickets_with_actual_time }} zgłoszeń ({{ tickets_with_actual_time_percentage|floatformat:0 }}%)
+                                {% else %}
+                                    Brak zgłoszeń z podanym czasem
+                                {% endif %}
+                            </small>
                         </div>
                     </div>
                     <div class="col-md-4 mb-3">
@@ -469,6 +494,7 @@
                                 <th>Rozwiązanych</th>
                                 <th>% rozwiązanych</th>
                                 <th>Śr. czas rozwiązania</th>
+                                <th>Śr. rzeczywisty czas</th>
                                 {% if agent_work_time_stats %}
                                 <th>Śr. czas pracy</th>
                                 {% endif %}
@@ -496,6 +522,20 @@
                                             {% else %}text-danger{% endif %}">
                                             {{ ap.avg_resolution_time|floatformat:1 }} godz.
                                         </span>
+                                    {% else %}
+                                        <span class="text-muted">Brak danych</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if ap.avg_actual_resolution_time %}
+                                        <span class="
+                                            {% if ap.avg_actual_resolution_time < 2 %}text-success
+                                            {% elif ap.avg_actual_resolution_time < 5 %}text-warning
+                                            {% else %}text-danger{% endif %}">
+                                            {{ ap.avg_actual_resolution_time|floatformat:1 }} godz.
+                                        </span>
+                                        <br>
+                                        <small class="text-muted">({{ ap.tickets_with_actual_time }} zgł.)</small>
                                     {% else %}
                                         <span class="text-muted">Brak danych</span>
                                     {% endif %}

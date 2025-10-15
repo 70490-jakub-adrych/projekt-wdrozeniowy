@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import HttpResponseForbidden, Http404
 from django.utils import timezone
+from decimal import Decimal, InvalidOperation
 
 from ...models import Ticket
 from ..helpers import log_activity
@@ -39,6 +40,36 @@ def ticket_close(request, pk):
             return HttpResponseForbidden("Nie można zamknąć nieprzypisanego zgłoszenia")
     
     if request.method == 'POST':
+        # Pobierz rzeczywisty czas wykonania z formularza
+        actual_time = request.POST.get('actual_resolution_time')
+        
+        # Walidacja czasu wykonania (tylko dla agentów, adminów i superagentów)
+        if role in ['agent', 'admin', 'superagent']:
+            if actual_time:
+                try:
+                    actual_time_decimal = Decimal(actual_time)
+                    if actual_time_decimal < Decimal('0.25'):
+                        messages.error(request, 'Rzeczywisty czas wykonania musi być co najmniej 0.25 godziny (15 minut)')
+                        return render(request, 'crm/tickets/ticket_confirm_close.html', {
+                            'ticket': ticket,
+                            'show_time_field': True
+                        })
+                    if actual_time_decimal > Decimal('1000'):
+                        messages.error(request, 'Rzeczywisty czas wykonania nie może przekraczać 1000 godzin')
+                        return render(request, 'crm/tickets/ticket_confirm_close.html', {
+                            'ticket': ticket,
+                            'show_time_field': True
+                        })
+                    ticket.actual_resolution_time = actual_time_decimal
+                except (ValueError, InvalidOperation):
+                    messages.error(request, 'Nieprawidłowy format czasu. Użyj liczby (np. 2.5 dla 2.5 godziny)')
+                    return render(request, 'crm/tickets/ticket_confirm_close.html', {
+                        'ticket': ticket,
+                        'show_time_field': True
+                    })
+            else:
+                messages.warning(request, 'Zaleca się podanie rzeczywistego czasu wykonania zgłoszenia')
+        
         # Store the old status for the log
         old_status = ticket.status
         
@@ -47,20 +78,30 @@ def ticket_close(request, pk):
         ticket.save()
         
         # Log closing with detailed information
+        log_message = f"Zamknięto zgłoszenie '{ticket.title}' (zmiana statusu z '{old_status}' na 'closed')"
+        if ticket.actual_resolution_time:
+            log_message += f" - Rzeczywisty czas wykonania: {ticket.actual_resolution_time} godz."
+        
         log_activity(
             request, 
             'ticket_closed', 
             ticket, 
-            f"Zamknięto zgłoszenie '{ticket.title}' (zmiana statusu z '{old_status}' na 'closed')"
+            log_message
         )
         
         # Send email notification about the ticket closure
         EmailNotificationService.notify_ticket_stakeholders('closed', ticket, triggered_by=user, old_status=old_status)
         
-        messages.success(request, 'Zgłosenie zostało zamknięte!')
+        messages.success(request, 'Zgłoszenie zostało zamknięte!')
         return redirect('ticket_detail', pk=ticket.pk)
     
-    return render(request, 'crm/tickets/ticket_confirm_close.html', {'ticket': ticket})
+    # Określ czy pokazać pole czasu wykonania (tylko dla agentów/adminów/superagentów)
+    show_time_field = role in ['agent', 'admin', 'superagent']
+    
+    return render(request, 'crm/tickets/ticket_confirm_close.html', {
+        'ticket': ticket,
+        'show_time_field': show_time_field
+    })
 
 
 @login_required

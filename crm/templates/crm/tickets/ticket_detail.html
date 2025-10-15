@@ -500,6 +500,16 @@
                     <div class="col-md-9">{{ ticket.closed_at|date:"d.m.Y H:i" }}</div>
                 </div>
                 {% endif %}
+                {% if ticket.actual_resolution_time %}
+                <div class="row mb-3">
+                    <div class="col-md-3 fw-bold">Rzeczywisty czas wykonania:</div>
+                    <div class="col-md-9">
+                        <span class="badge bg-info">
+                            <i class="fas fa-clock"></i> {{ ticket.actual_resolution_time }} {{ ticket.actual_resolution_time|floatformat:0|pluralize:"godzina,godziny,godzin" }}
+                        </span>
+                    </div>
+                </div>
+                {% endif %}
             </div>
         </div>
         

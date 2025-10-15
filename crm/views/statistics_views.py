@@ -158,6 +158,22 @@ def statistics_dashboard(request):
     else:
         avg_resolution_hours = 0
     
+    # Calculate average actual resolution time (rzeczywisty czas wykonania)
+    avg_actual_resolution_time = tickets.exclude(
+        actual_resolution_time__isnull=True
+    ).aggregate(
+        avg_actual_time=Avg('actual_resolution_time')
+    )['avg_actual_time']
+    
+    if avg_actual_resolution_time:
+        avg_actual_hours = float(avg_actual_resolution_time)
+    else:
+        avg_actual_hours = None
+    
+    # Count tickets with actual resolution time (for percentage calculation)
+    tickets_with_actual_time = tickets.exclude(actual_resolution_time__isnull=True).count()
+    tickets_with_actual_time_percentage = (tickets_with_actual_time / total_tickets * 100) if total_tickets > 0 else 0
+    
     # Get priority distribution
     priority_distribution = tickets.values('priority').annotate(
         count=Count('id')
@@ -238,13 +254,30 @@ def statistics_dashboard(request):
                     else:
                         agent_avg_hours = 0
                     
+                    # Calculate average actual resolution time for this agent
+                    agent_actual_avg_time = agent_tickets.exclude(
+                        actual_resolution_time__isnull=True
+                    ).aggregate(
+                        avg_actual_time=Avg('actual_resolution_time')
+                    )['avg_actual_time']
+                    
+                    if agent_actual_avg_time:
+                        agent_actual_avg_hours = float(agent_actual_avg_time)
+                    else:
+                        agent_actual_avg_hours = None
+                    
+                    # Count tickets with actual time for this agent
+                    agent_tickets_with_actual_time = agent_tickets.exclude(actual_resolution_time__isnull=True).count()
+                    
                     agent_performance.append({
                         'agent_id': agent_id,  # Add this line
                         'agent_name': f"{agent_user.first_name} {agent_user.last_name}" if agent_user.first_name else agent_user.username,
                         'ticket_count': agent_total,
                         'resolved_count': agent_resolved,
                         'resolution_rate': resolution_rate,
-                        'avg_resolution_time': agent_avg_hours
+                        'avg_resolution_time': agent_avg_hours,
+                        'avg_actual_resolution_time': agent_actual_avg_hours,
+                        'tickets_with_actual_time': agent_tickets_with_actual_time
                     })
                 except UserProfile.DoesNotExist:
                     # Skip if agent profile doesn't exist
@@ -328,6 +361,9 @@ def statistics_dashboard(request):
         'resolved_tickets': resolved_tickets,
         'closed_tickets': closed_tickets,
         'avg_resolution_hours': avg_resolution_hours,
+        'avg_actual_hours': avg_actual_hours,
+        'tickets_with_actual_time': tickets_with_actual_time,
+        'tickets_with_actual_time_percentage': tickets_with_actual_time_percentage,
         'priority_distribution': list(priority_distribution),
         'category_distribution': list(category_distribution),
         'tickets_by_date': list(tickets_by_date),
