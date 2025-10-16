@@ -31,8 +31,9 @@ def reverse_set_resolved_at(apps, schema_editor):
 
 class Migration(migrations.Migration):
 
-    # Bez dependencies - to jest tylko update danych, nie zmiana struktury
-    dependencies = []
+    dependencies = [
+        ('crm', '0003_ticket_actual_resolution_time'),
+    ]
 
     operations = [
         migrations.RunPython(
