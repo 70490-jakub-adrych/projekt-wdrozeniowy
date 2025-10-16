@@ -245,6 +245,34 @@ def ticket_mark_resolved(request, pk):
             return HttpResponseForbidden("Nie można oznaczyć jako rozwiązane nieprzypisanego zgłoszenia")
     
     if request.method == 'POST':
+        # Pobierz rzeczywisty czas wykonania z formularza
+        actual_time = request.POST.get('actual_resolution_time')
+        
+        # Walidacja czasu wykonania (tylko dla agentów, adminów i superagentów)
+        if role in ['agent', 'admin', 'superagent']:
+            if actual_time:
+                try:
+                    actual_time_decimal = Decimal(actual_time)
+                    if actual_time_decimal < Decimal('0.25'):
+                        messages.error(request, 'Rzeczywisty czas wykonania musi być co najmniej 0.25 godziny (15 minut)')
+                        return render(request, 'crm/tickets/ticket_confirm_resolve.html', {
+                            'ticket': ticket,
+                            'show_time_field': True
+                        })
+                    if actual_time_decimal > Decimal('1000'):
+                        messages.error(request, 'Rzeczywisty czas wykonania nie może przekraczać 1000 godzin')
+                        return render(request, 'crm/tickets/ticket_confirm_resolve.html', {
+                            'ticket': ticket,
+                            'show_time_field': True
+                        })
+                    ticket.actual_resolution_time = actual_time_decimal
+                except (ValueError, InvalidOperation):
+                    messages.error(request, 'Nieprawidłowy format czasu. Użyj liczby (np. 2.5 dla 2.5 godziny)')
+                    return render(request, 'crm/tickets/ticket_confirm_resolve.html', {
+                        'ticket': ticket,
+                        'show_time_field': True
+                    })
+        
         # Store the old status for the log
         old_status = ticket.status
         
@@ -253,11 +281,15 @@ def ticket_mark_resolved(request, pk):
         ticket.save()
         
         # Log the status change
+        log_message = f"Oznaczono zgłoszenie '{ticket.title}' jako rozwiązane (zmiana statusu z '{old_status}' na 'resolved')"
+        if ticket.actual_resolution_time:
+            log_message += f" - Rzeczywisty czas wykonania: {ticket.actual_resolution_time} godz."
+        
         log_activity(
             request, 
             'ticket_resolved', 
             ticket, 
-            f"Oznaczono zgłoszenie '{ticket.title}' jako rozwiązane (zmiana statusu z '{old_status}' na 'resolved')"
+            log_message
         )
         
         # Send email notification about the ticket being resolved
@@ -266,4 +298,10 @@ def ticket_mark_resolved(request, pk):
         messages.success(request, 'Zgłoszenie zostało oznaczone jako rozwiązane!')
         return redirect('ticket_detail', pk=ticket.pk)
     
-    return render(request, 'crm/tickets/ticket_confirm_resolve.html', {'ticket': ticket})
+    # Determine if the user should see the time field
+    show_time_field = role in ['agent', 'admin', 'superagent']
+    
+    return render(request, 'crm/tickets/ticket_confirm_resolve.html', {
+        'ticket': ticket,
+        'show_time_field': show_time_field
+    })

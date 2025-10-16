@@ -7,6 +7,10 @@ cryptography>=41.0.0
 pyotp>=2.8.0  # For Google Authenticator integration
 qrcode>=7.3.1  # For generating QR codes
 
+# Scheduler for periodic tasks (auto-close tickets, etc.)
+APScheduler>=3.10.0
+django-apscheduler>=0.6.2
+
 # Testing Dependencies for Live Domain Testing
 selenium==4.15.0
 pytest==7.4.3

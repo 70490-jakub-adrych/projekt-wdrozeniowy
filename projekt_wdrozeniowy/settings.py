@@ -43,6 +43,9 @@ INSTALLED_APPS = [
     'crispy_forms',
     'crispy_bootstrap4',
     
+    # Scheduler for periodic tasks
+    'django_apscheduler',
+    
     # 2FA/OTP apps
     'django_otp',
     'django_otp.plugins.otp_static',

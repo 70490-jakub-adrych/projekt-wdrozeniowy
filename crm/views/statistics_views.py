@@ -919,14 +919,19 @@ def _generate_csv_report(period_start, period_end, organization, agent,
     # Agent performance
     if agent_performance:
         writer.writerow(['WYDAJNOŚĆ AGENTÓW'])
-        writer.writerow(['Agent', 'Liczba zgłoszeń', 'Rozwiązanych', '% rozwiązanych', 'Śr. czas rozwiązania (godz.)'])
+        writer.writerow(['Agent', 'Liczba zgłoszeń', 'Rozwiązanych', '% rozwiązanych', 'Śr. czas rozwiązania (godz.)', 'Śr. rzeczywisty czas (godz.)', 'Zgł. z rzecz. czasem'])
         for ap in agent_performance:
+            avg_actual = f"{ap['avg_actual_resolution_time']:.2f}" if ap.get('avg_actual_resolution_time') else "Brak danych"
+            tickets_actual = ap.get('tickets_with_actual_time', 0)
+            
             writer.writerow([
                 ap['agent_name'], 
                 ap['ticket_count'], 
                 ap['resolved_count'],
                 f"{ap['resolution_rate']:.1f}%",
-                f"{ap['avg_resolution_time']:.2f}"
+                f"{ap['avg_resolution_time']:.2f}",
+                avg_actual,
+                tickets_actual
             ])
     
     return response
@@ -1053,18 +1058,23 @@ def _generate_excel_report(period_start, period_end, organization, agent,
             ws[f'A{row}'].font = subheader_font
             row += 1
             
-            headers = ['Agent', 'Liczba zgłoszeń', 'Rozwiązanych', '% rozwiązanych', 'Śr. czas rozwiązania (godz.)']
+            headers = ['Agent', 'Liczba zgłoszeń', 'Rozwiązanych', '% rozwiązanych', 'Śr. czas rozwiązania (godz.)', 'Śr. rzeczywisty czas (godz.)', 'Zgł. z rzecz. czasem']
             for col, header in enumerate(headers, 1):
                 cell = ws.cell(row=row, column=col, value=header)
                 cell.font = bold_font
             row += 1
             
             for ap in agent_performance:
+                avg_actual = f"{ap['avg_actual_resolution_time']:.2f}" if ap.get('avg_actual_resolution_time') else "Brak danych"
+                tickets_actual = ap.get('tickets_with_actual_time', 0)
+                
                 ws[f'A{row}'] = ap['agent_name']
                 ws[f'B{row}'] = ap['ticket_count']
                 ws[f'C{row}'] = ap['resolved_count']
                 ws[f'D{row}'] = f"{ap['resolution_rate']:.1f}%"
                 ws[f'E{row}'] = f"{ap['avg_resolution_time']:.2f}"
+                ws[f'F{row}'] = avg_actual
+                ws[f'G{row}'] = tickets_actual
                 row += 1
         
         logger.info("Auto-adjusting column widths...")
