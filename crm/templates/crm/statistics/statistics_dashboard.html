@@ -142,6 +142,15 @@
         box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
     }
     
+    /* Nagłówek w tickets wrapper */
+    .tickets-content-wrapper h6 {
+        color: inherit;
+    }
+    
+    [data-bs-theme="dark"] .tickets-content-wrapper h6 {
+        color: #f8f9fa;
+    }
+    
     /* Spacing for tickets table */
     .tickets-content-wrapper .table-responsive {
         margin-top: 0.75rem;
@@ -160,12 +169,12 @@
     }
     
     .tickets-content-wrapper .table tbody tr:first-child td {
-        padding-top: 0.75rem;
+        padding-top: 1rem;
     }
     
     .tickets-content-wrapper .table tbody tr td {
-        padding-top: 0.75rem;
-        padding-bottom: 0.75rem;
+        padding-top: 1rem;
+        padding-bottom: 1rem;
         padding-left: 0.75rem;
         padding-right: 0.75rem;
         text-align: center;
