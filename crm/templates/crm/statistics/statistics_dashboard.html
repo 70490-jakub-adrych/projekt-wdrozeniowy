@@ -135,11 +135,10 @@
         background-color: #f8f9fa;
     }
     
-    /* Dark mode - sprawdzamy czy html lub body ma data-bs-theme="dark" */
-    html[data-bs-theme="dark"] .tickets-content-wrapper.expanded,
-    body[data-bs-theme="dark"] .tickets-content-wrapper.expanded {
-        border-color: #495057 !important;
-        background-color: #2b3035 !important;
+    /* Dark mode - używamy data-theme="dark" zamiast data-bs-theme */
+    [data-theme="dark"] .tickets-content-wrapper.expanded {
+        border-color: #4a4a4a !important;
+        background-color: #2b2d31 !important;
         box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3) !important;
     }
     
@@ -153,7 +152,7 @@
         background-color: transparent !important;
     }
     
-    [data-bs-theme="dark"] .tickets-content-wrapper h6 {
+    [data-theme="dark"] .tickets-content-wrapper h6 {
         color: #f8f9fa;
         background-color: transparent !important;
     }
@@ -171,7 +170,7 @@
         background-color: transparent !important;
     }
     
-    [data-bs-theme="dark"] .tickets-content-wrapper .text-muted {
+    [data-theme="dark"] .tickets-content-wrapper .text-muted {
         color: #adb5bd !important;
         background-color: transparent !important;
     }
@@ -210,20 +209,20 @@
     }
     
     /* Dark mode table styling */
-    [data-bs-theme="dark"] .tickets-content-wrapper .table {
+    [data-theme="dark"] .tickets-content-wrapper .table {
         color: #dee2e6;
     }
     
-    [data-bs-theme="dark"] .tickets-content-wrapper .table thead th {
+    [data-theme="dark"] .tickets-content-wrapper .table thead th {
         border-bottom-color: #495057;
         color: #f8f9fa;
     }
     
-    [data-bs-theme="dark"] .tickets-content-wrapper .table tbody tr {
+    [data-theme="dark"] .tickets-content-wrapper .table tbody tr {
         border-color: #495057;
     }
     
-    [data-bs-theme="dark"] .tickets-content-wrapper .table-hover tbody tr:hover {
+    [data-theme="dark"] .tickets-content-wrapper .table-hover tbody tr:hover {
         background-color: rgba(255, 255, 255, 0.05);
     }
 
