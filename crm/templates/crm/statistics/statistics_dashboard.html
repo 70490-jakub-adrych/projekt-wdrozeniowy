@@ -143,6 +143,10 @@
     }
     
     /* Nagłówek w tickets wrapper */
+    .tickets-content-wrapper .d-flex {
+        background-color: transparent !important;
+    }
+    
     .tickets-content-wrapper h6 {
         color: inherit;
     }
@@ -158,25 +162,23 @@
     
     .tickets-content-wrapper .table {
         margin-bottom: 0.5rem;
+        border-spacing: 0 0.5rem;
+        border-collapse: separate;
     }
     
     .tickets-content-wrapper .table thead th {
-        padding-top: 0.75rem;
-        padding-bottom: 0.75rem;
+        padding: 0.75rem;
         border-bottom: 2px solid #dee2e6;
         text-align: center;
         vertical-align: middle;
     }
     
-    .tickets-content-wrapper .table tbody tr:first-child td {
-        padding-top: 1rem;
+    .tickets-content-wrapper .table tbody tr {
+        height: 3.5rem;
     }
     
     .tickets-content-wrapper .table tbody tr td {
-        padding-top: 1rem;
-        padding-bottom: 1rem;
-        padding-left: 0.75rem;
-        padding-right: 0.75rem;
+        padding: 1rem 0.75rem;
         text-align: center;
         vertical-align: middle;
     }
