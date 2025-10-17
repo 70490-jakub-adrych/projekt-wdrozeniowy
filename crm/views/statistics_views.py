@@ -812,7 +812,7 @@ def generate_statistics_report(request):
                                 'avg_resolution_time': agent_avg_hours
                             })
                             
-                            logger.debug(f"Agent {agent_user.username}: {agent_total} tickets, {resolution_rate}% resolution rate")
+                            logger.debug(f"Agent {agent_user.username} (id={agent_id}): {agent_total} tickets, {resolution_rate}% resolution rate")
                         except UserProfile.DoesNotExist:
                             logger.warning(f"UserProfile not found for user_id: {agent_id}")
                         except Exception as e:
@@ -1119,6 +1119,8 @@ def _generate_excel_report(period_start, period_end, organization, agent,
             
             white_font = Font(color="FFFFFF", bold=True)
             
+            logger.info(f"Excel Report - Processing {len(agent_performance)} agents")
+            
             for ap in agent_performance:
                 avg_actual = f"{ap['avg_actual_resolution_time']:.2f}" if ap.get('avg_actual_resolution_time') else "Brak danych"
                 tickets_actual = ap.get('tickets_with_actual_time', 0)
@@ -1148,6 +1150,9 @@ def _generate_excel_report(period_start, period_end, organization, agent,
                 
                 # Get agent's tickets in period
                 agent_id = ap.get('agent_id')
+                logger.info(f"Excel Report - Processing agent: {ap.get('agent_name')}, agent_id={agent_id}")
+                logger.info(f"Excel Report - Period: {period_start} to {period_end} (types: {type(period_start)}, {type(period_end)})")
+                
                 if agent_id:
                     # period_start and period_end are already date objects, use them directly
                     agent_tickets = Ticket.objects.filter(
@@ -1156,7 +1161,10 @@ def _generate_excel_report(period_start, period_end, organization, agent,
                         created_at__date__lte=period_end
                     ).order_by('-created_at')
                     
+                    logger.info(f"Excel Report - Found {agent_tickets.count()} tickets for agent {agent_id}")
+                    
                     if agent_tickets.exists():
+                        logger.info(f"Excel Report - Writing {agent_tickets.count()} tickets to Excel")
                         status_labels = {'new': 'Nowy', 'in_progress': 'W trakcie', 'unresolved': 'Nierozwiązany', 'resolved': 'Rozwiązany', 'closed': 'Zamknięty'}
                         priority_labels = {'low': 'Niski', 'medium': 'Średni', 'high': 'Wysoki', 'critical': 'Krytyczny'}
                         category_labels = {'hardware': 'Sprzęt', 'software': 'Oprogramowanie', 'network': 'Sieć', 'account': 'Konto', 'other': 'Inne'}
@@ -1185,9 +1193,15 @@ def _generate_excel_report(period_start, period_end, organization, agent,
                             ws[f'H{row}'] = ticket.closed_at.strftime('%Y-%m-%d %H:%M') if ticket.closed_at else '-'
                             row += 1
                     else:
+                        logger.warning(f"Excel Report - No tickets found for agent {agent_id} in period")
                         ws[f'A{row}'] = 'Brak zgłoszeń w wybranym okresie'
                         ws[f'A{row}'].font = Font(italic=True, color="6c757d")
                         row += 1
+                else:
+                    logger.error(f"Excel Report - agent_id is missing! Agent data: {ap}")
+                    ws[f'A{row}'] = 'Błąd: Brak ID agenta'
+                    ws[f'A{row}'].font = Font(italic=True, color="dc3545")
+                    row += 1
                 
                 row += 1
         
