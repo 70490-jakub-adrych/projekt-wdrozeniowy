@@ -14,9 +14,19 @@ class CrmAdminSite(AdminSite):
         ]
         return context
 
-    def get_app_list(self, request):
+    def get_app_list(self, request, app_label=None):
+        """
+        Return a sorted list of all the installed apps that have been
+        registered in this site.
+        """
         # Get the default app list
-        app_list = super().get_app_list(request)
+        app_list = super().get_app_list(request, app_label)
+        
+        # Remove app_url from each app to disable links to app index pages
+        # This prevents 500 errors when clicking on "admin/crm/", "admin/django_apscheduler/", etc.
+        for app in app_list:
+            app['app_url'] = None  # This removes the clickable link
+        
         # Sort the app list by name
         app_list.sort(key=lambda x: x['name'])
         return app_list

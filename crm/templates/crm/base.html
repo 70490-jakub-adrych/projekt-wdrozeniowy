@@ -142,7 +142,6 @@
             border: 1px solid var(--border-color);
             border-radius: 0.375rem;
             padding: 0.375rem 0.75rem;
-            color: var(--text-color);
             transition: all var(--transition-speed);
             cursor: pointer;
         }
@@ -154,6 +153,12 @@
         
         .theme-toggle i {
             font-size: 1rem;
+            color: #ffffff !important; /* Biała ikona w trybie jasnym */
+        }
+        
+        /* Biała ikona również w trybie ciemnym */
+        [data-theme="dark"] .theme-toggle i {
+            color: #ffffff !important;
         }
         
         /* Additional dark mode styles for Bootstrap components */
@@ -1019,10 +1024,6 @@
         [data-theme="dark"] .navbar button,
         [data-theme="dark"] .navbar .btn {
             color: var(--navbar-text) !important;
-        }
-        
-        [data-theme="dark"] .navbar .theme-toggle {
-            color: var(--text-color) !important;
         }
         
         /* FORCE BLACK TEXT ON SPECIFIC BADGE ELEMENTS */
