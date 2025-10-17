@@ -804,6 +804,7 @@ def generate_statistics_report(request):
                             
 
                             agent_performance.append({
+                                'agent_id': agent_id,  # Add agent_id for ticket filtering
                                 'agent_name': f"{agent_user.first_name} {agent_user.last_name}" if agent_user.first_name else agent_user.username,
                                 'ticket_count': agent_total,
                                 'resolved_count': agent_resolved,
@@ -942,14 +943,11 @@ def _generate_csv_report(period_start, period_end, organization, agent,
             # Get agent's tickets in period
             agent_id = ap.get('agent_id')
             if agent_id:
-                from django.utils.dateparse import parse_date
-                start_date = parse_date(period_start)
-                end_date = parse_date(period_end)
-                
+                # period_start and period_end are already date objects, use them directly
                 agent_tickets = Ticket.objects.filter(
                     assigned_to_id=agent_id,
-                    created_at__date__gte=start_date,
-                    created_at__date__lte=end_date
+                    created_at__date__gte=period_start,
+                    created_at__date__lte=period_end
                 ).order_by('-created_at')
                 
                 if agent_tickets.exists():
@@ -1151,14 +1149,11 @@ def _generate_excel_report(period_start, period_end, organization, agent,
                 # Get agent's tickets in period
                 agent_id = ap.get('agent_id')
                 if agent_id:
-                    from django.utils.dateparse import parse_date
-                    start_date = parse_date(period_start)
-                    end_date = parse_date(period_end)
-                    
+                    # period_start and period_end are already date objects, use them directly
                     agent_tickets = Ticket.objects.filter(
                         assigned_to_id=agent_id,
-                        created_at__date__gte=start_date,
-                        created_at__date__lte=end_date
+                        created_at__date__gte=period_start,
+                        created_at__date__lte=period_end
                     ).order_by('-created_at')
                     
                     if agent_tickets.exists():
