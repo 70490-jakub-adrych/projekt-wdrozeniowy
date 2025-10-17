@@ -24,6 +24,7 @@
 
 #### Otrzymuje powiadomienia o:
 - ✅ **Zatwierdzeniu konta**
+- ✅ **Nowych użytkownikach oczekujących na zatwierdzenie** (po weryfikacji emaila)
 - ✅ **Nowych ticketach** w swojej organizacji (notification_type='created')
   - Tylko tickety z organizacji, do których należy agent
 - ✅ **Ticketach przypisanych do niego**:
@@ -46,6 +47,7 @@
 ### **SUPERAGENT** (role='superagent')
 
 #### Otrzymuje powiadomienia o:
+- ✅ **Nowych użytkownikach oczekujących na zatwierdzenie** (po weryfikacji emaila)
 - ✅ **WSZYSTKICH nowych ticketach** niezależnie od organizacji (notification_type='created')
 - ✅ **WSZYSTKICH ticketach przypisanych do niego**
 - ✅ **WSZYSTKICH nieprzypisanych ticketach** z wszystkich organizacji
@@ -65,12 +67,23 @@
 
 #### Otrzymuje powiadomienia o:
 - ✅ **Dokładnie to samo co SUPERAGENT**
+- ✅ **Nowych użytkownikach oczekujących na zatwierdzenie** (po weryfikacji emaila)
 - ✅ Wszystkie tickety z wszystkich organizacji
 - ✅ Wszystkie zmiany statusów, komentarze, aktualizacje
 
 ---
 
 ## 🎯 Szczegóły logiki powiadomień
+
+### Rejestracja nowego użytkownika
+
+```
+UŻYTKOWNIK rejestruje się i weryfikuje email → Powiadomienia dostają:
+  ✅ Wszyscy AGENCI (mogą zatwierdzać użytkowników w swoich organizacjach)
+  ✅ Wszyscy SUPERAGENCI (mogą zatwierdzać wszystkich użytkowników)
+  ✅ Wszyscy ADMINI (mogą zatwierdzać wszystkich użytkowników)
+  ❌ Klienci NIE dostają powiadomień o nowych użytkownikach
+```
 
 ### Typ powiadomienia: `created` (Nowy ticket)
 
@@ -160,6 +173,22 @@ Jeśli użytkownik wyłączy np. `notify_ticket_commented = False`, to NIE dosta
 
 ## 📝 Przykłady scenariuszy
 
+### Scenariusz 0: Nowy użytkownik się rejestruje
+
+```
+1. Użytkownik Jan wypełnia formularz rejestracji
+2. System wysyła kod weryfikacyjny na email Jana
+3. Jan wprowadza kod i weryfikuje email
+4. Powiadomienia dostają:
+   ✅ Agent Piotr (może zatwierdzać użytkowników)
+   ✅ Agent Anna (może zatwierdzać użytkowników)
+   ✅ Superagent Marek (może zatwierdzać użytkowników)
+   ✅ Admin Tomasz (może zatwierdzać użytkowników)
+5. Admin/Superagent/Agent zatwierdza konto Jana
+6. Jan dostaje email o zatwierdzeniu konta
+7. Jan może się zalogować i korzystać z systemu
+```
+
 ### Scenariusz 1: Klient tworzy nowy ticket w organizacji "Firma ABC"
 
 ```
@@ -220,9 +249,11 @@ Jeśli użytkownik wyłączy np. `notify_ticket_commented = False`, to NIE dosta
 ## 🔧 Pliki kluczowe
 
 1. **`crm/services/email/ticket.py`** - Logika powiadomień o ticketach
-2. **`crm/models.py`** - Definicje modeli (on_delete=SET_NULL dla assigned_to)
-3. **`crm/signals.py`** - Sygnały dla zatwierdzania kont
-4. **`crm/views/tickets/*.py`** - Widoki wywołujące `notify_ticket_stakeholders()`
+2. **`crm/services/email/account.py`** - Powiadomienia o kontach (zatwierdzenie, nowy użytkownik)
+3. **`crm/models.py`** - Definicje modeli (on_delete=SET_NULL dla assigned_to)
+4. **`crm/signals.py`** - Sygnały dla zatwierdzania kont
+5. **`crm/views/auth_views.py`** - Widok rejestracji wywołujący `send_new_user_notification_to_admins()`
+6. **`crm/views/tickets/*.py`** - Widoki wywołujące `notify_ticket_stakeholders()`
 
 ---
 
@@ -235,11 +266,24 @@ Jeśli użytkownik wyłączy np. `notify_ticket_commented = False`, to NIE dosta
 | Agent dostaje maile o przypisanych ticketach | ✅ | Wszystkie typy powiadomień |
 | Agent dostaje maile o nowych ticketach w organizacji | ✅ | notification_type='created' |
 | Agent dostaje maile o nieprzypisanych w organizacji | ✅ | status_changed, commented, updated |
+| Agent dostaje maile o nowych użytkownikach | ✅ | Po weryfikacji emaila |
 | Superagent dostaje maile o WSZYSTKICH ticketach | ✅ | Niezależnie od organizacji |
+| Superagent dostaje maile o nowych użytkownikach | ✅ | Po weryfikacji emaila |
 | Admin dostaje maile o WSZYSTKICH ticketach | ✅ | Tak samo jak superagent |
+| Admin dostaje maile o nowych użytkownikach | ✅ | Po weryfikacji emaila |
 | Usunięcie agenta → tickety nieprzypisane | ✅ | on_delete=SET_NULL |
 
 ---
 
-**Data aktualizacji:** 2025-10-15
-**Wersja:** 1.0
+## 🆕 Ostatnie zmiany
+
+### 2025-10-17
+- ✅ Dodano powiadomienia email dla adminów/superagentów/agentów o nowych użytkownikach oczekujących na zatwierdzenie
+- ✅ Powiadomienie wysyłane zaraz po weryfikacji emaila przez użytkownika
+- ✅ Utworzono szablon `emails/new_user_pending_approval.html` i `.txt`
+- ✅ Dodano funkcję `send_new_user_notification_to_admins()` w `crm/services/email/account.py`
+
+---
+
+**Data aktualizacji:** 2025-10-17  
+**Wersja:** 1.1

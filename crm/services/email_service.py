@@ -21,7 +21,7 @@ from .email.ticket import (
     notify_ticket_stakeholders,
     send_ticket_notification
 )
-from .email.account import send_account_approved_email
+from .email.account import send_account_approved_email, send_new_user_notification_to_admins
 from .email.test import test_smtp_connection
 
 # Configure logger
@@ -53,6 +53,7 @@ class EmailNotificationService:
     
     # Account emails
     send_account_approved_email = staticmethod(send_account_approved_email)
+    send_new_user_notification_to_admins = staticmethod(send_new_user_notification_to_admins)
     
     # Test utilities
     test_smtp_connection = staticmethod(test_smtp_connection)

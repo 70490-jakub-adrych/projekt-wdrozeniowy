@@ -492,6 +492,7 @@
                     <table class="table table-hover data-table">
                         <thead>
                             <tr>
+                                <th style="width: 50px;"></th>
                                 <th>Agent</th>
                                 <th>Liczba zgłoszeń</th>
                                 <th>Rozwiązanych</th>
@@ -505,8 +506,11 @@
                         </thead>
                         <tbody>
                             {% for ap in agent_performance %}
-                            <tr>
-                                <td>{{ ap.agent_name }}</td>
+                            <tr class="agent-row" data-agent-id="{{ ap.agent_id }}" style="cursor: pointer;">
+                                <td>
+                                    <i class="fas fa-chevron-right toggle-icon" style="transition: transform 0.2s;"></i>
+                                </td>
+                                <td><strong>{{ ap.agent_name }}</strong></td>
                                 <td>{{ ap.ticket_count }}</td>
                                 <td>{{ ap.resolved_count }}</td>
                                 <td>
@@ -552,6 +556,19 @@
                                     {% endif %}
                                 </td>
                                 {% endif %}
+                            </tr>
+                            <tr class="agent-tickets-row" data-agent-id="{{ ap.agent_id }}" style="display: none;">
+                                <td colspan="{% if agent_work_time_stats %}8{% else %}7{% endif %}">
+                                    <div class="p-3 bg-light">
+                                        <div class="d-flex justify-content-between align-items-center mb-2">
+                                            <h6 class="mb-0">Zgłoszenia agenta {{ ap.agent_name }}</h6>
+                                            <div class="spinner-border spinner-border-sm text-primary tickets-spinner" role="status" style="display: none;">
+                                                <span class="sr-only">Ładowanie...</span>
+                                            </div>
+                                        </div>
+                                        <div class="tickets-container"></div>
+                                    </div>
+                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -607,6 +624,105 @@
 
 <!-- Chart.js and our custom script -->
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+// Agent tickets toggle functionality
+document.addEventListener('DOMContentLoaded', function() {
+    const agentRows = document.querySelectorAll('.agent-row');
+    const dateFrom = document.querySelector('input[name="date_from"]').value;
+    const dateTo = document.querySelector('input[name="date_to"]').value;
+    
+    agentRows.forEach(row => {
+        row.addEventListener('click', function() {
+            const agentId = this.dataset.agentId;
+            const ticketsRow = document.querySelector(`.agent-tickets-row[data-agent-id="${agentId}"]`);
+            const ticketsContainer = ticketsRow.querySelector('.tickets-container');
+            const spinner = ticketsRow.querySelector('.tickets-spinner');
+            const toggleIcon = this.querySelector('.toggle-icon');
+            
+            if (ticketsRow.style.display === 'none') {
+                // Show tickets
+                ticketsRow.style.display = '';
+                toggleIcon.style.transform = 'rotate(90deg)';
+                
+                // Check if tickets already loaded
+                if (ticketsContainer.innerHTML === '') {
+                    // Load tickets via AJAX
+                    spinner.style.display = 'inline-block';
+                    
+                    const url = `/api/agent-tickets/${agentId}/?date_from=${dateFrom}&date_to=${dateTo}`;
+                    
+                    fetch(url, {
+                        method: 'GET',
+                        headers: {
+                            'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                            'Content-Type': 'application/json'
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        spinner.style.display = 'none';
+                        
+                        if (data.success && data.tickets.length > 0) {
+                            let html = '<div class="table-responsive"><table class="table table-sm table-hover">';
+                            html += '<thead><tr>';
+                            html += '<th>ID</th>';
+                            html += '<th>Tytuł</th>';
+                            html += '<th>Status</th>';
+                            html += '<th>Priorytet</th>';
+                            html += '<th>Kategoria</th>';
+                            html += '<th>Utworzono</th>';
+                            html += '<th>Akcje</th>';
+                            html += '</tr></thead><tbody>';
+                            
+                            data.tickets.forEach(ticket => {
+                                let statusClass = '';
+                                if (ticket.status_raw === 'closed') statusClass = 'badge-secondary';
+                                else if (ticket.status_raw === 'resolved') statusClass = 'badge-success';
+                                else if (ticket.status_raw === 'in_progress') statusClass = 'badge-info';
+                                else if (ticket.status_raw === 'new') statusClass = 'badge-primary';
+                                else statusClass = 'badge-warning';
+                                
+                                let priorityClass = '';
+                                if (ticket.priority_raw === 'critical') priorityClass = 'badge-danger';
+                                else if (ticket.priority_raw === 'high') priorityClass = 'badge-warning';
+                                else if (ticket.priority_raw === 'medium') priorityClass = 'badge-info';
+                                else priorityClass = 'badge-secondary';
+                                
+                                html += '<tr>';
+                                html += `<td><strong>#${ticket.id}</strong></td>`;
+                                html += `<td><a href="${ticket.url}" target="_blank">${ticket.title}</a></td>`;
+                                html += `<td><span class="badge ${statusClass}">${ticket.status}</span></td>`;
+                                html += `<td><span class="badge ${priorityClass}">${ticket.priority}</span></td>`;
+                                html += `<td>${ticket.category}</td>`;
+                                html += `<td><small>${ticket.created_at}</small></td>`;
+                                html += `<td><a href="${ticket.url}" class="btn btn-sm btn-outline-primary" target="_blank"><i class="fas fa-eye"></i></a></td>`;
+                                html += '</tr>';
+                            });
+                            
+                            html += '</tbody></table></div>';
+                            html += `<p class="text-muted mb-0"><small>Łącznie: ${data.count} zgłoszeń w wybranym okresie</small></p>`;
+                            
+                            ticketsContainer.innerHTML = html;
+                        } else {
+                            ticketsContainer.innerHTML = '<p class="text-muted mb-0">Brak zgłoszeń w wybranym okresie</p>';
+                        }
+                    })
+                    .catch(error => {
+                        spinner.style.display = 'none';
+                        ticketsContainer.innerHTML = '<p class="text-danger mb-0">Błąd podczas ładowania zgłoszeń</p>';
+                        console.error('Error loading agent tickets:', error);
+                    });
+                }
+            } else {
+                // Hide tickets
+                ticketsRow.style.display = 'none';
+                toggleIcon.style.transform = 'rotate(0deg)';
+            }
+        });
+    });
+});
+</script>
 {% endblock %}
 
 {% block extra_js %}

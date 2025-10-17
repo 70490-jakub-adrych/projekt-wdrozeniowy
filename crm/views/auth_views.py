@@ -86,6 +86,13 @@ def register(request):
                         # Create default notification settings
                         EmailNotificationSettings.objects.get_or_create(user=user)
                         
+                        # Notify admins/superagents/agents about new user pending approval
+                        try:
+                            EmailNotificationService.send_new_user_notification_to_admins(user)
+                            logger.info(f"Sent new user notification to admins for {user.username}")
+                        except Exception as e:
+                            logger.error(f"Failed to send new user notification to admins: {str(e)}")
+                        
                         # Clear session
                         del request.session['pending_user_id']
                         

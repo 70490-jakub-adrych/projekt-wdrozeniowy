@@ -1,0 +1,20 @@
+Nowy użytkownik oczekuje na zatwierdzenie
+================================================
+
+Witaj {{ recipient.first_name|default:recipient.username }}!
+
+Nowy użytkownik zarejestrował się w systemie Helpdesk i oczekuje na zatwierdzenie konta.
+
+Dane użytkownika:
+-----------------
+Nazwa użytkownika: {{ new_user.username }}
+Email: {{ new_user.email }}
+Imię i nazwisko: {{ new_user.first_name }} {{ new_user.last_name }}
+Data rejestracji: {{ new_user.date_joined|date:"Y-m-d H:i" }}
+
+Aby zatwierdzić lub odrzucić tego użytkownika, odwiedź:
+{{ approval_url }}
+
+---
+{{ site_name }}
+To jest automatyczna wiadomość - nie odpowiadaj na ten email.

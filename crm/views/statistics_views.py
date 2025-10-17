@@ -916,7 +916,7 @@ def _generate_csv_report(period_start, period_end, organization, agent,
         writer.writerow([category_labels.get(category, category), count])
     writer.writerow([''])
     
-    # Agent performance
+    # Agent performance with tickets details
     if agent_performance:
         writer.writerow(['WYDAJNOŚĆ AGENTÓW'])
         writer.writerow(['Agent', 'Liczba zgłoszeń', 'Rozwiązanych', '% rozwiązanych', 'Śr. czas rozwiązania (godz.)', 'Śr. rzeczywisty czas (godz.)', 'Zgł. z rzecz. czasem'])
@@ -933,6 +933,45 @@ def _generate_csv_report(period_start, period_end, organization, agent,
                 avg_actual,
                 tickets_actual
             ])
+            
+            # Add agent's tickets details
+            writer.writerow([''])
+            writer.writerow([f"  Zgłoszenia agenta: {ap['agent_name']}"])
+            writer.writerow(['  ID', 'Tytuł', 'Status', 'Priorytet', 'Kategoria', 'Utworzono', 'Rozwiązano', 'Zamknięto'])
+            
+            # Get agent's tickets in period
+            agent_id = ap.get('agent_id')
+            if agent_id:
+                from django.utils.dateparse import parse_date
+                start_date = parse_date(period_start)
+                end_date = parse_date(period_end)
+                
+                agent_tickets = Ticket.objects.filter(
+                    assigned_to_id=agent_id,
+                    created_at__date__gte=start_date,
+                    created_at__date__lte=end_date
+                ).order_by('-created_at')
+                
+                if agent_tickets.exists():
+                    status_labels = {'new': 'Nowy', 'in_progress': 'W trakcie', 'unresolved': 'Nierozwiązany', 'resolved': 'Rozwiązany', 'closed': 'Zamknięty'}
+                    priority_labels = {'low': 'Niski', 'medium': 'Średni', 'high': 'Wysoki', 'critical': 'Krytyczny'}
+                    category_labels = {'hardware': 'Sprzęt', 'software': 'Oprogramowanie', 'network': 'Sieć', 'account': 'Konto', 'other': 'Inne'}
+                    
+                    for ticket in agent_tickets:
+                        writer.writerow([
+                            f'  #{ticket.id}',
+                            ticket.title[:50] + ('...' if len(ticket.title) > 50 else ''),
+                            status_labels.get(ticket.status, ticket.status),
+                            priority_labels.get(ticket.priority, ticket.priority),
+                            category_labels.get(ticket.category, ticket.category),
+                            ticket.created_at.strftime('%Y-%m-%d %H:%M'),
+                            ticket.resolved_at.strftime('%Y-%m-%d %H:%M') if ticket.resolved_at else '-',
+                            ticket.closed_at.strftime('%Y-%m-%d %H:%M') if ticket.closed_at else '-'
+                        ])
+                else:
+                    writer.writerow(['  ', 'Brak zgłoszeń w wybranym okresie'])
+            
+            writer.writerow([''])
     
     return response
 
@@ -1049,7 +1088,7 @@ def _generate_excel_report(period_start, period_end, organization, agent,
             ws[f'B{row}'] = count
             row += 1
         
-        # Agent performance
+        # Agent performance with tickets details
         if agent_performance:
             row += 2
             logger.info(f"Adding agent performance data ({len(agent_performance)} agents) to Excel...")
@@ -1064,17 +1103,98 @@ def _generate_excel_report(period_start, period_end, organization, agent,
                 cell.font = bold_font
             row += 1
             
+            # Colors for status badges
+            from openpyxl.styles import PatternFill
+            status_colors = {
+                'new': PatternFill(start_color="007bff", end_color="007bff", fill_type="solid"),
+                'in_progress': PatternFill(start_color="17a2b8", end_color="17a2b8", fill_type="solid"),
+                'unresolved': PatternFill(start_color="ffc107", end_color="ffc107", fill_type="solid"),
+                'resolved': PatternFill(start_color="28a745", end_color="28a745", fill_type="solid"),
+                'closed': PatternFill(start_color="6c757d", end_color="6c757d", fill_type="solid")
+            }
+            
+            priority_colors = {
+                'low': PatternFill(start_color="6c757d", end_color="6c757d", fill_type="solid"),
+                'medium': PatternFill(start_color="17a2b8", end_color="17a2b8", fill_type="solid"),
+                'high': PatternFill(start_color="ffc107", end_color="ffc107", fill_type="solid"),
+                'critical': PatternFill(start_color="dc3545", end_color="dc3545", fill_type="solid")
+            }
+            
+            white_font = Font(color="FFFFFF", bold=True)
+            
             for ap in agent_performance:
                 avg_actual = f"{ap['avg_actual_resolution_time']:.2f}" if ap.get('avg_actual_resolution_time') else "Brak danych"
                 tickets_actual = ap.get('tickets_with_actual_time', 0)
                 
                 ws[f'A{row}'] = ap['agent_name']
+                ws[f'A{row}'].font = bold_font
                 ws[f'B{row}'] = ap['ticket_count']
                 ws[f'C{row}'] = ap['resolved_count']
                 ws[f'D{row}'] = f"{ap['resolution_rate']:.1f}%"
                 ws[f'E{row}'] = f"{ap['avg_resolution_time']:.2f}"
                 ws[f'F{row}'] = avg_actual
                 ws[f'G{row}'] = tickets_actual
+                row += 1
+                
+                # Add agent's tickets details
+                row += 1
+                ws[f'A{row}'] = f"Zgłoszenia agenta: {ap['agent_name']}"
+                ws[f'A{row}'].font = Font(bold=True, italic=True)
+                row += 1
+                
+                ticket_headers = ['ID', 'Tytuł', 'Status', 'Priorytet', 'Kategoria', 'Utworzono', 'Rozwiązano', 'Zamknięto']
+                for col, header in enumerate(ticket_headers, 1):
+                    cell = ws.cell(row=row, column=col, value=header)
+                    cell.font = bold_font
+                    cell.fill = PatternFill(start_color="e9ecef", end_color="e9ecef", fill_type="solid")
+                row += 1
+                
+                # Get agent's tickets in period
+                agent_id = ap.get('agent_id')
+                if agent_id:
+                    from django.utils.dateparse import parse_date
+                    start_date = parse_date(period_start)
+                    end_date = parse_date(period_end)
+                    
+                    agent_tickets = Ticket.objects.filter(
+                        assigned_to_id=agent_id,
+                        created_at__date__gte=start_date,
+                        created_at__date__lte=end_date
+                    ).order_by('-created_at')
+                    
+                    if agent_tickets.exists():
+                        status_labels = {'new': 'Nowy', 'in_progress': 'W trakcie', 'unresolved': 'Nierozwiązany', 'resolved': 'Rozwiązany', 'closed': 'Zamknięty'}
+                        priority_labels = {'low': 'Niski', 'medium': 'Średni', 'high': 'Wysoki', 'critical': 'Krytyczny'}
+                        category_labels = {'hardware': 'Sprzęt', 'software': 'Oprogramowanie', 'network': 'Sieć', 'account': 'Konto', 'other': 'Inne'}
+                        
+                        for ticket in agent_tickets:
+                            ws[f'A{row}'] = f'#{ticket.id}'
+                            ws[f'B{row}'] = ticket.title[:50] + ('...' if len(ticket.title) > 50 else '')
+                            
+                            # Status with color
+                            status_cell = ws[f'C{row}']
+                            status_cell.value = status_labels.get(ticket.status, ticket.status)
+                            if ticket.status in status_colors:
+                                status_cell.fill = status_colors[ticket.status]
+                                status_cell.font = white_font
+                            
+                            # Priority with color
+                            priority_cell = ws[f'D{row}']
+                            priority_cell.value = priority_labels.get(ticket.priority, ticket.priority)
+                            if ticket.priority in priority_colors:
+                                priority_cell.fill = priority_colors[ticket.priority]
+                                priority_cell.font = white_font
+                            
+                            ws[f'E{row}'] = category_labels.get(ticket.category, ticket.category)
+                            ws[f'F{row}'] = ticket.created_at.strftime('%Y-%m-%d %H:%M')
+                            ws[f'G{row}'] = ticket.resolved_at.strftime('%Y-%m-%d %H:%M') if ticket.resolved_at else '-'
+                            ws[f'H{row}'] = ticket.closed_at.strftime('%Y-%m-%d %H:%M') if ticket.closed_at else '-'
+                            row += 1
+                    else:
+                        ws[f'A{row}'] = 'Brak zgłoszeń w wybranym okresie'
+                        ws[f'A{row}'].font = Font(italic=True, color="6c757d")
+                        row += 1
+                
                 row += 1
         
         logger.info("Auto-adjusting column widths...")

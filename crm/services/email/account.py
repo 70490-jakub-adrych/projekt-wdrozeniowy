@@ -85,3 +85,86 @@ def send_account_approved_email(user, approved_by=None):
     except Exception as e:
         logger.error(f"Failed to send account approval email to {user.email}: {str(e)}", exc_info=True)
         return False
+
+
+def send_new_user_notification_to_admins(user):
+    """
+    Send notification to admins/superagents when a new user registers and needs approval
+    
+    Args:
+        user: User object who just registered
+        
+    Returns:
+        bool: True if at least one notification was sent successfully
+    """
+    try:
+        logger.info(f"Starting new user notification for {user.email}")
+        
+        # Get all admins, superagents, and agents who should be notified
+        from ...models import UserProfile
+        
+        recipients = UserProfile.objects.filter(
+            role__in=['admin', 'superagent', 'agent'],
+            user__is_active=True
+        ).select_related('user')
+        
+        if not recipients.exists():
+            logger.warning("No admins/superagents/agents found to notify about new user")
+            return False
+        
+        # Generate approval URL
+        site_url = getattr(settings, 'SITE_URL', 'https://betulait.usermd.net')
+        approval_url = f"{site_url}/approvals/"
+        
+        context = {
+            'new_user': user,
+            'site_name': 'System Helpdesk',
+            'approval_url': approval_url,
+        }
+        
+        success_count = 0
+        
+        for recipient_profile in recipients:
+            recipient = recipient_profile.user
+            
+            # Skip if no email
+            if not recipient.email:
+                logger.warning(f"Skipping {recipient.username} - no email address")
+                continue
+            
+            try:
+                # Add recipient info to context
+                context['recipient'] = recipient
+                
+                html_content = render_to_string('emails/new_user_pending_approval.html', context)
+                text_content = render_to_string('emails/new_user_pending_approval.txt', context)
+                
+                msg = EmailMultiAlternatives(
+                    subject=f'System Helpdesk - Nowy użytkownik oczekuje na zatwierdzenie',
+                    body=text_content,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    to=[recipient.email]
+                )
+                msg.attach_alternative(html_content, "text/html")
+                
+                # Add helpful headers
+                msg.extra_headers = {
+                    'X-Application': 'System Helpdesk',
+                    'X-Priority': '3',
+                    'X-Auto-Response-Suppress': 'OOF, DR, RN, NRN, AutoReply',
+                }
+                
+                msg.send(fail_silently=False)
+                logger.info(f"New user notification sent to {recipient.email}")
+                success_count += 1
+                
+            except Exception as e:
+                logger.error(f"Failed to send new user notification to {recipient.email}: {str(e)}")
+                continue
+        
+        logger.info(f"Sent new user notification to {success_count}/{recipients.count()} recipients")
+        return success_count > 0
+        
+    except Exception as e:
+        logger.error(f"Error in send_new_user_notification_to_admins: {str(e)}", exc_info=True)
+        return False
