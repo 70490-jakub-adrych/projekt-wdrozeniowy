@@ -123,12 +123,65 @@
         opacity: 0;
         transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out, padding 0.3s ease-in-out;
         padding: 0 1rem;
+        border-radius: 8px;
+        background-color: #f8f9fa;
     }
     
     .tickets-content-wrapper.expanded {
         max-height: 2000px;
         opacity: 1;
         padding: 1rem;
+        border: 1px solid #dee2e6;
+        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.05);
+    }
+    
+    /* Dark mode border for tickets wrapper */
+    [data-bs-theme="dark"] .tickets-content-wrapper.expanded {
+        border-color: #495057;
+        background-color: #2b3035 !important;
+        box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.3);
+    }
+    
+    /* Spacing for tickets table */
+    .tickets-content-wrapper .table-responsive {
+        margin-top: 0.75rem;
+    }
+    
+    .tickets-content-wrapper .table {
+        margin-bottom: 0.5rem;
+    }
+    
+    .tickets-content-wrapper .table thead th {
+        padding-top: 0.75rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 2px solid #dee2e6;
+    }
+    
+    .tickets-content-wrapper .table tbody tr:first-child td {
+        padding-top: 0.75rem;
+    }
+    
+    .tickets-content-wrapper .table tbody tr td {
+        padding-top: 0.5rem;
+        padding-bottom: 0.5rem;
+    }
+    
+    /* Dark mode table styling */
+    [data-bs-theme="dark"] .tickets-content-wrapper .table {
+        color: #dee2e6;
+    }
+    
+    [data-bs-theme="dark"] .tickets-content-wrapper .table thead th {
+        border-bottom-color: #495057;
+        color: #f8f9fa;
+    }
+    
+    [data-bs-theme="dark"] .tickets-content-wrapper .table tbody tr {
+        border-color: #495057;
+    }
+    
+    [data-bs-theme="dark"] .tickets-content-wrapper .table-hover tbody tr:hover {
+        background-color: rgba(255, 255, 255, 0.05);
     }
 
 
@@ -590,7 +643,7 @@
                             </tr>
                             <tr class="agent-tickets-row" data-agent-id="{{ ap.agent_id }}">
                                 <td colspan="{% if agent_work_time_stats %}8{% else %}7{% endif %}">
-                                    <div class="tickets-content-wrapper bg-light">
+                                    <div class="tickets-content-wrapper">
                                         <div class="d-flex justify-content-between align-items-center mb-2">
                                             <h6 class="mb-0">Zgłoszenia agenta {{ ap.agent_name }}</h6>
                                             <div class="spinner-border spinner-border-sm text-primary tickets-spinner" role="status" style="display: none;">
