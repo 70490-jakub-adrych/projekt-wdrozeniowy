@@ -101,6 +101,41 @@
             display: none;
         }
     }
+    
+    /* Smooth animation for agent tickets expandable rows */
+    .agent-row {
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+    }
+    
+    .agent-row:hover {
+        background-color: rgba(0, 123, 255, 0.05);
+    }
+    
+    .agent-tickets-row {
+        transition: all 0.3s ease-in-out;
+        max-height: 0;
+        overflow: hidden;
+        opacity: 0;
+    }
+    
+    .agent-tickets-row.expanded {
+        max-height: 2000px; /* Large enough for content */
+        opacity: 1;
+    }
+    
+    .agent-tickets-row td {
+        padding: 0 !important;
+    }
+    
+    .agent-tickets-row.expanded td {
+        padding: 0.75rem !important;
+    }
+    
+    .tickets-content-wrapper {
+        transition: padding 0.3s ease-in-out;
+    }
+
 </style>
 {% endblock %}
 
@@ -557,9 +592,9 @@
                                 </td>
                                 {% endif %}
                             </tr>
-                            <tr class="agent-tickets-row" data-agent-id="{{ ap.agent_id }}" style="display: none;">
+                            <tr class="agent-tickets-row" data-agent-id="{{ ap.agent_id }}">
                                 <td colspan="{% if agent_work_time_stats %}8{% else %}7{% endif %}">
-                                    <div class="p-3 bg-light">
+                                    <div class="tickets-content-wrapper p-3 bg-light">
                                         <div class="d-flex justify-content-between align-items-center mb-2">
                                             <h6 class="mb-0">Zgłoszenia agenta {{ ap.agent_name }}</h6>
                                             <div class="spinner-border spinner-border-sm text-primary tickets-spinner" role="status" style="display: none;">
@@ -640,9 +675,12 @@ document.addEventListener('DOMContentLoaded', function() {
             const spinner = ticketsRow.querySelector('.tickets-spinner');
             const toggleIcon = this.querySelector('.toggle-icon');
             
-            if (ticketsRow.style.display === 'none') {
-                // Show tickets
-                ticketsRow.style.display = '';
+            // Toggle expanded state
+            const isExpanded = ticketsRow.classList.contains('expanded');
+            
+            if (!isExpanded) {
+                // Expand tickets
+                ticketsRow.classList.add('expanded');
                 toggleIcon.style.transform = 'rotate(90deg)';
                 
                 // Check if tickets already loaded
@@ -676,18 +714,21 @@ document.addEventListener('DOMContentLoaded', function() {
                             html += '</tr></thead><tbody>';
                             
                             data.tickets.forEach(ticket => {
+                                // Bootstrap 5 badge classes with proper colors
                                 let statusClass = '';
-                                if (ticket.status_raw === 'closed') statusClass = 'badge-secondary';
-                                else if (ticket.status_raw === 'resolved') statusClass = 'badge-success';
-                                else if (ticket.status_raw === 'in_progress') statusClass = 'badge-info';
-                                else if (ticket.status_raw === 'new') statusClass = 'badge-primary';
-                                else statusClass = 'badge-warning';
+                                if (ticket.status_raw === 'new') statusClass = 'bg-primary';
+                                else if (ticket.status_raw === 'in_progress') statusClass = 'bg-info';
+                                else if (ticket.status_raw === 'unresolved') statusClass = 'bg-warning text-dark';
+                                else if (ticket.status_raw === 'resolved') statusClass = 'bg-success';
+                                else if (ticket.status_raw === 'closed') statusClass = 'bg-secondary';
+                                else statusClass = 'bg-secondary';
                                 
                                 let priorityClass = '';
-                                if (ticket.priority_raw === 'critical') priorityClass = 'badge-danger';
-                                else if (ticket.priority_raw === 'high') priorityClass = 'badge-warning';
-                                else if (ticket.priority_raw === 'medium') priorityClass = 'badge-info';
-                                else priorityClass = 'badge-secondary';
+                                if (ticket.priority_raw === 'low') priorityClass = 'bg-secondary';
+                                else if (ticket.priority_raw === 'medium') priorityClass = 'bg-info';
+                                else if (ticket.priority_raw === 'high') priorityClass = 'bg-warning text-dark';
+                                else if (ticket.priority_raw === 'critical') priorityClass = 'bg-danger';
+                                else priorityClass = 'bg-secondary';
                                 
                                 html += '<tr>';
                                 html += `<td><strong>#${ticket.id}</strong></td>`;
@@ -715,8 +756,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                 }
             } else {
-                // Hide tickets
-                ticketsRow.style.display = 'none';
+                // Collapse tickets
+                ticketsRow.classList.remove('expanded');
                 toggleIcon.style.transform = 'rotate(0deg)';
             }
         });
