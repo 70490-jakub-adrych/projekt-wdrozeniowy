@@ -112,29 +112,25 @@
         background-color: rgba(0, 123, 255, 0.05);
     }
     
-    .agent-tickets-row {
-        transition: all 0.3s ease-in-out;
-        max-height: 0;
-        overflow: hidden;
-        opacity: 0;
-    }
-    
-    .agent-tickets-row.expanded {
-        max-height: 2000px; /* Large enough for content */
-        opacity: 1;
-    }
-    
     .agent-tickets-row td {
         padding: 0 !important;
-    }
-    
-    .agent-tickets-row.expanded td {
-        padding: 0.75rem !important;
+        border: none !important;
     }
     
     .tickets-content-wrapper {
-        transition: padding 0.3s ease-in-out;
+        max-height: 0;
+        overflow: hidden;
+        opacity: 0;
+        transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out, padding 0.3s ease-in-out;
+        padding: 0 1rem;
     }
+    
+    .tickets-content-wrapper.expanded {
+        max-height: 2000px;
+        opacity: 1;
+        padding: 1rem;
+    }
+
 
 </style>
 {% endblock %}
@@ -594,7 +590,7 @@
                             </tr>
                             <tr class="agent-tickets-row" data-agent-id="{{ ap.agent_id }}">
                                 <td colspan="{% if agent_work_time_stats %}8{% else %}7{% endif %}">
-                                    <div class="tickets-content-wrapper p-3 bg-light">
+                                    <div class="tickets-content-wrapper bg-light">
                                         <div class="d-flex justify-content-between align-items-center mb-2">
                                             <h6 class="mb-0">Zgłoszenia agenta {{ ap.agent_name }}</h6>
                                             <div class="spinner-border spinner-border-sm text-primary tickets-spinner" role="status" style="display: none;">
@@ -671,16 +667,17 @@ document.addEventListener('DOMContentLoaded', function() {
         row.addEventListener('click', function() {
             const agentId = this.dataset.agentId;
             const ticketsRow = document.querySelector(`.agent-tickets-row[data-agent-id="${agentId}"]`);
+            const contentWrapper = ticketsRow.querySelector('.tickets-content-wrapper');
             const ticketsContainer = ticketsRow.querySelector('.tickets-container');
             const spinner = ticketsRow.querySelector('.tickets-spinner');
             const toggleIcon = this.querySelector('.toggle-icon');
             
-            // Toggle expanded state
-            const isExpanded = ticketsRow.classList.contains('expanded');
+            // Toggle expanded state on the content wrapper
+            const isExpanded = contentWrapper.classList.contains('expanded');
             
             if (!isExpanded) {
                 // Expand tickets
-                ticketsRow.classList.add('expanded');
+                contentWrapper.classList.add('expanded');
                 toggleIcon.style.transform = 'rotate(90deg)';
                 
                 // Check if tickets already loaded
@@ -757,7 +754,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             } else {
                 // Collapse tickets
-                ticketsRow.classList.remove('expanded');
+                contentWrapper.classList.remove('expanded');
                 toggleIcon.style.transform = 'rotate(0deg)';
             }
         });

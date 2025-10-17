@@ -1103,8 +1103,7 @@ def _generate_excel_report(period_start, period_end, organization, agent,
                 cell.font = bold_font
             row += 1
             
-            # Colors for status badges
-            from openpyxl.styles import PatternFill
+            # Colors for status badges (using global PatternFill import)
             status_colors = {
                 'new': PatternFill(start_color="007bff", end_color="007bff", fill_type="solid"),
                 'in_progress': PatternFill(start_color="17a2b8", end_color="17a2b8", fill_type="solid"),

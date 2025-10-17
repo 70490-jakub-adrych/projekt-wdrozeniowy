@@ -3,13 +3,34 @@
 **Data:** 2025-10-17  
 **Typ:** Enhancement (UX)  
 **Priorytet:** Średni  
-**Status:** ✅ Zaimplementowane
+**Status:** ✅ Zaimplementowane (poprawione)
 
 ---
 
 ## 🎯 Cel
 
 Dodanie płynnej animacji slide-down/slide-up do rozwijanych list ticketów agentów na dashboardzie statystyk, aby poprawić user experience i nadać aplikacji bardziej profesjonalny wygląd.
+
+---
+
+## 🐛 Problem (po pierwszej implementacji)
+
+Pierwsza wersja animowała cały wiersz tabeli `<tr>`, co powodowało:
+- **Duże marginesy** między wierszami agentów
+- **Rozjeżdżanie się tabeli** po rozwinięciu (padding pół ekranu)
+- **Niespójna struktura** - tabela wyglądała jak połamana
+
+**Przyczyna:** Animowanie `max-height` i `padding` bezpośrednio na `<tr class="agent-tickets-row">` powodowało konflikty z domyślnym zachowaniem tabel HTML.
+
+---
+
+## ✅ Rozwiązanie (poprawione)
+
+Zamiast animować wiersz tabeli, **animujemy tylko wewnętrzny kontener** `.tickets-content-wrapper`:
+- Wiersz `<tr>` pozostaje zawsze widoczny (bez animacji)
+- Komórka `<td>` ma `padding: 0` i `border: none`
+- Kontener `.tickets-content-wrapper` wewnątrz `<td>` ma animację
+- Animacja rozwija się "od miejsca gdzie jest wpis agenta" (jak accordion)
 
 ---
 
@@ -43,7 +64,7 @@ Dodanie płynnej animacji slide-down/slide-up do rozwijanych list ticketów agen
 
 **Plik:** `crm/templates/crm/statistics/statistics_dashboard.html`
 
-### CSS Styles (dodane)
+### CSS Styles (poprawione)
 
 ```css
 /* Smooth animation for agent tickets expandable rows */
@@ -56,34 +77,37 @@ Dodanie płynnej animacji slide-down/slide-up do rozwijanych list ticketów agen
     background-color: rgba(0, 123, 255, 0.05);
 }
 
-.agent-tickets-row {
-    transition: all 0.3s ease-in-out;
+/* Wiersz tabeli bez paddingu i bordera */
+.agent-tickets-row td {
+    padding: 0 !important;
+    border: none !important;
+}
+
+/* Animacja tylko na wewnętrznym kontenerze */
+.tickets-content-wrapper {
     max-height: 0;
     overflow: hidden;
     opacity: 0;
+    transition: max-height 0.3s ease-in-out, opacity 0.3s ease-in-out, padding 0.3s ease-in-out;
+    padding: 0 1rem; /* Poziomy padding zachowany */
 }
 
-.agent-tickets-row.expanded {
-    max-height: 2000px; /* Large enough for content */
+.tickets-content-wrapper.expanded {
+    max-height: 2000px;
     opacity: 1;
-}
-
-.agent-tickets-row td {
-    padding: 0 !important;
-}
-
-.agent-tickets-row.expanded td {
-    padding: 0.75rem !important;
-}
-
-.tickets-content-wrapper {
-    transition: padding 0.3s ease-in-out;
+    padding: 1rem; /* Pełny padding gdy rozwinięte */
 }
 ```
 
-### HTML Changes
+**Kluczowe zmiany:**
+- Animacja przeniesiona z `<tr>` na `.tickets-content-wrapper`
+- `<td>` ma `padding: 0` i `border: none` (eliminuje marginesy)
+- Padding animowany tylko na kontenerze wewnętrznym
+- Tabela pozostaje spójna - bez "rozjeżdżania się"
 
-**Przed:**
+### HTML Changes (poprawione)
+
+**Przed (pierwotnie):**
 ```html
 <tr class="agent-tickets-row" data-agent-id="{{ ap.agent_id }}" style="display: none;">
     <td colspan="...">
@@ -94,7 +118,7 @@ Dodanie płynnej animacji slide-down/slide-up do rozwijanych list ticketów agen
 </tr>
 ```
 
-**Po:**
+**Po pierwszej zmianie (błędne - rozjeżdżało tabelę):**
 ```html
 <tr class="agent-tickets-row" data-agent-id="{{ ap.agent_id }}">
     <td colspan="...">
@@ -105,11 +129,25 @@ Dodanie płynnej animacji slide-down/slide-up do rozwijanych list ticketów agen
 </tr>
 ```
 
-**Zmiany:**
-- Usunięto `style="display: none;"` (kontrolowane przez CSS)
-- Dodano klasę `tickets-content-wrapper` dla animacji paddingu
+**Po poprawce (finalne - DZIAŁA):**
+```html
+<tr class="agent-tickets-row" data-agent-id="{{ ap.agent_id }}">
+    <td colspan="...">
+        <div class="tickets-content-wrapper bg-light">
+            <!-- Padding usunięty z klasy, animowany przez CSS -->
+            ...
+        </div>
+    </td>
+</tr>
+```
 
-### JavaScript Changes
+**Zmiany:**
+- Usunięto `style="display: none;"` z `<tr>`
+- Usunięto `p-3` z `.tickets-content-wrapper` (padding animowany w CSS)
+- `<td>` ma `padding: 0` w CSS (nie w HTML)
+- Klasa `expanded` dodawana do `.tickets-content-wrapper`, nie do `<tr>`
+
+### JavaScript Changes (poprawione)
 
 **Przed:**
 ```javascript
@@ -123,26 +161,27 @@ if (ticketsRow.style.display === 'none') {
 }
 ```
 
-**Po:**
+**Po poprawce (finalne):**
 ```javascript
-const isExpanded = ticketsRow.classList.contains('expanded');
+const contentWrapper = ticketsRow.querySelector('.tickets-content-wrapper');
+const isExpanded = contentWrapper.classList.contains('expanded');
 
 if (!isExpanded) {
     // Expand tickets
-    ticketsRow.classList.add('expanded');
+    contentWrapper.classList.add('expanded'); // Toggle na kontenerze, nie wierszu!
     toggleIcon.style.transform = 'rotate(90deg)';
     // ...
 } else {
     // Collapse tickets
-    ticketsRow.classList.remove('expanded');
+    contentWrapper.classList.remove('expanded');
     toggleIcon.style.transform = 'rotate(0deg)';
 }
 ```
 
 **Zmiany:**
-- Sprawdzanie stanu przez klasę CSS zamiast `style.display`
-- Toggle przez `classList.add()` / `classList.remove()`
-- Bardziej semantyczny i łatwiejszy do stylizacji
+- Pobieramy `.tickets-content-wrapper` zamiast sprawdzać `ticketsRow`
+- Toggle klasy `expanded` na kontenerze, nie na wierszu `<tr>`
+- Sprawdzanie stanu: `contentWrapper.classList.contains('expanded')`
 
 ---
 
@@ -150,41 +189,44 @@ if (!isExpanded) {
 
 ### Stan początkowy (zwinięte)
 ```
-.agent-tickets-row {
-    max-height: 0;        → Brak wysokości
-    opacity: 0;           → Niewidoczne
-    overflow: hidden;     → Zawartość ukryta
-    padding: 0;           → Brak paddingu
-}
+<tr class="agent-tickets-row">           ← Zawsze widoczny (część tabeli)
+  <td padding: 0, border: none>           ← Brak paddingu i bordera
+    <div class="tickets-content-wrapper"> ← TEN element jest animowany
+      max-height: 0        → Brak wysokości
+      opacity: 0           → Niewidoczne
+      overflow: hidden     → Zawartość ukryta
+      padding: 0 1rem      → Tylko poziomy padding
+    </div>
+  </td>
+</tr>
 ```
 
 ### Podczas rozwijania (0.3s)
 ```
-Animacja:
-0.0s: max-height: 0,    opacity: 0,   padding: 0
-0.1s: max-height: 666px, opacity: 0.33, padding: 0.25rem
-0.2s: max-height: 1333px, opacity: 0.66, padding: 0.5rem
-0.3s: max-height: 2000px, opacity: 1,    padding: 0.75rem ← Koniec
+Animacja kontenera .tickets-content-wrapper:
+0.0s: max-height: 0,     opacity: 0,   padding: 0 1rem
+0.1s: max-height: 666px, opacity: 0.33, padding: 0.33rem 1rem
+0.2s: max-height: 1333px, opacity: 0.66, padding: 0.66rem 1rem
+0.3s: max-height: 2000px, opacity: 1,    padding: 1rem ← Koniec
+
+Wiersz <tr> pozostaje bez zmian (część spójnej tabeli)
 ```
 
 ### Stan rozwinięty
 ```
-.agent-tickets-row.expanded {
-    max-height: 2000px;   → Pełna wysokość (auto)
-    opacity: 1;           → Pełna widoczność
-    overflow: hidden;     → Nadal hidden (dla animacji)
-    padding: 0.75rem;     → Normalny padding
-}
+<tr class="agent-tickets-row">           ← Nadal bez zmian
+  <td padding: 0, border: none>           ← Nadal bez paddingu
+    <div class="tickets-content-wrapper expanded"> ← Klasa "expanded"
+      max-height: 2000px   → Pełna wysokość
+      opacity: 1           → Pełna widoczność
+      overflow: hidden     → Nadal hidden
+      padding: 1rem        → Pełny padding
+    </div>
+  </td>
+</tr>
 ```
 
-### Podczas zwijania (0.3s)
-```
-Animacja wstecz (odwrotność rozwijania):
-0.0s: max-height: 2000px, opacity: 1,    padding: 0.75rem
-0.1s: max-height: 1333px, opacity: 0.66, padding: 0.5rem
-0.2s: max-height: 666px, opacity: 0.33, padding: 0.25rem
-0.3s: max-height: 0,    opacity: 0,   padding: 0 ← Koniec
-```
+**Efekt:** Lista rozwija się płynnie "od miejsca gdzie jest wpis agenta", tabela pozostaje spójna.
 
 ---
 
