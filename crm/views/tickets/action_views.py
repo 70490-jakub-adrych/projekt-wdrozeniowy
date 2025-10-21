@@ -48,8 +48,11 @@ def ticket_close(request, pk):
             if actual_time:
                 try:
                     actual_time_decimal = Decimal(actual_time)
-                    if actual_time_decimal < Decimal('0.25'):
-                        messages.error(request, 'Rzeczywisty czas wykonania musi być co najmniej 0.25 godziny (15 minut)')
+                    # Jeśli wpisano 0, automatycznie ustaw na 0.01
+                    if actual_time_decimal == Decimal('0'):
+                        actual_time_decimal = Decimal('0.01')
+                    if actual_time_decimal < Decimal('0'):
+                        messages.error(request, 'Rzeczywisty czas wykonania nie może być ujemny')
                         return render(request, 'crm/tickets/ticket_confirm_close.html', {
                             'ticket': ticket,
                             'show_time_field': True
@@ -253,8 +256,11 @@ def ticket_mark_resolved(request, pk):
             if actual_time:
                 try:
                     actual_time_decimal = Decimal(actual_time)
-                    if actual_time_decimal < Decimal('0.25'):
-                        messages.error(request, 'Rzeczywisty czas wykonania musi być co najmniej 0.25 godziny (15 minut)')
+                    # Jeśli wpisano 0, automatycznie ustaw na 0.01
+                    if actual_time_decimal == Decimal('0'):
+                        actual_time_decimal = Decimal('0.01')
+                    if actual_time_decimal < Decimal('0'):
+                        messages.error(request, 'Rzeczywisty czas wykonania nie może być ujemny')
                         return render(request, 'crm/tickets/ticket_confirm_resolve.html', {
                             'ticket': ticket,
                             'show_time_field': True

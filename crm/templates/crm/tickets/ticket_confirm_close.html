@@ -31,14 +31,13 @@
                             class="form-control" 
                             id="actual_resolution_time" 
                             name="actual_resolution_time" 
-                            step="0.25" 
-                            min="0.25"
+                            step="0.01" 
+                            min="0"
                             max="1000"
-                            placeholder="np. 2.5"
+                            placeholder="np. 0 lub 2.5"
                             required>
                         <div class="form-text">
-                            Podaj rzeczywisty czas poświęcony na wykonanie zgłoszenia (np. 2.5 dla 2 godzin i 30 minut).
-                            Minimum 0.25 godziny (15 minut).
+                            Podaj rzeczywisty czas poświęcony na wykonanie zgłoszenia (np. 0 dla bardzo szybkich zgłoszeń, 2.5 dla 2 godzin i 30 minut).
                         </div>
                     </div>
                     {% endif %}
