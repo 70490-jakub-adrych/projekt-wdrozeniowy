@@ -83,7 +83,7 @@
                     {% endif %}
                     
                     <!-- Render remaining fields -->
-                    {% if user.profile.role == 'admin' or user.profile.role == 'agent' %}
+                    {% if user.profile.role == 'admin' or user.profile.role == 'superagent' or user.profile.role == 'agent' %}
                         <div class="mb-3">
                             {{ form.priority|as_crispy_field }}
                         </div>

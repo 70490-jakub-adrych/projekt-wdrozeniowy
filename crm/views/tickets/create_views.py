@@ -20,7 +20,7 @@ def ticket_create(request):
     
     if request.method == 'POST':
         # Use different form based on user role
-        if user.profile.role in ['admin', 'agent']:
+        if user.profile.role in ['admin', 'superagent', 'agent']:
             form = TicketForm(request.POST)
         else:
             form = ClientTicketForm(request.POST)
@@ -74,13 +74,13 @@ def ticket_create(request):
                 ticket.priority = 'medium'  # Default priority for client tickets
             
             # Get the organization for the current user or from form
-            if 'organization' in request.POST and request.POST['organization'] and user.profile.role in ['admin', 'agent']:
-                # Admin/agent can select organization
+            if 'organization' in request.POST and request.POST['organization'] and user.profile.role in ['admin', 'superagent', 'agent']:
+                # Admin/superagent/agent can select organization
                 org_id = request.POST.get('organization')
                 try:
                     organization = Organization.objects.get(id=org_id)
                     
-                    # Check if agent is part of the selected organization
+                    # Check if agent is part of the selected organization (superagent can access all)
                     if user.profile.role == 'agent' and organization not in user.profile.organizations.all():
                         messages.error(request, "Nie możesz utworzyć zgłoszenia w organizacji, do której nie jesteś przypisany.")
                         return redirect('ticket_create')
@@ -126,18 +126,18 @@ def ticket_create(request):
                 messages.error(request, 'Wystąpił błąd z załącznikiem. Sprawdź dane i spróbuj ponownie.')
     else:
         # Also use different form for GET requests based on user role
-        if user.profile.role in ['admin', 'agent']:
+        if user.profile.role in ['admin', 'superagent', 'agent']:
             form = TicketForm()
         else:
             form = ClientTicketForm()
         
         # Check for organization parameter in URL
         org_id = request.GET.get('organization')
-        if org_id and user.profile.role in ['admin', 'agent']:
+        if org_id and user.profile.role in ['admin', 'superagent', 'agent']:
             try:
                 # Verify the organization exists and user has access
                 organization = Organization.objects.get(id=org_id)
-                if user.profile.role == 'admin' or organization in user.profile.organizations.all():
+                if user.profile.role in ['admin', 'superagent'] or organization in user.profile.organizations.all():
                     # Pre-select the organization in the form's initial data
                     form.initial['organization'] = org_id
             except (Organization.DoesNotExist, ValueError):
