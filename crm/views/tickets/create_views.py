@@ -15,6 +15,12 @@ def ticket_create(request):
     """Widok tworzenia nowego zgłoszenia"""
     user = request.user
     
+    # Check if agent/superagent has organizations
+    user_orgs = user.profile.organizations.all()
+    if user.profile.role in ['agent', 'superagent'] and not user_orgs.exists():
+        messages.error(request, 'Nie możesz tworzyć zgłoszeń, ponieważ Twoje konto nie jest przypisane do żadnej organizacji. Skontaktuj się z administratorem.')
+        return redirect('dashboard')
+    
     # Initialize the attachment form
     attachment_form = TicketAttachmentForm()
     

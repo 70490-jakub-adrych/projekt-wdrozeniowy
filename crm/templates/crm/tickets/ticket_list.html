@@ -1178,8 +1178,17 @@
 </div>
 {% endif %}
 {% else %}
-<div class="alert alert-info">
-    <p>Nie znaleziono zgłoszeń spełniających wybrane kryteria.</p>
+<div class="alert {% if has_no_organizations %}alert-warning{% else %}alert-info{% endif %}">
+    {% if has_no_organizations %}
+        <h5 class="alert-heading"><i class="fas fa-exclamation-triangle me-2"></i>Brak przypisanych organizacji</h5>
+        <p class="mb-2">Twoje konto nie jest przypisane do żadnej organizacji, dlatego nie możesz przeglądać zgłoszeń.</p>
+        <hr>
+        <p class="mb-0">
+            <strong>Skontaktuj się z administratorem</strong>, aby przypisać Twoje konto do odpowiedniej organizacji.
+        </p>
+    {% else %}
+        <p>Nie znaleziono zgłoszeń spełniających wybrane kryteria.</p>
+    {% endif %}
 </div>
 {% endif %}
 {% endblock %}

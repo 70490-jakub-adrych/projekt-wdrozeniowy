@@ -153,7 +153,11 @@ def ticket_list(request):
             pass
     
     # Dodaj logging do diagnostyki
-    logger.debug(f"User {user.username} role {role} - final query: {str(tickets.query)}")
+    try:
+        logger.debug(f"User {user.username} role {role} - final query: {str(tickets.query)}")
+    except Exception as e:
+        logger.debug(f"User {user.username} role {role} - could not get query string: {e}")
+    
     final_count = tickets.count()
     logger.debug(f"Final ticket count after filters: {final_count}")
     
@@ -266,6 +270,7 @@ def ticket_list(request):
         'status_choices': status_choices,
         'priority_choices': priority_choices,
         'category_choices': category_choices,
+        'has_no_organizations': role in ['agent', 'superagent'] and not org_ids,  # Flag for agents without orgs
     }
     
     return render(request, 'crm/tickets/ticket_list.html', context)
