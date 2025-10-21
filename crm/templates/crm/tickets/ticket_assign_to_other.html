@@ -7,7 +7,7 @@
     <div class="col-md-8">
         <div class="card">
             <div class="card-header text-white bg-warning">
-                <i class="fas fa-user-plus me-2"></i> Przydziel zgłoszenie do agenta
+                <i class="fas fa-user-plus me-2"></i> Przydziel zgłoszenie
             </div>
             <div class="card-body">
                 <h5 class="card-title">Przydzielanie zgłoszenia #{{ ticket.id }}: {{ ticket.title }}</h5>
@@ -26,13 +26,29 @@
                 <form method="post">
                     {% csrf_token %}
                     <div class="mb-3">
-                        <label for="agent_id" class="form-label">Wybierz agenta:</label>
+                        <label for="agent_id" class="form-label">Wybierz użytkownika:</label>
                         <select name="agent_id" id="agent_id" class="form-select" required>
-                            <option value="">-- Wybierz agenta --</option>
+                            <option value="">-- Wybierz użytkownika --</option>
                             {% for agent in possible_agents %}
-                            <option value="{{ agent.id }}">{{ agent.username }} ({{ agent.first_name }} {{ agent.last_name }})</option>
+                            <option value="{{ agent.id }}">
+                                {{ agent.username }}
+                                {% if agent.first_name or agent.last_name %}
+                                    ({{ agent.first_name }} {{ agent.last_name }})
+                                {% endif %}
+                                - 
+                                {% if agent.profile.role == 'admin' %}
+                                    <span class="text-danger">Administrator</span>
+                                {% elif agent.profile.role == 'superagent' %}
+                                    <span class="text-warning">Superagent</span>
+                                {% elif agent.profile.role == 'agent' %}
+                                    <span class="text-info">Agent</span>
+                                {% endif %}
+                            </option>
                             {% endfor %}
                         </select>
+                        <small class="form-text text-muted">
+                            Można przypisać zgłoszenie do administratora, superagenta lub agenta z tej organizacji.
+                        </small>
                     </div>
                     
                     <!-- Priority selection -->
@@ -105,7 +121,7 @@
                 </form>
                 {% else %}
                 <div class="alert alert-warning">
-                    <p>Brak agentów, którzy mogą obsłużyć to zgłoszenie. Agenci muszą należeć do organizacji: {{ ticket.organization.name }}</p>
+                    <p>Brak użytkowników, którzy mogą obsłużyć to zgłoszenie. Użytkownicy muszą należeć do organizacji: {{ ticket.organization.name }} lub być administratorami.</p>
                 </div>
                 <button type="button" class="btn btn-outline-secondary" onclick="window.history.back()">
                     <i class="fas fa-arrow-left me-1"></i> Powrót

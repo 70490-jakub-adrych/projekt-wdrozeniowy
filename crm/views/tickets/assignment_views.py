@@ -104,10 +104,23 @@ def ticket_assign_to_other(request, pk):
         return redirect('ticket_detail', pk=ticket.pk)
     
     # Get list of possible agents to assign the ticket to
+    # Include admins, superagents, and agents who can handle tickets
     possible_agents = []
-    for agent in User.objects.filter(groups__name='Agent'):
-        if ticket.organization in agent.profile.organizations.all():
-            possible_agents.append(agent)
+    
+    # Get all users with agent, superagent, or admin roles
+    for potential_agent in User.objects.filter(
+        profile__role__in=['admin', 'superagent', 'agent']
+    ).select_related('profile').distinct():
+        # Admins can be assigned to any ticket
+        if potential_agent.profile.role == 'admin':
+            possible_agents.append(potential_agent)
+        # Superagents and agents must belong to the ticket's organization
+        elif ticket.organization in potential_agent.profile.organizations.all():
+            possible_agents.append(potential_agent)
+    
+    # Sort by role (admin first, then superagent, then agent) and username
+    role_priority = {'admin': 0, 'superagent': 1, 'agent': 2}
+    possible_agents.sort(key=lambda u: (role_priority.get(u.profile.role, 3), u.username))
     
     if request.method == 'POST':
         agent_id = request.POST.get('agent_id')
@@ -119,10 +132,13 @@ def ticket_assign_to_other(request, pk):
             try:
                 agent = User.objects.get(id=agent_id)
                 
-                # Check if agent belongs to the ticket's organization
-                if ticket.organization not in agent.profile.organizations.all():
-                    messages.error(request, "Wybrany agent nie należy do organizacji tego zgłoszenia.")
-                    return redirect('ticket_detail', pk=ticket.pk)
+                # Check if agent is eligible to handle this ticket
+                # Admins can be assigned to any ticket
+                if agent.profile.role != 'admin':
+                    # Superagents and agents must belong to the ticket's organization
+                    if ticket.organization not in agent.profile.organizations.all():
+                        messages.error(request, "Wybrany użytkownik nie należy do organizacji tego zgłoszenia.")
+                        return redirect('ticket_detail', pk=ticket.pk)
                 
                 # Update ticket assignment
                 old_status = ticket.status

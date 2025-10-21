@@ -113,6 +113,18 @@ class TicketForm(forms.ModelForm):
     class Meta:
         model = Ticket
         fields = ['title', 'description', 'category', 'priority', 'assigned_to', 'suggested_category']
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Limit assigned_to field to only show admins, superagents, and agents
+        from django.contrib.auth.models import User
+        self.fields['assigned_to'].queryset = User.objects.filter(
+            profile__role__in=['admin', 'superagent', 'agent']
+        ).select_related('profile').order_by('username')
+        self.fields['assigned_to'].label_from_instance = lambda obj: (
+            f"{obj.username} ({obj.get_full_name() or obj.email}) - "
+            f"{'Administrator' if obj.profile.role == 'admin' else 'Superagent' if obj.profile.role == 'superagent' else 'Agent'}"
+        )
 
 
 class ModeratorTicketForm(forms.ModelForm):
@@ -153,6 +165,18 @@ class ModeratorTicketForm(forms.ModelForm):
     class Meta:
         model = Ticket
         fields = ['title', 'description', 'category', 'priority', 'status', 'assigned_to', 'suggested_category']
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Limit assigned_to field to only show admins, superagents, and agents
+        from django.contrib.auth.models import User
+        self.fields['assigned_to'].queryset = User.objects.filter(
+            profile__role__in=['admin', 'superagent', 'agent']
+        ).select_related('profile').order_by('username')
+        self.fields['assigned_to'].label_from_instance = lambda obj: (
+            f"{obj.username} ({obj.get_full_name() or obj.email}) - "
+            f"{'Administrator' if obj.profile.role == 'admin' else 'Superagent' if obj.profile.role == 'superagent' else 'Agent'}"
+        )
 
 
 class ClientTicketForm(forms.ModelForm):
