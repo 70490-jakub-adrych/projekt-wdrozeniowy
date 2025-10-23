@@ -1141,7 +1141,7 @@ def _generate_excel_report(period_start, period_end, organization, agent,
                 ws[f'A{row}'].font = Font(bold=True, italic=True)
                 row += 1
                 
-                ticket_headers = ['ID', 'Tytuł', 'Status', 'Priorytet', 'Kategoria', 'Utworzono', 'Rozwiązano', 'Zamknięto']
+                ticket_headers = ['ID', 'Tytuł', 'Status', 'Priorytet', 'Kategoria', 'Utworzono', 'Rozwiązano', 'Zamknięto', 'Rzecz. czas (h)']
                 for col, header in enumerate(ticket_headers, 1):
                     cell = ws.cell(row=row, column=col, value=header)
                     cell.font = bold_font
@@ -1191,6 +1191,7 @@ def _generate_excel_report(period_start, period_end, organization, agent,
                             ws[f'F{row}'] = ticket.created_at.strftime('%Y-%m-%d %H:%M')
                             ws[f'G{row}'] = ticket.resolved_at.strftime('%Y-%m-%d %H:%M') if ticket.resolved_at else '-'
                             ws[f'H{row}'] = ticket.closed_at.strftime('%Y-%m-%d %H:%M') if ticket.closed_at else '-'
+                            ws[f'I{row}'] = f"{ticket.actual_resolution_time:.2f}" if ticket.actual_resolution_time else '-'
                             row += 1
                     else:
                         logger.warning(f"Excel Report - No tickets found for agent {agent_id} in period")
