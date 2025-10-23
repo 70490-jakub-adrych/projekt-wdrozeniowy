@@ -9,6 +9,7 @@ from django.template.loader import render_to_string
 from django.conf import settings
 import logging
 import os
+import time
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -97,12 +98,17 @@ def notify_ticket_stakeholders(notification_type, ticket, triggered_by=None, **k
         # Send notifications to each stakeholder
         results = []
         logger.info(f"Sending {notification_type} notifications to {len(stakeholders)} stakeholders")
-        for user in stakeholders:
+        for index, user in enumerate(stakeholders):
             try:
                 result = send_ticket_notification(
                     notification_type, ticket, user, **kwargs
                 )
                 results.append(result)
+                
+                # Add 5 second delay between emails to avoid spam detection (except for last email)
+                if index < len(stakeholders) - 1:
+                    time.sleep(5)
+                    
             except Exception as e:
                 logger.error(f"Error notifying user {user.username} about ticket #{ticket.id}: {str(e)}")
                 results.append(False)

@@ -9,6 +9,7 @@ from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.conf import settings
 import logging
+import time
 
 # Configure logger
 logger = logging.getLogger(__name__)
@@ -123,8 +124,9 @@ def send_new_user_notification_to_admins(user):
         }
         
         success_count = 0
+        recipients_list = list(recipients)
         
-        for recipient_profile in recipients:
+        for index, recipient_profile in enumerate(recipients_list):
             recipient = recipient_profile.user
             
             # Skip if no email
@@ -157,6 +159,10 @@ def send_new_user_notification_to_admins(user):
                 msg.send(fail_silently=False)
                 logger.info(f"New user notification sent to {recipient.email}")
                 success_count += 1
+                
+                # Add 5 second delay between emails to avoid spam detection (except for last email)
+                if index < len(recipients_list) - 1:
+                    time.sleep(5)
                 
             except Exception as e:
                 logger.error(f"Failed to send new user notification to {recipient.email}: {str(e)}")
