@@ -17,6 +17,14 @@
                     Priorytet: {{ ticket.get_priority_display }}
                 </p>
                 <p class="text-muted">Oznaczenie zgłoszenia jako rozwiązanego wymaga potwierdzenia przez klienta. Klient będzie mógł zamknąć zgłoszenie lub oznaczyć je jako nierozwiązane.</p>
+                
+                {% if ticket.actual_resolution_time %}
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> 
+                    Rzeczywisty czas wykonania został już podany: <strong>{{ ticket.actual_resolution_time }} godz.</strong>
+                </div>
+                {% endif %}
+                
                 <form method="post">
                     {% csrf_token %}
                     

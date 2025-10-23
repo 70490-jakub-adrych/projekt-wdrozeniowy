@@ -98,8 +98,8 @@ def ticket_close(request, pk):
         messages.success(request, 'Zgłoszenie zostało zamknięte!')
         return redirect('ticket_detail', pk=ticket.pk)
     
-    # Określ czy pokazać pole czasu wykonania (tylko dla agentów/adminów/superagentów)
-    show_time_field = role in ['agent', 'admin', 'superagent']
+    # Określ czy pokazać pole czasu wykonania (tylko dla agentów/adminów/superagentów i tylko jeśli jeszcze nie podano)
+    show_time_field = role in ['agent', 'admin', 'superagent'] and not ticket.actual_resolution_time
     
     return render(request, 'crm/tickets/ticket_confirm_close.html', {
         'ticket': ticket,
@@ -304,8 +304,8 @@ def ticket_mark_resolved(request, pk):
         messages.success(request, 'Zgłoszenie zostało oznaczone jako rozwiązane!')
         return redirect('ticket_detail', pk=ticket.pk)
     
-    # Determine if the user should see the time field
-    show_time_field = role in ['agent', 'admin', 'superagent']
+    # Determine if the user should see the time field (only if not already provided)
+    show_time_field = role in ['agent', 'admin', 'superagent'] and not ticket.actual_resolution_time
     
     return render(request, 'crm/tickets/ticket_confirm_resolve.html', {
         'ticket': ticket,
