@@ -1122,6 +1122,7 @@ def _generate_excel_report(period_start, period_end, organization, agent,
             logger.info(f"Excel Report - Processing {len(agent_performance)} agents")
             
             for ap in agent_performance:
+                logger.info(f"Agent {ap['agent_name']}: avg_actual_resolution_time = {ap.get('avg_actual_resolution_time')}, tickets_with_actual_time = {ap.get('tickets_with_actual_time', 0)}")
                 avg_actual = f"{ap['avg_actual_resolution_time']:.2f}" if ap.get('avg_actual_resolution_time') else "Brak danych"
                 tickets_actual = ap.get('tickets_with_actual_time', 0)
                 
