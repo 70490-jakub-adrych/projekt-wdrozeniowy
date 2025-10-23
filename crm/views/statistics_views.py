@@ -802,6 +802,20 @@ def generate_statistics_report(request):
                             else:
                                 agent_avg_hours = 0
                             
+                            # Calculate average actual resolution time for this agent
+                            agent_actual_avg_time = agent_tickets.exclude(
+                                actual_resolution_time__isnull=True
+                            ).aggregate(
+                                avg_actual_time=Avg('actual_resolution_time')
+                            )['avg_actual_time']
+                            
+                            if agent_actual_avg_time:
+                                agent_actual_avg_hours = float(agent_actual_avg_time)
+                            else:
+                                agent_actual_avg_hours = None
+                            
+                            # Count tickets with actual time for this agent
+                            agent_tickets_with_actual_time = agent_tickets.exclude(actual_resolution_time__isnull=True).count()
 
                             agent_performance.append({
                                 'agent_id': agent_id,  # Add agent_id for ticket filtering
@@ -809,7 +823,9 @@ def generate_statistics_report(request):
                                 'ticket_count': agent_total,
                                 'resolved_count': agent_resolved,
                                 'resolution_rate': resolution_rate,
-                                'avg_resolution_time': agent_avg_hours
+                                'avg_resolution_time': agent_avg_hours,
+                                'avg_actual_resolution_time': agent_actual_avg_hours,
+                                'tickets_with_actual_time': agent_tickets_with_actual_time
                             })
                             
                             logger.debug(f"Agent {agent_user.username} (id={agent_id}): {agent_total} tickets, {resolution_rate}% resolution rate")
