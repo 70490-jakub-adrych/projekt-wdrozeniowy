@@ -182,6 +182,7 @@ class ModeratorTicketForm(forms.ModelForm):
 class ClientTicketForm(forms.ModelForm):
     """Formularz dla klientów ograniczający dostępne pola"""
     title = forms.CharField(
+        label="Tytuł",
         min_length=8,
         max_length=255,
         error_messages={
@@ -189,6 +190,7 @@ class ClientTicketForm(forms.ModelForm):
         }
     )
     description = forms.CharField(
+        label="Opis",
         min_length=20, 
         widget=forms.Textarea(attrs={'rows': 5}),
         error_messages={
