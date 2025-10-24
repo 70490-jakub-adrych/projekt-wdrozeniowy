@@ -1301,8 +1301,9 @@ def generate_organization_report(request):
             return JsonResponse({'status': 'error', 'message': 'Wymagane są daty początkowa i końcowa'}, status=400)
         
         try:
-            period_start_date = datetime.strptime(period_start, '%Y-%m-%d').date()
-            period_end_date = datetime.strptime(period_end, '%Y-%m-%d').date()
+            from datetime import datetime as dt
+            period_start_date = dt.strptime(period_start, '%Y-%m-%d').date()
+            period_end_date = dt.strptime(period_end, '%Y-%m-%d').date()
         except ValueError:
             return JsonResponse({'status': 'error', 'message': 'Nieprawidłowy format daty'}, status=400)
         
