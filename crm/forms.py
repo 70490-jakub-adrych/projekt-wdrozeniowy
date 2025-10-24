@@ -6,7 +6,7 @@ from django.contrib.auth import authenticate
 from .views.helpers import get_client_ip
 from .models import (
     UserProfile, Organization, Ticket,
-    TicketComment, ActivityLog, EmailVerification
+    TicketComment, TicketAttachment, ActivityLog, EmailVerification
 )
 from .validators import phone_regex
 import logging  # Add this import
@@ -228,42 +228,48 @@ def validate_file_size(value):
         raise ValidationError(f'Rozmiar pliku przekracza limit 20MB. Twój plik ma {value.size/(1024*1024):.2f}MB.')
 
 
-class TicketAttachmentForm(forms.Form):
-    """Formularz obsługujący wielokrotny upload załączników"""
-
-    files = forms.FileField(
-        label="Załączniki (opcjonalnie)",
+class TicketAttachmentForm(forms.ModelForm):
+    file = forms.FileField(
         required=False,
-        widget=forms.ClearableFileInput(attrs={'multiple': True})
+        label='Załączniki (opcjonalnie)',
+        widget=forms.ClearableFileInput(attrs={'multiple': True}),
+        help_text='Możesz wybrać wiele plików jednocześnie'
     )
     accepted_policy = forms.BooleanField(
-        required=False,
+        required=False,  # Changed to False, validation will be handled in clean()
         label="Akceptuję politykę prywatności i regulamin dotyczący załączników",
         error_messages={'required': 'Musisz zaakceptować regulamin, aby dodać załącznik.'}
     )
-
+    
+    class Meta:
+        model = TicketAttachment
+        fields = ['file', 'accepted_policy']
+        labels = {
+            'file': 'Załączniki (opcjonalnie)',
+            'accepted_policy': 'Akceptuję politykę prywatności i regulamin'
+        }
+    
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Inform users about size constraints
-        self.fields['files'].help_text = "Maksymalny rozmiar pojedynczego pliku: 20MB."
-
+        # Add the validator to the file field
+        self.fields['file'].validators.append(validate_file_size)
+        # Update help_text to inform users about the size limit
+        self.fields['file'].help_text = f"Maksymalny rozmiar pliku: 20MB."
+        # Make file field optional
+        self.fields['file'].required = False
+    
     def clean(self):
         cleaned_data = super().clean()
-        uploaded_files = self.files.getlist('files') if self.files else []
+        file = cleaned_data.get('file')
         accepted_policy = cleaned_data.get('accepted_policy')
-
-        if uploaded_files:
-            for uploaded_file in uploaded_files:
-                validate_file_size(uploaded_file)
-
-            if not accepted_policy:
-                self.add_error(
-                    'accepted_policy',
-                    'Musisz zaakceptować regulamin, aby dodać załącznik.'
-                )
-
-        # Ensure files key is present in cleaned data for downstream logic
-        cleaned_data['files'] = uploaded_files
+        
+        # Only require policy acceptance if a file is uploaded
+        if file and not accepted_policy:
+            self.add_error(
+                'accepted_policy', 
+                'Musisz zaakceptować regulamin, aby dodać załącznik.'
+            )
+        
         return cleaned_data
 
 

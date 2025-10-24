@@ -30,10 +30,10 @@ def ticket_create(request):
             form = TicketForm(request.POST)
         else:
             form = ClientTicketForm(request.POST)
-
+        
         # Handle file upload
         attachment_form = TicketAttachmentForm(request.POST, request.FILES)
-        
+            
         # Check if this is an AJAX request asking for category suggestion
         if 'suggest_category' in request.POST and request.headers.get('X-Requested-With') == 'XMLHttpRequest':
             title = request.POST.get('title', '')
@@ -52,86 +52,91 @@ def ticket_create(request):
                                  for k, v in match_details.items()}
             })
         
-        # First validate the main form and attachment form
+        # Check if files were uploaded
+        uploaded_files = request.FILES.getlist('file')
+        has_attachments = bool(uploaded_files)
+        accepted_policy = request.POST.get('accepted_policy') == 'on'
+        
+        # First validate the main form
         form_valid = form.is_valid()
-        attachment_valid = attachment_form.is_valid()
-        uploaded_files = attachment_form.cleaned_data.get('files', []) if attachment_valid else []
-
+        
+        # For attachments, only validate policy acceptance if files exist
+        attachment_valid = True
+        if has_attachments and not accepted_policy:
+            attachment_valid = False
+            # Add error directly to the attachment form
+            attachment_form.add_error('accepted_policy', 'Musisz zaakceptować regulamin, aby dodać załączniki.')
+        
         if form_valid and attachment_valid:
             ticket = form.save(commit=False)
             ticket.created_by = user
-
+            
             # Check if we should override the category based on suggestion
             if form.cleaned_data.get('suggested_category') and form.cleaned_data.get('category') != form.cleaned_data.get('suggested_category'):
                 # User accepted the suggestion - override category
                 ticket.category = form.cleaned_data.get('suggested_category')
-
+            
             # Set default priority for clients
             if user.profile.role == 'client':
                 ticket.priority = 'medium'  # Default priority for client tickets
-
+            
             # Get the organization for the current user or from form
             if 'organization' in request.POST and request.POST['organization'] and user.profile.role in ['admin', 'superagent', 'agent']:
+                # Admin/superagent/agent can select organization
                 org_id = request.POST.get('organization')
                 try:
                     organization = Organization.objects.get(id=org_id)
-
+                    
                     # Check if agent is part of the selected organization (superagent can access all)
                     if user.profile.role == 'agent' and organization not in user.profile.organizations.all():
                         messages.error(request, "Nie możesz utworzyć zgłoszenia w organizacji, do której nie jesteś przypisany.")
                         return redirect('ticket_create')
-
+                    
                     ticket.organization = organization
                 except Organization.DoesNotExist:
                     messages.error(request, "Wybrana organizacja nie istnieje.")
                     return redirect('ticket_create')
             else:
+                # Regular users use their first organization
                 user_orgs = user.profile.organizations.all()
                 if user_orgs.exists():
                     ticket.organization = user_orgs.first()
                 else:
                     messages.error(request, "Nie można utworzyć zgłoszenia: Brak organizacji przypisanej do Twojego konta.")
                     return redirect('dashboard')
-
+                
             ticket.save()
             log_activity(request, 'ticket_created', ticket, f"Utworzono zgłoszenie: '{ticket.title}'")
-
+            
             # Send email notifications to relevant stakeholders
             EmailNotificationService.notify_ticket_stakeholders('created', ticket, triggered_by=user)
-
-            # Handle attachment upload if provided
-            if uploaded_files:
-                attachment_names = []
+            
+            # Handle multiple attachment uploads if provided
+            attachments_count = 0
+            if has_attachments:
                 for uploaded_file in uploaded_files:
                     attachment = TicketAttachment(
                         ticket=ticket,
                         uploaded_by=user,
                         file=uploaded_file,
                         filename=os.path.basename(uploaded_file.name),
-                        accepted_policy=True
+                        accepted_policy=True  # User agreed to terms
                     )
                     attachment.save()
-                    attachment_names.append(attachment.filename)
-                    log_activity(
-                        request,
-                        'ticket_attachment_added',
-                        ticket=ticket,
-                        description=f"Dodano załącznik: {attachment.filename}"
-                    )
-
-                messages.success(
-                    request,
-                    f"Zgłoszenie oraz {len(attachment_names)} załącznik(i) zostały utworzone! Odpowiednie osoby zostały powiadomione e-mailem."
-                )
+                    log_activity(request, 'ticket_attachment_added', ticket=ticket, 
+                                description=f"Added attachment: {attachment.filename}")
+                    attachments_count += 1
+                
+                messages.success(request, f'Zgłoszenie oraz {attachments_count} załącznik(ów) zostały utworzone! Odpowiednie osoby zostały powiadomione e-mailem.')
             else:
                 messages.success(request, 'Zgłoszenie zostało utworzone! Odpowiednie osoby zostały powiadomione e-mailem.')
-
+                
             return redirect('ticket_detail', pk=ticket.pk)
-
-        if not form_valid:
-            messages.error(request, 'Wystąpił błąd w formularzu zgłoszenia. Sprawdź dane i spróbuj ponownie.')
-        if not attachment_valid:
-            messages.error(request, 'Wystąpił błąd z załącznikami. Sprawdź dane i spróbuj ponownie.')
+        else:
+            if not form_valid:
+                messages.error(request, 'Wystąpił błąd w formularzu zgłoszenia. Sprawdź dane i spróbuj ponownie.')
+            if not attachment_valid:
+                messages.error(request, 'Wystąpił błąd z załącznikiem. Sprawdź dane i spróbuj ponownie.')
     else:
         # Also use different form for GET requests based on user role
         if user.profile.role in ['admin', 'superagent', 'agent']:

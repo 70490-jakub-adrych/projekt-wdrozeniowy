@@ -102,14 +102,15 @@ def ticket_detail(request, pk):
         # Handle attachment upload - check for both possible button names
         if 'add_attachment' in request.POST or 'submit_attachment' in request.POST:
             attachment_form = TicketAttachmentForm(request.POST, request.FILES)
-
-            if attachment_form.is_valid():
-                uploaded_files = attachment_form.cleaned_data.get('files', [])
-
-                if not uploaded_files:
-                    messages.error(request, 'Nie wybrano plików do przesłania.')
-                else:
-                    attachment_names = []
+            
+            # Check if files were uploaded
+            uploaded_files = request.FILES.getlist('file')
+            has_attachments = bool(uploaded_files)
+            accepted_policy = request.POST.get('accepted_policy') == 'on'
+            
+            if has_attachments and attachment_form.is_valid():
+                if accepted_policy:
+                    attachments_count = 0
                     for uploaded_file in uploaded_files:
                         attachment = TicketAttachment(
                             ticket=ticket,
@@ -119,30 +120,27 @@ def ticket_detail(request, pk):
                             accepted_policy=True
                         )
                         attachment.save()
-                        attachment_names.append(attachment.filename)
-
-                        log_activity(
-                            request,
-                            'ticket_attachment_added',
-                            ticket=ticket,
-                            description=f"Dodano załącznik: {attachment.filename}"
-                        )
-
-                        EmailNotificationService.notify_ticket_stakeholders(
-                            'updated',
-                            ticket,
-                            triggered_by=user,
-                            update_type='attachment_added',
-                            attachment_name=attachment.filename
-                        )
-
-                    messages.success(
-                        request,
-                        f"Dodano {len(attachment_names)} załącznik(i)."
-                    )
+                        
+                        # Log the attachment
+                        log_activity(request, 'ticket_attachment_added', ticket=ticket, 
+                                    description=f"Added attachment: {attachment.filename}")
+                        
+                        # Send email notification about the attachment
+                        EmailNotificationService.notify_ticket_stakeholders('updated', ticket, 
+                                                                         triggered_by=user, 
+                                                                         update_type='attachment_added',
+                                                                         attachment_name=attachment.filename)
+                        attachments_count += 1
+                    
+                    messages.success(request, f'{attachments_count} załącznik(ów) zostało dodanych!')
                     return redirect('ticket_detail', pk=ticket.pk)
+                else:
+                    messages.error(request, 'Musisz zaakceptować regulamin, aby dodać załączniki.')
             else:
-                messages.error(request, 'Wystąpił błąd z załącznikami. Sprawdź formularz i spróbuj ponownie.')
+                if not has_attachments:
+                    messages.error(request, 'Nie wybrano plików do przesłania.')
+                else:
+                    messages.error(request, 'Wystąpił błąd z załącznikami. Sprawdź formularz i spróbuj ponownie.')
     
     # Check if user can edit this ticket
     can_edit = (role == 'admin' or

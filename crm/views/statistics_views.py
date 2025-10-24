@@ -612,18 +612,8 @@ def generate_statistics_report(request):
         organization_id = request.POST.get('organization')
         agent_id = request.POST.get('agent')
         report_format = request.POST.get('format', 'xlsx')  # xlsx or csv
-        report_type = request.POST.get('report_type', 'standard')
         
-        logger.info(
-            "Report parameters: period_type=%s, period_start=%s, period_end=%s, organization_id=%s, agent_id=%s, format=%s, type=%s",
-            period_type,
-            period_start,
-            period_end,
-            organization_id,
-            agent_id,
-            report_format,
-            report_type
-        )
+        logger.info(f"Report parameters: period_type={period_type}, period_start={period_start}, period_end={period_end}, organization_id={organization_id}, agent_id={agent_id}, format={report_format}")
         
         # Validate input parameters
         if not period_start or not period_end:
@@ -849,59 +839,23 @@ def generate_statistics_report(request):
             logger.error(f"Error calculating agent performance: {e}")
             agent_performance = []
         
-        organization_actual_stats = []
-        if report_type == 'organization_actual_time':
-            try:
-                organization_actual_stats = list(
-                    tickets_query.values('organization__id', 'organization__name').annotate(
-                        ticket_count=Count('id'),
-                        tickets_with_actual=Count('id', filter=Q(actual_resolution_time__isnull=False)),
-                        total_actual_time=Sum('actual_resolution_time'),
-                        avg_actual_time=Avg('actual_resolution_time')
-                    ).order_by('organization__name')
-                )
-                logger.info(
-                    "Calculated organization actual time stats for %d organizations",
-                    len(organization_actual_stats)
-                )
-            except Exception as e:
-                logger.error(f"Error calculating organization actual time stats: {e}")
-                return JsonResponse({'status': 'error', 'message': 'Błąd obliczania danych dla raportu firmowego'}, status=500)
-
         # Create the report file
-        logger.info(f"Generating {report_format} report (type={report_type})...")
+        logger.info(f"Generating {report_format} report...")
         try:
-            if report_type == 'organization_actual_time':
-                if report_format == 'csv':
-                    return _generate_csv_report_by_organization(
-                        period_start_date,
-                        period_end_date,
-                        organization,
-                        agent,
-                        organization_actual_stats
-                    )
-                return _generate_excel_report_by_organization(
-                    period_start_date,
-                    period_end_date,
-                    organization,
-                    agent,
-                    organization_actual_stats
-                )
-
             if report_format == 'csv':
                 return _generate_csv_report(
+                    period_start_date, period_end_date, organization, agent,
+                    tickets_opened, tickets_closed, tickets_resolved, tickets_new, 
+                    tickets_in_progress, tickets_unresolved, avg_resolution_time,
+                    priority_distribution, category_distribution, agent_performance
+                )
+            else:  # xlsx
+                return _generate_excel_report(
                     period_start_date, period_end_date, organization, agent,
                     tickets_opened, tickets_closed, tickets_resolved, tickets_new,
                     tickets_in_progress, tickets_unresolved, avg_resolution_time,
                     priority_distribution, category_distribution, agent_performance
                 )
-
-            return _generate_excel_report(
-                period_start_date, period_end_date, organization, agent,
-                tickets_opened, tickets_closed, tickets_resolved, tickets_new,
-                tickets_in_progress, tickets_unresolved, avg_resolution_time,
-                priority_distribution, category_distribution, agent_performance
-            )
         except ImportError as e:
             logger.error(f"Import error during report generation: {e}")
             return JsonResponse({
@@ -1034,184 +988,6 @@ def _generate_csv_report(period_start, period_end, organization, agent,
             writer.writerow([''])
     
     return response
-
-
-def _generate_csv_report_by_organization(period_start, period_end, organization, agent, organization_stats):
-    """Generate CSV report for organization actual resolution times"""
-    response = HttpResponse(content_type='text/csv; charset=utf-8')
-
-    org_name = organization.name if organization else "Wszystkie"
-    agent_name = agent.username if agent else "Wszyscy"
-    filename = f"raport_firm_{period_start}_{period_end}_{org_name}_{agent_name}.csv"
-    filename = filename.replace(" ", "_").replace("/", "_").replace("\\", "_")
-    response['Content-Disposition'] = f'attachment; filename="{filename}"'
-
-    writer = csv.writer(response)
-
-    writer.writerow(['RAPORT: RZECZYWISTY CZAS OBSŁUGI FIRM'])
-    writer.writerow([''])
-    writer.writerow(['Okres:', f"{period_start} - {period_end}"])
-    writer.writerow(['Organizacja (filtr):', org_name])
-    writer.writerow(['Agent (filtr):', agent_name])
-    writer.writerow(['Data generacji:', timezone.now().strftime('%Y-%m-%d %H:%M:%S')])
-    writer.writerow([''])
-
-    headers = ['Lp.', 'Organizacja', 'Liczba zgłoszeń', 'Zgłoszenia z czasem', 'Łączny rzecz. czas (h)', 'Średni rzecz. czas (h)']
-    writer.writerow(headers)
-
-    total_tickets = 0
-    total_with_actual = 0
-    total_hours = 0.0
-
-    if organization_stats:
-        for index, stat in enumerate(organization_stats, start=1):
-            name = stat.get('organization__name') or 'Brak przypisanej organizacji'
-            ticket_count = stat.get('ticket_count', 0) or 0
-            tickets_with_actual = stat.get('tickets_with_actual', 0) or 0
-            sum_actual = float(stat.get('total_actual_time') or 0)
-            avg_actual = float(stat.get('avg_actual_time') or 0)
-
-            total_tickets += ticket_count
-            total_with_actual += tickets_with_actual
-            total_hours += sum_actual
-
-            writer.writerow([
-                index,
-                name,
-                ticket_count,
-                tickets_with_actual,
-                f"{sum_actual:.2f}",
-                f"{avg_actual:.2f}"
-            ])
-    else:
-        writer.writerow(['-', 'Brak danych dla wskazanego okresu', 0, 0, '0.00', '0.00'])
-
-    writer.writerow([''])
-    average_total = (total_hours / total_with_actual) if total_with_actual else 0
-    writer.writerow([
-        'Razem',
-        '',
-        total_tickets,
-        total_with_actual,
-        f"{total_hours:.2f}",
-        f"{average_total:.2f}"
-    ])
-
-    return response
-
-
-def _generate_excel_report_by_organization(period_start, period_end, organization, agent, organization_stats):
-    """Generate Excel report focusing on organization actual resolution times"""
-    logger.info("Starting organization actual time Excel report generation")
-
-    wb = Workbook()
-    ws = wb.active
-    ws.title = "Raport firm"
-
-    title_font = Font(bold=True, size=14)
-    header_font = Font(bold=True)
-    italic_font = Font(italic=True)
-
-    org_name = organization.name if organization else "Wszystkie"
-    agent_name = agent.username if agent else "Wszyscy"
-
-    ws['A1'] = 'RAPORT: RZECZYWISTY CZAS OBSŁUGI FIRM'
-    ws['A1'].font = title_font
-
-    row = 3
-    ws[f'A{row}'] = 'Okres:'
-    ws[f'B{row}'] = f"{period_start} - {period_end}"
-    row += 1
-    ws[f'A{row}'] = 'Organizacja (filtr):'
-    ws[f'B{row}'] = org_name
-    row += 1
-    ws[f'A{row}'] = 'Agent (filtr):'
-    ws[f'B{row}'] = agent_name
-    row += 1
-    ws[f'A{row}'] = 'Data generacji:'
-    ws[f'B{row}'] = timezone.now().strftime('%Y-%m-%d %H:%M:%S')
-
-    row += 2
-
-    headers = [
-        'Lp.',
-        'Organizacja',
-        'Liczba zgłoszeń',
-        'Zgłoszenia z czasem',
-        'Łączny rzecz. czas (h)',
-        'Średni rzecz. czas (h)'
-    ]
-
-    for col_index, header in enumerate(headers, start=1):
-        cell = ws.cell(row=row, column=col_index, value=header)
-        cell.font = header_font
-        cell.alignment = Alignment(horizontal='center', vertical='center')
-    row += 1
-
-    total_tickets = 0
-    total_with_actual = 0
-    total_hours = 0.0
-
-    if organization_stats:
-        for index, stat in enumerate(organization_stats, start=1):
-            name = stat.get('organization__name') or 'Brak przypisanej organizacji'
-            ticket_count = stat.get('ticket_count', 0) or 0
-            tickets_with_actual = stat.get('tickets_with_actual', 0) or 0
-            sum_actual = float(stat.get('total_actual_time') or 0)
-            avg_actual = float(stat.get('avg_actual_time') or 0)
-
-            total_tickets += ticket_count
-            total_with_actual += tickets_with_actual
-            total_hours += sum_actual
-
-            ws.cell(row=row, column=1, value=index)
-            ws.cell(row=row, column=2, value=name)
-            ws.cell(row=row, column=3, value=ticket_count)
-            ws.cell(row=row, column=4, value=tickets_with_actual)
-
-            total_cell = ws.cell(row=row, column=5, value=round(sum_actual, 2))
-            total_cell.number_format = '0.00'
-            avg_cell = ws.cell(row=row, column=6, value=round(avg_actual, 2))
-            avg_cell.number_format = '0.00'
-
-            row += 1
-    else:
-        ws.cell(row=row, column=1, value='-')
-        ws.cell(row=row, column=2, value='Brak danych dla wskazanego okresu').font = italic_font
-        ws.cell(row=row, column=3, value=0)
-        ws.cell(row=row, column=4, value=0)
-        ws.cell(row=row, column=5, value=0).number_format = '0.00'
-        ws.cell(row=row, column=6, value=0).number_format = '0.00'
-        row += 1
-
-    average_total = (total_hours / total_with_actual) if total_with_actual else 0
-
-    summary_row = row + 1
-    ws.cell(row=summary_row, column=1, value='Razem').font = header_font
-    ws.cell(row=summary_row, column=2, value='')
-    ws.cell(row=summary_row, column=3, value=total_tickets).font = header_font
-    ws.cell(row=summary_row, column=4, value=total_with_actual).font = header_font
-    total_hours_cell = ws.cell(row=summary_row, column=5, value=round(total_hours, 2))
-    total_hours_cell.font = header_font
-    total_hours_cell.number_format = '0.00'
-    avg_hours_cell = ws.cell(row=summary_row, column=6, value=round(average_total, 2))
-    avg_hours_cell.font = header_font
-    avg_hours_cell.number_format = '0.00'
-
-    column_widths = [6, 40, 18, 22, 25, 25]
-    for idx, width in enumerate(column_widths, start=1):
-        ws.column_dimensions[get_column_letter(idx)].width = width
-
-    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    sanitized_org = org_name.replace(' ', '_').replace('/', '_').replace('\\', '_').replace(':', '_')
-    sanitized_agent = agent_name.replace(' ', '_').replace('/', '_').replace('\\', '_').replace(':', '_')
-    filename = f"raport_firm_{period_start}_{period_end}_{sanitized_org}_{sanitized_agent}.xlsx"
-    response['Content-Disposition'] = f'attachment; filename="{filename}"'
-
-    wb.save(response)
-    logger.info("Organization actual time Excel report generated successfully")
-    return response
-
 
 def _generate_excel_report(period_start, period_end, organization, agent,
                           tickets_opened, tickets_closed, tickets_resolved, tickets_new,
@@ -1499,3 +1275,132 @@ def _generate_excel_report(period_start, period_end, organization, agent,
         import traceback
         logger.error(f"Full traceback: {traceback.format_exc()}")
         raise
+
+
+@login_required
+def generate_organization_report(request):
+    """
+    Generate Excel report showing actual resolution time by organization
+    """
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Metoda POST wymagana'}, status=405)
+    
+    try:
+        user = request.user
+        role = user.profile.role
+        
+        # Only admins and superagents can generate this report
+        if role not in ['admin', 'superagent']:
+            return JsonResponse({'status': 'error', 'message': 'Brak uprawnień'}, status=403)
+        
+        # Parse dates
+        period_start = request.POST.get('period_start')
+        period_end = request.POST.get('period_end')
+        
+        if not period_start or not period_end:
+            return JsonResponse({'status': 'error', 'message': 'Wymagane są daty początkowa i końcowa'}, status=400)
+        
+        try:
+            period_start_date = datetime.strptime(period_start, '%Y-%m-%d').date()
+            period_end_date = datetime.strptime(period_end, '%Y-%m-%d').date()
+        except ValueError:
+            return JsonResponse({'status': 'error', 'message': 'Nieprawidłowy format daty'}, status=400)
+        
+        logger.info(f"Generating organization report for period: {period_start_date} to {period_end_date}")
+        
+        # Build query for tickets in date range
+        tickets_query = Ticket.objects.filter(
+            created_at__date__gte=period_start_date,
+            created_at__date__lte=period_end_date
+        ).exclude(
+            actual_resolution_time__isnull=True
+        )
+        
+        # Group by organization and calculate average actual resolution time
+        org_stats = []
+        
+        if role == 'admin':
+            organizations = Organization.objects.all()
+        else:  # superagent
+            organizations = user.profile.organizations.all()
+        
+        for org in organizations:
+            org_tickets = tickets_query.filter(organization=org)
+            
+            if org_tickets.exists():
+                avg_time = org_tickets.aggregate(
+                    avg_actual=Avg('actual_resolution_time')
+                )['avg_actual']
+                
+                tickets_count = org_tickets.count()
+                
+                org_stats.append({
+                    'name': org.name,
+                    'avg_actual_time': float(avg_time) if avg_time else 0,
+                    'tickets_count': tickets_count
+                })
+        
+        # Sort by average time (descending)
+        org_stats.sort(key=lambda x: x['avg_actual_time'], reverse=True)
+        
+        # Generate Excel file
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Raport firm"
+        
+        # Styles
+        header_font = Font(bold=True, size=14)
+        subheader_font = Font(bold=True, size=12)
+        bold_font = Font(bold=True)
+        
+        # Title
+        ws['A1'] = 'RAPORT RZECZYWISTYCH CZASÓW OBSŁUGI FIRM'
+        ws['A1'].font = header_font
+        ws.merge_cells('A1:C1')
+        
+        # Period info
+        ws['A3'] = f'Okres: {period_start_date} - {period_end_date}'
+        ws['A3'].font = bold_font
+        
+        ws['A4'] = f'Data generacji: {timezone.now().strftime("%Y-%m-%d %H:%M:%S")}'
+        
+        # Headers
+        row = 6
+        headers = ['Firma', 'Śr. rzeczywisty czas (godz.)', 'Liczba zgłoszeń']
+        for col, header in enumerate(headers, 1):
+            cell = ws.cell(row=row, column=col, value=header)
+            cell.font = bold_font
+        
+        # Data
+        row += 1
+        for org_data in org_stats:
+            ws[f'A{row}'] = org_data['name']
+            ws[f'B{row}'] = f"{org_data['avg_actual_time']:.2f}"
+            ws[f'C{row}'] = org_data['tickets_count']
+            row += 1
+        
+        # Auto-adjust column widths
+        for column_cells in ws.columns:
+            length = max(len(str(cell.value or '')) for cell in column_cells)
+            ws.column_dimensions[column_cells[0].column_letter].width = min(length + 2, 50)
+        
+        # Prepare response
+        response = HttpResponse(
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        filename = f"raport_firm_{period_start_date}_{period_end_date}.xlsx"
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        
+        wb.save(response)
+        logger.info(f"Organization report generated successfully: {filename}")
+        
+        return response
+        
+    except Exception as e:
+        logger.error(f"Error generating organization report: {e}")
+        import traceback
+        logger.error(f"Full traceback: {traceback.format_exc()}")
+        return JsonResponse({
+            'status': 'error',
+            'message': f'Błąd generowania raportu: {str(e)}'
+        }, status=500)

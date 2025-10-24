@@ -130,10 +130,10 @@
                         <div class="row">
                             <div class="col-md-12">
                                 <div class="mb-3">
-                                    {{ attachment_form.files|as_crispy_field }}
+                                    {{ attachment_form.file|as_crispy_field }}
                                     <small class="form-text text-muted">
                                         <i class="fas fa-info-circle me-1"></i>
-                                        Możesz wybrać kilka plików naraz. Maksymalny rozmiar pojedynczego pliku: 20MB. Dozwolone formaty: PDF, DOC, DOCX, XLS, XLSX, JPG, PNG, GIF.
+                                        Maksymalny rozmiar pliku: 20MB. Dozwolone formaty: PDF, DOC, DOCX, XLS, XLSX, JPG, PNG, GIF.
                                     </small>
                                 </div>
                             </div>
@@ -326,7 +326,7 @@
         }
         
         // Walidacja po stronie klienta dla załącznika i checkbox polityki
-    const fileInput = document.querySelector('#id_files');
+        const fileInput = document.querySelector('#id_file');
         const policyCheckbox = document.querySelector('#id_accepted_policy');
         const policyField = document.querySelector('.attachment-policy');
         
