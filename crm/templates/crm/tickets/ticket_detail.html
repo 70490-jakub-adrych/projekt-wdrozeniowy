@@ -1189,6 +1189,14 @@
             }
         });
     });
+    
+    // Enable multiple file selection for attachments
+    document.addEventListener('DOMContentLoaded', function() {
+        const fileInput = document.querySelector('#id_file');
+        if (fileInput) {
+            fileInput.setAttribute('multiple', 'multiple');
+        }
+    });
 </script>
 {% endif %}
 {% endblock %}

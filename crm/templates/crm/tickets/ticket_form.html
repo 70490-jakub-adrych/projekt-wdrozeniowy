@@ -367,6 +367,9 @@
                 return true;
             });
             
+            // Enable multiple file selection
+            fileInput.setAttribute('multiple', 'multiple');
+            
             // Add change handler for file input to clear errors when changed
             fileInput.addEventListener('change', function() {
                 // If user removes the file, clear any error on the checkbox

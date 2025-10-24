@@ -229,12 +229,6 @@ def validate_file_size(value):
 
 
 class TicketAttachmentForm(forms.ModelForm):
-    file = forms.FileField(
-        required=False,
-        label='Załączniki (opcjonalnie)',
-        widget=forms.FileInput(attrs={'multiple': True, 'class': 'form-control'}),
-        help_text='Możesz wybrać wiele plików jednocześnie'
-    )
     accepted_policy = forms.BooleanField(
         required=False,  # Changed to False, validation will be handled in clean()
         label="Akceptuję politykę prywatności i regulamin dotyczący załączników",
@@ -247,6 +241,12 @@ class TicketAttachmentForm(forms.ModelForm):
         labels = {
             'file': 'Załączniki (opcjonalnie)',
             'accepted_policy': 'Akceptuję politykę prywatności i regulamin'
+        }
+        widgets = {
+            'file': forms.FileInput(attrs={'class': 'form-control'})
+        }
+        help_texts = {
+            'file': 'Możesz wybrać wiele plików jednocześnie'
         }
     
     def __init__(self, *args, **kwargs):
