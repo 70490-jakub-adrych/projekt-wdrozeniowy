@@ -711,14 +711,32 @@
     <div class="col-md-12">
         <div class="card border-0 shadow-sm">
             <div class="card-body text-center">
-                <h5 class="card-title mb-3">Generowanie raportu</h5>
+                <h5 class="card-title mb-3">Generowanie raportów</h5>
                 <p class="text-muted mb-3">
-                    Wygeneruj szczegółowy raport statystyk na podstawie aktualnie wybranych filtrów. 
-                    Raport będzie zawierał wszystkie dane widoczne na tej stronie w formacie Excel lub CSV.
+                    Wybierz rodzaj raportu do wygenerowania:
                 </p>
-                <button id="generateReportBtn" class="btn btn-primary btn-ripple btn-lg">
-                    <i class="fas fa-file-export"></i> Wygeneruj raport z aktualnych filtrów
-                </button>
+                
+                <div class="d-grid gap-3 d-md-flex justify-content-md-center mb-3">
+                    <button id="generateReportBtn" class="btn btn-primary btn-ripple btn-lg">
+                        <i class="fas fa-file-export"></i> Raport ogólny (aktualne filtry)
+                    </button>
+                    <button id="generateOrganizationReportBtn" class="btn btn-success btn-ripple btn-lg">
+                        <i class="fas fa-building"></i> Raport czasów organizacji
+                    </button>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle"></i> Raport ogólny zawiera wszystkie dane widoczne na tej stronie
+                        </small>
+                    </div>
+                    <div class="col-md-6">
+                        <small class="text-muted">
+                            <i class="fas fa-info-circle"></i> Raport organizacji pokazuje rzeczywisty czas obsługi każdej firmy
+                        </small>
+                    </div>
+                </div>
                 <div id="reportStatus" class="mt-3"></div>
                 <div class="mt-2">
                     <small class="text-muted">

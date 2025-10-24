@@ -854,6 +854,120 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Handle report generation
         handleGenerateReport();
+        
+        // Handle organization report generation
+        const orgReportBtn = document.getElementById('generateOrganizationReportBtn');
+        if (orgReportBtn) {
+            orgReportBtn.addEventListener('click', function() {
+                generateOrganizationReport();
+            });
+        }
+    };
+    
+    /**
+     * Generate organization time report
+     */
+    const generateOrganizationReport = () => {
+        const reportBtn = document.getElementById('generateOrganizationReportBtn');
+        const statusDiv = document.getElementById('reportStatus');
+        
+        // Show loading state
+        reportBtn.disabled = true;
+        reportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generowanie...';
+        statusDiv.innerHTML = '<i class="fas fa-info-circle"></i> Generowanie raportu organizacji, proszę czekać...';
+        statusDiv.className = 'mt-3 text-info';
+        
+        // Get filter values
+        const dateFrom = document.getElementById('date_from').value;
+        const dateTo = document.getElementById('date_to').value;
+        
+        // Validate required fields
+        if (!dateFrom || !dateTo) {
+            statusDiv.innerHTML = '<i class="fas fa-times-circle"></i> Błąd: Wymagane są daty początkowa i końcowa';
+            statusDiv.className = 'mt-3 text-danger';
+            reportBtn.disabled = false;
+            reportBtn.innerHTML = '<i class="fas fa-building"></i> Raport czasów organizacji';
+            return;
+        }
+        
+        // Validate date range
+        if (new Date(dateFrom) > new Date(dateTo)) {
+            statusDiv.innerHTML = '<i class="fas fa-times-circle"></i> Błąd: Data początkowa nie może być późniejsza niż końcowa';
+            statusDiv.className = 'mt-3 text-danger';
+            reportBtn.disabled = false;
+            reportBtn.innerHTML = '<i class="fas fa-building"></i> Raport czasów organizacji';
+            return;
+        }
+        
+        // Get CSRF token
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        
+        if (!csrfToken) {
+            statusDiv.innerHTML = '<i class="fas fa-times-circle"></i> Błąd: Brak tokenu CSRF. Odśwież stronę i spróbuj ponownie.';
+            statusDiv.className = 'mt-3 text-danger';
+            reportBtn.disabled = false;
+            reportBtn.innerHTML = '<i class="fas fa-building"></i> Raport czasów organizacji';
+            return;
+        }
+        
+        // Create form data
+        const formData = new FormData();
+        formData.append('period_start', dateFrom);
+        formData.append('period_end', dateTo);
+        formData.append('format', 'xlsx');
+        
+        // Send request
+        fetch('/statistics/organization-time-report/', {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrfToken
+            },
+            body: formData
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(data => {
+                    throw new Error(data.message || 'Błąd serwera');
+                });
+            }
+            
+            // Get filename from Content-Disposition header
+            const disposition = response.headers.get('Content-Disposition');
+            let filename = 'raport_organizacji.xlsx';
+            if (disposition && disposition.includes('filename=')) {
+                const filenameMatch = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+                if (filenameMatch && filenameMatch[1]) {
+                    filename = filenameMatch[1].replace(/['"]/g, '');
+                }
+            }
+            
+            return response.blob().then(blob => ({ blob, filename }));
+        })
+        .then(({ blob, filename }) => {
+            // Create download link
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+            
+            // Show success message
+            statusDiv.innerHTML = '<i class="fas fa-check-circle"></i> Raport został wygenerowany i pobrany!';
+            statusDiv.className = 'mt-3 text-success';
+            reportBtn.disabled = false;
+            reportBtn.innerHTML = '<i class="fas fa-building"></i> Raport czasów organizacji';
+        })
+        .catch(error => {
+            console.error('Report generation error:', error);
+            statusDiv.innerHTML = `<i class="fas fa-times-circle"></i> Błąd: ${error.message}`;
+            statusDiv.className = 'mt-3 text-danger';
+            reportBtn.disabled = false;
+            reportBtn.innerHTML = '<i class="fas fa-building"></i> Raport czasów organizacji';
+        });
     };
     
     // Initialize everything

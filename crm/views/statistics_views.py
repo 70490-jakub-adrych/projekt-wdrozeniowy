@@ -1275,3 +1275,156 @@ def _generate_excel_report(period_start, period_end, organization, agent,
         import traceback
         logger.error(f"Full traceback: {traceback.format_exc()}")
         raise
+
+
+@login_required
+def generate_organization_time_report(request):
+    """
+    Generate Excel report showing actual resolution time by organization
+    """
+    if request.method != 'POST':
+        return JsonResponse({'status': 'error', 'message': 'Metoda POST wymagana'}, status=400)
+    
+    user = request.user
+    role = user.profile.role
+    
+    # Only admins and superagents can generate this report
+    if role not in ['admin', 'superagent']:
+        return JsonResponse({'status': 'error', 'message': 'Brak uprawnień'}, status=403)
+    
+    try:
+        # Get date range from request
+        period_start = request.POST.get('period_start')
+        period_end = request.POST.get('period_end')
+        
+        if not period_start or not period_end:
+            return JsonResponse({'status': 'error', 'message': 'Wymagane są daty początkowa i końcowa'}, status=400)
+        
+        # Parse dates
+        try:
+            from datetime import datetime
+            period_start_date = datetime.strptime(period_start, '%Y-%m-%d').date()
+            period_end_date = datetime.strptime(period_end, '%Y-%m-%d').date()
+        except ValueError:
+            return JsonResponse({'status': 'error', 'message': 'Nieprawidłowy format daty'}, status=400)
+        
+        logger.info(f"Generating organization time report for period: {period_start_date} to {period_end_date}")
+        
+        # Get all organizations
+        organizations = Organization.objects.all().order_by('name')
+        
+        # Calculate actual resolution time for each organization
+        org_data = []
+        for org in organizations:
+            # Get tickets for this organization in the date range
+            tickets = Ticket.objects.filter(
+                organization=org,
+                created_at__date__gte=period_start_date,
+                created_at__date__lte=period_end_date
+            ).exclude(actual_resolution_time__isnull=True)
+            
+            ticket_count = tickets.count()
+            
+            if ticket_count > 0:
+                # Calculate average actual resolution time
+                avg_time = tickets.aggregate(
+                    avg=Avg('actual_resolution_time')
+                )['avg']
+                
+                # Calculate total time
+                total_time = tickets.aggregate(
+                    total=Sum('actual_resolution_time')
+                )['total']
+                
+                org_data.append({
+                    'name': org.name,
+                    'ticket_count': ticket_count,
+                    'avg_time': float(avg_time) if avg_time else 0,
+                    'total_time': float(total_time) if total_time else 0
+                })
+        
+        # Sort by total time descending
+        org_data.sort(key=lambda x: x['total_time'], reverse=True)
+        
+        # Generate Excel file
+        from openpyxl import Workbook
+        from openpyxl.styles import Font, PatternFill, Alignment
+        
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Czas obsługi organizacji"
+        
+        # Header styling
+        header_font = Font(bold=True, color="FFFFFF", size=12)
+        header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+        header_alignment = Alignment(horizontal="center", vertical="center")
+        
+        bold_font = Font(bold=True)
+        
+        # Report title
+        ws['A1'] = 'RAPORT RZECZYWISTEGO CZASU OBSŁUGI ORGANIZACJI'
+        ws['A1'].font = Font(bold=True, size=14)
+        ws.merge_cells('A1:D1')
+        
+        # Report info
+        ws['A2'] = f"Okres: {period_start_date} - {period_end_date}"
+        ws['A2'].font = bold_font
+        
+        ws['A3'] = f"Data generacji: {timezone.now().strftime('%Y-%m-%d %H:%M:%S')}"
+        
+        # Headers
+        row = 5
+        headers = ['Organizacja', 'Liczba zgłoszeń', 'Średni czas (godz.)', 'Łączny czas (godz.)']
+        for col, header in enumerate(headers, 1):
+            cell = ws.cell(row=row, column=col, value=header)
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = header_alignment
+        
+        # Data rows
+        row += 1
+        for org in org_data:
+            ws[f'A{row}'] = org['name']
+            ws[f'A{row}'].font = bold_font
+            ws[f'B{row}'] = org['ticket_count']
+            ws[f'C{row}'] = f"{org['avg_time']:.2f}"
+            ws[f'D{row}'] = f"{org['total_time']:.2f}"
+            row += 1
+        
+        # Add totals row
+        row += 1
+        total_tickets = sum(o['ticket_count'] for o in org_data)
+        total_hours = sum(o['total_time'] for o in org_data)
+        
+        ws[f'A{row}'] = 'RAZEM'
+        ws[f'A{row}'].font = Font(bold=True, size=12)
+        ws[f'B{row}'] = total_tickets
+        ws[f'B{row}'].font = bold_font
+        ws[f'C{row}'] = '-'
+        ws[f'D{row}'] = f"{total_hours:.2f}"
+        ws[f'D{row}'].font = bold_font
+        
+        # Column widths
+        ws.column_dimensions['A'].width = 40
+        ws.column_dimensions['B'].width = 18
+        ws.column_dimensions['C'].width = 20
+        ws.column_dimensions['D'].width = 20
+        
+        # Create response
+        response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
+        filename = f"raport_organizacji_{period_start_date}_{period_end_date}.xlsx"
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        
+        wb.save(response)
+        logger.info(f"Organization time report generated successfully: {filename}")
+        
+        return response
+        
+    except Exception as e:
+        logger.error(f"Error generating organization time report: {e}")
+        import traceback
+        logger.error(f"Full traceback: {traceback.format_exc()}")
+        return JsonResponse({
+            'status': 'error',
+            'message': f'Błąd generowania raportu: {str(e)}'
+        }, status=500)

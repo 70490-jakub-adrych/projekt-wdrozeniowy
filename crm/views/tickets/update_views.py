@@ -46,16 +46,18 @@ def ticket_update(request, pk):
         # Handle file upload as well
         attachment_form = TicketAttachmentForm(request.POST, request.FILES)
         
-        # Check if a file was uploaded
-        has_attachment = bool(request.FILES.get('file'))
+        # Check if any files were uploaded
+        uploaded_files = request.FILES.getlist('files')
+        has_attachments = bool(uploaded_files)
         policy_accepted = request.POST.get('accepted_policy') == 'on'
         
         # First validate the ticket form
         if form.is_valid():
-            # Check if attachment form is valid if a file was uploaded
+            # Check if policy is accepted if files were uploaded
             attachment_valid = True
-            if has_attachment:
-                attachment_valid = attachment_form.is_valid() and policy_accepted
+            if has_attachments and not policy_accepted:
+                attachment_valid = False
+                messages.error(request, 'Musisz zaakceptować regulamin, aby dodać załączniki.')
             
             if attachment_valid:
                 updated_ticket = form.save()
@@ -93,19 +95,23 @@ def ticket_update(request, pk):
                     description=f"Zaktualizowano zgłoszenie #{updated_ticket.pk}: {changes_text}"
                 )
                 
-                # Handle attachment upload if provided
-                if has_attachment:
-                    attachment = attachment_form.save(commit=False)
-                    attachment.ticket = updated_ticket
-                    attachment.uploaded_by = user
-                    attachment.filename = os.path.basename(attachment.file.name)
-                    attachment.accepted_policy = True
-                    attachment.save()
+                # Handle multiple attachments upload if provided
+                if has_attachments:
+                    for uploaded_file in uploaded_files:
+                        attachment = TicketAttachment()
+                        attachment.ticket = updated_ticket
+                        attachment.uploaded_by = user
+                        attachment.file = uploaded_file
+                        attachment.filename = os.path.basename(uploaded_file.name)
+                        attachment.accepted_policy = True
+                        attachment.save()
+                        
+                        log_activity(request, 'ticket_attachment_added', ticket=updated_ticket, 
+                                    description=f"Added attachment: {attachment.filename}")
                     
-                    log_activity(request, 'ticket_attachment_added', ticket=updated_ticket, 
-                                description=f"Added attachment: {attachment.filename}")
-                    
-                    messages.success(request, 'Zgłoszenie oraz załącznik zostały zaktualizowane!')
+                    file_count = len(uploaded_files)
+                    file_word = 'załącznik' if file_count == 1 else 'załączniki' if file_count < 5 else 'załączników'
+                    messages.success(request, f'Zgłoszenie oraz {file_count} {file_word} zostały zaktualizowane!')
                 else:
                     messages.success(request, 'Zgłoszenie zostało zaktualizowane!')
                 
@@ -114,11 +120,6 @@ def ticket_update(request, pk):
                     EmailNotificationService.notify_ticket_stakeholders('updated', updated_ticket, triggered_by=user, changes=changes_text)
                 
                 return redirect('ticket_detail', pk=updated_ticket.pk)
-            else:
-                if has_attachment and not policy_accepted:
-                    messages.error(request, 'Musisz zaakceptować regulamin, aby dodać załącznik.')
-                else:
-                    messages.error(request, 'Wystąpił błąd z załącznikiem. Sprawdź formularz i spróbuj ponownie.')
         else:
             messages.error(request, 'Wystąpił błąd. Sprawdź formularz i spróbuj ponownie.')
     else:

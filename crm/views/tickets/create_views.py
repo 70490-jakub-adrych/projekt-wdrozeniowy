@@ -52,19 +52,19 @@ def ticket_create(request):
                                  for k, v in match_details.items()}
             })
         
-        # Check if a file was uploaded
-        has_attachment = bool(request.FILES.get('file'))
+        # Check if any files were uploaded
+        uploaded_files = request.FILES.getlist('files')
+        has_attachments = bool(uploaded_files)
         accepted_policy = request.POST.get('accepted_policy') == 'on'
         
         # First validate the main form
         form_valid = form.is_valid()
         
-        # For attachments, only validate policy acceptance if a file exists
+        # For attachments, only validate policy acceptance if files exist
         attachment_valid = True
-        if has_attachment and not accepted_policy:
+        if has_attachments and not accepted_policy:
             attachment_valid = False
-            # Add error directly to the attachment form
-            attachment_form.add_error('accepted_policy', 'Musisz zaakceptować regulamin, aby dodać załącznik.')
+            messages.error(request, 'Musisz zaakceptować regulamin, aby dodać załączniki.')
         
         if form_valid and attachment_valid:
             ticket = form.save(commit=False)
@@ -110,17 +110,22 @@ def ticket_create(request):
             # Send email notifications to relevant stakeholders
             EmailNotificationService.notify_ticket_stakeholders('created', ticket, triggered_by=user)
             
-            # Handle attachment upload if provided
-            if has_attachment:
-                attachment = attachment_form.save(commit=False)
-                attachment.ticket = ticket
-                attachment.uploaded_by = user
-                attachment.filename = os.path.basename(attachment.file.name)
-                attachment.accepted_policy = True  # User agreed to terms
-                attachment.save()
-                log_activity(request, 'ticket_attachment_added', ticket=ticket, 
-                            description=f"Added attachment: {attachment.filename}")
-                messages.success(request, 'Zgłoszenie oraz załącznik zostały utworzone! Odpowiednie osoby zostały powiadomione e-mailem.')
+            # Handle multiple attachments upload if provided
+            if has_attachments:
+                for uploaded_file in uploaded_files:
+                    attachment = TicketAttachment()
+                    attachment.ticket = ticket
+                    attachment.uploaded_by = user
+                    attachment.file = uploaded_file
+                    attachment.filename = os.path.basename(uploaded_file.name)
+                    attachment.accepted_policy = True  # User agreed to terms
+                    attachment.save()
+                    log_activity(request, 'ticket_attachment_added', ticket=ticket, 
+                                description=f"Added attachment: {attachment.filename}")
+                
+                file_count = len(uploaded_files)
+                file_word = 'załącznik' if file_count == 1 else 'załączniki' if file_count < 5 else 'załączników'
+                messages.success(request, f'Zgłoszenie oraz {file_count} {file_word} zostały utworzone! Odpowiednie osoby zostały powiadomione e-mailem.')
             else:
                 messages.success(request, 'Zgłoszenie zostało utworzone! Odpowiednie osoby zostały powiadomione e-mailem.')
                 

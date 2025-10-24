@@ -127,34 +127,44 @@
                             Załączniki <small class="text-muted">(opcjonalnie)</small>
                         </h5>
                         
-                        <div class="row">
-                            <div class="col-md-12">
-                                <div class="mb-3">
-                                    {{ attachment_form.file|as_crispy_field }}
-                                    <small class="form-text text-muted">
-                                        <i class="fas fa-info-circle me-1"></i>
-                                        Maksymalny rozmiar pliku: 20MB. Dozwolone formaty: PDF, DOC, DOCX, XLS, XLSX, JPG, PNG, GIF.
-                                    </small>
+                        <div id="attachment-container">
+                            <div class="attachment-item mb-3" data-index="0">
+                                <div class="row">
+                                    <div class="col-md-11">
+                                        <div class="mb-0">
+                                            <label class="form-label">Plik</label>
+                                            <input type="file" class="form-control" name="files" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif">
+                                            <small class="form-text text-muted">
+                                                <i class="fas fa-info-circle me-1"></i>
+                                                Maksymalny rozmiar pliku: 20MB. Dozwolone formaty: PDF, DOC, DOCX, XLS, XLSX, JPG, PNG, GIF.
+                                            </small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-1 d-flex align-items-center">
+                                        <button type="button" class="btn btn-outline-danger btn-sm remove-attachment" style="display: none;">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                         
+                        <button type="button" class="btn btn-outline-secondary btn-sm mb-3" id="add-attachment">
+                            <i class="fas fa-plus me-1"></i> Dodaj kolejny załącznik
+                        </button>
+                        
                         <!-- Policy checkbox in a separate, clearly defined section -->
-                        <div class="mb-3 attachment-policy border rounded p-3 bg-light" id="policy-section">
+                        <div class="mb-3 attachment-policy border rounded p-3 bg-light" id="policy-section" style="display: none;">
                             <div class="form-check">
-                                {{ attachment_form.accepted_policy }}
-                                <label class="form-check-label fw-normal" for="{{ attachment_form.accepted_policy.id_for_label }}">
+                                <input type="checkbox" class="form-check-input" id="accepted_policy" name="accepted_policy">
+                                <label class="form-check-label fw-normal" for="accepted_policy">
                                     Akceptuję 
                                     <a href="#" data-bs-toggle="modal" data-bs-target="#privacyPolicyModal" class="text-decoration-none">
                                         regulamin dotyczący załączników
                                     </a>
                                 </label>
                             </div>
-                            {% if attachment_form.accepted_policy.errors %}
-                                <div class="alert alert-danger mt-2 mb-0">
-                                    {{ attachment_form.accepted_policy.errors }}
-                                </div>
-                            {% endif %}
+                            <div id="policy-error" class="alert alert-danger mt-2 mb-0" style="display: none;"></div>
                         </div>
                     </div>
                     
@@ -325,68 +335,124 @@
             }
         }
         
-        // Walidacja po stronie klienta dla załącznika i checkbox polityki
-        const fileInput = document.querySelector('#id_file');
-        const policyCheckbox = document.querySelector('#id_accepted_policy');
-        const policyField = document.querySelector('.attachment-policy');
+        // Multiple attachments handling
+        let attachmentIndex = 1;
+        const addAttachmentBtn = document.querySelector('#add-attachment');
+        const attachmentContainer = document.querySelector('#attachment-container');
+        const policySection = document.querySelector('#policy-section');
+        const policyCheckbox = document.querySelector('#accepted_policy');
+        const policyError = document.querySelector('#policy-error');
         
-        if (form && fileInput && policyCheckbox) {
-            // Add form submission handler for validation
+        // Function to check if any file is selected
+        function hasAnyFiles() {
+            const fileInputs = document.querySelectorAll('input[name="files"]');
+            for (let input of fileInputs) {
+                if (input.files && input.files.length > 0) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        
+        // Function to update remove buttons visibility
+        function updateRemoveButtons() {
+            const items = document.querySelectorAll('.attachment-item');
+            items.forEach((item, index) => {
+                const removeBtn = item.querySelector('.remove-attachment');
+                if (items.length > 1) {
+                    removeBtn.style.display = 'block';
+                } else {
+                    removeBtn.style.display = 'none';
+                }
+            });
+        }
+        
+        // Function to update policy section visibility
+        function updatePolicyVisibility() {
+            if (hasAnyFiles()) {
+                policySection.style.display = 'block';
+            } else {
+                policySection.style.display = 'none';
+                policyCheckbox.checked = false;
+            }
+        }
+        
+        // Add attachment button click handler
+        if (addAttachmentBtn) {
+            addAttachmentBtn.addEventListener('click', function() {
+                const newItem = document.createElement('div');
+                newItem.className = 'attachment-item mb-3';
+                newItem.dataset.index = attachmentIndex;
+                newItem.innerHTML = `
+                    <div class="row">
+                        <div class="col-md-11">
+                            <div class="mb-0">
+                                <label class="form-label">Plik</label>
+                                <input type="file" class="form-control" name="files" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png,.gif">
+                                <small class="form-text text-muted">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Maksymalny rozmiar pliku: 20MB
+                                </small>
+                            </div>
+                        </div>
+                        <div class="col-md-1 d-flex align-items-center">
+                            <button type="button" class="btn btn-outline-danger btn-sm remove-attachment">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+                `;
+                attachmentContainer.appendChild(newItem);
+                attachmentIndex++;
+                updateRemoveButtons();
+                
+                // Add change handler to new file input
+                const newFileInput = newItem.querySelector('input[type="file"]');
+                newFileInput.addEventListener('change', updatePolicyVisibility);
+            });
+        }
+        
+        // Remove attachment handler (delegated)
+        if (attachmentContainer) {
+            attachmentContainer.addEventListener('click', function(e) {
+                if (e.target.closest('.remove-attachment')) {
+                    const item = e.target.closest('.attachment-item');
+                    item.remove();
+                    updateRemoveButtons();
+                    updatePolicyVisibility();
+                }
+            });
+        }
+        
+        // Add change handler to initial file input
+        const initialFileInput = document.querySelector('input[name="files"]');
+        if (initialFileInput) {
+            initialFileInput.addEventListener('change', updatePolicyVisibility);
+        }
+        
+        // Form validation for attachments and policy
+        if (form) {
             form.addEventListener('submit', function(event) {
-                // Check if an attachment was selected but terms not accepted
-                if (fileInput.files && fileInput.files.length > 0 && !policyCheckbox.checked) {
-                    // Add custom error message directly to the field
-                    const errorElement = document.querySelector('#error_id_accepted_policy');
+                // Check if any attachment is selected but terms not accepted
+                if (hasAnyFiles() && !policyCheckbox.checked) {
+                    policyError.textContent = 'Musisz zaakceptować regulamin, aby dodać załączniki.';
+                    policyError.style.display = 'block';
+                    policyCheckbox.classList.add('is-invalid');
                     
-                    // Create error message if it doesn't exist
-                    if (!errorElement) {
-                        const newErrorElement = document.createElement('p');
-                        newErrorElement.id = 'error_id_accepted_policy';
-                        newErrorElement.className = 'invalid-feedback';
-                        newErrorElement.style.display = 'block';
-                        newErrorElement.textContent = 'Musisz zaakceptować regulamin, aby dodać załącznik.';
-                        
-                        // Find the parent div that contains the checkbox
-                        const formGroup = policyCheckbox.closest('.form-group');
-                        formGroup.appendChild(newErrorElement);
-                        
-                        // Add error class to the checkbox
-                        policyCheckbox.classList.add('is-invalid');
-                    }
-                    
-                    // Prevent form submission
                     event.preventDefault();
-                    
-                    // Scroll to the error message
-                    policyField.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                    
+                    policySection.scrollIntoView({ behavior: 'smooth', block: 'center' });
                     return false;
                 }
-                
-                // If we get here, form is valid (either no attachment or terms accepted)
                 return true;
             });
-            
-            // Add change handler for file input to clear errors when changed
-            fileInput.addEventListener('change', function() {
-                // If user removes the file, clear any error on the checkbox
-                if (!this.files || this.files.length === 0) {
-                    const errorElement = document.querySelector('#error_id_accepted_policy');
-                    if (errorElement) {
-                        errorElement.remove();
-                        policyCheckbox.classList.remove('is-invalid');
-                    }
-                }
-            });
-            
-            // Add change handler for checkbox to clear errors when checked
+        }
+        
+        // Clear error when checkbox is checked
+        if (policyCheckbox) {
             policyCheckbox.addEventListener('change', function() {
                 if (this.checked) {
-                    const errorElement = document.querySelector('#error_id_accepted_policy');
-                    if (errorElement) {
-                        errorElement.remove();
-                        this.classList.remove('is-invalid');
-                    }
+                    policyError.style.display = 'none';
+                    this.classList.remove('is-invalid');
                 }
             });
         }
