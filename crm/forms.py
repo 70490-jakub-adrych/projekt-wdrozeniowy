@@ -232,7 +232,7 @@ class TicketAttachmentForm(forms.ModelForm):
     file = forms.FileField(
         required=False,
         label='Załączniki (opcjonalnie)',
-        widget=forms.ClearableFileInput(attrs={'multiple': True}),
+        widget=forms.FileInput(attrs={'multiple': True, 'class': 'form-control'}),
         help_text='Możesz wybrać wiele plików jednocześnie'
     )
     accepted_policy = forms.BooleanField(
