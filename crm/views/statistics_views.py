@@ -1381,9 +1381,9 @@ def generate_organization_report(request):
             row += 1
         
         # Auto-adjust column widths
-        for column_cells in ws.columns:
-            length = max(len(str(cell.value or '')) for cell in column_cells)
-            ws.column_dimensions[column_cells[0].column_letter].width = min(length + 2, 50)
+        for col_idx, column_cells in enumerate(ws.columns, 1):
+            length = max(len(str(cell.value or '')) for cell in column_cells if hasattr(cell, 'value'))
+            ws.column_dimensions[get_column_letter(col_idx)].width = min(length + 2, 50)
         
         # Prepare response
         response = HttpResponse(
