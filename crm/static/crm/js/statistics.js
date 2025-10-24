@@ -514,6 +514,24 @@ document.addEventListener('DOMContentLoaded', function() {
                             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                         </div>
                         <div class="modal-body">
+                            <div class="mb-4">
+                                <h6 class="fw-semibold">Rodzaj raportu</h6>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="reportType" id="reportTypeStandard" value="standard" checked>
+                                    <label class="form-check-label" for="reportTypeStandard">
+                                        Opcja 1: Szczegółowy raport statystyk
+                                    </label>
+                                    <small class="form-text text-muted d-block">Zawiera wszystkie dane z panelu statystyk (agenci, zgłoszenia, wykresy).</small>
+                                </div>
+                                <div class="form-check mt-3">
+                                    <input class="form-check-input" type="radio" name="reportType" id="reportTypeOrgActual" value="organization_actual_time">
+                                    <label class="form-check-label" for="reportTypeOrgActual">
+                                        Opcja 2: Rzeczywisty czas obsługi firm
+                                    </label>
+                                    <small class="form-text text-muted d-block">Lista organizacji z liczbą zgłoszeń oraz łącznym i średnim rzeczywistym czasem obsługi w wybranym okresie.</small>
+                                </div>
+                            </div>
+                            <hr>
                             <div class="form-check">
                                 <input class="form-check-input" type="radio" name="reportFormat" id="formatExcel" value="xlsx" checked>
                                 <label class="form-check-label" for="formatExcel">
@@ -556,22 +574,24 @@ document.addEventListener('DOMContentLoaded', function() {
         // Handle confirm button
         document.getElementById('confirmGenerateReport').addEventListener('click', function() {
             const selectedFormat = document.querySelector('input[name="reportFormat"]:checked').value;
+            const selectedType = document.querySelector('input[name="reportType"]:checked').value;
             modal.hide();
-            generateReport(selectedFormat);
+            generateReport(selectedFormat, selectedType);
         });
     };
     
     /**
      * Generate and download report
      */
-    const generateReport = (format) => {
+    const generateReport = (format, reportType = 'standard') => {
         const reportBtn = document.getElementById('generateReportBtn');
         const statusDiv = document.getElementById('reportStatus');
         
         // Show loading state
         reportBtn.disabled = true;
         reportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generowanie...';
-        statusDiv.innerHTML = `<i class="fas fa-info-circle"></i> Generowanie raportu ${format.toUpperCase()}, proszę czekać...`;
+        const reportLabel = reportType === 'organization_actual_time' ? 'raportu firmowego' : 'raportu statystyk';
+        statusDiv.innerHTML = `<i class="fas fa-info-circle"></i> Generowanie ${reportLabel} (${format.toUpperCase()}), proszę czekać...`;
         statusDiv.className = 'mt-3 text-info';
         
         // Get filter values
@@ -582,7 +602,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const agent = document.getElementById('agent').value;
         
         console.log('Report generation parameters:', {
-            period, dateFrom, dateTo, organization, agent, format
+            period, dateFrom, dateTo, organization, agent, format, reportType
         });
         
         // Validate required fields
@@ -620,6 +640,7 @@ document.addEventListener('DOMContentLoaded', function() {
         formData.append('period_start', dateFrom);
         formData.append('period_end', dateTo);
         formData.append('format', format);
+        formData.append('report_type', reportType);
         if (organization) formData.append('organization', organization);
         if (agent) formData.append('agent', agent);
         
@@ -628,6 +649,7 @@ document.addEventListener('DOMContentLoaded', function() {
             period_start: dateFrom,
             period_end: dateTo,
             format: format,
+            report_type: reportType,
             organization: organization || 'none',
             agent: agent || 'none'
         });
@@ -791,7 +813,8 @@ document.addEventListener('DOMContentLoaded', function() {
         })
         .then(result => {
             if (result && result.success) {
-                statusDiv.innerHTML = `<i class="fas fa-check-circle"></i> Raport został wygenerowany i pobrany: ${result.filename}`;
+                const successLabel = reportType === 'organization_actual_time' ? 'Raport firmowy' : 'Raport statystyk';
+                statusDiv.innerHTML = `<i class="fas fa-check-circle"></i> ${successLabel} został wygenerowany i pobrany: ${result.filename}`;
                 statusDiv.className = 'mt-3 text-success';
                 console.log('Report generation successful:', result.filename);
             }
@@ -854,120 +877,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // Handle report generation
         handleGenerateReport();
-        
-        // Handle organization report generation
-        const orgReportBtn = document.getElementById('generateOrganizationReportBtn');
-        if (orgReportBtn) {
-            orgReportBtn.addEventListener('click', function() {
-                generateOrganizationReport();
-            });
-        }
-    };
-    
-    /**
-     * Generate organization time report
-     */
-    const generateOrganizationReport = () => {
-        const reportBtn = document.getElementById('generateOrganizationReportBtn');
-        const statusDiv = document.getElementById('reportStatus');
-        
-        // Show loading state
-        reportBtn.disabled = true;
-        reportBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generowanie...';
-        statusDiv.innerHTML = '<i class="fas fa-info-circle"></i> Generowanie raportu organizacji, proszę czekać...';
-        statusDiv.className = 'mt-3 text-info';
-        
-        // Get filter values
-        const dateFrom = document.getElementById('date_from').value;
-        const dateTo = document.getElementById('date_to').value;
-        
-        // Validate required fields
-        if (!dateFrom || !dateTo) {
-            statusDiv.innerHTML = '<i class="fas fa-times-circle"></i> Błąd: Wymagane są daty początkowa i końcowa';
-            statusDiv.className = 'mt-3 text-danger';
-            reportBtn.disabled = false;
-            reportBtn.innerHTML = '<i class="fas fa-building"></i> Raport czasów organizacji';
-            return;
-        }
-        
-        // Validate date range
-        if (new Date(dateFrom) > new Date(dateTo)) {
-            statusDiv.innerHTML = '<i class="fas fa-times-circle"></i> Błąd: Data początkowa nie może być późniejsza niż końcowa';
-            statusDiv.className = 'mt-3 text-danger';
-            reportBtn.disabled = false;
-            reportBtn.innerHTML = '<i class="fas fa-building"></i> Raport czasów organizacji';
-            return;
-        }
-        
-        // Get CSRF token
-        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-        
-        if (!csrfToken) {
-            statusDiv.innerHTML = '<i class="fas fa-times-circle"></i> Błąd: Brak tokenu CSRF. Odśwież stronę i spróbuj ponownie.';
-            statusDiv.className = 'mt-3 text-danger';
-            reportBtn.disabled = false;
-            reportBtn.innerHTML = '<i class="fas fa-building"></i> Raport czasów organizacji';
-            return;
-        }
-        
-        // Create form data
-        const formData = new FormData();
-        formData.append('period_start', dateFrom);
-        formData.append('period_end', dateTo);
-        formData.append('format', 'xlsx');
-        
-        // Send request
-        fetch('/statistics/organization-time-report/', {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': csrfToken
-            },
-            body: formData
-        })
-        .then(response => {
-            if (!response.ok) {
-                return response.json().then(data => {
-                    throw new Error(data.message || 'Błąd serwera');
-                });
-            }
-            
-            // Get filename from Content-Disposition header
-            const disposition = response.headers.get('Content-Disposition');
-            let filename = 'raport_organizacji.xlsx';
-            if (disposition && disposition.includes('filename=')) {
-                const filenameMatch = disposition.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
-                if (filenameMatch && filenameMatch[1]) {
-                    filename = filenameMatch[1].replace(/['"]/g, '');
-                }
-            }
-            
-            return response.blob().then(blob => ({ blob, filename }));
-        })
-        .then(({ blob, filename }) => {
-            // Create download link
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.style.display = 'none';
-            a.href = url;
-            a.download = filename;
-            document.body.appendChild(a);
-            a.click();
-            window.URL.revokeObjectURL(url);
-            document.body.removeChild(a);
-            
-            // Show success message
-            statusDiv.innerHTML = '<i class="fas fa-check-circle"></i> Raport został wygenerowany i pobrany!';
-            statusDiv.className = 'mt-3 text-success';
-            reportBtn.disabled = false;
-            reportBtn.innerHTML = '<i class="fas fa-building"></i> Raport czasów organizacji';
-        })
-        .catch(error => {
-            console.error('Report generation error:', error);
-            statusDiv.innerHTML = `<i class="fas fa-times-circle"></i> Błąd: ${error.message}`;
-            statusDiv.className = 'mt-3 text-danger';
-            reportBtn.disabled = false;
-            reportBtn.innerHTML = '<i class="fas fa-building"></i> Raport czasów organizacji';
-        });
     };
     
     // Initialize everything

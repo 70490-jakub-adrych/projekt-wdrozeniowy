@@ -45,21 +45,12 @@ def ticket_update(request, pk):
         
         # Handle file upload as well
         attachment_form = TicketAttachmentForm(request.POST, request.FILES)
-        
-        # Check if any files were uploaded
-        uploaded_files = request.FILES.getlist('files')
-        has_attachments = bool(uploaded_files)
-        policy_accepted = request.POST.get('accepted_policy') == 'on'
-        
-        # First validate the ticket form
-        if form.is_valid():
-            # Check if policy is accepted if files were uploaded
-            attachment_valid = True
-            if has_attachments and not policy_accepted:
-                attachment_valid = False
-                messages.error(request, 'Musisz zaakceptować regulamin, aby dodać załączniki.')
-            
-            if attachment_valid:
+
+        form_valid = form.is_valid()
+        attachment_valid = attachment_form.is_valid()
+        uploaded_files = attachment_form.cleaned_data.get('files', []) if attachment_valid else []
+
+        if form_valid and attachment_valid:
                 updated_ticket = form.save()
                 
                 # Create list of changes for activity log
@@ -95,23 +86,30 @@ def ticket_update(request, pk):
                     description=f"Zaktualizowano zgłoszenie #{updated_ticket.pk}: {changes_text}"
                 )
                 
-                # Handle multiple attachments upload if provided
-                if has_attachments:
+                # Handle attachment upload if provided
+                if uploaded_files:
+                    attachment_names = []
                     for uploaded_file in uploaded_files:
-                        attachment = TicketAttachment()
-                        attachment.ticket = updated_ticket
-                        attachment.uploaded_by = user
-                        attachment.file = uploaded_file
-                        attachment.filename = os.path.basename(uploaded_file.name)
-                        attachment.accepted_policy = True
+                        attachment = TicketAttachment(
+                            ticket=updated_ticket,
+                            uploaded_by=user,
+                            file=uploaded_file,
+                            filename=os.path.basename(uploaded_file.name),
+                            accepted_policy=True
+                        )
                         attachment.save()
-                        
-                        log_activity(request, 'ticket_attachment_added', ticket=updated_ticket, 
-                                    description=f"Added attachment: {attachment.filename}")
-                    
-                    file_count = len(uploaded_files)
-                    file_word = 'załącznik' if file_count == 1 else 'załączniki' if file_count < 5 else 'załączników'
-                    messages.success(request, f'Zgłoszenie oraz {file_count} {file_word} zostały zaktualizowane!')
+                        attachment_names.append(attachment.filename)
+                        log_activity(
+                            request,
+                            'ticket_attachment_added',
+                            ticket=updated_ticket,
+                            description=f"Dodano załącznik: {attachment.filename}"
+                        )
+
+                    messages.success(
+                        request,
+                        f"Zgłoszenie oraz {len(attachment_names)} załącznik(i) zostały zaktualizowane!"
+                    )
                 else:
                     messages.success(request, 'Zgłoszenie zostało zaktualizowane!')
                 
@@ -121,7 +119,10 @@ def ticket_update(request, pk):
                 
                 return redirect('ticket_detail', pk=updated_ticket.pk)
         else:
-            messages.error(request, 'Wystąpił błąd. Sprawdź formularz i spróbuj ponownie.')
+            if not form_valid:
+                messages.error(request, 'Wystąpił błąd. Sprawdź formularz i spróbuj ponownie.')
+            if not attachment_valid:
+                messages.error(request, 'Wystąpił błąd z załącznikami. Sprawdź formularz i spróbuj ponownie.')
     else:
         form = ModeratorTicketForm(instance=ticket)
     

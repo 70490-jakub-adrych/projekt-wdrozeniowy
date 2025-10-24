@@ -20,7 +20,7 @@ from .views.tickets.action_views import (ticket_confirm_solution, ticket_close, 
 from . import views
 from .views import secure_file_views, log_views  # Add log_views import here
 from django.contrib.auth import views as auth_views
-from .views.statistics_views import statistics_dashboard, update_agent_work_log, generate_statistics_report, generate_organization_time_report
+from .views.statistics_views import statistics_dashboard, update_agent_work_log, generate_statistics_report
 from .views.tickets.unassignment_views import ticket_unassign
 from .views.tickets.assignment_views import ticket_assign_to_other
 from .views.two_factor_views import setup_2fa, setup_2fa_success, disable_2fa, verify_2fa, recovery_code
@@ -108,7 +108,6 @@ urlpatterns = [
     path('statistics/', statistics_dashboard, name='statistics_dashboard'),
     path('statistics/update-work-log/', update_agent_work_log, name='update_work_log'),
     path('statistics/generate-report/', generate_statistics_report, name='generate_statistics_report'),
-    path('statistics/organization-time-report/', generate_organization_time_report, name='generate_organization_time_report'),
 
     path('get_tickets_update/', get_tickets_update, name='get_tickets_update'),
 
