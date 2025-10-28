@@ -292,6 +292,17 @@
             color: var(--text-color) !important;
         }
         
+        /* Fix for labels in filters and forms in dark mode */
+        [data-theme="dark"] label,
+        [data-theme="dark"] .form-check-label,
+        [data-theme="dark"] .filter-form label {
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] .dropdown-menu label {
+            color: var(--text-color) !important;
+        }
+        
         [data-theme="dark"] .table-sm th,
         [data-theme="dark"] .table-sm td {
             border-color: var(--border-color) !important;
