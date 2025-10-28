@@ -268,6 +268,30 @@
             color: var(--text-color) !important;
         }
         
+        /* Fix for select dropdowns in filters and forms in dark mode */
+        [data-theme="dark"] select.form-select,
+        [data-theme="dark"] select.form-control,
+        [data-theme="dark"] .filter-form select {
+            background-color: var(--input-bg) !important;
+            border-color: var(--input-border) !important;
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] select.form-select option,
+        [data-theme="dark"] select.form-control option,
+        [data-theme="dark"] .filter-form select option {
+            background-color: var(--input-bg) !important;
+            color: var(--text-color) !important;
+        }
+        
+        [data-theme="dark"] select.form-select:focus,
+        [data-theme="dark"] select.form-control:focus,
+        [data-theme="dark"] .filter-form select:focus {
+            background-color: var(--input-bg) !important;
+            border-color: var(--accent-color) !important;
+            color: var(--text-color) !important;
+        }
+        
         [data-theme="dark"] .table-sm th,
         [data-theme="dark"] .table-sm td {
             border-color: var(--border-color) !important;

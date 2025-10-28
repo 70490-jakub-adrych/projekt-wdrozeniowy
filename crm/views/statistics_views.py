@@ -1329,20 +1329,20 @@ def generate_organization_report(request):
             org_tickets = tickets_query.filter(organization=org)
             
             if org_tickets.exists():
-                avg_time = org_tickets.aggregate(
-                    avg_actual=Avg('actual_resolution_time')
-                )['avg_actual']
+                total_time = org_tickets.aggregate(
+                    total_actual=Sum('actual_resolution_time')
+                )['total_actual']
                 
                 tickets_count = org_tickets.count()
                 
                 org_stats.append({
                     'name': org.name,
-                    'avg_actual_time': float(avg_time) if avg_time else 0,
+                    'total_actual_time': float(total_time) if total_time else 0,
                     'tickets_count': tickets_count
                 })
         
-        # Sort by average time (descending)
-        org_stats.sort(key=lambda x: x['avg_actual_time'], reverse=True)
+        # Sort by total time (descending)
+        org_stats.sort(key=lambda x: x['total_actual_time'], reverse=True)
         
         # Generate Excel file
         wb = Workbook()
@@ -1367,7 +1367,7 @@ def generate_organization_report(request):
         
         # Headers
         row = 6
-        headers = ['Firma', 'Śr. rzeczywisty czas (godz.)', 'Liczba zgłoszeń']
+        headers = ['Firma', 'Suma rzeczywistego czasu (godz.)', 'Liczba zgłoszeń']
         for col, header in enumerate(headers, 1):
             cell = ws.cell(row=row, column=col, value=header)
             cell.font = bold_font
@@ -1376,7 +1376,7 @@ def generate_organization_report(request):
         row += 1
         for org_data in org_stats:
             ws[f'A{row}'] = org_data['name']
-            ws[f'B{row}'] = f"{org_data['avg_actual_time']:.2f}"
+            ws[f'B{row}'] = f"{org_data['total_actual_time']:.2f}"
             ws[f'C{row}'] = org_data['tickets_count']
             row += 1
         
