@@ -10,13 +10,62 @@ from django.conf import settings
 import logging
 import os
 import time
+import threading
 
 # Configure logger
 logger = logging.getLogger(__name__)
 
+def _send_notifications_to_stakeholders(notification_type, ticket_id, stakeholders_ids, triggered_by_id, **kwargs):
+    """
+    Internal function that performs the actual sending of notifications.
+    This runs in a separate thread to avoid blocking the main request.
+    
+    Args:
+        notification_type: Type of notification (created, updated, commented, etc.)
+        ticket_id: ID of the ticket
+        stakeholders_ids: List of user IDs to notify
+        triggered_by_id: ID of user who triggered the action
+        **kwargs: Additional context data for the email template
+    """
+    from django.contrib.auth import get_user_model
+    from ...models import Ticket
+    
+    User = get_user_model()
+    
+    try:
+        # Re-fetch the ticket and users from the database in this thread
+        ticket = Ticket.objects.get(id=ticket_id)
+        stakeholders = User.objects.filter(id__in=stakeholders_ids)
+        
+        # Send notifications to each stakeholder
+        results = []
+        logger.info(f"Sending {notification_type} notifications to {len(stakeholders)} stakeholders")
+        for index, user in enumerate(stakeholders):
+            try:
+                result = send_ticket_notification(
+                    notification_type, ticket, user, **kwargs
+                )
+                results.append(result)
+                
+                # Add 5 second delay between emails to avoid spam detection (except for last email)
+                if index < len(stakeholders) - 1:
+                    time.sleep(5)
+                    
+            except Exception as e:
+                logger.error(f"Error notifying user {user.username} about ticket #{ticket.id}: {str(e)}")
+                results.append(False)
+        
+        # Log final results
+        sent_count = sum(1 for r in results if r)
+        logger.info(f"Successfully sent {sent_count} notifications out of {len(results)}")
+        
+    except Exception as e:
+        logger.error(f"Error in background notification thread: {str(e)}")
+
 def notify_ticket_stakeholders(notification_type, ticket, triggered_by=None, **kwargs):
     """
-    Send notification to all stakeholders of a ticket
+    Send notification to all stakeholders of a ticket (asynchronously).
+    This function returns immediately while notifications are sent in the background.
     
     Args:
         notification_type: Type of notification (created, updated, commented, etc.)
@@ -25,7 +74,7 @@ def notify_ticket_stakeholders(notification_type, ticket, triggered_by=None, **k
         **kwargs: Additional context data for the email template
         
     Returns:
-        bool: True if at least one notification was sent successfully
+        bool: Always returns True (notifications are sent asynchronously)
     """
     try:
         logger.info(f"Starting notification for {notification_type} on ticket #{ticket.id}")
@@ -95,28 +144,27 @@ def notify_ticket_stakeholders(notification_type, ticket, triggered_by=None, **k
                         stakeholders.append(profile.user)
                         logger.debug(f"Added agent {profile.user.username} to stakeholders (organization unassigned ticket)")
         
-        # Send notifications to each stakeholder
-        results = []
-        logger.info(f"Sending {notification_type} notifications to {len(stakeholders)} stakeholders")
-        for index, user in enumerate(stakeholders):
-            try:
-                result = send_ticket_notification(
-                    notification_type, ticket, user, **kwargs
-                )
-                results.append(result)
-                
-                # Add 5 second delay between emails to avoid spam detection (except for last email)
-                if index < len(stakeholders) - 1:
-                    time.sleep(5)
-                    
-            except Exception as e:
-                logger.error(f"Error notifying user {user.username} about ticket #{ticket.id}: {str(e)}")
-                results.append(False)
+        # If there are stakeholders to notify, start background thread
+        if stakeholders:
+            stakeholder_ids = [user.id for user in stakeholders]
+            triggered_by_id = triggered_by.id if triggered_by else None
+            
+            # Start a daemon thread to send notifications in the background
+            notification_thread = threading.Thread(
+                target=_send_notifications_to_stakeholders,
+                args=(notification_type, ticket.id, stakeholder_ids, triggered_by_id),
+                kwargs=kwargs,
+                daemon=True
+            )
+            notification_thread.start()
+            
+            logger.info(f"Started background thread to send {notification_type} notifications to {len(stakeholders)} stakeholders")
+        else:
+            logger.info(f"No stakeholders to notify for {notification_type} on ticket #{ticket.id}")
         
-        # Return True if at least one notification was sent successfully
-        sent_count = sum(1 for r in results if r)
-        logger.info(f"Successfully sent {sent_count} notifications out of {len(results)}")
-        return any(results)
+        # Return immediately - notifications will be sent in background
+        return True
+        
     except Exception as e:
         logger.error(f"Error in notify_ticket_stakeholders: {str(e)}")
         return False
