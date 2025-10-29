@@ -80,6 +80,10 @@ def ticket_create(request):
             if user.profile.role == 'client':
                 ticket.priority = 'medium'  # Default priority for client tickets
             
+            # If agent/superagent/admin creates ticket and assigns it immediately, set status to 'in_progress'
+            if user.profile.role in ['admin', 'superagent', 'agent'] and form.cleaned_data.get('assigned_to'):
+                ticket.status = 'in_progress'
+            
             # Get the organization for the current user or from form
             if 'organization' in request.POST and request.POST['organization'] and user.profile.role in ['admin', 'superagent', 'agent']:
                 # Admin/superagent/agent can select organization
