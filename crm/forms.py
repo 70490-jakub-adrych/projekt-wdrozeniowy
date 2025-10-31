@@ -79,6 +79,33 @@ class UserProfileForm(forms.ModelForm):
 class OrganizationForm(forms.ModelForm):
     phone = forms.CharField(max_length=17, required=False, validators=[phone_regex],
                           widget=forms.TextInput(attrs={'placeholder': '+48 123 456 789'}))
+    
+    # Field to select members (agents, superagents, clients)
+    members = forms.ModelMultipleChoiceField(
+        queryset=User.objects.none(),  # Will be set dynamically in __init__
+        required=False,
+        widget=forms.CheckboxSelectMultiple,
+        label="Członkowie organizacji",
+        help_text="Wybierz użytkowników, którzy będą przypisani do tej organizacji. Twórca organizacji zostanie dodany automatycznie."
+    )
+    
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Show only users with profile (exclude superusers without profiles)
+        # and order by role and username
+        users_qs = User.objects.filter(
+            profile__isnull=False
+        ).select_related('profile').order_by('profile__role', 'username')
+        
+        self.fields['members'].queryset = users_qs
+        
+        # Customize labels to show role
+        self.fields['members'].label_from_instance = lambda obj: f"{obj.get_full_name() or obj.username} ({obj.profile.get_role_display()})" if hasattr(obj, 'profile') else obj.username
+        
+        # If editing existing organization, pre-select current members
+        if self.instance and self.instance.pk:
+            self.fields['members'].initial = self.instance.members.all()
+    
     class Meta:
         model = Organization
         fields = ['name', 'email', 'phone', 'website', 'address', 'description']

@@ -153,7 +153,17 @@ def organization_create(request):
         form = OrganizationForm(request.POST)
         if form.is_valid():
             organization = form.save()
-            messages.success(request, 'Organizacja została utworzona!')
+            
+            # Automatically add the creator to the organization
+            request.user.profile.organizations.add(organization)
+            
+            # Add selected members to the organization
+            selected_members = form.cleaned_data.get('members', [])
+            for user in selected_members:
+                if hasattr(user, 'profile'):
+                    user.profile.organizations.add(organization)
+            
+            messages.success(request, f'Organizacja została utworzona! Przypisano {len(selected_members) + 1} użytkowników (w tym Ciebie).')
             return redirect('organization_detail', pk=organization.pk)
     else:
         form = OrganizationForm()
@@ -176,7 +186,27 @@ def organization_update(request, pk):
     if request.method == 'POST':
         form = OrganizationForm(request.POST, instance=organization)
         if form.is_valid():
-            form.save()
+            organization = form.save()
+            
+            # Update members - remove all current members and add selected ones
+            # Get current members
+            current_members = set(organization.members.all())
+            
+            # Get selected members from form
+            selected_members = set(form.cleaned_data.get('members', []))
+            
+            # Remove users that are no longer selected
+            members_to_remove = current_members - selected_members
+            for user in members_to_remove:
+                if hasattr(user, 'profile'):
+                    user.profile.organizations.remove(organization)
+            
+            # Add newly selected users
+            members_to_add = selected_members - current_members
+            for user in members_to_add:
+                if hasattr(user, 'profile'):
+                    user.profile.organizations.add(organization)
+            
             messages.success(request, 'Organizacja została zaktualizowana!')
             return redirect('organization_detail', pk=organization.pk)
         

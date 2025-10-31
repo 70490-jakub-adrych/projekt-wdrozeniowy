@@ -5,6 +5,26 @@
     {% if organization %}Edytuj organizację{% else %}Nowa organizacja{% endif %} | System Helpdesk
 {% endblock %}
 
+{% block extra_css %}
+<style>
+    .members-container input[type="checkbox"] {
+        margin-right: 8px;
+    }
+    .members-container label {
+        display: block;
+        padding: 5px 0;
+        margin: 0;
+    }
+    .members-container li {
+        list-style: none;
+    }
+    .members-container ul {
+        padding-left: 0;
+        margin: 0;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row">
     <div class="col-md-8 offset-md-2">
@@ -16,7 +36,30 @@
             <div class="card-body">
                 <form method="post">
                     {% csrf_token %}
-                    {{ form|crispy }}
+                    
+                    {# Basic organization fields #}
+                    {% for field in form %}
+                        {% if field.name != 'members' %}
+                            {{ field|as_crispy_field }}
+                        {% endif %}
+                    {% endfor %}
+                    
+                    {# Members field with scrollable container #}
+                    <div class="form-group mt-4">
+                        <label class="form-label"><strong>{{ form.members.label }}</strong></label>
+                        {% if form.members.help_text %}
+                            <small class="form-text text-muted d-block mb-2">{{ form.members.help_text }}</small>
+                        {% endif %}
+                        <div class="members-container" style="max-height: 300px; overflow-y: auto; border: 1px solid #ced4da; border-radius: 0.25rem; padding: 15px; background-color: #f8f9fa;">
+                            {{ form.members }}
+                        </div>
+                        {% if form.members.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.members.errors }}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
                     <div class="mt-4">
                         <button type="submit" class="btn btn-primary">
                             <i class="fas fa-save"></i> Zapisz
