@@ -7,7 +7,7 @@
 Jeśli nie masz jeszcze konta w systemie, musisz się zarejestrować:
 
 1. **Otwórz stronę logowania**
-2. **Kliknij "Zarejestruj się"** lub "Rejestracja"
+2. **Kliknij "Rejestracja"
 3. Wypełnij formularz rejestracji
 
 ### Formularz Rejestracji
@@ -20,6 +20,7 @@ Jeśli nie masz jeszcze konta w systemie, musisz się zarejestrować:
 - **Powtórz hasło** - potwierdzenie hasła
 - **Imię** - Twoje imię
 - **Nazwisko** - Twoje nazwisko
+- **Telefon** - Twój aktywny numer telefonu
 
 ### Weryfikacja Email
 
@@ -62,7 +63,7 @@ Otwórz stronę logowania w przeglądarce (URL otrzymasz od administratora)
 Jeśli konto wymaga zatwierdzenia, zobaczysz komunikat:
 > "Twoje konto oczekuje na zatwierdzenie przez administratora"
 
-W takiej sytuacji skontaktuj się z administratorem lub super agentem.
+W takiej sytuacji skontaktuj się z administratorem.
 
 ---
 
@@ -84,13 +85,13 @@ W takiej sytuacji skontaktuj się z administratorem lub super agentem.
 **Symptom:** Komunikat "Konto oczekuje na zatwierdzenie"
 
 **Rozwiązanie:**
-1. Skontaktuj się z administratorem lub super agentem
+1. Skontaktuj się z administratorem
 2. Poproś o zatwierdzenie konta
 
 ### Nie Pamiętasz Hasła
 
 **Rozwiązanie:**
-1. Użyj funkcji "Przypomnij hasło" na stronie logowania
+1. Użyj funkcji "Resetuj hasło" na stronie logowania
 2. Sprawdź email z linkiem resetującym hasło
 3. Ustaw nowe hasło
 
@@ -146,4 +147,5 @@ Po zalogowaniu zostaniesz przekierowany do:
 **Następny krok:** [Role w Systemie](03_role_w_systemie.md) (03) - poznaj swoją rolę
 
 **Powrót do:** [README.md](README.md)
+
 
