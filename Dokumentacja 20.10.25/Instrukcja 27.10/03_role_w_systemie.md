@@ -74,9 +74,7 @@ Tworzenie i przeglądanie **własnych zgłoszeń**.
 
 ### Możliwości:
 - Przeglądanie zgłoszeń
-- Widzenie statusu i szczegółów
-- Przeglądanie komentarzy
-- Oglądanie załączników (według uprawnień)
+- Widok statusu i szczegółów
 
 **Uwaga:** Po zalogowaniu automatyczne przekierowanie do widoku zgłoszeń bez standardowej nawigacji.
 
@@ -106,4 +104,5 @@ Tworzenie i przeglądanie **własnych zgłoszeń**.
 
 **Następny krok:** Wybierz instrukcje dla swojej roli (pliki 04-08) ←  
 **Powrót do:** [README.md](README.md)
+
 
