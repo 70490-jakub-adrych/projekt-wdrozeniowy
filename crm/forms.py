@@ -53,8 +53,17 @@ class EmailVerificationForm(forms.Form):
 
 
 class UserProfileForm(forms.ModelForm):
-    phone = forms.CharField(max_length=17, required=False, validators=[phone_regex],
-                          widget=forms.TextInput(attrs={'placeholder': '+48 123 456 789'}))
+    phone = forms.CharField(
+        max_length=20, 
+        required=False, 
+        validators=[phone_regex],
+        label='Telefon',
+        widget=forms.TextInput(attrs={
+            'placeholder': '12 345 67 89 lub +48 12 345 67 89',
+            'class': 'form-control phone-mask'
+        })
+    )
+    
     class Meta:
         model = UserProfile
         fields = ['phone']  # Remove 'organizations' field from registration
@@ -77,8 +86,16 @@ class UserProfileForm(forms.ModelForm):
 
 
 class OrganizationForm(forms.ModelForm):
-    phone = forms.CharField(max_length=17, required=False, validators=[phone_regex],
-                          widget=forms.TextInput(attrs={'placeholder': '+48 123 456 789'}))
+    phone = forms.CharField(
+        max_length=20, 
+        required=False, 
+        validators=[phone_regex],
+        label='Telefon',
+        widget=forms.TextInput(attrs={
+            'placeholder': '12 345 67 89 lub +48 12 345 67 89',
+            'class': 'form-control phone-mask'
+        })
+    )
     
     # Field to select members (agents, superagents, clients)
     members = forms.ModelMultipleChoiceField(
