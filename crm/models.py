@@ -462,8 +462,8 @@ class TicketCalendarAssignment(models.Model):
         verbose_name = "Przypisanie ticketu do kalendarza"
         verbose_name_plural = "Przypisania ticketów do kalendarza"
         ordering = ['assigned_date', 'created_at']
-        # Prevent duplicate assignments of same ticket to same user on same date
-        unique_together = [['ticket', 'assigned_to', 'assigned_date']]
+        # One ticket can only be assigned to one date per user
+        unique_together = [['ticket', 'assigned_to']]
     
     def __str__(self):
         return f"Ticket #{self.ticket.id} → {self.assigned_to.username} na {self.assigned_date}"

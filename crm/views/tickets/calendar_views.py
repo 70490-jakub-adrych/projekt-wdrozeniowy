@@ -84,20 +84,35 @@ def assign_ticket_to_calendar(request, ticket_id):
             # Regular agent or no agent specified - assign to self
             assigned_to = request.user
         
-        # Check if this assignment already exists
+        # Check if this ticket already has an assignment for this user
         existing = TicketCalendarAssignment.objects.filter(
             ticket=ticket,
-            assigned_to=assigned_to,
-            assigned_date=assigned_date
-        ).exists()
+            assigned_to=assigned_to
+        ).first()
         
+        # If exists, update it (move to new date)
         if existing:
+            old_date = existing.assigned_date
+            existing.assigned_date = assigned_date
+            existing.assigned_by = request.user
+            existing.notes = notes
+            existing.save()
+            
+            logger.info(
+                f"Calendar assignment updated: Ticket #{ticket.id} moved from {old_date} to {assigned_date} "
+                f"for {assigned_to.username} by {request.user.username}"
+            )
+            
             return JsonResponse({
-                'success': False,
-                'error': f'To zgłoszenie jest już przypisane do kalendarza użytkownika {assigned_to.get_full_name() or assigned_to.username} na wybraną datę.'
-            }, status=400)
+                'success': True,
+                'message': f'Zgłoszenie zostało przeniesione z {old_date.strftime("%d.%m.%Y")} na {assigned_date.strftime("%d.%m.%Y")}.',
+                'assignment_id': existing.id,
+                'assigned_date': assigned_date.strftime('%Y-%m-%d'),
+                'assigned_to': assigned_to.get_full_name() or assigned_to.username,
+                'was_updated': True
+            })
         
-        # Create the assignment
+        # Create new assignment
         assignment = TicketCalendarAssignment.objects.create(
             ticket=ticket,
             assigned_to=assigned_to,

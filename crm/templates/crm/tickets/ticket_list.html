@@ -1479,11 +1479,12 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                showSuccess('Zgłoszenie zostało pomyślnie przypisane do kalendarza!');
+                // Show the message from server (includes info about moving/creating)
+                showSuccess(data.message || 'Zgłoszenie zostało pomyślnie przypisane do kalendarza!');
                 setTimeout(() => {
                     modal.hide();
-                    // Optionally reload to show updated data
-                    // location.reload();
+                    // Reload to show updated calendar
+                    location.reload();
                 }, 1500);
             } else {
                 showError(data.error || 'Wystąpił błąd podczas przypisywania zgłoszenia.');
