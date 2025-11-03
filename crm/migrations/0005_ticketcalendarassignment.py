@@ -28,7 +28,7 @@ class Migration(migrations.Migration):
                 'verbose_name': 'Przypisanie ticketu do kalendarza',
                 'verbose_name_plural': 'Przypisania ticketów do kalendarza',
                 'ordering': ['assigned_date', 'created_at'],
-                'unique_together': {('ticket', 'assigned_to', 'assigned_date')},
+                'unique_together': {('ticket', 'assigned_to')},
             },
         ),
     ]
