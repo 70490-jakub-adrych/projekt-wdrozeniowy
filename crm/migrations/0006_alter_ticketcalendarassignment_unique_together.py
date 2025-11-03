@@ -10,6 +10,12 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        # First, remove the old unique_together constraint
+        migrations.AlterUniqueTogether(
+            name='ticketcalendarassignment',
+            unique_together=set(),
+        ),
+        # Then, add the new unique_together constraint
         migrations.AlterUniqueTogether(
             name='ticketcalendarassignment',
             unique_together={('ticket', 'assigned_to')},
