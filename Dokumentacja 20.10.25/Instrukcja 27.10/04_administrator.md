@@ -15,8 +15,8 @@ Po zalogowaniu zobaczysz panel główny z przeglądem:
 
 ### Dodawanie i Edycja Użytkowników
 
-1. Przejdź do **Panel Django** (ikonka koła zębatego w górnym menu)
-2. Wybierz **Users** lub **User profiles**
+1. Przejdź do **Panel Admina** (ikonka kół zębatych w górnym menu)
+2. Wybierz **Użytkownicy**
 3. Możesz:
    - **Dodawać** nowych użytkowników
    - **Edytować** istniejących
@@ -27,12 +27,13 @@ Po zalogowaniu zobaczysz panel główny z przeglądem:
 
 1. Otwórz profil użytkownika
 2. Zmień dane:
+   - login
    - Email
    - Imię i nazwisko
    - Telefon
    - Rola
    - Organizacje
-3. Kliknij **Zapisz**
+4. Kliknij **Zapisz**
 
 ---
 
@@ -52,8 +53,9 @@ Po zalogowaniu zobaczysz panel główny z przeglądem:
 
 1. Kliknij **Zatwierdź** obok użytkownika
 2. Wybierz **Rolę** dla użytkownika
-3. Potwierdź zatwierdzenie
-4. Użytkownik otrzyma email z powiadomieniem
+3. Wybierz **Organizację** użytkownika
+4. Potwierdź zatwierdzenie
+5. Użytkownik otrzyma email z powiadomieniem
 
 ### Odrzucanie
 
@@ -198,4 +200,5 @@ Użyj filtrów aby szybko znaleźć:
 - [Funkcje Dodatkowe](12_funkcje_dodatkowe.md)
 
 **Powrót do:** [README.md](README.md)
+
 
