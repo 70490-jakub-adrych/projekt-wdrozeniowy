@@ -478,8 +478,8 @@
 <!-- Quick Action buttons and Calendar - show for all users including clients -->
 <div class="row mb-4">
     <!-- Quick Actions Column -->
-    <div class="col-lg-6 mb-3">
-        <div class="card shadow-sm h-100">
+    <div class="col-lg-6 col-xl-5 mb-3">
+        <div class="card shadow-sm">
             <div class="card-header bg-light">
                 <i class="fas fa-bolt me-2"></i> Szybkie akcje
             </div>
@@ -521,8 +521,8 @@
     
     <!-- Calendar Column - only for agents, superagents, and admins -->
     {% if user.profile.role in 'admin,superagent,agent' %}
-    <div class="col-lg-6 mb-3">
-        <div class="card shadow-sm h-100">
+    <div class="col-lg-6 col-xl-7 mb-3">
+        <div class="card shadow-sm">
             <div class="card-header bg-light">
                 <i class="fas fa-calendar-alt me-2"></i> Kalendarz przypisań
             </div>
@@ -1302,6 +1302,97 @@
         padding: 2px 6px;
         font-size: 0.7rem;
         font-weight: bold;
+    }
+    
+    /* Dark mode styles for calendar */
+    [data-bs-theme="dark"] .calendar-header {
+        background-color: #343a40;
+    }
+    
+    [data-bs-theme="dark"] .calendar-header button {
+        color: #0d6efd;
+    }
+    
+    [data-bs-theme="dark"] .calendar-header button:hover {
+        color: #6ea8fe;
+    }
+    
+    [data-bs-theme="dark"] .calendar-month-year {
+        color: #f8f9fa;
+    }
+    
+    [data-bs-theme="dark"] .calendar-day-header {
+        background-color: #495057;
+        color: #dee2e6;
+    }
+    
+    [data-bs-theme="dark"] .calendar-day {
+        background-color: #212529;
+        border-color: #495057;
+        color: #dee2e6;
+    }
+    
+    [data-bs-theme="dark"] .calendar-day.other-month {
+        background-color: #1a1d20;
+        color: #6c757d;
+    }
+    
+    [data-bs-theme="dark"] .calendar-day.weekend {
+        background-color: #3d1f1f;
+    }
+    
+    [data-bs-theme="dark"] .calendar-day.today {
+        background-color: #0c4a6e;
+        border-color: #0ea5e9;
+        color: #f8f9fa;
+    }
+    
+    [data-bs-theme="dark"] .calendar-day.has-assignments {
+        background-color: #664d03;
+        color: #fff;
+    }
+    
+    [data-bs-theme="dark"] .calendar-day.has-assignments:hover {
+        background-color: #997404;
+        border-color: #ffc107;
+    }
+    
+    [data-bs-theme="dark"] .calendar-day-badge {
+        background-color: #dc3545;
+    }
+    
+    /* Mobile responsive for calendar */
+    @media (max-width: 991px) {
+        .calendar-grid {
+            gap: 3px;
+        }
+        
+        .calendar-day {
+            min-height: 40px;
+            padding: 5px 2px;
+            font-size: 0.85rem;
+        }
+        
+        .calendar-day-number {
+            font-size: 0.8rem;
+        }
+        
+        .calendar-day-badge {
+            font-size: 0.6rem;
+            padding: 1px 4px;
+        }
+        
+        .calendar-header {
+            padding: 8px;
+        }
+        
+        .calendar-month-year {
+            font-size: 0.95rem;
+        }
+        
+        .calendar-header button {
+            font-size: 1rem;
+        }
     }
 </style>
 
