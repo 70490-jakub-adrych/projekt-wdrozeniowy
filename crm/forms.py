@@ -6,7 +6,8 @@ from django.contrib.auth import authenticate
 from .views.helpers import get_client_ip
 from .models import (
     UserProfile, Organization, Ticket,
-    TicketComment, TicketAttachment, ActivityLog, EmailVerification
+    TicketComment, TicketAttachment, ActivityLog, EmailVerification,
+    TicketCalendarAssignment
 )
 from .validators import phone_regex
 import logging  # Add this import
@@ -526,3 +527,101 @@ class TOTPVerificationForm(forms.Form):
         if not code.isdigit():
             raise ValidationError("Kod weryfikacyjny musi składać się tylko z cyfr.")
         return code
+
+class TicketCalendarAssignmentForm(forms.ModelForm):
+    """Form for assigning tickets to calendar dates"""
+    assigned_date = forms.DateField(
+        label="Data przypisania",
+        help_text="Wybierz dzień roboczy (poniedziałek-piątek)",
+        widget=forms.DateInput(attrs={
+            'class': 'form-control calendar-datepicker',
+            'type': 'date',
+            'autocomplete': 'off'
+        })
+    )
+    
+    notes = forms.CharField(
+        label="Notatki",
+        required=False,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 3,
+            'placeholder': 'Opcjonalne notatki do przypisania...'
+        })
+    )
+    
+    # For superagents: option to assign to other agents
+    assign_to_other = forms.BooleanField(
+        label="Przypisz innemu agentowi",
+        required=False,
+        widget=forms.CheckboxInput(attrs={
+            'class': 'form-check-input',
+            'id': 'id_assign_to_other'
+        })
+    )
+    
+    assigned_to_agent = forms.ModelChoiceField(
+        queryset=User.objects.none(),  # Will be set in __init__
+        label="Agent",
+        required=False,
+        widget=forms.Select(attrs={
+            'class': 'form-control',
+            'id': 'id_assigned_to_agent',
+            'style': 'display: none;'  # Initially hidden
+        })
+    )
+    
+    class Meta:
+        model = TicketCalendarAssignment
+        fields = ['assigned_date', 'notes']
+    
+    def __init__(self, *args, **kwargs):
+        self.user = kwargs.pop('user', None)
+        self.ticket = kwargs.pop('ticket', None)
+        super().__init__(*args, **kwargs)
+        
+        # Configure agent selection based on user role
+        if self.user:
+            user_role = getattr(self.user.profile, 'role', 'client')
+            
+            if user_role in ['superagent', 'admin']:
+                # Superagents and admins can assign to other agents
+                self.fields['assigned_to_agent'].queryset = User.objects.filter(
+                    profile__role__in=['agent', 'superagent', 'admin'],
+                    is_active=True
+                ).order_by('first_name', 'last_name')
+            else:
+                # Regular agents can only assign to themselves
+                self.fields.pop('assign_to_other', None)
+                self.fields.pop('assigned_to_agent', None)
+    
+    def clean_assigned_date(self):
+        assigned_date = self.cleaned_data.get('assigned_date')
+        
+        if assigned_date:
+            # Check if it's a weekend (Saturday=5, Sunday=6)
+            if assigned_date.weekday() >= 5:
+                raise ValidationError(
+                    "Nie można przypisać zgłoszenia na weekend. Wybierz dzień roboczy (poniedziałek-piątek)."
+                )
+            
+            # Check if date is not in the past
+            from django.utils import timezone
+            today = timezone.now().date()
+            if assigned_date < today:
+                raise ValidationError("Nie można przypisać zgłoszenia na przeszłą datę.")
+        
+        return assigned_date
+    
+    def clean(self):
+        cleaned_data = super().clean()
+        assign_to_other = cleaned_data.get('assign_to_other')
+        assigned_to_agent = cleaned_data.get('assigned_to_agent')
+        
+        # If "assign to other" is checked, agent must be selected
+        if assign_to_other and not assigned_to_agent:
+            raise ValidationError(
+                "Jeśli chcesz przypisać innemu agentowi, musisz wybrać agenta z listy."
+            )
+        
+        return cleaned_data

@@ -475,23 +475,24 @@
     </div>
 </div>
 
-<!-- Quick Action buttons - show for all users including clients -->
+<!-- Quick Action buttons and Calendar - show for all users including clients -->
 <div class="row mb-4">
-    <div class="col-md-12">
-        <div class="card shadow-sm">
+    <!-- Quick Actions Column -->
+    <div class="col-lg-6 mb-3">
+        <div class="card shadow-sm h-100">
             <div class="card-header bg-light">
                 <i class="fas fa-bolt me-2"></i> Szybkie akcje
             </div>
             <div class="card-body pb-0">
                 <div class="row">
-                    <div class="col-md-3 mb-3">
+                    <div class="col-md-6 mb-3">
                         <a href="{% url 'ticket_create' %}" class="quick-action-btn btn-ripple btn btn-primary d-block">
                             <i class="fas fa-plus"></i> Nowe zgłoszenie
                         </a>
                     </div>
                     
                     {% if resolved_tickets_count > 0 and user.profile.role == 'client' %}
-                    <div class="col-md-3 mb-3">
+                    <div class="col-md-6 mb-3">
                         <a href="{% url 'ticket_list' %}?status=resolved&created_by=me" class="quick-action-btn btn-ripple btn btn-warning d-block">
                             <i class="fas fa-exclamation-circle"></i> Zgłoszenia do potwierdzenia ({{ resolved_tickets_count }})
                         </a>
@@ -499,7 +500,7 @@
                     {% endif %}
                     
                     {% if pending_approvals > 0 and user.profile.role in 'admin,superagent,agent' %}
-                    <div class="col-md-3 mb-3">
+                    <div class="col-md-6 mb-3">
                         <a href="{% url 'pending_approvals' %}" class="quick-action-btn btn-ripple btn btn-warning d-block">
                             <i class="fas fa-user-clock"></i> Oczekujące zatwierdzenia ({{ pending_approvals }})
                         </a>
@@ -507,7 +508,7 @@
                     {% endif %}
                     
                     {% if user.profile.role == 'admin' or user.profile.role == 'superagent' %}
-                    <div class="col-md-3 mb-3">
+                    <div class="col-md-6 mb-3">
                         <a href="{% url 'organization_create' %}" class="quick-action-btn btn-ripple btn btn-success d-block">
                             <i class="fas fa-building"></i> Nowa organizacja
                         </a>
@@ -517,6 +518,23 @@
             </div>
         </div>
     </div>
+    
+    <!-- Calendar Column - only for agents, superagents, and admins -->
+    {% if user.profile.role in 'admin,superagent,agent' %}
+    <div class="col-lg-6 mb-3">
+        <div class="card shadow-sm h-100">
+            <div class="card-header bg-light">
+                <i class="fas fa-calendar-alt me-2"></i> Kalendarz przypisań
+            </div>
+            <div class="card-body">
+                <div id="dashboard-calendar"></div>
+                <div class="text-center mt-2">
+                    <small class="text-muted">Kliknij dzień, aby zobaczyć przypisane zgłoszenia</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
 </div>
 
 <!-- Statistics summary for all roles -->
@@ -1185,4 +1203,273 @@
 
 {% block extra_js %}
 <script src="{% static 'crm/js/ui-enhancements.js' %}"></script>
+
+{% if user.profile.role in 'admin,superagent,agent' %}
+<style>
+    #dashboard-calendar {
+        font-family: Arial, sans-serif;
+    }
+    
+    .calendar-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        padding: 10px;
+        background-color: #f8f9fa;
+        border-radius: 5px;
+    }
+    
+    .calendar-header button {
+        background: none;
+        border: none;
+        font-size: 1.2rem;
+        cursor: pointer;
+        padding: 5px 10px;
+        color: #007bff;
+    }
+    
+    .calendar-header button:hover {
+        color: #0056b3;
+    }
+    
+    .calendar-month-year {
+        font-weight: bold;
+        font-size: 1.1rem;
+    }
+    
+    .calendar-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 5px;
+    }
+    
+    .calendar-day-header {
+        text-align: center;
+        font-weight: bold;
+        padding: 8px 0;
+        background-color: #e9ecef;
+        font-size: 0.85rem;
+    }
+    
+    .calendar-day {
+        text-align: center;
+        padding: 10px 5px;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        min-height: 50px;
+        position: relative;
+        cursor: default;
+        background-color: #fff;
+    }
+    
+    .calendar-day.other-month {
+        background-color: #f8f9fa;
+        color: #6c757d;
+    }
+    
+    .calendar-day.weekend {
+        background-color: #ffe6e6;
+    }
+    
+    .calendar-day.today {
+        background-color: #d1ecf1;
+        border-color: #0c5460;
+        font-weight: bold;
+    }
+    
+    .calendar-day.has-assignments {
+        background-color: #fff3cd;
+        cursor: pointer;
+    }
+    
+    .calendar-day.has-assignments:hover {
+        background-color: #ffc107;
+        border-color: #ff9800;
+    }
+    
+    .calendar-day-number {
+        font-size: 0.9rem;
+    }
+    
+    .calendar-day-badge {
+        position: absolute;
+        top: 3px;
+        right: 3px;
+        background-color: #dc3545;
+        color: white;
+        border-radius: 10px;
+        padding: 2px 6px;
+        font-size: 0.7rem;
+        font-weight: bold;
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const calendarContainer = document.getElementById('dashboard-calendar');
+    
+    if (!calendarContainer) return;
+    
+    let currentDate = new Date();
+    let currentYear = currentDate.getFullYear();
+    let currentMonth = currentDate.getMonth(); // 0-11
+    
+    const monthNames = [
+        'Styczeń', 'Luty', 'Marzec', 'Kwiecień', 'Maj', 'Czerwiec',
+        'Lipiec', 'Sierpień', 'Wrzesień', 'Październik', 'Listopad', 'Grudzień'
+    ];
+    
+    const dayNames = ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Nie'];
+    
+    let assignments = {};
+    
+    function renderCalendar(year, month) {
+        // Clear container
+        calendarContainer.innerHTML = '';
+        
+        // Create header
+        const header = document.createElement('div');
+        header.className = 'calendar-header';
+        header.innerHTML = `
+            <button type="button" id="prev-month"><i class="fas fa-chevron-left"></i></button>
+            <span class="calendar-month-year">${monthNames[month]} ${year}</span>
+            <button type="button" id="next-month"><i class="fas fa-chevron-right"></i></button>
+        `;
+        calendarContainer.appendChild(header);
+        
+        // Create grid
+        const grid = document.createElement('div');
+        grid.className = 'calendar-grid';
+        
+        // Add day headers
+        dayNames.forEach(day => {
+            const dayHeader = document.createElement('div');
+            dayHeader.className = 'calendar-day-header';
+            dayHeader.textContent = day;
+            grid.appendChild(dayHeader);
+        });
+        
+        // Get first day of month (0 = Sunday, 1 = Monday, etc.)
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const daysInPrevMonth = new Date(year, month, 0).getDate();
+        
+        // Adjust for Monday start (0 = Monday)
+        const startDay = firstDay === 0 ? 6 : firstDay - 1;
+        
+        // Add previous month's days
+        for (let i = startDay - 1; i >= 0; i--) {
+            const day = daysInPrevMonth - i;
+            const dayDiv = createDayCell(day, true, false, year, month - 1);
+            grid.appendChild(dayDiv);
+        }
+        
+        // Add current month's days
+        const today = new Date();
+        for (let day = 1; day <= daysInMonth; day++) {
+            const date = new Date(year, month, day);
+            const isToday = date.toDateString() === today.toDateString();
+            const isWeekend = date.getDay() === 0 || date.getDay() === 6;
+            const dayDiv = createDayCell(day, false, isToday, year, month, isWeekend);
+            grid.appendChild(dayDiv);
+        }
+        
+        // Fill remaining cells with next month's days
+        const totalCells = grid.children.length - 7; // Subtract day headers
+        const remainingCells = 42 - totalCells; // 6 weeks * 7 days
+        for (let day = 1; day <= remainingCells; day++) {
+            const dayDiv = createDayCell(day, true, false, year, month + 1);
+            grid.appendChild(dayDiv);
+        }
+        
+        calendarContainer.appendChild(grid);
+        
+        // Attach event listeners
+        document.getElementById('prev-month').addEventListener('click', () => {
+            currentMonth--;
+            if (currentMonth < 0) {
+                currentMonth = 11;
+                currentYear--;
+            }
+            renderCalendar(currentYear, currentMonth);
+            loadAssignments(currentYear, currentMonth + 1);
+        });
+        
+        document.getElementById('next-month').addEventListener('click', () => {
+            currentMonth++;
+            if (currentMonth > 11) {
+                currentMonth = 0;
+                currentYear++;
+            }
+            renderCalendar(currentYear, currentMonth);
+            loadAssignments(currentYear, currentMonth + 1);
+        });
+    }
+    
+    function createDayCell(day, isOtherMonth, isToday, year, month, isWeekend = false) {
+        const dayDiv = document.createElement('div');
+        dayDiv.className = 'calendar-day';
+        
+        if (isOtherMonth) {
+            dayDiv.classList.add('other-month');
+        } else {
+            if (isToday) dayDiv.classList.add('today');
+            if (isWeekend) dayDiv.classList.add('weekend');
+            
+            // Check for assignments
+            const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+            if (assignments[dateStr]) {
+                dayDiv.classList.add('has-assignments');
+                dayDiv.dataset.date = dateStr;
+                
+                // Add badge with count
+                const badge = document.createElement('span');
+                badge.className = 'calendar-day-badge';
+                badge.textContent = assignments[dateStr].length;
+                dayDiv.appendChild(badge);
+                
+                // Add click handler
+                dayDiv.addEventListener('click', () => {
+                    window.location.href = `/tickets/?calendar_date=${dateStr}`;
+                });
+                
+                // Add tooltip
+                const ticketTitles = assignments[dateStr].map(a => `• ${a.ticket_title}`).join('\n');
+                dayDiv.title = `Przypisane zgłoszenia (${assignments[dateStr].length}):\n${ticketTitles}`;
+            }
+        }
+        
+        const dayNumber = document.createElement('div');
+        dayNumber.className = 'calendar-day-number';
+        dayNumber.textContent = day;
+        dayDiv.appendChild(dayNumber);
+        
+        return dayDiv;
+    }
+    
+    function loadAssignments(year, month) {
+        fetch(`/calendar/assignments/?year=${year}&month=${month}`, {
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                assignments = data.assignments;
+                renderCalendar(currentYear, currentMonth);
+            }
+        })
+        .catch(error => {
+            console.error('Error loading calendar assignments:', error);
+        });
+    }
+    
+    // Initial render
+    renderCalendar(currentYear, currentMonth);
+    loadAssignments(currentYear, currentMonth + 1);
+});
+</script>
+{% endif %}
 {% endblock %}

@@ -914,6 +914,11 @@
 <div class="card">
     <div class="card-header">
         <i class="fas fa-ticket-alt"></i> Lista zgłoszeń
+        {% if calendar_date_filter_active %}
+        <span class="badge bg-warning text-dark ms-2">
+            <i class="fas fa-calendar-day"></i> Filtrowano według daty: {{ calendar_date }}
+        </span>
+        {% endif %}
     </div>
     <div class="card-body p-2">  <!-- Reduced padding in card body -->
         <!-- Desktop Table View -->
@@ -979,6 +984,13 @@
                                 {% endif %}
                                 
                                 {% if user.profile.role == 'admin' or user.profile.role == 'superagent' or user.profile.role == 'agent' %}
+                                    <button type="button" class="btn btn-sm btn-warning action-btn assign-to-calendar-btn" 
+                                            data-ticket-id="{{ ticket.pk }}" 
+                                            data-ticket-title="{{ ticket.title }}"
+                                            title="Przypisz do kalendarza">
+                                        <i class="fas fa-calendar-plus"></i>
+                                    </button>
+                                    
                                     {% if ticket.status != 'closed' and ticket.assigned_to %}
                                         {% if ticket.status == 'resolved' %}
                                             <!-- Only show close button to admins and superagents -->
@@ -1072,6 +1084,12 @@
                     </a>
                     
                     {% if user.profile.role == 'admin' or user.profile.role == 'superagent' or user.profile.role == 'agent' %}
+                        <button type="button" class="btn btn-warning assign-to-calendar-btn" 
+                                data-ticket-id="{{ ticket.pk }}" 
+                                data-ticket-title="{{ ticket.title }}">
+                            <i class="fas fa-calendar-plus"></i> Kalendarz
+                        </button>
+                        
                         {% if ticket.status != 'closed' and ticket.assigned_to %}
                             {% if ticket.status == 'resolved' %}
                                 {% if user.profile.role == 'admin' or user.profile.role == 'superagent' %}
@@ -1191,4 +1209,224 @@
     {% endif %}
 </div>
 {% endif %}
+
+<!-- Calendar Assignment Modal -->
+<div class="modal fade" id="calendarAssignmentModal" tabindex="-1" aria-labelledby="calendarAssignmentModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="calendarAssignmentModalLabel">
+                    <i class="fas fa-calendar-plus me-2"></i>Przypisz zgłoszenie do kalendarza
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Zamknij"></button>
+            </div>
+            <div class="modal-body">
+                <form id="calendarAssignmentForm">
+                    {% csrf_token %}
+                    <input type="hidden" id="modal_ticket_id" name="ticket_id">
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Zgłoszenie:</label>
+                        <p id="modal_ticket_title" class="text-muted"></p>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="assigned_date" class="form-label">Data przypisania <span class="text-danger">*</span></label>
+                        <input type="date" class="form-control" id="assigned_date" name="assigned_date" required>
+                        <div class="form-text">Wybierz dzień roboczy (poniedziałek-piątek)</div>
+                    </div>
+                    
+                    {% if user.profile.role == 'superagent' or user.profile.role == 'admin' %}
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="assign_to_other" name="assign_to_other">
+                            <label class="form-check-label" for="assign_to_other">
+                                Przypisz innemu agentowi
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3" id="agent_selection_container" style="display: none;">
+                        <label for="assigned_to_agent" class="form-label">Wybierz agenta <span class="text-danger">*</span></label>
+                        <select class="form-control" id="assigned_to_agent" name="assigned_to_agent">
+                            <option value="">-- Wybierz agenta --</option>
+                            {% for agent_user in agents %}
+                            <option value="{{ agent_user.id }}">{{ agent_user.get_full_name|default:agent_user.username }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Notatki</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3" placeholder="Opcjonalne notatki do przypisania..."></textarea>
+                    </div>
+                    
+                    <div class="alert alert-danger d-none" id="calendar_error_message"></div>
+                    <div class="alert alert-success d-none" id="calendar_success_message"></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Anuluj
+                </button>
+                <button type="button" class="btn btn-primary" id="submit_calendar_assignment">
+                    <i class="fas fa-save me-1"></i>Przypisz
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const modal = new bootstrap.Modal(document.getElementById('calendarAssignmentModal'));
+    const assignButtons = document.querySelectorAll('.assign-to-calendar-btn');
+    const assignToOtherCheckbox = document.getElementById('assign_to_other');
+    const agentSelectionContainer = document.getElementById('agent_selection_container');
+    const assignedDateInput = document.getElementById('assigned_date');
+    const submitButton = document.getElementById('submit_calendar_assignment');
+    const errorMessageDiv = document.getElementById('calendar_error_message');
+    const successMessageDiv = document.getElementById('calendar_success_message');
+    
+    // Set minimum date to today
+    const today = new Date().toISOString().split('T')[0];
+    assignedDateInput.setAttribute('min', today);
+    
+    // Function to check if date is weekend
+    function isWeekend(dateString) {
+        const date = new Date(dateString);
+        const day = date.getDay();
+        return day === 0 || day === 6; // Sunday = 0, Saturday = 6
+    }
+    
+    // Block weekend selection
+    assignedDateInput.addEventListener('change', function() {
+        if (this.value && isWeekend(this.value)) {
+            showError('Nie można wybrać weekendu. Wybierz dzień roboczy (poniedziałek-piątek).');
+            this.value = '';
+        }
+    });
+    
+    // Open modal when assign button is clicked
+    assignButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const ticketId = this.dataset.ticketId;
+            const ticketTitle = this.dataset.ticketTitle;
+            
+            document.getElementById('modal_ticket_id').value = ticketId;
+            document.getElementById('modal_ticket_title').textContent = ticketTitle;
+            
+            // Reset form
+            document.getElementById('calendarAssignmentForm').reset();
+            hideMessages();
+            
+            modal.show();
+        });
+    });
+    
+    // Toggle agent selection visibility
+    if (assignToOtherCheckbox) {
+        assignToOtherCheckbox.addEventListener('change', function() {
+            if (this.checked) {
+                agentSelectionContainer.style.display = 'block';
+                document.getElementById('assigned_to_agent').required = true;
+            } else {
+                agentSelectionContainer.style.display = 'none';
+                document.getElementById('assigned_to_agent').required = false;
+                document.getElementById('assigned_to_agent').value = '';
+            }
+        });
+    }
+    
+    // Submit form
+    submitButton.addEventListener('click', function() {
+        hideMessages();
+        
+        const ticketId = document.getElementById('modal_ticket_id').value;
+        const assignedDate = document.getElementById('assigned_date').value;
+        const notes = document.getElementById('notes').value;
+        
+        // Validation
+        if (!assignedDate) {
+            showError('Proszę wybrać datę przypisania.');
+            return;
+        }
+        
+        if (isWeekend(assignedDate)) {
+            showError('Nie można przypisać zgłoszenia na weekend.');
+            return;
+        }
+        
+        let assignedToAgent = null;
+        if (assignToOtherCheckbox && assignToOtherCheckbox.checked) {
+            assignedToAgent = document.getElementById('assigned_to_agent').value;
+            if (!assignedToAgent) {
+                showError('Proszę wybrać agenta z listy.');
+                return;
+            }
+        }
+        
+        // Prepare data
+        const formData = new FormData();
+        formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
+        formData.append('assigned_date', assignedDate);
+        formData.append('notes', notes);
+        if (assignedToAgent) {
+            formData.append('assigned_to_agent', assignedToAgent);
+        }
+        
+        // Disable button during submission
+        submitButton.disabled = true;
+        submitButton.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Zapisywanie...';
+        
+        // Submit via AJAX
+        fetch(`/tickets/${ticketId}/assign-to-calendar/`, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showSuccess('Zgłoszenie zostało pomyślnie przypisane do kalendarza!');
+                setTimeout(() => {
+                    modal.hide();
+                    // Optionally reload to show updated data
+                    // location.reload();
+                }, 1500);
+            } else {
+                showError(data.error || 'Wystąpił błąd podczas przypisywania zgłoszenia.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showError('Wystąpił błąd połączenia. Spróbuj ponownie.');
+        })
+        .finally(() => {
+            submitButton.disabled = false;
+            submitButton.innerHTML = '<i class="fas fa-save me-1"></i>Przypisz';
+        });
+    });
+    
+    function showError(message) {
+        errorMessageDiv.textContent = message;
+        errorMessageDiv.classList.remove('d-none');
+        successMessageDiv.classList.add('d-none');
+    }
+    
+    function showSuccess(message) {
+        successMessageDiv.textContent = message;
+        successMessageDiv.classList.remove('d-none');
+        errorMessageDiv.classList.add('d-none');
+    }
+    
+    function hideMessages() {
+        errorMessageDiv.classList.add('d-none');
+        successMessageDiv.classList.add('d-none');
+    }
+});
+</script>
 {% endblock %}

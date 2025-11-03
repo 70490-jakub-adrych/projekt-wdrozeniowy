@@ -424,6 +424,66 @@ class TicketAttachment(models.Model):
         verbose_name_plural = "Załączniki do zgłoszeń"
 
 
+class TicketCalendarAssignment(models.Model):
+    """Model przechowujący przypisania ticketów do dat w kalendarzu"""
+    ticket = models.ForeignKey(
+        Ticket, 
+        related_name='calendar_assignments', 
+        on_delete=models.CASCADE, 
+        verbose_name="Zgłoszenie"
+    )
+    assigned_to = models.ForeignKey(
+        User, 
+        related_name='calendar_assignments', 
+        on_delete=models.CASCADE, 
+        verbose_name="Przypisany do"
+    )
+    assigned_date = models.DateField(
+        verbose_name="Data przypisania"
+    )
+    assigned_by = models.ForeignKey(
+        User, 
+        related_name='calendar_assignments_created', 
+        on_delete=models.SET_NULL,
+        null=True,
+        verbose_name="Przypisany przez"
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True, 
+        verbose_name="Data utworzenia"
+    )
+    notes = models.TextField(
+        blank=True, 
+        null=True,
+        verbose_name="Notatki"
+    )
+    
+    class Meta:
+        verbose_name = "Przypisanie ticketu do kalendarza"
+        verbose_name_plural = "Przypisania ticketów do kalendarza"
+        ordering = ['assigned_date', 'created_at']
+        # Prevent duplicate assignments of same ticket to same user on same date
+        unique_together = [['ticket', 'assigned_to', 'assigned_date']]
+    
+    def __str__(self):
+        return f"Ticket #{self.ticket.id} → {self.assigned_to.username} na {self.assigned_date}"
+    
+    def clean(self):
+        """Validate that assigned_date is not a weekend"""
+        from django.core.exceptions import ValidationError
+        if self.assigned_date:
+            # Check if it's Saturday (5) or Sunday (6)
+            if self.assigned_date.weekday() >= 5:
+                raise ValidationError({
+                    'assigned_date': 'Nie można przypisać ticketu na weekend (sobota/niedziela).'
+                })
+    
+    def save(self, *args, **kwargs):
+        # Run validation before saving
+        self.clean()
+        super().save(*args, **kwargs)
+
+
 class ActivityLog(models.Model):
     """Model przechowujący logi aktywności w systemie"""
     ACTION_TYPES = (

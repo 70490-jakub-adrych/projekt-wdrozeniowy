@@ -10,7 +10,7 @@ from .models import (
     UserProfile, Organization, Ticket, TicketComment,
     TicketAttachment, ActivityLog, GroupSettings, 
     ViewPermission, GroupViewPermission, UserViewPermission,
-    WorkHours, TicketStatistics, AgentWorkLog  # Add the new models
+    WorkHours, TicketStatistics, AgentWorkLog, TicketCalendarAssignment  # Add the new models
 )
 
 
@@ -435,6 +435,19 @@ class TicketAttachmentAdmin(admin.ModelAdmin):
     list_filter = ('ticket__status', 'uploaded_by')
     search_fields = ('filename', 'ticket__title', 'uploaded_by__username')
     date_hierarchy = 'uploaded_at'
+
+
+@admin.register(TicketCalendarAssignment)
+class TicketCalendarAssignmentAdmin(admin.ModelAdmin):
+    list_display = ('ticket', 'assigned_to', 'assigned_date', 'assigned_by', 'created_at')
+    list_filter = ('assigned_date', 'assigned_to', 'assigned_by')
+    search_fields = ('ticket__title', 'assigned_to__username', 'assigned_by__username', 'notes')
+    date_hierarchy = 'assigned_date'
+    readonly_fields = ('created_at',)
+    
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.select_related('ticket', 'assigned_to', 'assigned_by')
 
 
 @admin.register(ActivityLog)

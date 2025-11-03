@@ -106,6 +106,36 @@ def ticket_list(request):
             tickets = tickets.filter(organization_id__in=valid_org_ids)
             logger.debug(f"Filtering tickets by organization IDs: {valid_org_ids}")
     
+    # Filter by calendar date (if clicking from calendar widget)
+    calendar_date = request.GET.get('calendar_date', '')
+    calendar_date_filter_active = False
+    if calendar_date:
+        try:
+            from crm.models import TicketCalendarAssignment
+            # Parse the date
+            calendar_date_obj = datetime.strptime(calendar_date, '%Y-%m-%d').date()
+            
+            # Get ticket IDs that have assignments for this date
+            # For agents: only their own assignments
+            # For superagents/admins: all assignments
+            if role in ['superagent', 'admin']:
+                assignment_ticket_ids = TicketCalendarAssignment.objects.filter(
+                    assigned_date=calendar_date_obj
+                ).values_list('ticket_id', flat=True)
+            else:
+                assignment_ticket_ids = TicketCalendarAssignment.objects.filter(
+                    assigned_to=user,
+                    assigned_date=calendar_date_obj
+                ).values_list('ticket_id', flat=True)
+            
+            tickets = tickets.filter(id__in=assignment_ticket_ids)
+            calendar_date_filter_active = True
+            logger.debug(f"Filtering tickets by calendar date: {calendar_date}")
+        except ValueError:
+            logger.warning(f"Invalid calendar date format: {calendar_date}")
+        except Exception as e:
+            logger.error(f"Error filtering by calendar date: {str(e)}")
+    
     # Filtrowanie po przypisaniu (multi)
     if assigned_filters:
         assigned_q = Q()
@@ -243,6 +273,15 @@ def ticket_list(request):
     status_choices = Ticket.STATUS_CHOICES
     priority_choices = Ticket.PRIORITY_CHOICES
     category_choices = Ticket.CATEGORY_CHOICES
+    
+    # Get agents for calendar assignment modal (for superagents and admins)
+    agents = []
+    if role in ['superagent', 'admin']:
+        from django.contrib.auth.models import User
+        agents = User.objects.filter(
+            profile__role__in=['agent', 'superagent', 'admin'],
+            is_active=True
+        ).order_by('first_name', 'last_name')
 
     context = {
         'tickets': tickets_page,
@@ -271,6 +310,9 @@ def ticket_list(request):
         'priority_choices': priority_choices,
         'category_choices': category_choices,
         'has_no_organizations': role in ['agent', 'superagent'] and not org_ids,  # Flag for agents without orgs
+        'agents': agents,  # For calendar assignment modal
+        'calendar_date': calendar_date,  # For calendar date filter display
+        'calendar_date_filter_active': calendar_date_filter_active,
     }
     
     return render(request, 'crm/tickets/ticket_list.html', context)

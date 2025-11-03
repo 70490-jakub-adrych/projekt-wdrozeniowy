@@ -17,11 +17,11 @@ logger = logging.getLogger(__name__)
 
 def auto_close_resolved_tickets():
     """
-    Job that automatically closes resolved tickets after 24 hours
+    Job that automatically closes resolved tickets after 3 business days
     """
     logger.info("Running auto_close_resolved_tickets job...")
     try:
-        # Call the management command
+        # Call the management command (uses default: 3 business days)
         call_command('auto_close_tickets')
         logger.info("auto_close_resolved_tickets job completed successfully")
     except Exception as e:
@@ -51,7 +51,7 @@ def start_scheduler():
         id="auto_close_resolved_tickets",
         max_instances=1,
         replace_existing=True,
-        name="Auto-close resolved tickets after 24 hours"
+        name="Auto-close resolved tickets after 3 business days"
     )
     logger.info("Added job 'auto_close_resolved_tickets' to scheduler (runs daily at 2:00 AM)")
     
