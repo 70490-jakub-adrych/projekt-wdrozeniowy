@@ -119,6 +119,44 @@
                         {% endif %}
                     {% endif %}
 
+                    <!-- Calendar assignment section (only for agents/superagents/admins) -->
+                    {% if user.profile.role in 'admin,superagent,agent' and not ticket %}
+                    <hr class="my-4">
+                    <div class="calendar-assignment-section">
+                        <h5 class="mb-3">
+                            <i class="fas fa-calendar-plus me-2"></i> 
+                            Przypisanie do kalendarza <small class="text-muted">(opcjonalnie)</small>
+                        </h5>
+                        
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Możesz od razu przypisać to zgłoszenie do kalendarza. 
+                            {% if user.profile.role == 'agent' %}
+                                Zgłoszenie zostanie przypisane do Twojego kalendarza.
+                            {% else %}
+                                Możesz wybrać agenta, do którego kalendarza zostanie przypisane zgłoszenie.
+                            {% endif %}
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.calendar_assign_to|as_crispy_field }}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    {{ form.calendar_assigned_date|as_crispy_field }}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.calendar_notes|as_crispy_field }}
+                        </div>
+                    </div>
+                    {% endif %}
+
                     <!-- Attachment upload section -->
                     <hr class="my-4">
                     <div class="attachment-section">

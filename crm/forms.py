@@ -155,11 +155,32 @@ class TicketForm(forms.ModelForm):
         required=False
     )
     
+    # Calendar assignment fields (optional)
+    calendar_assign_to = forms.ModelChoiceField(
+        queryset=User.objects.none(),
+        required=False,
+        label="Przypisz do kalendarza",
+        help_text="Opcjonalnie przypisz zgłoszenie do kalendarza agenta"
+    )
+    calendar_assigned_date = forms.DateField(
+        required=False,
+        label="Data w kalendarzu",
+        widget=forms.DateInput(attrs={'type': 'date'}),
+        help_text="Wybierz datę w kalendarzu"
+    )
+    calendar_notes = forms.CharField(
+        required=False,
+        label="Notatki do kalendarza",
+        widget=forms.Textarea(attrs={'rows': 2}),
+        help_text="Opcjonalne notatki dotyczące przypisania do kalendarza"
+    )
+    
     class Meta:
         model = Ticket
         fields = ['title', 'description', 'category', 'priority', 'assigned_to', 'suggested_category']
     
     def __init__(self, *args, **kwargs):
+        self.request_user = kwargs.pop('request_user', None)
         super().__init__(*args, **kwargs)
         # Limit assigned_to field to only show admins, superagents, and agents
         from django.contrib.auth.models import User
@@ -170,6 +191,21 @@ class TicketForm(forms.ModelForm):
             f"{obj.username} ({obj.get_full_name() or obj.email}) - "
             f"{'Administrator' if obj.profile.role == 'admin' else 'Superagent' if obj.profile.role == 'superagent' else 'Agent'}"
         )
+        
+        # Setup calendar_assign_to field based on user role
+        if self.request_user:
+            if self.request_user.profile.role == 'agent':
+                # Agent can only assign to themselves
+                self.fields['calendar_assign_to'].queryset = User.objects.filter(id=self.request_user.id)
+                self.fields['calendar_assign_to'].initial = self.request_user
+            elif self.request_user.profile.role in ['superagent', 'admin']:
+                # Superagent/admin can assign to any agent
+                self.fields['calendar_assign_to'].queryset = User.objects.filter(
+                    profile__role__in=['agent', 'superagent']
+                ).select_related('profile').order_by('username')
+                self.fields['calendar_assign_to'].label_from_instance = lambda obj: (
+                    f"{obj.username} ({obj.get_full_name() or obj.email})"
+                )
 
 
 class ModeratorTicketForm(forms.ModelForm):
@@ -207,11 +243,32 @@ class ModeratorTicketForm(forms.ModelForm):
         label="Status"
     )
     
+    # Calendar assignment fields (optional)
+    calendar_assign_to = forms.ModelChoiceField(
+        queryset=User.objects.none(),
+        required=False,
+        label="Przypisz do kalendarza",
+        help_text="Opcjonalnie przypisz zgłoszenie do kalendarza agenta"
+    )
+    calendar_assigned_date = forms.DateField(
+        required=False,
+        label="Data w kalendarzu",
+        widget=forms.DateInput(attrs={'type': 'date'}),
+        help_text="Wybierz datę w kalendarzu"
+    )
+    calendar_notes = forms.CharField(
+        required=False,
+        label="Notatki do kalendarza",
+        widget=forms.Textarea(attrs={'rows': 2}),
+        help_text="Opcjonalne notatki dotyczące przypisania do kalendarza"
+    )
+    
     class Meta:
         model = Ticket
         fields = ['title', 'description', 'category', 'priority', 'status', 'assigned_to', 'suggested_category']
     
     def __init__(self, *args, **kwargs):
+        self.request_user = kwargs.pop('request_user', None)
         super().__init__(*args, **kwargs)
         # Limit assigned_to field to only show admins, superagents, and agents
         from django.contrib.auth.models import User
@@ -222,6 +279,21 @@ class ModeratorTicketForm(forms.ModelForm):
             f"{obj.username} ({obj.get_full_name() or obj.email}) - "
             f"{'Administrator' if obj.profile.role == 'admin' else 'Superagent' if obj.profile.role == 'superagent' else 'Agent'}"
         )
+        
+        # Setup calendar_assign_to field based on user role
+        if self.request_user:
+            if self.request_user.profile.role == 'agent':
+                # Agent can only assign to themselves
+                self.fields['calendar_assign_to'].queryset = User.objects.filter(id=self.request_user.id)
+                self.fields['calendar_assign_to'].initial = self.request_user
+            elif self.request_user.profile.role in ['superagent', 'admin']:
+                # Superagent/admin can assign to any agent
+                self.fields['calendar_assign_to'].queryset = User.objects.filter(
+                    profile__role__in=['agent', 'superagent']
+                ).select_related('profile').order_by('username')
+                self.fields['calendar_assign_to'].label_from_instance = lambda obj: (
+                    f"{obj.username} ({obj.get_full_name() or obj.email})"
+                )
 
 
 class ClientTicketForm(forms.ModelForm):

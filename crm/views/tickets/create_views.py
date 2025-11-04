@@ -27,7 +27,7 @@ def ticket_create(request):
     if request.method == 'POST':
         # Use different form based on user role
         if user.profile.role in ['admin', 'superagent', 'agent']:
-            form = TicketForm(request.POST)
+            form = TicketForm(request.POST, request_user=user)
         else:
             form = ClientTicketForm(request.POST)
         
@@ -112,6 +112,25 @@ def ticket_create(request):
             ticket.save()
             log_activity(request, 'ticket_created', ticket, f"Utworzono zgłoszenie: '{ticket.title}'")
             
+            # Handle calendar assignment if provided
+            if user.profile.role in ['admin', 'superagent', 'agent']:
+                calendar_assign_to = form.cleaned_data.get('calendar_assign_to')
+                calendar_assigned_date = form.cleaned_data.get('calendar_assigned_date')
+                
+                if calendar_assign_to and calendar_assigned_date:
+                    from ...models import TicketCalendarAssignment
+                    
+                    # Create calendar assignment
+                    TicketCalendarAssignment.objects.create(
+                        ticket=ticket,
+                        assigned_to=calendar_assign_to,
+                        assigned_date=calendar_assigned_date,
+                        assigned_by=user,
+                        notes=form.cleaned_data.get('calendar_notes', '')
+                    )
+                    log_activity(request, 'ticket_calendar_assigned', ticket, 
+                                f"Przypisano zgłoszenie do kalendarza użytkownika {calendar_assign_to.username} na dzień {calendar_assigned_date}")
+            
             # Send email notifications to relevant stakeholders
             EmailNotificationService.notify_ticket_stakeholders('created', ticket, triggered_by=user)
             
@@ -144,7 +163,7 @@ def ticket_create(request):
     else:
         # Also use different form for GET requests based on user role
         if user.profile.role in ['admin', 'superagent', 'agent']:
-            form = TicketForm()
+            form = TicketForm(request_user=user)
         else:
             form = ClientTicketForm()
         
