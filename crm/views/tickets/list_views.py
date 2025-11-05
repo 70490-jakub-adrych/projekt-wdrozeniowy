@@ -26,7 +26,7 @@ def ticket_list(request):
     on_duty_filters = request.GET.getlist('on_duty')  # wartości: 'true', 'false'
     date_from = request.GET.get('date_from', '')
     date_to = request.GET.get('date_to', '')
-    ticket_id = request.GET.get('ticket_id', '')
+    ticket_title = request.GET.get('ticket_title', '')
     sort_by = request.GET.get('sort_by', '-created_at')
     # Check for explicit 'false' value, default to excluding closed tickets
     exclude_closed = request.GET.get('exclude_closed', 'true').lower() != 'false'
@@ -166,14 +166,9 @@ def ticket_list(request):
     if exclude_created_by == 'me':
         tickets = tickets.exclude(created_by=user)
     
-    # Filtrowanie po ID zgłoszenia
-    if ticket_id:
-        try:
-            ticket_id = int(ticket_id)
-            tickets = tickets.filter(id=ticket_id)
-        except ValueError:
-            # Jeśli podano nieprawidłowy ID, nie filtruj
-            pass
+    # Filtrowanie po tytule zgłoszenia (case-insensitive, partial match)
+    if ticket_title:
+        tickets = tickets.filter(title__icontains=ticket_title)
     
     # Filtrowanie po zakresie dat
     if date_from:
@@ -252,8 +247,8 @@ def ticket_list(request):
         url_params.append(('date_from', date_from))
     if date_to:
         url_params.append(('date_to', date_to))
-    if ticket_id:
-        url_params.append(('ticket_id', str(ticket_id)))
+    if ticket_title:
+        url_params.append(('ticket_title', ticket_title))
     if sort_by != '-created_at':
         url_params.append(('sort_by', sort_by))
     if not exclude_closed:
@@ -308,7 +303,7 @@ def ticket_list(request):
         'selected_on_duty': on_duty_filters,
         'date_from': date_from,
         'date_to': date_to,
-        'ticket_id': ticket_id,
+        'ticket_title': ticket_title,
         'sort_by': sort_by,
         'sort_options': sort_options,
         'user_organizations': user_orgs,  # Add user's organizations for debugging in template

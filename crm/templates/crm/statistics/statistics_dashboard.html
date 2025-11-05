@@ -310,7 +310,7 @@
                     <label for="date_to">Do:</label>
                     <input type="date" name="date_to" id="date_to" class="form-control" value="{{ date_to|date:'Y-m-d' }}">
                 </div>
-                <div class="col-md-2 mb-2">
+                <div class="col-md-3 mb-2">
                     <label for="organization">Organizacja:</label>
                     <select name="organization" id="organization" class="form-control">
                         <option value="">Wszystkie</option>
@@ -319,7 +319,7 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-2 mb-2">
+                <div class="col-md-3 mb-2">
                     <label for="agent">Agent:</label>
                     <select name="agent" id="agent" class="form-control">
                         <option value="">Wszyscy</option>
@@ -330,7 +330,9 @@
                         {% endfor %}
                     </select>
                 </div>
-                <div class="col-md-2 mb-2">
+            </div>
+            <div class="row">
+                <div class="col-md-3 mb-2">
                     <label for="on_duty">Dyżur:</label>
                     <select name="on_duty" id="on_duty" class="form-control">
                         <option value="">Wszystkie</option>
@@ -338,7 +340,7 @@
                         <option value="false" {% if on_duty_filter == 'false' %}selected{% endif %}>Nie</option>
                     </select>
                 </div>
-                <div class="col-md-2 d-flex align-items-end mb-2">
+                <div class="col-md-3 d-flex align-items-end mb-2">
                     <button type="submit" class="btn btn-primary btn-ripple w-100">
                         <i class="fas fa-search"></i> Zastosuj
                     </button>
