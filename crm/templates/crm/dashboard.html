@@ -520,7 +520,11 @@
             <div class="card-body">
                 <div id="dashboard-calendar"></div>
                 <div class="text-center mt-2">
-                    <small class="text-muted">Kliknij dzień, aby zobaczyć przypisane zgłoszenia</small>
+                    <small class="text-muted">
+                        <span class="badge bg-success me-1">●</span> Zgłoszenia
+                        <span class="badge bg-info ms-2 me-1">●</span> Notatki
+                        <br>Kliknij dzień z notatką/zgłoszeniem aby zobaczyć szczegóły
+                    </small>
                 </div>
             </div>
         </div>
@@ -1190,6 +1194,94 @@
         </div>
     </div>
 </div>
+
+<!-- Calendar Note Modal -->
+{% if user.profile.role in 'admin,superagent,agent' %}
+<div class="modal fade" id="calendarNoteModal" tabindex="-1" aria-labelledby="calendarNoteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="calendarNoteModalLabel">
+                    <i class="fas fa-sticky-note me-2"></i><span id="noteModalTitle">Notatki i zgłoszenia</span>
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="noteModalDate" class="alert alert-info mb-3"></div>
+                
+                <!-- Assignments Section -->
+                <div id="assignmentsSection" class="mb-4" style="display: none;">
+                    <h6 class="border-bottom pb-2 mb-3">
+                        <i class="fas fa-ticket-alt text-success me-2"></i>Przypisane zgłoszenia
+                    </h6>
+                    <div id="assignmentsList"></div>
+                </div>
+                
+                <!-- Notes Section -->
+                <div id="notesSection">
+                    <h6 class="border-bottom pb-2 mb-3">
+                        <i class="fas fa-sticky-note text-info me-2"></i>Twoje notatki
+                    </h6>
+                    <div id="notesList"></div>
+                    
+                    <!-- Add Note Form -->
+                    <div id="addNoteForm" class="card bg-light mt-3" style="display: none;">
+                        <div class="card-body">
+                            <div class="mb-2">
+                                <label for="noteTitle" class="form-label">Tytuł notatki</label>
+                                <input type="text" class="form-control form-control-sm" id="noteTitle" placeholder="Wpisz tytuł..." maxlength="200">
+                            </div>
+                            <div class="mb-2">
+                                <label for="noteContent" class="form-label">Treść (opcjonalnie)</label>
+                                <textarea class="form-control form-control-sm" id="noteContent" rows="3" placeholder="Wpisz szczegóły..."></textarea>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-sm btn-primary" onclick="saveNote()">
+                                    <i class="fas fa-save me-1"></i>Zapisz
+                                </button>
+                                <button type="button" class="btn btn-sm btn-secondary" onclick="cancelNoteForm()">
+                                    <i class="fas fa-times me-1"></i>Anuluj
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Edit Note Form -->
+                    <div id="editNoteForm" class="card bg-light mt-3" style="display: none;">
+                        <div class="card-body">
+                            <input type="hidden" id="editNoteId">
+                            <div class="mb-2">
+                                <label for="editNoteTitle" class="form-label">Tytuł notatki</label>
+                                <input type="text" class="form-control form-control-sm" id="editNoteTitle" placeholder="Wpisz tytuł..." maxlength="200">
+                            </div>
+                            <div class="mb-2">
+                                <label for="editNoteContent" class="form-label">Treść (opcjonalnie)</label>
+                                <textarea class="form-control form-control-sm" id="editNoteContent" rows="3" placeholder="Wpisz szczegóły..."></textarea>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button type="button" class="btn btn-sm btn-primary" onclick="updateNote()">
+                                    <i class="fas fa-save me-1"></i>Zapisz
+                                </button>
+                                <button type="button" class="btn btn-sm btn-secondary" onclick="cancelEditForm()">
+                                    <i class="fas fa-times me-1"></i>Anuluj
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button type="button" class="btn btn-sm btn-outline-primary mt-2 w-100" id="addNoteBtn" onclick="showAddNoteForm()">
+                        <i class="fas fa-plus me-1"></i>Dodaj notatkę
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zamknij</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 {% endblock %}
 
 {% block extra_js %}
@@ -1270,13 +1362,35 @@
     }
     
     .calendar-day.has-assignments {
-        background-color: #fff3cd;
+        background-color: #d4edda;
         cursor: pointer;
+        border-left: 3px solid #28a745;
     }
     
     .calendar-day.has-assignments:hover {
-        background-color: #ffc107;
-        border-color: #ff9800;
+        background-color: #c3e6cb;
+        border-color: #28a745;
+    }
+    
+    .calendar-day.has-notes {
+        background-color: #cfe2ff;
+        cursor: pointer;
+        border-left: 3px solid #0d6efd;
+    }
+    
+    .calendar-day.has-notes:hover {
+        background-color: #9ec5fe;
+        border-color: #0d6efd;
+    }
+    
+    .calendar-day.has-assignments.has-notes {
+        background: linear-gradient(135deg, #d4edda 50%, #cfe2ff 50%);
+        border-left: 3px solid #28a745;
+        border-right: 3px solid #0d6efd;
+    }
+    
+    .calendar-day.has-assignments.has-notes:hover {
+        background: linear-gradient(135deg, #c3e6cb 50%, #9ec5fe 50%);
     }
     
     .calendar-day-number {
@@ -1287,12 +1401,22 @@
         position: absolute;
         top: 3px;
         right: 3px;
-        background-color: #dc3545;
+        background-color: #28a745;
         color: white;
         border-radius: 10px;
         padding: 2px 6px;
         font-size: 0.7rem;
         font-weight: bold;
+    }
+    
+    .calendar-day-badge.notes-badge {
+        background-color: #0d6efd;
+        right: auto;
+        left: 3px;
+    }
+    
+    .calendar-day-badge.assignments-badge {
+        background-color: #28a745;
     }
     
     /* Dark mode styles for calendar */
@@ -1339,17 +1463,47 @@
     }
     
     [data-theme="dark"] .calendar-day.has-assignments {
-        background-color: #664d03 !important;
+        background-color: #1e4620 !important;
+        border-left-color: #28a745 !important;
         color: #fff !important;
     }
     
     [data-theme="dark"] .calendar-day.has-assignments:hover {
-        background-color: #997404 !important;
-        border-color: #ffc107 !important;
+        background-color: #2d5a2f !important;
+        border-color: #28a745 !important;
+    }
+    
+    [data-theme="dark"] .calendar-day.has-notes {
+        background-color: #0c2340 !important;
+        border-left-color: #0d6efd !important;
+        color: #fff !important;
+    }
+    
+    [data-theme="dark"] .calendar-day.has-notes:hover {
+        background-color: #153055 !important;
+        border-color: #0d6efd !important;
+    }
+    
+    [data-theme="dark"] .calendar-day.has-assignments.has-notes {
+        background: linear-gradient(135deg, #1e4620 50%, #0c2340 50%) !important;
+        border-left-color: #28a745 !important;
+        border-right-color: #0d6efd !important;
+    }
+    
+    [data-theme="dark"] .calendar-day.has-assignments.has-notes:hover {
+        background: linear-gradient(135deg, #2d5a2f 50%, #153055 50%) !important;
     }
     
     [data-theme="dark"] .calendar-day-badge {
-        background-color: #dc3545 !important;
+        background-color: #28a745 !important;
+    }
+    
+    [data-theme="dark"] .calendar-day-badge.notes-badge {
+        background-color: #0d6efd !important;
+    }
+    
+    [data-theme="dark"] .calendar-day-badge.assignments-badge {
+        background-color: #28a745 !important;
     }
     
     /* Mobile responsive for calendar */
@@ -1405,6 +1559,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const dayNames = ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Nie'];
     
     let assignments = {};
+    let notes = {};
+    let currentSelectedDate = null;
     
     function renderCalendar(year, month) {
         // Clear container
@@ -1499,32 +1655,52 @@ document.addEventListener('DOMContentLoaded', function() {
             if (isToday) dayDiv.classList.add('today');
             if (isWeekend) dayDiv.classList.add('weekend');
             
-            // Check for assignments
             const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-            if (assignments[dateStr]) {
-                dayDiv.classList.add('has-assignments');
+            const hasAssignments = assignments[dateStr] && assignments[dateStr].length > 0;
+            const hasNotes = notes[dateStr] && notes[dateStr].length > 0;
+            
+            if (hasAssignments || hasNotes) {
                 dayDiv.dataset.date = dateStr;
+                dayDiv.style.cursor = 'pointer';
                 
-                // Add badge with count
-                const badge = document.createElement('span');
-                badge.className = 'calendar-day-badge';
-                badge.textContent = assignments[dateStr].length;
-                dayDiv.appendChild(badge);
+                if (hasAssignments) {
+                    dayDiv.classList.add('has-assignments');
+                    const assignmentsBadge = document.createElement('span');
+                    assignmentsBadge.className = 'calendar-day-badge assignments-badge';
+                    assignmentsBadge.textContent = assignments[dateStr].length;
+                    dayDiv.appendChild(assignmentsBadge);
+                }
                 
-                // Add click handler
+                if (hasNotes) {
+                    dayDiv.classList.add('has-notes');
+                    const notesBadge = document.createElement('span');
+                    notesBadge.className = 'calendar-day-badge notes-badge';
+                    notesBadge.textContent = notes[dateStr].length;
+                    dayDiv.appendChild(notesBadge);
+                }
+                
+                // Add click handler to show modal
                 dayDiv.addEventListener('click', () => {
-                    window.location.href = `/tickets/?calendar_date=${dateStr}`;
+                    showDayDetails(dateStr);
                 });
                 
-                // Add tooltip with ticket titles and notes
-                const ticketInfo = assignments[dateStr].map(a => {
-                    let info = `• ${a.ticket_title}`;
-                    if (a.notes && a.notes.trim()) {
-                        info += `\n  ↳ ${a.notes}`;
-                    }
-                    return info;
-                }).join('\n');
-                dayDiv.title = `Przypisane zgłoszenia (${assignments[dateStr].length}):\n${ticketInfo}`;
+                // Build tooltip
+                let tooltipParts = [];
+                if (hasAssignments) {
+                    const ticketInfo = assignments[dateStr].map(a => {
+                        let info = `• ${a.ticket_title}`;
+                        if (a.notes && a.notes.trim()) {
+                            info += `\n  ↳ ${a.notes}`;
+                        }
+                        return info;
+                    }).join('\n');
+                    tooltipParts.push(`Zgłoszenia (${assignments[dateStr].length}):\n${ticketInfo}`);
+                }
+                if (hasNotes) {
+                    const notesInfo = notes[dateStr].map(n => `• ${n.title}`).join('\n');
+                    tooltipParts.push(`Notatki (${notes[dateStr].length}):\n${notesInfo}`);
+                }
+                dayDiv.title = tooltipParts.join('\n\n');
             }
         }
         
@@ -1537,6 +1713,13 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function loadAssignments(year, month) {
+        // Load both assignments and notes
+        const firstDay = new Date(year, month - 1, 1);
+        const lastDay = new Date(year, month, 0);
+        const startDate = firstDay.toISOString().split('T')[0];
+        const endDate = lastDay.toISOString().split('T')[0];
+        
+        // Load assignments
         fetch(`/calendar/assignments/?year=${year}&month=${month}`, {
             headers: {
                 'X-Requested-With': 'XMLHttpRequest'
@@ -1546,13 +1729,283 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(data => {
             if (data.success) {
                 assignments = data.assignments;
+            }
+            // Load notes
+            return fetch(`/api/calendar-notes/?start=${startDate}&end=${endDate}`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            });
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Group notes by date
+                notes = {};
+                data.notes.forEach(note => {
+                    if (!notes[note.date]) {
+                        notes[note.date] = [];
+                    }
+                    notes[note.date].push(note);
+                });
+            }
+            renderCalendar(currentYear, currentMonth);
+        })
+        .catch(error => {
+            console.error('Error loading calendar data:', error);
+        });
+    }
+    
+    // Functions for day details modal
+    function showDayDetails(dateStr) {
+        currentSelectedDate = dateStr;
+        const modal = new bootstrap.Modal(document.getElementById('calendarNoteModal'));
+        
+        // Format date for display
+        const [year, month, day] = dateStr.split('-');
+        const date = new Date(year, month - 1, day);
+        const dateFormatted = date.toLocaleDateString('pl-PL', { 
+            weekday: 'long', 
+            year: 'numeric', 
+            month: 'long', 
+            day: 'numeric' 
+        });
+        
+        document.getElementById('noteModalDate').textContent = dateFormatted;
+        
+        // Show assignments section if any
+        const assignmentsSection = document.getElementById('assignmentsSection');
+        const assignmentsList = document.getElementById('assignmentsList');
+        
+        if (assignments[dateStr] && assignments[dateStr].length > 0) {
+            assignmentsSection.style.display = 'block';
+            assignmentsList.innerHTML = assignments[dateStr].map(a => `
+                <div class="card mb-2 border-success">
+                    <div class="card-body p-2">
+                        <h6 class="card-title mb-1">
+                            <a href="/tickets/${a.ticket_id}/" class="text-decoration-none">
+                                #${a.ticket_id} - ${a.ticket_title}
+                            </a>
+                        </h6>
+                        ${a.notes ? `<small class="text-muted">${a.notes}</small>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            assignmentsSection.style.display = 'none';
+        }
+        
+        // Show notes
+        refreshNotesList();
+        
+        modal.show();
+    }
+    
+    function refreshNotesList() {
+        const notesList = document.getElementById('notesList');
+        
+        if (!currentSelectedDate || !notes[currentSelectedDate] || notes[currentSelectedDate].length === 0) {
+            notesList.innerHTML = '<p class="text-muted small">Brak notatek na ten dzień.</p>';
+            return;
+        }
+        
+        notesList.innerHTML = notes[currentSelectedDate].map(note => `
+            <div class="card mb-2 border-info">
+                <div class="card-body p-2">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div class="flex-grow-1">
+                            <h6 class="card-title mb-1">${escapeHtml(note.title)}</h6>
+                            ${note.content ? `<p class="card-text small mb-0">${escapeHtml(note.content)}</p>` : ''}
+                            <small class="text-muted">Zaktualizowano: ${new Date(note.updated_at).toLocaleString('pl-PL')}</small>
+                        </div>
+                        <div class="btn-group-vertical btn-group-sm ms-2">
+                            <button class="btn btn-sm btn-outline-primary" onclick="editNote(${note.id})" title="Edytuj">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteNote(${note.id})" title="Usuń">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `).join('');
+    }
+    
+    function showAddNoteForm() {
+        document.getElementById('addNoteForm').style.display = 'block';
+        document.getElementById('addNoteBtn').style.display = 'none';
+        document.getElementById('noteTitle').value = '';
+        document.getElementById('noteContent').value = '';
+        document.getElementById('noteTitle').focus();
+    }
+    
+    function cancelNoteForm() {
+        document.getElementById('addNoteForm').style.display = 'none';
+        document.getElementById('addNoteBtn').style.display = 'block';
+    }
+    
+    function saveNote() {
+        const title = document.getElementById('noteTitle').value.trim();
+        const content = document.getElementById('noteContent').value.trim();
+        
+        if (!title) {
+            alert('Tytuł jest wymagany');
+            return;
+        }
+        
+        fetch('/api/calendar-notes/create/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                date: currentSelectedDate,
+                title: title,
+                content: content
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Add note to local data
+                if (!notes[currentSelectedDate]) {
+                    notes[currentSelectedDate] = [];
+                }
+                notes[currentSelectedDate].push(data.note);
+                
+                refreshNotesList();
+                cancelNoteForm();
                 renderCalendar(currentYear, currentMonth);
+            } else {
+                alert('Błąd: ' + data.error);
             }
         })
         .catch(error => {
-            console.error('Error loading calendar assignments:', error);
+            console.error('Error saving note:', error);
+            alert('Wystąpił błąd podczas zapisywania notatki');
         });
     }
+    
+    function editNote(noteId) {
+        const note = notes[currentSelectedDate].find(n => n.id === noteId);
+        if (!note) return;
+        
+        document.getElementById('editNoteId').value = noteId;
+        document.getElementById('editNoteTitle').value = note.title;
+        document.getElementById('editNoteContent').value = note.content || '';
+        document.getElementById('editNoteForm').style.display = 'block';
+        document.getElementById('addNoteBtn').style.display = 'none';
+        document.getElementById('editNoteTitle').focus();
+    }
+    
+    function cancelEditForm() {
+        document.getElementById('editNoteForm').style.display = 'none';
+        document.getElementById('addNoteBtn').style.display = 'block';
+    }
+    
+    function updateNote() {
+        const noteId = document.getElementById('editNoteId').value;
+        const title = document.getElementById('editNoteTitle').value.trim();
+        const content = document.getElementById('editNoteContent').value.trim();
+        
+        if (!title) {
+            alert('Tytuł jest wymagany');
+            return;
+        }
+        
+        fetch(`/api/calendar-notes/${noteId}/update/`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: JSON.stringify({
+                title: title,
+                content: content
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Update note in local data
+                const noteIndex = notes[currentSelectedDate].findIndex(n => n.id === noteId);
+                if (noteIndex !== -1) {
+                    notes[currentSelectedDate][noteIndex] = data.note;
+                }
+                
+                refreshNotesList();
+                cancelEditForm();
+                renderCalendar(currentYear, currentMonth);
+            } else {
+                alert('Błąd: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error updating note:', error);
+            alert('Wystąpił błąd podczas aktualizacji notatki');
+        });
+    }
+    
+    function deleteNote(noteId) {
+        if (!confirm('Czy na pewno chcesz usunąć tę notatkę?')) {
+            return;
+        }
+        
+        fetch(`/api/calendar-notes/${noteId}/delete/`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': getCookie('csrftoken')
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Remove note from local data
+                notes[currentSelectedDate] = notes[currentSelectedDate].filter(n => n.id !== noteId);
+                
+                refreshNotesList();
+                renderCalendar(currentYear, currentMonth);
+            } else {
+                alert('Błąd: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error deleting note:', error);
+            alert('Wystąpił błąd podczas usuwania notatki');
+        });
+    }
+    
+    function escapeHtml(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+    }
+    
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+    
+    // Make functions globally accessible
+    window.showAddNoteForm = showAddNoteForm;
+    window.cancelNoteForm = cancelNoteForm;
+    window.saveNote = saveNote;
+    window.editNote = editNote;
+    window.cancelEditForm = cancelEditForm;
+    window.updateNote = updateNote;
+    window.deleteNote = deleteNote;
     
     // Initial render
     renderCalendar(currentYear, currentMonth);

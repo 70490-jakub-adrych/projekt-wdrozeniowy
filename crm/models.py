@@ -955,7 +955,24 @@ class EmailNotificationSettings(models.Model):
     class Meta:
         verbose_name = "Ustawienia powiadomień email"
         verbose_name_plural = "Ustawienia powiadomień email"
+
+
+class CalendarNote(models.Model):
+    """Personal calendar notes - independent of tickets"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='calendar_notes', verbose_name="Użytkownik")
+    date = models.DateField(verbose_name="Data")
+    title = models.CharField(max_length=200, verbose_name="Tytuł")
+    content = models.TextField(blank=True, verbose_name="Treść")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Data utworzenia")
+    updated_at = models.DateTimeField(auto_now=True, verbose_name="Data aktualizacji")
     
     class Meta:
-        verbose_name = "Ustawienia powiadomień email"
-        verbose_name_plural = "Ustawienia powiadomień email"
+        verbose_name = "Notatka kalendarzowa"
+        verbose_name_plural = "Notatki kalendarzowe"
+        ordering = ['date', '-created_at']
+        indexes = [
+            models.Index(fields=['user', 'date']),
+        ]
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.date} - {self.title}"

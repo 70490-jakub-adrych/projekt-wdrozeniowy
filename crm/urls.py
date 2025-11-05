@@ -25,7 +25,10 @@ from .views.statistics_views import statistics_dashboard, update_agent_work_log,
 from .views.tickets.unassignment_views import ticket_unassign
 from .views.tickets.assignment_views import ticket_assign_to_other
 from .views.two_factor_views import setup_2fa, setup_2fa_success, disable_2fa, verify_2fa, recovery_code
-from .views.api_views import user_contact_info, toggle_theme, agent_tickets
+from .views.api_views import (
+    user_contact_info, toggle_theme, agent_tickets,
+    calendar_notes_api, calendar_note_create, calendar_note_update, calendar_note_delete
+)
 
 urlpatterns = [
     # Landing and authentication
@@ -131,5 +134,11 @@ urlpatterns = [
     path('api/user-contact/<int:user_id>/', user_contact_info, name='user_contact_info'),
     path('api/agent-tickets/<int:agent_id>/', agent_tickets, name='agent_tickets'),
     path('api/toggle-theme/', toggle_theme, name='toggle_theme'),
+    
+    # Calendar Notes API
+    path('api/calendar-notes/', calendar_notes_api, name='calendar_notes_api'),
+    path('api/calendar-notes/create/', calendar_note_create, name='calendar_note_create'),
+    path('api/calendar-notes/<int:note_id>/update/', calendar_note_update, name='calendar_note_update'),
+    path('api/calendar-notes/<int:note_id>/delete/', calendar_note_delete, name='calendar_note_delete'),
 
 ]

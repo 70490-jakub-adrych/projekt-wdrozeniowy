@@ -171,3 +171,208 @@ def toggle_theme(request):
             'success': False,
             'error': str(e)
         }, status=500)
+
+
+@login_required
+@require_http_methods(["GET"])
+def calendar_notes_api(request):
+    """
+    API endpoint to get user's calendar notes for a specific date range
+    """
+    try:
+        from ..models import CalendarNote
+        from datetime import datetime
+        
+        # Get date range from query parameters
+        start_date = request.GET.get('start')
+        end_date = request.GET.get('end')
+        
+        if not start_date or not end_date:
+            return JsonResponse({
+                'success': False,
+                'error': 'Brak wymaganych parametrów daty'
+            }, status=400)
+        
+        # Parse dates
+        try:
+            start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+            end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+        except ValueError:
+            return JsonResponse({
+                'success': False,
+                'error': 'Nieprawidłowy format daty'
+            }, status=400)
+        
+        # Get user's notes in date range
+        notes = CalendarNote.objects.filter(
+            user=request.user,
+            date__gte=start_date,
+            date__lte=end_date
+        ).order_by('date')
+        
+        # Build notes list
+        notes_list = []
+        for note in notes:
+            notes_list.append({
+                'id': note.id,
+                'date': note.date.strftime('%Y-%m-%d'),
+                'title': note.title,
+                'content': note.content,
+                'created_at': note.created_at.strftime('%Y-%m-%d %H:%M'),
+                'updated_at': note.updated_at.strftime('%Y-%m-%d %H:%M')
+            })
+        
+        return JsonResponse({
+            'success': True,
+            'notes': notes_list
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+
+@login_required
+@require_http_methods(["POST"])
+def calendar_note_create(request):
+    """
+    API endpoint to create a new calendar note
+    """
+    try:
+        from ..models import CalendarNote
+        from datetime import datetime
+        import json
+        
+        data = json.loads(request.body)
+        date_str = data.get('date')
+        title = data.get('title', '').strip()
+        content = data.get('content', '').strip()
+        
+        # Validate required fields
+        if not date_str or not title:
+            return JsonResponse({
+                'success': False,
+                'error': 'Data i tytuł są wymagane'
+            }, status=400)
+        
+        # Parse date
+        try:
+            date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        except ValueError:
+            return JsonResponse({
+                'success': False,
+                'error': 'Nieprawidłowy format daty'
+            }, status=400)
+        
+        # Create note
+        note = CalendarNote.objects.create(
+            user=request.user,
+            date=date,
+            title=title,
+            content=content
+        )
+        
+        return JsonResponse({
+            'success': True,
+            'note': {
+                'id': note.id,
+                'date': note.date.strftime('%Y-%m-%d'),
+                'title': note.title,
+                'content': note.content,
+                'created_at': note.created_at.strftime('%Y-%m-%d %H:%M'),
+                'updated_at': note.updated_at.strftime('%Y-%m-%d %H:%M')
+            }
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'error': 'Nieprawidłowy format danych'
+        }, status=400)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+
+@login_required
+@require_http_methods(["PUT", "PATCH"])
+def calendar_note_update(request, note_id):
+    """
+    API endpoint to update an existing calendar note
+    """
+    try:
+        from ..models import CalendarNote
+        import json
+        
+        # Get note and verify ownership
+        note = get_object_or_404(CalendarNote, id=note_id, user=request.user)
+        
+        data = json.loads(request.body)
+        title = data.get('title', '').strip()
+        content = data.get('content', '').strip()
+        
+        # Validate title
+        if not title:
+            return JsonResponse({
+                'success': False,
+                'error': 'Tytuł jest wymagany'
+            }, status=400)
+        
+        # Update note
+        note.title = title
+        note.content = content
+        note.save()
+        
+        return JsonResponse({
+            'success': True,
+            'note': {
+                'id': note.id,
+                'date': note.date.strftime('%Y-%m-%d'),
+                'title': note.title,
+                'content': note.content,
+                'created_at': note.created_at.strftime('%Y-%m-%d %H:%M'),
+                'updated_at': note.updated_at.strftime('%Y-%m-%d %H:%M')
+            }
+        })
+        
+    except json.JSONDecodeError:
+        return JsonResponse({
+            'success': False,
+            'error': 'Nieprawidłowy format danych'
+        }, status=400)
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
+
+
+@login_required
+@require_http_methods(["DELETE"])
+def calendar_note_delete(request, note_id):
+    """
+    API endpoint to delete a calendar note
+    """
+    try:
+        from ..models import CalendarNote
+        
+        # Get note and verify ownership
+        note = get_object_or_404(CalendarNote, id=note_id, user=request.user)
+        
+        # Delete note
+        note.delete()
+        
+        return JsonResponse({
+            'success': True,
+            'message': 'Notatka została usunięta'
+        })
+        
+    except Exception as e:
+        return JsonResponse({
+            'success': False,
+            'error': str(e)
+        }, status=500)
