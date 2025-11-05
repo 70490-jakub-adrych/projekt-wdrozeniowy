@@ -168,22 +168,13 @@ def get_calendar_assignments(request):
             year = now.year
             month = now.month
         
-        # Get assignments for the user
-        user_role = request.user.profile.role
-        
-        if user_role in ['superagent', 'admin']:
-            # Superagents and admins can see all assignments
-            assignments = TicketCalendarAssignment.objects.filter(
-                assigned_date__year=year,
-                assigned_date__month=month
-            ).select_related('ticket', 'assigned_to', 'assigned_by')
-        else:
-            # Regular agents see only their own assignments
-            assignments = TicketCalendarAssignment.objects.filter(
-                assigned_to=request.user,
-                assigned_date__year=year,
-                assigned_date__month=month
-            ).select_related('ticket', 'assigned_by')
+        # Everyone sees only their own assignments
+        # If admin wants to check someone else's calendar, they can use admin panel
+        assignments = TicketCalendarAssignment.objects.filter(
+            assigned_to=request.user,
+            assigned_date__year=year,
+            assigned_date__month=month
+        ).select_related('ticket', 'assigned_by')
         
         # Group by date
         assignments_by_date = {}
