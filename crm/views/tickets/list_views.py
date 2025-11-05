@@ -23,6 +23,7 @@ def ticket_list(request):
     priority_filters = request.GET.getlist('priority')
     category_filters = request.GET.getlist('category')
     assigned_filters = request.GET.getlist('assigned')  # wartości: 'me', 'unassigned'
+    on_duty_filters = request.GET.getlist('on_duty')  # wartości: 'true', 'false'
     date_from = request.GET.get('date_from', '')
     date_to = request.GET.get('date_to', '')
     ticket_id = request.GET.get('ticket_id', '')
@@ -148,6 +149,17 @@ def ticket_list(request):
             tickets = tickets.filter(assigned_q)
     # 'all' nie wymaga filtrowania - pokazuje wszystkie zgłoszenia z organizacji agenta
     
+    # Filtrowanie po dyżurze (multi)
+    if on_duty_filters:
+        on_duty_q = Q()
+        for od in on_duty_filters:
+            if od == 'true':
+                on_duty_q |= Q(on_duty=True)
+            elif od == 'false':
+                on_duty_q |= Q(on_duty=False)
+        if on_duty_q:
+            tickets = tickets.filter(on_duty_q)
+    
     # New filtering options for client dashboard
     if created_by_filter == 'me':
         tickets = tickets.filter(created_by=user)
@@ -234,6 +246,8 @@ def ticket_list(request):
         url_params.append(('category', v))
     for v in assigned_filters:
         url_params.append(('assigned', v))
+    for v in on_duty_filters:
+        url_params.append(('on_duty', v))
     if date_from:
         url_params.append(('date_from', date_from))
     if date_to:
@@ -291,6 +305,7 @@ def ticket_list(request):
         'selected_priorities': priority_filters,
         'selected_categories': category_filters,
         'selected_assigned': assigned_filters,
+        'selected_on_duty': on_duty_filters,
         'date_from': date_from,
         'date_to': date_to,
         'ticket_id': ticket_id,

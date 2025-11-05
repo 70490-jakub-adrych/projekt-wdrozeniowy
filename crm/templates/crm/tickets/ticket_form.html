@@ -100,6 +100,20 @@
                             </div>
                         {% endif %}
                         
+                        {% if form.on_duty %}
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    {{ form.on_duty }}
+                                    <label class="form-check-label" for="{{ form.on_duty.id_for_label }}">
+                                        {{ form.on_duty.label }}
+                                    </label>
+                                </div>
+                                {% if form.on_duty.help_text %}
+                                    <small class="form-text text-muted">{{ form.on_duty.help_text }}</small>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                        
                         {% if not ticket %}
                         <div class="mb-3">
                             <label for="organization" class="form-label">Organizacja:</label>

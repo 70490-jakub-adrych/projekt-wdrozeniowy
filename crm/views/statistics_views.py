@@ -954,7 +954,7 @@ def _generate_csv_report(period_start, period_end, organization, agent,
             # Add agent's tickets details
             writer.writerow([''])
             writer.writerow([f"  Zgłoszenia agenta: {ap['agent_name']}"])
-            writer.writerow(['  ID', 'Tytuł', 'Status', 'Priorytet', 'Kategoria', 'Utworzono', 'Rozwiązano', 'Zamknięto'])
+            writer.writerow(['  ID', 'Tytuł', 'Status', 'Priorytet', 'Kategoria', 'Dyżur', 'Utworzono', 'Rozwiązano', 'Zamknięto', 'Rzecz. czas (h)'])
             
             # Get agent's tickets in period
             agent_id = ap.get('agent_id')
@@ -978,9 +978,11 @@ def _generate_csv_report(period_start, period_end, organization, agent,
                             status_labels.get(ticket.status, ticket.status),
                             priority_labels.get(ticket.priority, ticket.priority),
                             category_labels.get(ticket.category, ticket.category),
+                            'Tak' if ticket.on_duty else 'Nie',
                             ticket.created_at.strftime('%Y-%m-%d %H:%M'),
                             ticket.resolved_at.strftime('%Y-%m-%d %H:%M') if ticket.resolved_at else '-',
-                            ticket.closed_at.strftime('%Y-%m-%d %H:%M') if ticket.closed_at else '-'
+                            ticket.closed_at.strftime('%Y-%m-%d %H:%M') if ticket.closed_at else '-',
+                            f"{ticket.actual_resolution_time:.2f}" if ticket.actual_resolution_time else '-'
                         ])
                 else:
                     writer.writerow(['  ', 'Brak zgłoszeń w wybranym okresie'])
@@ -1158,7 +1160,7 @@ def _generate_excel_report(period_start, period_end, organization, agent,
                 ws[f'A{row}'].font = Font(bold=True, italic=True)
                 row += 1
                 
-                ticket_headers = ['ID', 'Tytuł', 'Status', 'Priorytet', 'Kategoria', 'Utworzono', 'Rozwiązano', 'Zamknięto', 'Rzecz. czas (h)']
+                ticket_headers = ['ID', 'Tytuł', 'Status', 'Priorytet', 'Kategoria', 'Dyżur', 'Utworzono', 'Rozwiązano', 'Zamknięto', 'Rzecz. czas (h)']
                 for col, header in enumerate(ticket_headers, 1):
                     cell = ws.cell(row=row, column=col, value=header)
                     cell.font = bold_font
@@ -1205,10 +1207,21 @@ def _generate_excel_report(period_start, period_end, organization, agent,
                                 priority_cell.font = white_font
                             
                             ws[f'E{row}'] = category_labels.get(ticket.category, ticket.category)
-                            ws[f'F{row}'] = ticket.created_at.strftime('%Y-%m-%d %H:%M')
-                            ws[f'G{row}'] = ticket.resolved_at.strftime('%Y-%m-%d %H:%M') if ticket.resolved_at else '-'
-                            ws[f'H{row}'] = ticket.closed_at.strftime('%Y-%m-%d %H:%M') if ticket.closed_at else '-'
-                            ws[f'I{row}'] = f"{ticket.actual_resolution_time:.2f}" if ticket.actual_resolution_time else '-'
+                            
+                            # On Duty with color
+                            on_duty_cell = ws[f'F{row}']
+                            on_duty_cell.value = 'Tak' if ticket.on_duty else 'Nie'
+                            if ticket.on_duty:
+                                on_duty_cell.fill = PatternFill(start_color="28a745", end_color="28a745", fill_type="solid")
+                                on_duty_cell.font = white_font
+                            else:
+                                on_duty_cell.fill = PatternFill(start_color="dc3545", end_color="dc3545", fill_type="solid")
+                                on_duty_cell.font = white_font
+                            
+                            ws[f'G{row}'] = ticket.created_at.strftime('%Y-%m-%d %H:%M')
+                            ws[f'H{row}'] = ticket.resolved_at.strftime('%Y-%m-%d %H:%M') if ticket.resolved_at else '-'
+                            ws[f'I{row}'] = ticket.closed_at.strftime('%Y-%m-%d %H:%M') if ticket.closed_at else '-'
+                            ws[f'J{row}'] = f"{ticket.actual_resolution_time:.2f}" if ticket.actual_resolution_time else '-'
                             row += 1
                     else:
                         logger.warning(f"Excel Report - No tickets found for agent {agent_id} in period")

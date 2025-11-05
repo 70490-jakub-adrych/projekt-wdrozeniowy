@@ -485,6 +485,20 @@
                     </div>
                 </div>
                 <div class="row mb-3">
+                    <div class="col-md-3 fw-bold">Dyżur:</div>
+                    <div class="col-md-9">
+                        {% if ticket.on_duty %}
+                            <span class="badge bg-success p-2">
+                                <i class="fas fa-check-circle"></i> Tak
+                            </span>
+                        {% else %}
+                            <span class="badge bg-danger p-2">
+                                <i class="fas fa-times-circle"></i> Nie
+                            </span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="row mb-3">
                     <div class="col-md-3 fw-bold">Data utworzenia:</div>
                     <div class="col-md-9">{{ ticket.created_at|date:"d.m.Y H:i" }}</div>
                 </div>

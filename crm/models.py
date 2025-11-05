@@ -319,6 +319,11 @@ class Ticket(models.Model):
         verbose_name="Rzeczywisty czas wykonania (godziny)",
         help_text="Podaj rzeczywisty czas poświęcony na wykonanie zgłoszenia w godzinach"
     )
+    on_duty = models.BooleanField(
+        default=False,
+        verbose_name="Dyżur",
+        help_text="Czy zgłoszenie jest dyżurowe"
+    )
     
     def __str__(self):
         return self.title

@@ -484,7 +484,7 @@
     
     <!-- Filter summary when collapsed -->
     <div class="card-body p-2 filter-summary">
-        {% if selected_statuses or selected_priorities or selected_categories or selected_assigned or selected_organizations or created_by_filter or date_from or date_to or ticket_id %}
+        {% if selected_statuses or selected_priorities or selected_categories or selected_assigned or selected_on_duty or selected_organizations or created_by_filter or date_from or date_to or ticket_id %}
             <div class="active-filters">
                 {% if selected_statuses %}
                     <span class="active-filter"><strong>Status:</strong>
@@ -514,6 +514,14 @@
                     <span class="active-filter"><strong>Przypisane:</strong>
                         {% for code in selected_assigned %}
                             {% if code == 'me' %}Do mnie{% elif code == 'unassigned' %}Nieprzypisane{% endif %}{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                    </span>
+                {% endif %}
+
+                {% if selected_on_duty %}
+                    <span class="active-filter"><strong>Dyżur:</strong>
+                        {% for code in selected_on_duty %}
+                            {% if code == 'true' %}Tak{% elif code == 'false' %}Nie{% endif %}{% if not forloop.last %}, {% endif %}
                         {% endfor %}
                     </span>
                 {% endif %}
@@ -627,6 +635,28 @@
                                     <div class="form-check">
                                         <input class="form-check-input" type="checkbox" name="assigned" value="unassigned" id="assigned_unassigned" {% if 'unassigned' in selected_assigned %}checked{% endif %}>
                                         <label class="form-check-label" for="assigned_unassigned">Nieprzypisane</label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-sm-6 mb-2">
+                            <label class="d-block">Dyżur:</label>
+                            <div class="dropdown multi-select-dropdown">
+                                <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                                    {% if selected_on_duty %}Dyżur: {{ selected_on_duty|length }} wybr.{% else %}Dyżur: Wszystkie{% endif %}
+                                </button>
+                                <div class="dropdown-menu p-2">
+                                    <div class="multi-select-actions">
+                                        <button type="button" class="btn btn-link" onclick="toggleSelectAll(this, 'on_duty', true)">Zaznacz wszystkie</button>
+                                        <button type="button" class="btn btn-link text-danger" onclick="toggleSelectAll(this, 'on_duty', false)">Wyczyść</button>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="on_duty" value="true" id="on_duty_true" {% if 'true' in selected_on_duty %}checked{% endif %}>
+                                        <label class="form-check-label" for="on_duty_true">Tak</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="on_duty" value="false" id="on_duty_false" {% if 'false' in selected_on_duty %}checked{% endif %}>
+                                        <label class="form-check-label" for="on_duty_false">Nie</label>
                                     </div>
                                 </div>
                             </div>
