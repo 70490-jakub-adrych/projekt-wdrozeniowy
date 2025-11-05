@@ -36,6 +36,8 @@ media/
 .vscode/
 *.swp
 *.swo
+
+# Local migration files (not on production server)
 crm/migrations/0001_initial.py
 crm/migrations/0002_alter_userprofile_role.py
 crm/migrations/0003_groupsettings.py
@@ -43,10 +45,11 @@ crm/migrations/0004_groupviewpermission_userviewpermission_viewpermission.py
 crm/migrations/0005_auto_20250605_1245.py
 crm/migrations/0002_add_2fa_fields.py
 crm/migrations/0003_set_ga_enabled_default.py
-crm/migrations/0003_set_ga_enabled_default.py
-crm/migrations/0002_add_2fa_fields.py
-crm/migrations/0003_set_ga_enabled_default.py
-crm/migrations/0002_add_2fa_fields.py
-crm/migrations/0003_set_ga_enabled_default.py
+crm/migrations/0003_ticket_actual_resolution_time.py
+
+# Documentation files
 MOBILE_UI_FIXES.md
 MOBILE_UI_FIXES_ROUND2.md
+crm/migrations/0004_set_resolved_at_for_existing.py
+crm/migrations/0005_ticketcalendarassignment.py
+crm/migrations/0004_set_resolved_at_for_existing.py
