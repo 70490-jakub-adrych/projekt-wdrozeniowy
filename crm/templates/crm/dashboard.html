@@ -1516,9 +1516,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     window.location.href = `/tickets/?calendar_date=${dateStr}`;
                 });
                 
-                // Add tooltip
-                const ticketTitles = assignments[dateStr].map(a => `• ${a.ticket_title}`).join('\n');
-                dayDiv.title = `Przypisane zgłoszenia (${assignments[dateStr].length}):\n${ticketTitles}`;
+                // Add tooltip with ticket titles and notes
+                const ticketInfo = assignments[dateStr].map(a => {
+                    let info = `• ${a.ticket_title}`;
+                    if (a.notes && a.notes.trim()) {
+                        info += `\n  ↳ ${a.notes}`;
+                    }
+                    return info;
+                }).join('\n');
+                dayDiv.title = `Przypisane zgłoszenia (${assignments[dateStr].length}):\n${ticketInfo}`;
             }
         }
         

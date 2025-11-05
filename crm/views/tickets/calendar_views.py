@@ -170,10 +170,13 @@ def get_calendar_assignments(request):
         
         # Everyone sees only their own assignments
         # If admin wants to check someone else's calendar, they can use admin panel
+        # Exclude tickets that are resolved or closed - no need to show them in calendar
         assignments = TicketCalendarAssignment.objects.filter(
             assigned_to=request.user,
             assigned_date__year=year,
             assigned_date__month=month
+        ).exclude(
+            ticket__status__in=['resolved', 'closed']
         ).select_related('ticket', 'assigned_by')
         
         # Group by date
