@@ -22,6 +22,22 @@
         padding-left: 0;
         margin: 0;
     }
+    
+    /* Light mode default styles */
+    .members-container {
+        background-color: #f8f9fa;
+        border: 1px solid #ced4da;
+    }
+    
+    /* Dark mode styles for members container */
+    [data-theme="dark"] .members-container {
+        background-color: var(--input-bg) !important;
+        border-color: var(--input-border) !important;
+    }
+    
+    [data-theme="dark"] .members-container label {
+        color: var(--text-color) !important;
+    }
 </style>
 {% endblock %}
 
@@ -50,7 +66,7 @@
                         {% if form.members.help_text %}
                             <small class="form-text text-muted d-block mb-2">{{ form.members.help_text }}</small>
                         {% endif %}
-                        <div class="members-container" style="max-height: 300px; overflow-y: auto; border: 1px solid #ced4da; border-radius: 0.25rem; padding: 15px; background-color: #f8f9fa;">
+                        <div class="members-container" style="max-height: 300px; overflow-y: auto; border-radius: 0.25rem; padding: 15px;">
                             {{ form.members }}
                         </div>
                         {% if form.members.errors %}
