@@ -32,7 +32,7 @@ def reverse_set_resolved_at(apps, schema_editor):
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('crm', '0003_ticket_actual_resolution_time'),
+        ('crm', '0002_add_actual_resolution_time_manually'),
     ]
 
     operations = [
