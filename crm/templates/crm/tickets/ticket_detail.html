@@ -319,6 +319,15 @@
                     </a>
                 {% endif %}
                 
+                <!-- Calendar assignment button - show for assigned tickets (admin, superagent, agent) -->
+                {% if ticket.assigned_to and not is_closed %}
+                    {% if user.profile.role in 'admin,superagent,agent' %}
+                    <button type="button" class="btn btn-outline-info" data-bs-toggle="modal" data-bs-target="#calendarAssignModal">
+                        <i class="fas fa-calendar-plus me-1"></i> Przypisz do kalendarza
+                    </button>
+                    {% endif %}
+                {% endif %}
+                
                 <!-- Close button - Replace with Mark as Resolved button for agent/superagent -->
                 {% if not is_closed and ticket.assigned_to %}
                     {% if ticket.assigned_to == user and group_settings.can_close_assigned_tickets %}
@@ -1213,6 +1222,79 @@
     });
 </script>
 {% endif %}
+
+<!-- Calendar Assignment Modal -->
+{% if user.profile.role in 'admin,superagent,agent' and ticket.assigned_to and not is_closed %}
+<div class="modal fade" id="calendarAssignModal" tabindex="-1" aria-labelledby="calendarAssignModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="calendarAssignModalLabel">
+                    <i class="fas fa-calendar-plus me-2"></i>Przypisz zgłoszenie do kalendarza
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form method="post" action="{% url 'assign_ticket_to_calendar' ticket.id %}">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Przypisanie zgłoszenia do kalendarza oznacza planowaną datę pracy nad nim.
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="calendar_date" class="form-label">Data przypisania</label>
+                        <input type="date" class="form-control" id="calendar_date" name="calendar_date" required>
+                        <small class="form-text text-muted">Wybierz dzień, w którym planujesz pracować nad tym zgłoszeniem</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="calendar_notes" class="form-label">Notatki (opcjonalnie)</label>
+                        <textarea class="form-control" id="calendar_notes" name="calendar_notes" rows="3" placeholder="Np. spotkanie o 10:00, przygotować dokumentację..."></textarea>
+                        <small class="form-text text-muted">Dodatkowe informacje widoczne w kalendarzu</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <p class="mb-2"><strong>Zgłoszenie:</strong></p>
+                        <div class="card bg-light">
+                            <div class="card-body py-2">
+                                <small>
+                                    <strong>#{{ ticket.id }}</strong> - {{ ticket.title }}<br>
+                                    <span class="text-muted">Przypisane do: {{ ticket.assigned_to.username }}</span>
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anuluj</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-1"></i>Przypisz do kalendarza
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Set today's date as default in calendar assignment modal
+    document.addEventListener('DOMContentLoaded', function() {
+        const calendarModal = document.getElementById('calendarAssignModal');
+        if (calendarModal) {
+            calendarModal.addEventListener('show.bs.modal', function() {
+                const dateInput = document.getElementById('calendar_date');
+                if (dateInput && !dateInput.value) {
+                    // Set today as default
+                    const today = new Date().toISOString().split('T')[0];
+                    dateInput.value = today;
+                }
+            });
+        }
+    });
+</script>
+{% endif %}
+
 {% endblock %}
 
 {% endblock %}
