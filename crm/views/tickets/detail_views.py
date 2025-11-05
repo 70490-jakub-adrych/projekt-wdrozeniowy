@@ -2,6 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import HttpResponseForbidden, Http404
+from django.contrib.auth.models import User
 import os
 import logging
 
@@ -186,6 +187,11 @@ def ticket_detail(request, pk):
          ticket.organization in user_orgs)
     )
 
+    # Get list of agents for calendar assignment (for superagents and admins)
+    agents = []
+    if role in ['admin', 'superagent']:
+        agents = User.objects.filter(profile__role__in=['agent', 'superagent']).order_by('username')
+    
     context = {
         'ticket': ticket,
         'comments': comments,
@@ -200,6 +206,7 @@ def ticket_detail(request, pk):
         'can_close': can_close,
         'can_reopen': can_reopen,
         'is_closed': is_closed,
+        'agents': agents,
     }
     
     return render(request, 'crm/tickets/ticket_detail.html', context)
