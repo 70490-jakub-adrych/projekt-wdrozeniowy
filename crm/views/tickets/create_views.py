@@ -114,22 +114,22 @@ def ticket_create(request):
             
             # Handle calendar assignment if provided
             if user.profile.role in ['admin', 'superagent', 'agent']:
-                calendar_assign_to = form.cleaned_data.get('calendar_assign_to')
                 calendar_assigned_date = form.cleaned_data.get('calendar_assigned_date')
                 
-                if calendar_assign_to and calendar_assigned_date:
+                # Use assigned_to from the ticket as the calendar assignee
+                if ticket.assigned_to and calendar_assigned_date:
                     from ...models import TicketCalendarAssignment
                     
-                    # Create calendar assignment
+                    # Create calendar assignment for the person assigned to the ticket
                     TicketCalendarAssignment.objects.create(
                         ticket=ticket,
-                        assigned_to=calendar_assign_to,
+                        assigned_to=ticket.assigned_to,
                         assigned_date=calendar_assigned_date,
                         assigned_by=user,
                         notes=form.cleaned_data.get('calendar_notes', '')
                     )
                     log_activity(request, 'ticket_calendar_assigned', ticket, 
-                                f"Przypisano zgłoszenie do kalendarza użytkownika {calendar_assign_to.username} na dzień {calendar_assigned_date}")
+                                f"Przypisano zgłoszenie do kalendarza użytkownika {ticket.assigned_to.username} na dzień {calendar_assigned_date}")
             
             # Send email notifications to relevant stakeholders
             EmailNotificationService.notify_ticket_stakeholders('created', ticket, triggered_by=user)

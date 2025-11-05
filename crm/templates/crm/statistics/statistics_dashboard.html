@@ -241,11 +241,11 @@
     <div class="mobile-filter-controls">
         <button class="btn btn-outline-primary btn-sm" type="button" data-bs-toggle="modal" data-bs-target="#mobileStatsFilterModal">
             <i class="fas fa-filter me-1"></i> Filtry
-            {% if period != 'month' or org_filter or agent_filter or date_from or date_to %}
+            {% if period != 'month' or org_filter or agent_filter or on_duty_filter or date_from or date_to %}
             <span class="badge bg-info ms-1">!</span>
             {% endif %}
         </button>
-        {% if period != 'month' or org_filter or agent_filter or date_from or date_to %}
+        {% if period != 'month' or org_filter or agent_filter or on_duty_filter or date_from or date_to %}
         <a href="{% url 'statistics_dashboard' %}" class="btn btn-outline-secondary btn-sm">
             <i class="fas fa-times me-1"></i> Wyczyść
         </a>
@@ -280,11 +280,11 @@
     <div class="card-header p-2 d-flex justify-content-between align-items-center flex-column flex-sm-row">
         <div class="mb-2 mb-sm-0">
             <i class="fas fa-filter me-1"></i> Filtry statystyk
-            {% if period != 'month' or org_filter or agent_filter or date_from or date_to %}
+            {% if period != 'month' or org_filter or agent_filter or on_duty_filter or date_from or date_to %}
             <span class="badge bg-info ms-2">Aktywne</span>
             {% endif %}
         </div>
-        {% if period != 'month' or org_filter or agent_filter or date_from or date_to %}
+        {% if period != 'month' or org_filter or agent_filter or on_duty_filter or date_from or date_to %}
         <a href="{% url 'statistics_dashboard' %}" class="btn btn-sm btn-outline-secondary">
             <i class="fas fa-times me-1"></i> Wyczyść filtry
         </a>
@@ -328,6 +328,14 @@
                             {% if agent_profile.user.first_name %}{{ agent_profile.user.first_name }} {{ agent_profile.user.last_name }}{% else %}{{ agent_profile.user.username }}{% endif %}
                         </option>
                         {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2 mb-2">
+                    <label for="on_duty">Dyżur:</label>
+                    <select name="on_duty" id="on_duty" class="form-control">
+                        <option value="">Wszystkie</option>
+                        <option value="true" {% if on_duty_filter == 'true' %}selected{% endif %}>Tak</option>
+                        <option value="false" {% if on_duty_filter == 'false' %}selected{% endif %}>Nie</option>
                     </select>
                 </div>
                 <div class="col-md-2 d-flex align-items-end mb-2">
@@ -393,6 +401,15 @@
                                 {% if agent_profile.user.first_name %}{{ agent_profile.user.first_name }} {{ agent_profile.user.last_name }}{% else %}{{ agent_profile.user.username }}{% endif %}
                             </option>
                             {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="mobile_on_duty" class="form-label">Dyżur</label>
+                        <select name="on_duty" id="mobile_on_duty" class="form-select">
+                            <option value="" {% if not on_duty_filter %}selected{% endif %}>Wszystkie</option>
+                            <option value="true" {% if on_duty_filter == 'true' %}selected{% endif %}>Tak</option>
+                            <option value="false" {% if on_duty_filter == 'false' %}selected{% endif %}>Nie</option>
                         </select>
                     </div>
                 </form>

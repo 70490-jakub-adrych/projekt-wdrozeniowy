@@ -115,6 +115,14 @@ def statistics_dashboard(request):
     if agent_filter:
         tickets = tickets.filter(assigned_to_id=agent_filter)
     
+    # On Duty filter
+    on_duty_filter = request.GET.get('on_duty', '')
+    if on_duty_filter:
+        if on_duty_filter == 'true':
+            tickets = tickets.filter(on_duty=True)
+        elif on_duty_filter == 'false':
+            tickets = tickets.filter(on_duty=False)
+    
     # Count tickets by status
     new_tickets = tickets.filter(status='new').count()
     in_progress_tickets = tickets.filter(status='in_progress').count()
@@ -389,6 +397,7 @@ def statistics_dashboard(request):
         'agents': agents,
         'org_filter': org_filter,
         'agent_filter': agent_filter,
+        'on_duty_filter': on_duty_filter,
         'agent_work_time_stats': agent_work_time_stats,
         'debug_unresolved_count': unresolved_count,  # Keep this for debugging
     }

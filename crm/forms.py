@@ -156,17 +156,12 @@ class TicketForm(forms.ModelForm):
     )
     
     # Calendar assignment fields (optional)
-    calendar_assign_to = forms.ModelChoiceField(
-        queryset=User.objects.none(),
-        required=False,
-        label="Przypisz do kalendarza",
-        help_text="Opcjonalnie przypisz zgłoszenie do kalendarza agenta"
-    )
+    # Note: Calendar assignment will use the 'assigned_to' user automatically
     calendar_assigned_date = forms.DateField(
         required=False,
         label="Data w kalendarzu",
         widget=forms.DateInput(attrs={'type': 'date'}),
-        help_text="Wybierz datę w kalendarzu"
+        help_text="Zgłoszenie zostanie dodane do kalendarza osoby wybranej w polu 'Przypisane do'"
     )
     calendar_notes = forms.CharField(
         required=False,
@@ -191,21 +186,6 @@ class TicketForm(forms.ModelForm):
             f"{obj.username} ({obj.get_full_name() or obj.email}) - "
             f"{'Administrator' if obj.profile.role == 'admin' else 'Superagent' if obj.profile.role == 'superagent' else 'Agent'}"
         )
-        
-        # Setup calendar_assign_to field based on user role
-        if self.request_user:
-            if self.request_user.profile.role == 'agent':
-                # Agent can only assign to themselves
-                self.fields['calendar_assign_to'].queryset = User.objects.filter(id=self.request_user.id)
-                self.fields['calendar_assign_to'].initial = self.request_user
-            elif self.request_user.profile.role in ['superagent', 'admin']:
-                # Superagent/admin can assign to any agent
-                self.fields['calendar_assign_to'].queryset = User.objects.filter(
-                    profile__role__in=['agent', 'superagent']
-                ).select_related('profile').order_by('username')
-                self.fields['calendar_assign_to'].label_from_instance = lambda obj: (
-                    f"{obj.username} ({obj.get_full_name() or obj.email})"
-                )
 
 
 class ModeratorTicketForm(forms.ModelForm):
@@ -244,17 +224,12 @@ class ModeratorTicketForm(forms.ModelForm):
     )
     
     # Calendar assignment fields (optional)
-    calendar_assign_to = forms.ModelChoiceField(
-        queryset=User.objects.none(),
-        required=False,
-        label="Przypisz do kalendarza",
-        help_text="Opcjonalnie przypisz zgłoszenie do kalendarza agenta"
-    )
+    # Note: Calendar assignment will use the 'assigned_to' user automatically
     calendar_assigned_date = forms.DateField(
         required=False,
         label="Data w kalendarzu",
         widget=forms.DateInput(attrs={'type': 'date'}),
-        help_text="Wybierz datę w kalendarzu"
+        help_text="Zgłoszenie zostanie dodane do kalendarza osoby wybranej w polu 'Przypisane do'"
     )
     calendar_notes = forms.CharField(
         required=False,
@@ -279,21 +254,6 @@ class ModeratorTicketForm(forms.ModelForm):
             f"{obj.username} ({obj.get_full_name() or obj.email}) - "
             f"{'Administrator' if obj.profile.role == 'admin' else 'Superagent' if obj.profile.role == 'superagent' else 'Agent'}"
         )
-        
-        # Setup calendar_assign_to field based on user role
-        if self.request_user:
-            if self.request_user.profile.role == 'agent':
-                # Agent can only assign to themselves
-                self.fields['calendar_assign_to'].queryset = User.objects.filter(id=self.request_user.id)
-                self.fields['calendar_assign_to'].initial = self.request_user
-            elif self.request_user.profile.role in ['superagent', 'admin']:
-                # Superagent/admin can assign to any agent
-                self.fields['calendar_assign_to'].queryset = User.objects.filter(
-                    profile__role__in=['agent', 'superagent']
-                ).select_related('profile').order_by('username')
-                self.fields['calendar_assign_to'].label_from_instance = lambda obj: (
-                    f"{obj.username} ({obj.get_full_name() or obj.email})"
-                )
 
 
 class ClientTicketForm(forms.ModelForm):
