@@ -1342,13 +1342,21 @@
         border-radius: 4px;
         min-height: 50px;
         position: relative;
-        cursor: default;
+        cursor: pointer;
         background-color: #fff;
+        transition: all 0.2s ease;
+    }
+    
+    .calendar-day:not(.other-month):hover {
+        border-color: #adb5bd;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transform: translateY(-1px);
     }
     
     .calendar-day.other-month {
         background-color: #f8f9fa;
         color: #6c757d;
+        cursor: default;
     }
     
     .calendar-day.weekend {
@@ -1445,6 +1453,11 @@
         background-color: #212529 !important;
         border-color: #495057 !important;
         color: #dee2e6 !important;
+    }
+    
+    [data-theme="dark"] .calendar-day:not(.other-month):hover {
+        border-color: #6c757d !important;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.3) !important;
     }
     
     [data-theme="dark"] .calendar-day.other-month {
@@ -1659,32 +1672,34 @@ document.addEventListener('DOMContentLoaded', function() {
             const hasAssignments = assignments[dateStr] && assignments[dateStr].length > 0;
             const hasNotes = notes[dateStr] && notes[dateStr].length > 0;
             
+            // Make ALL days clickable, not just those with content
+            dayDiv.dataset.date = dateStr;
+            dayDiv.style.cursor = 'pointer';
+            
+            // Add visual indicators if there's content
+            if (hasAssignments) {
+                dayDiv.classList.add('has-assignments');
+                const assignmentsBadge = document.createElement('span');
+                assignmentsBadge.className = 'calendar-day-badge assignments-badge';
+                assignmentsBadge.textContent = assignments[dateStr].length;
+                dayDiv.appendChild(assignmentsBadge);
+            }
+            
+            if (hasNotes) {
+                dayDiv.classList.add('has-notes');
+                const notesBadge = document.createElement('span');
+                notesBadge.className = 'calendar-day-badge notes-badge';
+                notesBadge.textContent = notes[dateStr].length;
+                dayDiv.appendChild(notesBadge);
+            }
+            
+            // Add click handler to show modal for ALL days
+            dayDiv.addEventListener('click', () => {
+                showDayDetails(dateStr);
+            });
+            
+            // Build tooltip only if there's content
             if (hasAssignments || hasNotes) {
-                dayDiv.dataset.date = dateStr;
-                dayDiv.style.cursor = 'pointer';
-                
-                if (hasAssignments) {
-                    dayDiv.classList.add('has-assignments');
-                    const assignmentsBadge = document.createElement('span');
-                    assignmentsBadge.className = 'calendar-day-badge assignments-badge';
-                    assignmentsBadge.textContent = assignments[dateStr].length;
-                    dayDiv.appendChild(assignmentsBadge);
-                }
-                
-                if (hasNotes) {
-                    dayDiv.classList.add('has-notes');
-                    const notesBadge = document.createElement('span');
-                    notesBadge.className = 'calendar-day-badge notes-badge';
-                    notesBadge.textContent = notes[dateStr].length;
-                    dayDiv.appendChild(notesBadge);
-                }
-                
-                // Add click handler to show modal
-                dayDiv.addEventListener('click', () => {
-                    showDayDetails(dateStr);
-                });
-                
-                // Build tooltip
                 let tooltipParts = [];
                 if (hasAssignments) {
                     const ticketInfo = assignments[dateStr].map(a => {
@@ -1701,6 +1716,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     tooltipParts.push(`Notatki (${notes[dateStr].length}):\n${notesInfo}`);
                 }
                 dayDiv.title = tooltipParts.join('\n\n');
+            } else {
+                dayDiv.title = 'Kliknij aby dodać notatkę';
             }
         }
         
