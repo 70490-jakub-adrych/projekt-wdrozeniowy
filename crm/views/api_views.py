@@ -177,11 +177,15 @@ def toggle_theme(request):
 @require_http_methods(["GET"])
 def calendar_notes_api(request):
     """
-    API endpoint to get user's calendar notes for a specific date range
+    API endpoint to get calendar notes for a specific date range
+    Shows:
+    - User's own notes (private and public)
+    - Public notes from other users (if not client)
     """
     try:
         from ..models import CalendarNote
         from datetime import datetime
+        from django.db.models import Q
         
         # Get date range from query parameters
         start_date = request.GET.get('start')
@@ -203,12 +207,23 @@ def calendar_notes_api(request):
                 'error': 'Nieprawidłowy format daty'
             }, status=400)
         
-        # Get user's notes in date range
-        notes = CalendarNote.objects.filter(
-            user=request.user,
-            date__gte=start_date,
-            date__lte=end_date
-        ).order_by('date')
+        # Build query based on user role
+        if request.user.profile.role == 'client':
+            # Clients see only their own notes
+            notes = CalendarNote.objects.filter(
+                user=request.user,
+                date__gte=start_date,
+                date__lte=end_date
+            )
+        else:
+            # Non-clients see their own notes + public notes from others
+            notes = CalendarNote.objects.filter(
+                Q(user=request.user) | Q(is_private=False),
+                date__gte=start_date,
+                date__lte=end_date
+            )
+        
+        notes = notes.order_by('date')
         
         # Build notes list
         notes_list = []
@@ -218,6 +233,9 @@ def calendar_notes_api(request):
                 'date': note.date.strftime('%Y-%m-%d'),
                 'title': note.title,
                 'content': note.content,
+                'is_private': note.is_private,
+                'is_own': note.user == request.user,
+                'author': note.user.get_full_name() or note.user.username,
                 'created_at': note.created_at.strftime('%Y-%m-%d %H:%M'),
                 'updated_at': note.updated_at.strftime('%Y-%m-%d %H:%M')
             })
@@ -249,6 +267,7 @@ def calendar_note_create(request):
         date_str = data.get('date')
         title = data.get('title', '').strip()
         content = data.get('content', '').strip()
+        is_private = data.get('is_private', True)  # Default to private
         
         # Validate required fields
         if not date_str or not title:
@@ -271,7 +290,8 @@ def calendar_note_create(request):
             user=request.user,
             date=date,
             title=title,
-            content=content
+            content=content,
+            is_private=is_private
         )
         
         return JsonResponse({
@@ -281,6 +301,7 @@ def calendar_note_create(request):
                 'date': note.date.strftime('%Y-%m-%d'),
                 'title': note.title,
                 'content': note.content,
+                'is_private': note.is_private,
                 'created_at': note.created_at.strftime('%Y-%m-%d %H:%M'),
                 'updated_at': note.updated_at.strftime('%Y-%m-%d %H:%M')
             }
@@ -314,6 +335,7 @@ def calendar_note_update(request, note_id):
         data = json.loads(request.body)
         title = data.get('title', '').strip()
         content = data.get('content', '').strip()
+        is_private = data.get('is_private', note.is_private)  # Keep current value if not provided
         
         # Validate title
         if not title:
@@ -325,6 +347,7 @@ def calendar_note_update(request, note_id):
         # Update note
         note.title = title
         note.content = content
+        note.is_private = is_private
         note.save()
         
         return JsonResponse({
@@ -334,6 +357,7 @@ def calendar_note_update(request, note_id):
                 'date': note.date.strftime('%Y-%m-%d'),
                 'title': note.title,
                 'content': note.content,
+                'is_private': note.is_private,
                 'created_at': note.created_at.strftime('%Y-%m-%d %H:%M'),
                 'updated_at': note.updated_at.strftime('%Y-%m-%d %H:%M')
             }

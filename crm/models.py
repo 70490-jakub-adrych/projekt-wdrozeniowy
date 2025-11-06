@@ -963,6 +963,7 @@ class CalendarNote(models.Model):
     date = models.DateField(verbose_name="Data")
     title = models.CharField(max_length=200, verbose_name="Tytuł")
     content = models.TextField(blank=True, verbose_name="Treść")
+    is_private = models.BooleanField(default=True, verbose_name="Tylko dla mnie")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Data utworzenia")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Data aktualizacji")
     

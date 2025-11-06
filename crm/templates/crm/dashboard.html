@@ -1235,6 +1235,13 @@
                                 <label for="noteContent" class="form-label">Treść (opcjonalnie)</label>
                                 <textarea class="form-control form-control-sm" id="noteContent" rows="3" placeholder="Wpisz szczegóły..."></textarea>
                             </div>
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" class="form-check-input" id="noteIsPrivate" checked>
+                                <label class="form-check-label" for="noteIsPrivate">
+                                    <i class="fas fa-lock me-1"></i>Tylko dla mnie
+                                </label>
+                                <small class="form-text text-muted d-block">Odznacz, aby udostępnić notatkę innym pracownikom</small>
+                            </div>
                             <div class="d-flex gap-2">
                                 <button type="button" class="btn btn-sm btn-primary" onclick="saveNote()">
                                     <i class="fas fa-save me-1"></i>Zapisz
@@ -1257,6 +1264,13 @@
                             <div class="mb-2">
                                 <label for="editNoteContent" class="form-label">Treść (opcjonalnie)</label>
                                 <textarea class="form-control form-control-sm" id="editNoteContent" rows="3" placeholder="Wpisz szczegóły..."></textarea>
+                            </div>
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" class="form-check-input" id="editNoteIsPrivate">
+                                <label class="form-check-label" for="editNoteIsPrivate">
+                                    <i class="fas fa-lock me-1"></i>Tylko dla mnie
+                                </label>
+                                <small class="form-text text-muted d-block">Odznacz, aby udostępnić notatkę innym pracownikom</small>
                             </div>
                             <div class="d-flex gap-2">
                                 <button type="button" class="btn btn-sm btn-primary" onclick="updateNote()">
@@ -1826,15 +1840,24 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        notesList.innerHTML = notes[currentSelectedDate].map(note => `
-            <div class="card mb-2 border-info">
+        notesList.innerHTML = notes[currentSelectedDate].map(note => {
+            const isOwn = note.is_own !== false; // Default to true for backwards compatibility
+            const privacyIcon = note.is_private ? '<i class="fas fa-lock text-warning me-1" title="Notatka prywatna"></i>' : '<i class="fas fa-users text-success me-1" title="Notatka publiczna"></i>';
+            const authorInfo = !isOwn && note.author ? `<small class="text-muted d-block">Autor: ${escapeHtml(note.author)}</small>` : '';
+            
+            return `
+            <div class="card mb-2 ${isOwn ? 'border-info' : 'border-secondary'}">
                 <div class="card-body p-2">
                     <div class="d-flex justify-content-between align-items-start">
                         <div class="flex-grow-1">
-                            <h6 class="card-title mb-1">${escapeHtml(note.title)}</h6>
+                            <h6 class="card-title mb-1">
+                                ${privacyIcon}${escapeHtml(note.title)}
+                            </h6>
                             ${note.content ? `<p class="card-text small mb-0">${escapeHtml(note.content)}</p>` : ''}
+                            ${authorInfo}
                             <small class="text-muted">Zaktualizowano: ${new Date(note.updated_at).toLocaleString('pl-PL')}</small>
                         </div>
+                        ${isOwn ? `
                         <div class="btn-group-vertical btn-group-sm ms-2">
                             <button class="btn btn-sm btn-outline-primary" onclick="editNote(${note.id})" title="Edytuj">
                                 <i class="fas fa-edit"></i>
@@ -1843,10 +1866,12 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>
+                        ` : ''}
                     </div>
                 </div>
             </div>
-        `).join('');
+            `;
+        }).join('');
     }
     
     function showAddNoteForm() {
@@ -1854,6 +1879,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('addNoteBtn').style.display = 'none';
         document.getElementById('noteTitle').value = '';
         document.getElementById('noteContent').value = '';
+        document.getElementById('noteIsPrivate').checked = true; // Default to private
         document.getElementById('noteTitle').focus();
     }
     
@@ -1865,6 +1891,7 @@ document.addEventListener('DOMContentLoaded', function() {
     function saveNote() {
         const title = document.getElementById('noteTitle').value.trim();
         const content = document.getElementById('noteContent').value.trim();
+        const isPrivate = document.getElementById('noteIsPrivate').checked;
         
         if (!title) {
             alert('Tytuł jest wymagany');
@@ -1880,7 +1907,8 @@ document.addEventListener('DOMContentLoaded', function() {
             body: JSON.stringify({
                 date: currentSelectedDate,
                 title: title,
-                content: content
+                content: content,
+                is_private: isPrivate
             })
         })
         .then(response => response.json())
@@ -1912,6 +1940,7 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('editNoteId').value = noteId;
         document.getElementById('editNoteTitle').value = note.title;
         document.getElementById('editNoteContent').value = note.content || '';
+        document.getElementById('editNoteIsPrivate').checked = note.is_private;
         document.getElementById('editNoteForm').style.display = 'block';
         document.getElementById('addNoteBtn').style.display = 'none';
         document.getElementById('editNoteTitle').focus();
@@ -1926,6 +1955,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const noteId = document.getElementById('editNoteId').value;
         const title = document.getElementById('editNoteTitle').value.trim();
         const content = document.getElementById('editNoteContent').value.trim();
+        const isPrivate = document.getElementById('editNoteIsPrivate').checked;
         
         if (!title) {
             alert('Tytuł jest wymagany');
@@ -1940,10 +1970,11 @@ document.addEventListener('DOMContentLoaded', function() {
             },
             body: JSON.stringify({
                 title: title,
-                content: content
+                content: content,
+                is_private: isPrivate
             })
         })
-        .then(response => response.json())
+        .then(response => response.json()))
         .then(data => {
             if (data.success) {
                 // Update note in local data
