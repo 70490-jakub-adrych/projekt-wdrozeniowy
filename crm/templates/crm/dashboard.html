@@ -1815,10 +1815,18 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="card-body p-2">
                         <h6 class="card-title mb-1">
                             <a href="/tickets/${a.ticket_id}/" class="text-decoration-none">
-                                #${a.ticket_id} - ${a.ticket_title}
+                                <i class="fas fa-ticket-alt me-1"></i>#${a.ticket_id} - ${escapeHtml(a.ticket_title)}
                             </a>
                         </h6>
-                        ${a.notes ? `<small class="text-muted">${a.notes}</small>` : ''}
+                        <span class="badge bg-${a.ticket_priority === 'high' ? 'danger' : a.ticket_priority === 'medium' ? 'warning' : 'secondary'} me-1">
+                            ${a.ticket_priority === 'high' ? 'Wysoki' : a.ticket_priority === 'medium' ? 'Średni' : 'Niski'}
+                        </span>
+                        ${a.notes ? `
+                        <div class="mt-2 p-2 bg-light rounded">
+                            <small class="text-muted d-block mb-1"><i class="fas fa-sticky-note me-1"></i><strong>Notatki z przypisania:</strong></small>
+                            <small class="text-dark">${escapeHtml(a.notes)}</small>
+                        </div>
+                        ` : ''}
                     </div>
                 </div>
             `).join('');
