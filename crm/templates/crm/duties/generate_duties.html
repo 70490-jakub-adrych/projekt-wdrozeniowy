@@ -102,6 +102,19 @@
                     {% if existing_duties %}
                     <div class="mb-4">
                         <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="overwrite_existing" value="yes" id="overwrite_existing">
+                            <label class="form-check-label" for="overwrite_existing">
+                                <strong>Nadpisz wszystkie istniejące dyżury</strong> (usuń cały kalendarz i wygeneruj na nowo)
+                            </label>
+                        </div>
+                        <small class="form-text text-muted">
+                            <i class="fas fa-exclamation-triangle text-warning me-1"></i>
+                            Uwaga! To usunie WSZYSTKIE dyżury z całego kalendarza i utworzy nowe.
+                        </small>
+                    </div>
+
+                    <div class="mb-4" id="continueRotationDiv">
+                        <div class="form-check">
                             <input class="form-check-input" type="checkbox" name="continue_rotation" value="yes" id="continue_rotation" checked>
                             <label class="form-check-label" for="continue_rotation">
                                 <strong>Kontynuuj rotację</strong> od ostatniego dyżuru
@@ -110,15 +123,6 @@
                         <small class="form-text text-muted">
                             Jeśli odznaczysz, rotacja zacznie się od pierwszej wybranej osoby.
                         </small>
-                    </div>
-
-                    <div class="mb-4">
-                        <div class="form-check">
-                            <input class="form-check-input" type="checkbox" name="overwrite_existing" value="yes" id="overwrite_existing">
-                            <label class="form-check-label" for="overwrite_existing">
-                                <strong>Nadpisz istniejące dyżury</strong> (usuń obecne i wygeneruj nowe)
-                            </label>
-                        </div>
                     </div>
                     {% endif %}
 
@@ -216,6 +220,27 @@ numWeeksInput.addEventListener('input', updateDatePreview);
 // Initial preview
 updateDatePreview();
 
+{% if existing_duties %}
+// Handle overwrite checkbox - hide continue rotation when overwriting
+const overwriteCheckbox = document.getElementById('overwrite_existing');
+const continueRotationDiv = document.getElementById('continueRotationDiv');
+const continueRotationCheckbox = document.getElementById('continue_rotation');
+
+if (overwriteCheckbox && continueRotationDiv) {
+    overwriteCheckbox.addEventListener('change', function() {
+        if (this.checked) {
+            // Hide continue rotation option when overwriting
+            continueRotationDiv.style.display = 'none';
+            continueRotationCheckbox.checked = false;
+        } else {
+            // Show continue rotation option
+            continueRotationDiv.style.display = 'block';
+            continueRotationCheckbox.checked = true;
+        }
+    });
+}
+{% endif %}
+
 document.getElementById('generateDutiesForm').addEventListener('submit', function(e) {
     const checkboxes = document.querySelectorAll('input[name="selected_users"]:checked');
     if (checkboxes.length === 0) {
@@ -233,7 +258,18 @@ document.getElementById('generateDutiesForm').addEventListener('submit', functio
     
     // Confirm before generating
     const count = checkboxes.length;
+    {% if existing_duties %}
+    const overwrite = document.getElementById('overwrite_existing')?.checked;
+    let message = '';
+    
+    if (overwrite) {
+        message = `⚠️ UWAGA! ⚠️\n\nZostanie usunięty CAŁY kalendarz dyżurów!\n\nNastępnie zostanie wygenerowane ${weeks} tygodni nowych dyżurów dla ${count} osób.\n\nCzy na pewno chcesz kontynuować?`;
+    } else {
+        message = `Czy na pewno chcesz wygenerować dyżury dla ${count} osób na ${weeks} tygodni?\n\nDyżury będą generowane tygodniowo.`;
+    }
+    {% else %}
     const message = `Czy na pewno chcesz wygenerować dyżury dla ${count} osób na ${weeks} tygodni?\n\nDyżury będą generowane tygodniowo.`;
+    {% endif %}
     
     if (!confirm(message)) {
         e.preventDefault();

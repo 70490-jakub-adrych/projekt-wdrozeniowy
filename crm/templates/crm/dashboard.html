@@ -1313,6 +1313,59 @@
 </div>
 {% endif %}
 
+<!-- Change Duty Modal -->
+{% if user.profile.role in 'admin,superagent' %}
+<div class="modal fade" id="changeDutyModal" tabindex="-1" aria-labelledby="changeDutyModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="changeDutyModalLabel">
+                    <i class="fas fa-exchange-alt me-2"></i>Zmień osobę dyżurującą
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div id="currentDutyInfo" class="alert alert-info mb-3"></div>
+                
+                <form id="changeDutyForm">
+                    <div class="mb-3">
+                        <label for="newDutyUser" class="form-label">
+                            <i class="fas fa-user me-1"></i>Wybierz nową osobę dyżurującą:
+                        </label>
+                        <select class="form-select" id="newDutyUser" required>
+                            <option value="">-- Wybierz użytkownika --</option>
+                            {% for duty_user in available_duty_users %}
+                            <option value="{{ duty_user.id }}">
+                                {{ duty_user.username }}
+                                {% if duty_user.get_full_name %}
+                                    ({{ duty_user.get_full_name }})
+                                {% endif %}
+                                - {{ duty_user.profile.get_role_display }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="dutyNotes" class="form-label">
+                            <i class="fas fa-comment me-1"></i>Uwagi (opcjonalnie):
+                        </label>
+                        <textarea class="form-control" id="dutyNotes" rows="2" placeholder="Np. zmiana w zastępstwie..."></textarea>
+                        <small class="form-text text-muted">Te uwagi będą widoczne dla innych przy najechaniu na dyżur</small>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Anuluj</button>
+                <button type="button" class="btn btn-primary" onclick="submitDutyChange()">
+                    <i class="fas fa-save me-1"></i>Zapisz zmianę
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
 {% endblock %}
 
 {% block extra_js %}
@@ -2109,17 +2162,43 @@ document.addEventListener('DOMContentLoaded', function() {
     function changeDuty() {
         if (!currentSelectedDate) return;
         
-        // Show prompt with available users
         const currentDuty = duties[currentSelectedDate];
-        const message = currentDuty 
-            ? `Obecnie dyżur pełni: ${currentDuty.full_name}\n\nWybierz nową osobę dyżurującą:` 
-            : 'Wybierz osobę dyżurującą na ten dzień:';
+        const currentDutyInfoDiv = document.getElementById('currentDutyInfo');
         
-        // In a real implementation, this should be a proper modal with a select dropdown
-        // For now, we'll use a simple prompt
-        const newUserInput = prompt(message + '\n\nWpisz ID użytkownika (dostępni użytkownicy zostaną wyświetleni w przyszłej wersji):');
+        // Show current duty info
+        if (currentDuty) {
+            currentDutyInfoDiv.innerHTML = `
+                <strong>Data:</strong> ${currentSelectedDate}<br>
+                <strong>Obecnie dyżur pełni:</strong> ${currentDuty.full_name} (${currentDuty.username})
+                ${currentDuty.notes ? '<br><strong>Uwagi:</strong> ' + currentDuty.notes : ''}
+            `;
+        } else {
+            currentDutyInfoDiv.innerHTML = `
+                <strong>Data:</strong> ${currentSelectedDate}<br>
+                <em>Brak przypisanej osoby dyżurującej na ten dzień</em>
+            `;
+        }
         
-        if (!newUserInput) return;
+        // Reset form
+        document.getElementById('newDutyUser').value = '';
+        document.getElementById('dutyNotes').value = currentDuty?.notes || '';
+        
+        // Open modal
+        const modal = new bootstrap.Modal(document.getElementById('changeDutyModal'));
+        modal.show();
+    }
+    
+    // Function to submit duty change
+    function submitDutyChange() {
+        const newUserId = document.getElementById('newDutyUser').value;
+        const notes = document.getElementById('dutyNotes').value;
+        
+        if (!newUserId) {
+            alert('Wybierz osobę dyżurującą!');
+            return;
+        }
+        
+        if (!currentSelectedDate) return;
         
         // Send AJAX request to change duty
         fetch('/calendar/change-duty/', {
@@ -2128,7 +2207,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'X-CSRFToken': getCookie('csrftoken')
             },
-            body: `duty_date=${currentSelectedDate}&user_id=${newUserInput}`
+            body: `duty_date=${currentSelectedDate}&user_id=${newUserId}&notes=${encodeURIComponent(notes)}`
         })
         .then(response => response.json())
         .then(data => {
@@ -2136,7 +2215,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 alert(data.message);
                 // Reload calendar data
                 loadAssignments(currentYear, currentMonth + 1);
-                // Close modal
+                // Close both modals
+                bootstrap.Modal.getInstance(document.getElementById('changeDutyModal')).hide();
                 bootstrap.Modal.getInstance(document.getElementById('calendarNoteModal')).hide();
             } else {
                 alert('Błąd: ' + data.error);
@@ -2148,8 +2228,9 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
     
-    // Make changeDuty globally accessible
+    // Make functions globally accessible
     window.changeDuty = changeDuty;
+    window.submitDutyChange = submitDutyChange;
     {% endif %}
     
     // Make functions globally accessible

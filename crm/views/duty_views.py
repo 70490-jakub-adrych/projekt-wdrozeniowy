@@ -54,43 +54,45 @@ def generate_duties(request):
         # Calculate end date (num_weeks * 7 days)
         end_date = start_date + timedelta(weeks=num_weeks) - timedelta(days=1)
         
-        # Check if we should continue existing rotation
-        user_index = 0
-        should_continue = False
+        # Check if overwrite is selected - if yes, delete ALL duties and don't continue rotation
+        overwrite_existing = request.POST.get('overwrite_existing') == 'yes'
         
-        # Get last duty before start_date to continue rotation
-        last_duty = CalendarDuty.objects.filter(
-            duty_date__lt=start_date
-        ).select_related('assigned_to').order_by('-duty_date').first()
-        
-        if last_duty and request.POST.get('continue_rotation') == 'yes':
-            # Check if last duty person is in selected users
-            users_list = list(selected_users)
-            try:
-                # Find where the last person was in the rotation
-                last_index = users_list.index(last_duty.assigned_to)
-                # Start with next person
-                user_index = (last_index + 1) % len(users_list)
-                should_continue = True
-            except ValueError:
-                # Last person not in current selection, start from beginning
-                user_index = 0
-        
-        # Delete existing duties in the date range if overwrite selected
-        if request.POST.get('overwrite_existing') == 'yes':
-            deleted_count = CalendarDuty.objects.filter(
-                duty_date__gte=start_date,
-                duty_date__lte=end_date
-            ).delete()[0]
+        if overwrite_existing:
+            # Delete ALL duties from the entire calendar
+            deleted_count = CalendarDuty.objects.all().delete()[0]
             if deleted_count > 0:
-                messages.info(request, f'Usunięto {deleted_count} istniejących dyżurów.')
+                messages.warning(request, f'Usunięto wszystkie {deleted_count} dyżurów z kalendarza.')
+            # Start fresh - no continuation
+            user_index = 0
+            should_continue = False
+            users_list = list(selected_users)
+        else:
+            # Normal mode - check if we should continue existing rotation
+            user_index = 0
+            should_continue = False
+            users_list = list(selected_users)
+            
+            # Get last duty before start_date to continue rotation
+            last_duty = CalendarDuty.objects.filter(
+                duty_date__lt=start_date
+            ).select_related('assigned_to').order_by('-duty_date').first()
+            
+            if last_duty and request.POST.get('continue_rotation') == 'yes':
+                # Check if last duty person is in selected users
+                try:
+                    # Find where the last person was in the rotation
+                    last_index = users_list.index(last_duty.assigned_to)
+                    # Start with next person
+                    user_index = (last_index + 1) % len(users_list)
+                    should_continue = True
+                except ValueError:
+                    # Last person not in current selection, start from beginning
+                    user_index = 0
         
         # Generate duties
         created_count = 0
         skipped_count = 0
         current_date = start_date
-        users_list = list(selected_users)
-        current_week_start = start_date
         
         while current_date <= end_date:
             # Change person every Monday (start of week)
@@ -98,7 +100,7 @@ def generate_duties(request):
                 user_index = (user_index + 1) % len(users_list)
             
             # Skip if duty already exists (unless overwrite is selected)
-            if not CalendarDuty.objects.filter(duty_date=current_date).exists():
+            if overwrite_existing or not CalendarDuty.objects.filter(duty_date=current_date).exists():
                 # Assign duty to current user in rotation
                 CalendarDuty.objects.create(
                     duty_date=current_date,
@@ -113,11 +115,15 @@ def generate_duties(request):
             # Move to next day
             current_date += timedelta(days=1)
         
-        success_msg = f'Wygenerowano {created_count} dyżurów na {num_weeks} tygodni (od {start_date} do {end_date})!'
-        if skipped_count > 0:
-            success_msg += f' Pominięto {skipped_count} już istniejących.'
-        if should_continue:
-            success_msg += f' Kontynuowano rotację od: {users_list[user_index].username}'
+        # Prepare success message
+        if overwrite_existing:
+            success_msg = f'Kalendarz wyczyszczony! Wygenerowano {created_count} nowych dyżurów na {num_weeks} tygodni (od {start_date} do {end_date}).'
+        else:
+            success_msg = f'Wygenerowano {created_count} dyżurów na {num_weeks} tygodni (od {start_date} do {end_date})!'
+            if skipped_count > 0:
+                success_msg += f' Pominięto {skipped_count} już istniejących.'
+            if should_continue:
+                success_msg += f' Kontynuowano rotację od: {users_list[user_index].username}'
         
         messages.success(request, success_msg)
         return redirect('dashboard')
@@ -163,6 +169,7 @@ def change_duty(request):
     
     duty_date_str = request.POST.get('duty_date')
     new_user_id = request.POST.get('user_id')
+    notes = request.POST.get('notes', '')
     
     if not duty_date_str or not new_user_id:
         return JsonResponse({'success': False, 'error': 'Brak wymaganych danych'}, status=400)
@@ -181,24 +188,32 @@ def change_duty(request):
                 'error': 'Wybrany użytkownik nie może pełnić dyżuru'
             }, status=400)
         
+        # Prepare notes
+        if not notes:
+            notes = f"Zmieniony przez {request.user.username}"
+        else:
+            notes = f"{notes} (zmienił: {request.user.username})"
+        
         # Update or create duty
         duty, created = CalendarDuty.objects.update_or_create(
             duty_date=duty_date,
             defaults={
                 'assigned_to': new_user,
                 'created_by': request.user,
-                'notes': f"Ręcznie zmieniony dyżur przez {request.user.username}"
+                'notes': notes
             }
         )
         
+        action = 'utworzony' if created else 'zmieniony'
         return JsonResponse({
             'success': True,
-            'message': f'Dyżur na {duty_date} został przypisany do {new_user.username}',
+            'message': f'Dyżur na {duty_date} został {action} - przypisany do {new_user.username}',
             'duty': {
                 'date': duty_date.strftime('%Y-%m-%d'),
                 'user_id': new_user.id,
                 'username': new_user.username,
-                'full_name': new_user.get_full_name() or new_user.username
+                'full_name': new_user.get_full_name() or new_user.username,
+                'notes': notes
             }
         })
         

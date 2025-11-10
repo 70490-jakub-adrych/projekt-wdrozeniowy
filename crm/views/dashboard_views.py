@@ -4,7 +4,7 @@ from django.contrib import messages
 from django.db.models import Q, Count
 
 from ..models import UserProfile, Organization, Ticket, ActivityLog
-from django.contrib.auth.models import Group
+from django.contrib.auth.models import Group, User
 
 
 @login_required
@@ -148,6 +148,14 @@ def dashboard(request):
         'resolved_tickets': resolved_tickets,
         'closed_tickets': closed_tickets,
     }
+    
+    # Add list of available users for duty change (for admin/superagent)
+    if role in ['admin', 'superagent']:
+        available_users = User.objects.filter(
+            profile__role__in=['admin', 'superagent', 'agent'],
+            is_active=True
+        ).select_related('profile').order_by('username')
+        context['available_duty_users'] = available_users
     
     # Add role specific context
     if role == 'client':
