@@ -526,9 +526,9 @@
                     <small class="text-muted">
                         <span class="badge bg-info me-1" style="background-color: #17a2b8 !important;">DY</span> Dyżur
                         {% if user.profile.role in 'admin,superagent' %}
-                        <span class="badge bg-warning ms-2 me-1" style="background-color: #ffc107 !important;">●</span> Przypisania
+                        <span class="badge bg-warning ms-2 me-1" style="background-color: #ffc107 !important; color: #000;">●</span> Inne przypisania
                         {% endif %}
-                        <span class="badge bg-success ms-2 me-1">●</span> Zgłoszenia
+                        <span class="badge bg-success ms-2 me-1">●</span> Twoje zgłoszenia
                         <span class="badge bg-primary ms-2 me-1">●</span> Notatki
                         <br>Kliknij dzień z notatką/zgłoszeniem aby zobaczyć szczegóły
                     </small>
@@ -1790,13 +1790,19 @@ document.addEventListener('DOMContentLoaded', function() {
             // Add ALL assignments badge for admin/superagent (yellow, top-right)
             {% if user.profile.role in 'admin,superagent' %}
             if (hasAllAssignments) {
-                dayDiv.classList.add('has-all-assignments');
-                const allAssignmentsBadge = document.createElement('span');
-                allAssignmentsBadge.className = 'calendar-day-badge all-assignments-badge';
-                allAssignmentsBadge.textContent = allAssignments[dateStr].length;
-                allAssignmentsBadge.style.cssText = 'position: absolute; top: 3px; right: 3px; background-color: #ffc107; color: #000; border-radius: 10px; padding: 2px 6px; font-size: 0.7rem; font-weight: bold;';
-                allAssignmentsBadge.title = `Wszystkie przypisania kalendarzowe: ${allAssignments[dateStr].length}`;
-                dayDiv.appendChild(allAssignmentsBadge);
+                // Filter out own assignments to show only OTHER people's assignments
+                const ownAssignmentIds = hasAssignments ? assignments[dateStr].map(a => a.id) : [];
+                const otherAssignmentsCount = allAssignments[dateStr].filter(a => !ownAssignmentIds.includes(a.id)).length;
+                
+                if (otherAssignmentsCount > 0) {
+                    dayDiv.classList.add('has-all-assignments');
+                    const allAssignmentsBadge = document.createElement('span');
+                    allAssignmentsBadge.className = 'calendar-day-badge all-assignments-badge';
+                    allAssignmentsBadge.textContent = otherAssignmentsCount;
+                    allAssignmentsBadge.style.cssText = 'position: absolute; top: 3px; right: 3px; background-color: #ffc107; color: #000; border-radius: 10px; padding: 2px 6px; font-size: 0.7rem; font-weight: bold;';
+                    allAssignmentsBadge.title = `Przypisania innych osób: ${otherAssignmentsCount}`;
+                    dayDiv.appendChild(allAssignmentsBadge);
+                }
             }
             {% endif %}
             
@@ -1977,32 +1983,40 @@ document.addEventListener('DOMContentLoaded', function() {
         const allAssignmentsList = document.getElementById('allAssignmentsList');
         
         if (allAssignments[dateStr] && allAssignments[dateStr].length > 0) {
-            allAssignmentsSection.style.display = 'block';
-            allAssignmentsList.innerHTML = allAssignments[dateStr].map(a => `
-                <div class="card mb-2 border-warning">
-                    <div class="card-body p-2">
-                        <h6 class="card-title mb-1">
-                            <a href="/tickets/${a.ticket_id}/" class="text-decoration-none">
-                                <i class="fas fa-ticket-alt me-1"></i>#${a.ticket_id} - ${escapeHtml(a.ticket_title)}
-                            </a>
-                        </h6>
-                        <div class="mb-1">
-                            <span class="badge bg-info me-1">
-                                <i class="fas fa-user me-1"></i>${escapeHtml(a.assigned_to)}
-                            </span>
-                            <span class="badge bg-${a.ticket_priority === 'high' ? 'danger' : a.ticket_priority === 'medium' ? 'warning' : 'secondary'}">
-                                ${a.ticket_priority === 'high' ? 'Wysoki' : a.ticket_priority === 'medium' ? 'Średni' : 'Niski'}
-                            </span>
+            // Filter out own assignments to avoid duplicates
+            const ownAssignmentIds = assignments[dateStr] ? assignments[dateStr].map(a => a.id) : [];
+            const otherAssignments = allAssignments[dateStr].filter(a => !ownAssignmentIds.includes(a.id));
+            
+            if (otherAssignments.length > 0) {
+                allAssignmentsSection.style.display = 'block';
+                allAssignmentsList.innerHTML = otherAssignments.map(a => `
+                    <div class="card mb-2 border-warning">
+                        <div class="card-body p-2">
+                            <h6 class="card-title mb-1">
+                                <a href="/tickets/${a.ticket_id}/" class="text-decoration-none">
+                                    <i class="fas fa-ticket-alt me-1"></i>#${a.ticket_id} - ${escapeHtml(a.ticket_title)}
+                                </a>
+                            </h6>
+                            <div class="mb-1">
+                                <span class="badge bg-info me-1">
+                                    <i class="fas fa-user me-1"></i>${escapeHtml(a.assigned_to)}
+                                </span>
+                                <span class="badge bg-${a.ticket_priority === 'high' ? 'danger' : a.ticket_priority === 'medium' ? 'warning' : 'secondary'}">
+                                    ${a.ticket_priority === 'high' ? 'Wysoki' : a.ticket_priority === 'medium' ? 'Średni' : 'Niski'}
+                                </span>
+                            </div>
+                            ${a.notes ? `
+                            <div class="mt-2 p-2 bg-light rounded">
+                                <small class="text-muted d-block mb-1"><i class="fas fa-sticky-note me-1"></i><strong>Notatki:</strong></small>
+                                <small class="text-dark">${escapeHtml(a.notes)}</small>
+                            </div>
+                            ` : ''}
                         </div>
-                        ${a.notes ? `
-                        <div class="mt-2 p-2 bg-light rounded">
-                            <small class="text-muted d-block mb-1"><i class="fas fa-sticky-note me-1"></i><strong>Notatki:</strong></small>
-                            <small class="text-dark">${escapeHtml(a.notes)}</small>
-                        </div>
-                        ` : ''}
                     </div>
-                </div>
-            `).join('');
+                `).join('');
+            } else {
+                allAssignmentsSection.style.display = 'none';
+            }
         } else {
             allAssignmentsSection.style.display = 'none';
         }
