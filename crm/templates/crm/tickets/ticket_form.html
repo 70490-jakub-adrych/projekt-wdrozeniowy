@@ -114,6 +114,43 @@
                             </div>
                         {% endif %}
                         
+                        <!-- Contact person fields (admin/superagent only) -->
+                        {% if user.profile.role in 'admin,superagent' %}
+                        <div class="mb-3">
+                            <div class="form-check">
+                                {{ form.has_contact_person }}
+                                <label class="form-check-label" for="{{ form.has_contact_person.id_for_label }}">
+                                    <strong>Osoba do kontaktu</strong> (opcjonalne)
+                                </label>
+                            </div>
+                            <small class="form-text text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Zaznacz jeśli chcesz dodać dane osoby kontaktowej dla tego zgłoszenia
+                            </small>
+                        </div>
+                        
+                        <div id="contactPersonFields" style="display: none;">
+                            <div class="card bg-light mb-3">
+                                <div class="card-body">
+                                    <h6 class="card-title mb-3">
+                                        <i class="fas fa-user me-1"></i> Dane osoby do kontaktu
+                                    </h6>
+                                    <div class="row">
+                                        <div class="col-md-6 mb-3">
+                                            {{ form.contact_person_first_name|as_crispy_field }}
+                                        </div>
+                                        <div class="col-md-6 mb-3">
+                                            {{ form.contact_person_last_name|as_crispy_field }}
+                                        </div>
+                                    </div>
+                                    <div class="mb-0">
+                                        {{ form.contact_person_phone|as_crispy_field }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
                         {% if not ticket %}
                         <div class="mb-3">
                             <label for="organization" class="form-label">Organizacja:</label>
@@ -435,6 +472,27 @@
                     }
                 }
             });
+        }
+        
+        // Contact person fields toggle
+        const hasContactPersonCheckbox = document.querySelector('#id_has_contact_person');
+        const contactPersonFields = document.querySelector('#contactPersonFields');
+        
+        if (hasContactPersonCheckbox && contactPersonFields) {
+            // Function to toggle visibility
+            function toggleContactPersonFields() {
+                if (hasContactPersonCheckbox.checked) {
+                    contactPersonFields.style.display = 'block';
+                } else {
+                    contactPersonFields.style.display = 'none';
+                }
+            }
+            
+            // Set initial state
+            toggleContactPersonFields();
+            
+            // Add event listener
+            hasContactPersonCheckbox.addEventListener('change', toggleContactPersonFields);
         }
     });
 </script>

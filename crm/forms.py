@@ -172,7 +172,9 @@ class TicketForm(forms.ModelForm):
     
     class Meta:
         model = Ticket
-        fields = ['title', 'description', 'category', 'priority', 'assigned_to', 'on_duty', 'suggested_category']
+        fields = ['title', 'description', 'category', 'priority', 'assigned_to', 'on_duty', 
+                  'has_contact_person', 'contact_person_first_name', 'contact_person_last_name', 
+                  'contact_person_phone', 'suggested_category']
     
     def __init__(self, *args, **kwargs):
         self.request_user = kwargs.pop('request_user', None)
@@ -240,7 +242,9 @@ class ModeratorTicketForm(forms.ModelForm):
     
     class Meta:
         model = Ticket
-        fields = ['title', 'description', 'category', 'priority', 'status', 'assigned_to', 'on_duty', 'suggested_category']
+        fields = ['title', 'description', 'category', 'priority', 'status', 'assigned_to', 'on_duty', 
+                  'has_contact_person', 'contact_person_first_name', 'contact_person_last_name', 
+                  'contact_person_phone', 'suggested_category']
     
     def __init__(self, *args, **kwargs):
         self.request_user = kwargs.pop('request_user', None)

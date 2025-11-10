@@ -197,6 +197,33 @@ def get_calendar_assignments(request):
                 'created_at': assignment.created_at.strftime('%Y-%m-%d %H:%M')
             })
         
+        # Admin/Superagent sees ALL calendar assignments (for overview)
+        all_assignments_by_date = {}
+        if request.user.profile.role in ['admin', 'superagent']:
+            all_assignments = TicketCalendarAssignment.objects.filter(
+                assigned_date__year=year,
+                assigned_date__month=month
+            ).exclude(
+                ticket__status__in=['resolved', 'closed']
+            ).select_related('ticket', 'assigned_to', 'assigned_by')
+            
+            for assignment in all_assignments:
+                date_str = assignment.assigned_date.strftime('%Y-%m-%d')
+                if date_str not in all_assignments_by_date:
+                    all_assignments_by_date[date_str] = []
+                
+                all_assignments_by_date[date_str].append({
+                    'id': assignment.id,
+                    'ticket_id': assignment.ticket.id,
+                    'ticket_title': assignment.ticket.title,
+                    'ticket_priority': assignment.ticket.priority,
+                    'assigned_to': assignment.assigned_to.get_full_name() or assignment.assigned_to.username,
+                    'assigned_to_username': assignment.assigned_to.username,
+                    'assigned_by': assignment.assigned_by.get_full_name() if assignment.assigned_by else None,
+                    'notes': assignment.notes,
+                    'created_at': assignment.created_at.strftime('%Y-%m-%d %H:%M')
+                })
+        
         # Get duty information for the month
         duties = CalendarDuty.objects.filter(
             duty_date__year=year,
@@ -221,6 +248,7 @@ def get_calendar_assignments(request):
             'year': year,
             'month': month,
             'assignments': assignments_by_date,
+            'all_assignments': all_assignments_by_date if request.user.profile.role in ['admin', 'superagent'] else {},
             'duties': duties_by_date
         })
         

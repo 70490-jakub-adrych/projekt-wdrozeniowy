@@ -324,6 +324,28 @@ class Ticket(models.Model):
         verbose_name="Dyżur",
     )
     
+    # Contact person fields (optional, for admin/superagent)
+    has_contact_person = models.BooleanField(
+        default=False,
+        verbose_name="Ma osobę do kontaktu"
+    )
+    contact_person_first_name = models.CharField(
+        max_length=50,
+        blank=True,
+        verbose_name="Imię osoby do kontaktu"
+    )
+    contact_person_last_name = models.CharField(
+        max_length=50,
+        blank=True,
+        verbose_name="Nazwisko osoby do kontaktu"
+    )
+    contact_person_phone = models.CharField(
+        max_length=20,
+        blank=True,
+        verbose_name="Telefon osoby do kontaktu",
+        validators=[phone_regex]
+    )
+    
     def __str__(self):
         return self.title
     

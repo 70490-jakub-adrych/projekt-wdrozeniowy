@@ -525,6 +525,9 @@
                 <div class="text-center mt-2">
                     <small class="text-muted">
                         <span class="badge bg-info me-1" style="background-color: #17a2b8 !important;">DY</span> Dyżur
+                        {% if user.profile.role in 'admin,superagent' %}
+                        <span class="badge bg-warning ms-2 me-1" style="background-color: #ffc107 !important;">●</span> Przypisania
+                        {% endif %}
                         <span class="badge bg-success ms-2 me-1">●</span> Zgłoszenia
                         <span class="badge bg-primary ms-2 me-1">●</span> Notatki
                         <br>Kliknij dzień z notatką/zgłoszeniem aby zobaczyć szczegóły
@@ -1234,6 +1237,16 @@
                     <div id="assignmentsList"></div>
                 </div>
                 
+                <!-- All Assignments Section (admin/superagent only) -->
+                {% if user.profile.role in 'admin,superagent' %}
+                <div id="allAssignmentsSection" class="mb-4" style="display: none;">
+                    <h6 class="border-bottom pb-2 mb-3">
+                        <i class="fas fa-calendar-check text-warning me-2"></i>Wszystkie przypisania kalendarzowe
+                    </h6>
+                    <div id="allAssignmentsList"></div>
+                </div>
+                {% endif %}
+                
                 <!-- Notes Section -->
                 <div id="notesSection">
                     <h6 class="border-bottom pb-2 mb-3">
@@ -1655,7 +1668,8 @@ document.addEventListener('DOMContentLoaded', function() {
     
     const dayNames = ['Pon', 'Wt', 'Śr', 'Czw', 'Pt', 'Sob', 'Nie'];
     
-    let assignments = {};
+    let assignments = {};  // User's own assignments
+    let allAssignments = {};  // All assignments (admin/superagent only)
     let notes = {};
     let duties = {}; // Duty assignments by date
     let currentSelectedDate = null;
@@ -1755,6 +1769,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             const hasAssignments = assignments[dateStr] && assignments[dateStr].length > 0;
+            const hasAllAssignments = allAssignments[dateStr] && allAssignments[dateStr].length > 0; // All assignments for admin/superagent
             const hasNotes = notes[dateStr] && notes[dateStr].length > 0;
             const hasDuty = duties[dateStr]; // Check if there's a duty for this day
             
@@ -1771,6 +1786,19 @@ document.addEventListener('DOMContentLoaded', function() {
                 dutyBadge.style.cssText = 'position: absolute; top: 2px; left: 2px; background: #17a2b8; color: white; border-radius: 3px; padding: 2px 5px; font-size: 0.7rem; font-weight: bold;';
                 dayDiv.appendChild(dutyBadge);
             }
+            
+            // Add ALL assignments badge for admin/superagent (yellow, top-right)
+            {% if user.profile.role in 'admin,superagent' %}
+            if (hasAllAssignments) {
+                dayDiv.classList.add('has-all-assignments');
+                const allAssignmentsBadge = document.createElement('span');
+                allAssignmentsBadge.className = 'calendar-day-badge all-assignments-badge';
+                allAssignmentsBadge.textContent = allAssignments[dateStr].length;
+                allAssignmentsBadge.style.cssText = 'position: absolute; top: 3px; right: 3px; background-color: #ffc107; color: #000; border-radius: 10px; padding: 2px 6px; font-size: 0.7rem; font-weight: bold;';
+                allAssignmentsBadge.title = `Wszystkie przypisania kalendarzowe: ${allAssignments[dateStr].length}`;
+                dayDiv.appendChild(allAssignmentsBadge);
+            }
+            {% endif %}
             
             // Add visual indicators if there's content
             if (hasAssignments) {
@@ -1795,11 +1823,16 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             
             // Build tooltip only if there's content
-            if (hasAssignments || hasNotes || hasDuty) {
+            if (hasAssignments || hasAllAssignments || hasNotes || hasDuty) {
                 let tooltipParts = [];
                 if (hasDuty) {
                     tooltipParts.push(`🔵 Dyżur: ${hasDuty.full_name}`);
                 }
+                {% if user.profile.role in 'admin,superagent' %}
+                if (hasAllAssignments) {
+                    tooltipParts.push(`⚠️ Wszystkie przypisania: ${allAssignments[dateStr].length}`);
+                }
+                {% endif %}
                 if (hasAssignments) {
                     const ticketInfo = assignments[dateStr].map(a => {
                         let info = `• ${a.ticket_title}`;
@@ -1845,6 +1878,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(data => {
             if (data.success) {
                 assignments = data.assignments;
+                allAssignments = data.all_assignments || {}; // All assignments for admin/superagent
                 duties = data.duties || {}; // Store duties information
             }
             // Load notes
@@ -1936,6 +1970,43 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             assignmentsSection.style.display = 'none';
         }
+        
+        // Show ALL assignments section (admin/superagent only)
+        {% if user.profile.role in 'admin,superagent' %}
+        const allAssignmentsSection = document.getElementById('allAssignmentsSection');
+        const allAssignmentsList = document.getElementById('allAssignmentsList');
+        
+        if (allAssignments[dateStr] && allAssignments[dateStr].length > 0) {
+            allAssignmentsSection.style.display = 'block';
+            allAssignmentsList.innerHTML = allAssignments[dateStr].map(a => `
+                <div class="card mb-2 border-warning">
+                    <div class="card-body p-2">
+                        <h6 class="card-title mb-1">
+                            <a href="/tickets/${a.ticket_id}/" class="text-decoration-none">
+                                <i class="fas fa-ticket-alt me-1"></i>#${a.ticket_id} - ${escapeHtml(a.ticket_title)}
+                            </a>
+                        </h6>
+                        <div class="mb-1">
+                            <span class="badge bg-info me-1">
+                                <i class="fas fa-user me-1"></i>${escapeHtml(a.assigned_to)}
+                            </span>
+                            <span class="badge bg-${a.ticket_priority === 'high' ? 'danger' : a.ticket_priority === 'medium' ? 'warning' : 'secondary'}">
+                                ${a.ticket_priority === 'high' ? 'Wysoki' : a.ticket_priority === 'medium' ? 'Średni' : 'Niski'}
+                            </span>
+                        </div>
+                        ${a.notes ? `
+                        <div class="mt-2 p-2 bg-light rounded">
+                            <small class="text-muted d-block mb-1"><i class="fas fa-sticky-note me-1"></i><strong>Notatki:</strong></small>
+                            <small class="text-dark">${escapeHtml(a.notes)}</small>
+                        </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `).join('');
+        } else {
+            allAssignmentsSection.style.display = 'none';
+        }
+        {% endif %}
         
         // Show notes
         refreshNotesList();

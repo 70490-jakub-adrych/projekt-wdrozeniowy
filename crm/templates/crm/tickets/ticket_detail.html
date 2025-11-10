@@ -509,6 +509,34 @@
                         {% endif %}
                     </div>
                 </div>
+                
+                <!-- Contact person info (only for admin/superagent) -->
+                {% if user.profile.role in 'admin,superagent' and ticket.has_contact_person %}
+                <div class="row mb-3">
+                    <div class="col-md-3 fw-bold">
+                        <i class="fas fa-user me-1"></i>Osoba do kontaktu:
+                    </div>
+                    <div class="col-md-9">
+                        <div class="card bg-light">
+                            <div class="card-body py-2">
+                                <div class="mb-1">
+                                    <strong>Imię i nazwisko:</strong> 
+                                    {{ ticket.contact_person_first_name }} {{ ticket.contact_person_last_name }}
+                                </div>
+                                {% if ticket.contact_person_phone %}
+                                <div>
+                                    <strong>Telefon:</strong> 
+                                    <a href="tel:{{ ticket.contact_person_phone }}">
+                                        {{ ticket.contact_person_phone }}
+                                    </a>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
                 <div class="row mb-3">
                     <div class="col-md-3 fw-bold">Data utworzenia:</div>
                     <div class="col-md-9">{{ ticket.created_at|date:"d.m.Y H:i" }}</div>
