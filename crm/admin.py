@@ -10,7 +10,7 @@ from .models import (
     UserProfile, Organization, Ticket, TicketComment,
     TicketAttachment, ActivityLog, GroupSettings, 
     ViewPermission, GroupViewPermission, UserViewPermission,
-    WorkHours, TicketStatistics, AgentWorkLog, TicketCalendarAssignment  # Add the new models
+    WorkHours, TicketStatistics, AgentWorkLog, TicketCalendarAssignment, CalendarDuty
 )
 
 
@@ -448,6 +448,24 @@ class TicketCalendarAssignmentAdmin(admin.ModelAdmin):
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         return qs.select_related('ticket', 'assigned_to', 'assigned_by')
+
+
+@admin.register(CalendarDuty)
+class CalendarDutyAdmin(admin.ModelAdmin):
+    list_display = ('duty_date', 'assigned_to', 'get_week_display', 'created_by', 'created_at')
+    list_filter = ('duty_date', 'assigned_to', 'created_by')
+    search_fields = ('assigned_to__username', 'created_by__username', 'notes')
+    date_hierarchy = 'duty_date'
+    readonly_fields = ('created_at', 'updated_at')
+    
+    def get_week_display(self, obj):
+        """Display week number"""
+        return f"Tydzień {obj.get_week_number()}"
+    get_week_display.short_description = "Tydzień"
+    
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.select_related('assigned_to', 'created_by')
 
 
 @admin.register(ActivityLog)

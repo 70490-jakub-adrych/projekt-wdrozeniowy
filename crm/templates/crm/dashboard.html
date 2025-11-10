@@ -505,6 +505,9 @@
                 <a href="{% url 'organization_create' %}" class="quick-action-btn btn-ripple btn btn-success d-block mb-3">
                     <i class="fas fa-building"></i> Nowa organizacja
                 </a>
+                <a href="{% url 'generate_duties' %}" class="quick-action-btn btn-ripple btn btn-info d-block mb-3">
+                    <i class="fas fa-calendar-week"></i> Generuj dyżury
+                </a>
                 {% endif %}
             </div>
         </div>
@@ -1209,6 +1212,19 @@
             <div class="modal-body">
                 <div id="noteModalDate" class="alert alert-info mb-3"></div>
                 
+                <!-- Duty Section (only for superagent/admin) -->
+                {% if user.profile.role in 'admin,superagent' %}
+                <div id="dutySection" class="mb-4" style="display: none;">
+                    <h6 class="border-bottom pb-2 mb-3">
+                        <i class="fas fa-user-shield text-primary me-2"></i>Dyżur
+                    </h6>
+                    <div id="dutyInfo" class="alert alert-info"></div>
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="changeDuty()">
+                        <i class="fas fa-exchange-alt me-1"></i>Zmień osobę dyżurującą
+                    </button>
+                </div>
+                {% endif %}
+                
                 <!-- Assignments Section -->
                 <div id="assignmentsSection" class="mb-4" style="display: none;">
                     <h6 class="border-bottom pb-2 mb-3">
@@ -1587,6 +1603,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     let assignments = {};
     let notes = {};
+    let duties = {}; // Duty assignments by date
     let currentSelectedDate = null;
     
     function renderCalendar(year, month) {
@@ -1685,10 +1702,21 @@ document.addEventListener('DOMContentLoaded', function() {
             const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
             const hasAssignments = assignments[dateStr] && assignments[dateStr].length > 0;
             const hasNotes = notes[dateStr] && notes[dateStr].length > 0;
+            const hasDuty = duties[dateStr]; // Check if there's a duty for this day
             
             // Make ALL days clickable, not just those with content
             dayDiv.dataset.date = dateStr;
             dayDiv.style.cursor = 'pointer';
+            
+            // Add duty badge if someone is on duty this day
+            if (hasDuty) {
+                const dutyBadge = document.createElement('span');
+                dutyBadge.className = 'calendar-duty-badge';
+                dutyBadge.textContent = hasDuty.initials;
+                dutyBadge.title = `Dyżur: ${hasDuty.full_name}`;
+                dutyBadge.style.cssText = 'position: absolute; top: 2px; left: 2px; background: #17a2b8; color: white; border-radius: 3px; padding: 2px 5px; font-size: 0.7rem; font-weight: bold;';
+                dayDiv.appendChild(dutyBadge);
+            }
             
             // Add visual indicators if there's content
             if (hasAssignments) {
@@ -1713,8 +1741,11 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             
             // Build tooltip only if there's content
-            if (hasAssignments || hasNotes) {
+            if (hasAssignments || hasNotes || hasDuty) {
                 let tooltipParts = [];
+                if (hasDuty) {
+                    tooltipParts.push(`🔵 Dyżur: ${hasDuty.full_name}`);
+                }
                 if (hasAssignments) {
                     const ticketInfo = assignments[dateStr].map(a => {
                         let info = `• ${a.ticket_title}`;
@@ -1760,6 +1791,7 @@ document.addEventListener('DOMContentLoaded', function() {
         .then(data => {
             if (data.success) {
                 assignments = data.assignments;
+                duties = data.duties || {}; // Store duties information
             }
             // Load notes
             return fetch(`/api/calendar-notes/?start=${startDate}&end=${endDate}`, {
@@ -1803,6 +1835,23 @@ document.addEventListener('DOMContentLoaded', function() {
         });
         
         document.getElementById('noteModalDate').textContent = dateFormatted;
+        
+        // Show duty section if superagent/admin and there's a duty
+        {% if user.profile.role in 'admin,superagent' %}
+        const dutySection = document.getElementById('dutySection');
+        const dutyInfo = document.getElementById('dutyInfo');
+        
+        if (duties[dateStr]) {
+            dutySection.style.display = 'block';
+            dutyInfo.innerHTML = `
+                <strong><i class="fas fa-user me-1"></i>${duties[dateStr].full_name}</strong> (${duties[dateStr].username}) pełni dyżur tego dnia
+                ${duties[dateStr].notes ? `<br><small class="text-muted"><i class="fas fa-info-circle me-1"></i>${escapeHtml(duties[dateStr].notes)}</small>` : ''}
+            `;
+        } else {
+            dutySection.style.display = 'block';
+            dutyInfo.innerHTML = '<i class="fas fa-exclamation-triangle text-warning me-1"></i>Brak przypisanego dyżuru na ten dzień.';
+        }
+        {% endif %}
         
         // Show assignments section if any
         const assignmentsSection = document.getElementById('assignmentsSection');
@@ -2053,6 +2102,54 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         return cookieValue;
     }
+    
+    {% if user.profile.role in 'admin,superagent' %}
+    // Function to change duty for a specific day
+    function changeDuty() {
+        if (!currentSelectedDate) return;
+        
+        // Show prompt with available users
+        const currentDuty = duties[currentSelectedDate];
+        const message = currentDuty 
+            ? `Obecnie dyżur pełni: ${currentDuty.full_name}\n\nWybierz nową osobę dyżurującą:` 
+            : 'Wybierz osobę dyżurującą na ten dzień:';
+        
+        // In a real implementation, this should be a proper modal with a select dropdown
+        // For now, we'll use a simple prompt
+        const newUserInput = prompt(message + '\n\nWpisz ID użytkownika (dostępni użytkownicy zostaną wyświetleni w przyszłej wersji):');
+        
+        if (!newUserInput) return;
+        
+        // Send AJAX request to change duty
+        fetch('/calendar/change-duty/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'X-CSRFToken': getCookie('csrftoken')
+            },
+            body: `duty_date=${currentSelectedDate}&user_id=${newUserInput}`
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert(data.message);
+                // Reload calendar data
+                loadAssignments(currentYear, currentMonth + 1);
+                // Close modal
+                bootstrap.Modal.getInstance(document.getElementById('calendarNoteModal')).hide();
+            } else {
+                alert('Błąd: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error changing duty:', error);
+            alert('Wystąpił błąd podczas zmiany dyżuru');
+        });
+    }
+    
+    // Make changeDuty globally accessible
+    window.changeDuty = changeDuty;
+    {% endif %}
     
     // Make functions globally accessible
     window.showAddNoteForm = showAddNoteForm;

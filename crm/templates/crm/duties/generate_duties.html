@@ -1,0 +1,244 @@
+{% extends 'crm/base.html' %}
+{% load static %}
+
+{% block title %}Generuj dyżury | System Helpdesk{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-10 offset-lg-1">
+        <div class="card shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="fas fa-calendar-week me-2"></i>
+                    Generowanie dyżurów w kalendarzu
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>Jak to działa:</strong>
+                    <ul class="mb-0 mt-2">
+                        <li>Wybierz osoby, które będą brały udział w dyżurach</li>
+                        <li>Dyżury będą generowane tygodniowo (od poniedziałku do niedzieli)</li>
+                        <li>Każdy tydzień inna osoba według kolejności wyboru</li>
+                        <li>Określ liczbę tygodni do wygenerowania</li>
+                        <li>System automatycznie kontynuuje rotację od ostatniego dyżuru</li>
+                        <li>Możesz później zmienić dyżur dla konkretnego dnia klikając na niego w kalendarzu</li>
+                    </ul>
+                </div>
+
+                {% if last_duty %}
+                <div class="alert alert-success">
+                    <i class="fas fa-history me-2"></i>
+                    <strong>Ostatni dyżur:</strong> {{ last_duty.assigned_to.get_full_name|default:last_duty.assigned_to.username }} 
+                    w dniu {{ last_duty.duty_date|date:"Y-m-d" }}
+                    <br>
+                    <small class="text-muted">
+                        System automatycznie kontynuuje rotację od następnej osoby w kolejności.
+                    </small>
+                </div>
+                {% endif %}
+
+                {% if existing_duties %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>Uwaga!</strong> W systemie już istnieją dyżury. Zaznacz opcję "Nadpisz istniejące" aby je zastąpić nowymi.
+                </div>
+                {% endif %}
+
+                <form method="post" id="generateDutiesForm">
+                    {% csrf_token %}
+                    
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-users me-1"></i>
+                            Wybierz osoby do dyżurów (wybierz w kolejności rotacji):
+                        </label>
+                        <div class="row">
+                            {% for user in available_users %}
+                            <div class="col-md-6 col-lg-4 mb-2">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" name="selected_users" value="{{ user.id }}" id="user_{{ user.id }}">
+                                    <label class="form-check-label" for="user_{{ user.id }}">
+                                        {{ user.username }}
+                                        {% if user.get_full_name %}
+                                            ({{ user.get_full_name }})
+                                        {% endif %}
+                                        <span class="badge bg-secondary">{{ user.profile.get_role_display }}</span>
+                                    </label>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <small class="form-text text-muted">
+                            <i class="fas fa-lightbulb me-1"></i>
+                            Kolejność wyboru ma znaczenie - osoby będą przypisywane do dyżurów w tej kolejności co tydzień.
+                        </small>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">
+                            <i class="fas fa-calendar-week me-1"></i>
+                            Liczba tygodni do wygenerowania:
+                        </label>
+                        <div class="row align-items-center">
+                            <div class="col-md-4">
+                                <input type="number" name="num_weeks" id="num_weeks" class="form-control" 
+                                       value="52" min="1" max="104" required>
+                            </div>
+                            <div class="col-md-8">
+                                <small class="form-text text-muted" id="datePreview">
+                                    <i class="fas fa-calendar-alt me-1"></i>
+                                    <span id="previewText">Dyżury od {{ next_monday|date:"Y-m-d" }} do ...</span>
+                                </small>
+                            </div>
+                        </div>
+                        <small class="form-text text-muted d-block mt-2">
+                            <i class="fas fa-lightbulb me-1"></i>
+                            Domyślnie: 52 tygodnie (1 rok). Maksymalnie: 104 tygodnie (2 lata).
+                        </small>
+                    </div>
+
+                    {% if existing_duties %}
+                    <div class="mb-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="continue_rotation" value="yes" id="continue_rotation" checked>
+                            <label class="form-check-label" for="continue_rotation">
+                                <strong>Kontynuuj rotację</strong> od ostatniego dyżuru
+                            </label>
+                        </div>
+                        <small class="form-text text-muted">
+                            Jeśli odznaczysz, rotacja zacznie się od pierwszej wybranej osoby.
+                        </small>
+                    </div>
+
+                    <div class="mb-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="overwrite_existing" value="yes" id="overwrite_existing">
+                            <label class="form-check-label" for="overwrite_existing">
+                                <strong>Nadpisz istniejące dyżury</strong> (usuń obecne i wygeneruj nowe)
+                            </label>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-between">
+                        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">
+                            <i class="fas fa-arrow-left me-1"></i>
+                            Anuluj
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-calendar-check me-1"></i>
+                            Generuj dyżury
+                        </button>
+                    </div>
+                </form>
+
+                {% if existing_duties %}
+                <hr class="my-4">
+                <h6 class="mb-3">
+                    <i class="fas fa-list me-2"></i>
+                    Podgląd istniejących dyżurów (najbliższe 30 dni):
+                </h6>
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Data</th>
+                                <th>Dzień tygodnia</th>
+                                <th>Tydzień</th>
+                                <th>Osoba na dyżurze</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for duty in existing_duties %}
+                            <tr>
+                                <td>{{ duty.duty_date|date:"Y-m-d" }}</td>
+                                <td>{{ duty.duty_date|date:"l" }}</td>
+                                <td>Tydzień {{ duty.get_week_number }}</td>
+                                <td>
+                                    <i class="fas fa-user me-1"></i>
+                                    {{ duty.assigned_to.username }}
+                                    {% if duty.assigned_to.get_full_name %}
+                                        ({{ duty.assigned_to.get_full_name }})
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Calculate and show end date based on number of weeks
+const numWeeksInput = document.getElementById('num_weeks');
+const previewText = document.getElementById('previewText');
+
+// Start date (next Monday or today if Monday)
+const today = new Date('{{ today|date:"Y-m-d" }}');
+const nextMonday = new Date('{{ next_monday|date:"Y-m-d" }}');
+
+function updateDatePreview() {
+    const weeks = parseInt(numWeeksInput.value) || 0;
+    if (weeks < 1 || weeks > 104) {
+        previewText.innerHTML = '<span class="text-danger">Wprowadź liczbę między 1 a 104</span>';
+        return;
+    }
+    
+    const startDate = new Date(nextMonday);
+    const endDate = new Date(startDate);
+    endDate.setDate(endDate.getDate() + (weeks * 7) - 1); // -1 to get last day of last week
+    
+    const formatDate = (date) => {
+        return date.toLocaleDateString('pl-PL', { 
+            year: 'numeric', 
+            month: '2-digit', 
+            day: '2-digit' 
+        });
+    };
+    
+    const daysDiff = Math.ceil((endDate - today) / (1000 * 60 * 60 * 24));
+    
+    previewText.innerHTML = `
+        Dyżury od <strong>${formatDate(startDate)}</strong> do <strong>${formatDate(endDate)}</strong>
+        <br><small class="text-muted">(${weeks} tygodni, ${daysDiff} dni)</small>
+    `;
+}
+
+// Update preview on input change
+numWeeksInput.addEventListener('input', updateDatePreview);
+
+// Initial preview
+updateDatePreview();
+
+document.getElementById('generateDutiesForm').addEventListener('submit', function(e) {
+    const checkboxes = document.querySelectorAll('input[name="selected_users"]:checked');
+    if (checkboxes.length === 0) {
+        e.preventDefault();
+        alert('Musisz wybrać przynajmniej jedną osobę do dyżurów!');
+        return false;
+    }
+    
+    const weeks = parseInt(numWeeksInput.value);
+    if (weeks < 1 || weeks > 104) {
+        e.preventDefault();
+        alert('Liczba tygodni musi być między 1 a 104!');
+        return false;
+    }
+    
+    // Confirm before generating
+    const count = checkboxes.length;
+    const message = `Czy na pewno chcesz wygenerować dyżury dla ${count} osób na ${weeks} tygodni?\n\nDyżury będą generowane tygodniowo.`;
+    
+    if (!confirm(message)) {
+        e.preventDefault();
+        return false;
+    }
+});
+</script>
+{% endblock %}

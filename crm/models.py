@@ -488,6 +488,57 @@ class TicketCalendarAssignment(models.Model):
         super().save(*args, **kwargs)
 
 
+class CalendarDuty(models.Model):
+    """Model przechowujący informacje o dyżurach w kalendarzu"""
+    assigned_to = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='calendar_duties',
+        verbose_name="Przypisany do dyżuru"
+    )
+    duty_date = models.DateField(
+        verbose_name="Data dyżuru",
+        unique=True,  # Jeden dzień = jedna osoba na dyżurze
+        db_index=True
+    )
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='duties_created',
+        verbose_name="Utworzony przez"
+    )
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Data utworzenia"
+    )
+    updated_at = models.DateTimeField(
+        auto_now=True,
+        verbose_name="Data aktualizacji"
+    )
+    notes = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="Notatki"
+    )
+    
+    class Meta:
+        verbose_name = "Dyżur w kalendarzu"
+        verbose_name_plural = "Dyżury w kalendarzu"
+        ordering = ['duty_date']
+        indexes = [
+            models.Index(fields=['duty_date']),
+            models.Index(fields=['assigned_to', 'duty_date']),
+        ]
+    
+    def __str__(self):
+        return f"Dyżur: {self.assigned_to.username} - {self.duty_date}"
+    
+    def get_week_number(self):
+        """Zwraca numer tygodnia w roku"""
+        return self.duty_date.isocalendar()[1]
+
+
 class ActivityLog(models.Model):
     """Model przechowujący logi aktywności w systemie"""
     ACTION_TYPES = (

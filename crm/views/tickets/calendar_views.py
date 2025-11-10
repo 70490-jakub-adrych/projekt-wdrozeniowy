@@ -9,7 +9,7 @@ from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from django.views.decorators.http import require_POST
 from django.contrib.auth.models import User
-from crm.models import Ticket, TicketCalendarAssignment
+from crm.models import Ticket, TicketCalendarAssignment, CalendarDuty
 from crm.decorators import role_required
 import logging
 
@@ -197,11 +197,31 @@ def get_calendar_assignments(request):
                 'created_at': assignment.created_at.strftime('%Y-%m-%d %H:%M')
             })
         
+        # Get duty information for the month
+        duties = CalendarDuty.objects.filter(
+            duty_date__year=year,
+            duty_date__month=month
+        ).select_related('assigned_to')
+        
+        # Create duties dict
+        duties_by_date = {}
+        for duty in duties:
+            date_str = duty.duty_date.strftime('%Y-%m-%d')
+            duties_by_date[date_str] = {
+                'id': duty.id,
+                'user_id': duty.assigned_to.id,
+                'username': duty.assigned_to.username,
+                'full_name': duty.assigned_to.get_full_name() or duty.assigned_to.username,
+                'initials': ''.join([n[0].upper() for n in duty.assigned_to.get_full_name().split()]) if duty.assigned_to.get_full_name() else duty.assigned_to.username[:2].upper(),
+                'notes': duty.notes
+            }
+        
         return JsonResponse({
             'success': True,
             'year': year,
             'month': month,
-            'assignments': assignments_by_date
+            'assignments': assignments_by_date,
+            'duties': duties_by_date
         })
         
     except Exception as e:

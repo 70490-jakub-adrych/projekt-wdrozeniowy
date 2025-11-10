@@ -18,6 +18,7 @@ from .views.auth_views import (
 )
 from .views.tickets.action_views import (ticket_confirm_solution, ticket_close, ticket_reopen, ticket_mark_resolved)  # Add this import
 from .views.tickets.calendar_views import assign_ticket_to_calendar, get_calendar_assignments
+from .views.duty_views import generate_duties, change_duty
 from . import views
 from .views import secure_file_views, log_views  # Add log_views import here
 from django.contrib.auth import views as auth_views
@@ -66,6 +67,10 @@ urlpatterns = [
     # Calendar assignments
     path('tickets/<int:ticket_id>/assign-to-calendar/', assign_ticket_to_calendar, name='assign_ticket_to_calendar'),
     path('calendar/assignments/', get_calendar_assignments, name='get_calendar_assignments'),
+    
+    # Calendar duties
+    path('calendar/generate-duties/', generate_duties, name='generate_duties'),
+    path('calendar/change-duty/', change_duty, name='change_duty'),
     
     path('tickets/display/', ticket_display_view, name='ticket_display'),
     
