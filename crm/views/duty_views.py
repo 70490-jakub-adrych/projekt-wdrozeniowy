@@ -20,8 +20,8 @@ def generate_duties(request):
     ).select_related('profile').order_by('username')
     
     if request.method == 'POST':
-        # Get selected users
-        selected_user_ids = request.POST.getlist('selected_users')
+        # Get selected users order (comma-separated IDs)
+        selected_users_order = request.POST.get('selected_users_order', '')
         num_weeks = request.POST.get('num_weeks', '52')
         
         try:
@@ -33,29 +33,43 @@ def generate_duties(request):
             messages.error(request, 'Nieprawidłowa liczba tygodni!')
             return redirect('generate_duties')
         
+        if not selected_users_order or selected_users_order.strip() == '':
+            messages.error(request, 'Musisz wybrać przynajmniej jedną osobę do dyżurów!')
+            return redirect('generate_duties')
+        
+        # Parse user IDs from comma-separated string (order is preserved)
+        try:
+            selected_user_ids = [int(id.strip()) for id in selected_users_order.split(',') if id.strip()]
+        except ValueError:
+            messages.error(request, 'Nieprawidłowy format danych użytkowników!')
+            return redirect('generate_duties')
+        
         if not selected_user_ids:
             messages.error(request, 'Musisz wybrać przynajmniej jedną osobę do dyżurów!')
             return redirect('generate_duties')
         
-        # Get selected users
-        selected_users = User.objects.filter(id__in=selected_user_ids)
+        # Get selected users in the specified order
+        # Important: preserve the order from the form
+        users_dict = {user.id: user for user in User.objects.filter(id__in=selected_user_ids)}
+        selected_users = [users_dict[user_id] for user_id in selected_user_ids if user_id in users_dict]
         
-        if not selected_users.exists():
+        if not selected_users:
             messages.error(request, 'Nie wybrano poprawnych użytkowników!')
             return redirect('generate_duties')
         
         # Get today and calculate end date
         today = timezone.now().date()
-        # Start from next Monday if not Monday
-        start_date = today
-        if today.weekday() != 0:  # If not Monday
-            start_date = today + timedelta(days=(7 - today.weekday()))
+        # Start from current week's Monday (including current week)
+        start_date = today - timedelta(days=today.weekday())  # Go back to Monday of current week
         
         # Calculate end date (num_weeks * 7 days)
         end_date = start_date + timedelta(weeks=num_weeks) - timedelta(days=1)
         
         # Check if overwrite is selected - if yes, delete ALL duties and don't continue rotation
         overwrite_existing = request.POST.get('overwrite_existing') == 'yes'
+        
+        # Users list is already in correct order from form
+        users_list = selected_users
         
         if overwrite_existing:
             # Delete ALL duties from the entire calendar
@@ -65,12 +79,10 @@ def generate_duties(request):
             # Start fresh - no continuation
             user_index = 0
             should_continue = False
-            users_list = list(selected_users)
         else:
             # Normal mode - check if we should continue existing rotation
             user_index = 0
             should_continue = False
-            users_list = list(selected_users)
             
             # Get last duty before start_date to continue rotation
             last_duty = CalendarDuty.objects.filter(
@@ -142,17 +154,15 @@ def generate_duties(request):
         duty_date__gte=today
     ).select_related('assigned_to').order_by('duty_date')[:30]  # Show next 30 days
     
-    # Calculate next Monday if not Monday
-    next_monday = today
-    if today.weekday() != 0:
-        next_monday = today + timedelta(days=(7 - today.weekday()))
+    # Calculate Monday of current week (including today's week)
+    current_monday = today - timedelta(days=today.weekday())
     
     context = {
         'available_users': available_users,
         'existing_duties': existing_duties,
         'current_year': timezone.now().year,
         'last_duty': last_duty,
-        'next_monday': next_monday,
+        'current_monday': current_monday,
         'today': today,
     }
     

@@ -3,6 +3,39 @@
 
 {% block title %}Generuj dyżury | System Helpdesk{% endblock %}
 
+{% block extra_css %}
+<style>
+    #selectedUsers .list-group-item {
+        cursor: move;
+        transition: background-color 0.2s;
+    }
+    
+    #selectedUsers .list-group-item:hover {
+        background-color: #f8f9fa;
+    }
+    
+    #selectedUsers .list-group-item[draggable="true"] {
+        user-select: none;
+    }
+    
+    #availableUsers .list-group-item {
+        transition: all 0.2s;
+    }
+    
+    #availableUsers .list-group-item:hover {
+        background-color: #e9ecef;
+    }
+    
+    .add-user-btn {
+        transition: transform 0.2s;
+    }
+    
+    .add-user-btn:hover {
+        transform: scale(1.1);
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row">
     <div class="col-lg-10 offset-lg-1">
@@ -18,10 +51,11 @@
                     <i class="fas fa-info-circle me-2"></i>
                     <strong>Jak to działa:</strong>
                     <ul class="mb-0 mt-2">
-                        <li>Wybierz osoby, które będą brały udział w dyżurach</li>
-                        <li>Dyżury będą generowane tygodniowo (od poniedziałku do niedzieli)</li>
-                        <li>Każdy tydzień inna osoba według kolejności wyboru</li>
-                        <li>Określ liczbę tygodni do wygenerowania</li>
+                        <li>Dodaj osoby do listy rotacji klikając przycisk <i class="fas fa-plus"></i></li>
+                        <li>Ustaw kolejność przeciągając użytkowników lub używając strzałek</li>
+                        <li>Kolejność od góry do dołu określa rotację dyżurów</li>
+                        <li>Dyżury będą generowane od poniedziałku bieżącego tygodnia włącznie</li>
+                        <li>Dyżury tygodniowe (od poniedziałku do niedzieli), każdy tydzień inna osoba</li>
                         <li>System automatycznie kontynuuje rotację od ostatniego dyżuru</li>
                         <li>Możesz później zmienić dyżur dla konkretnego dnia klikając na niego w kalendarzu</li>
                     </ul>
@@ -52,28 +86,67 @@
                     <div class="mb-4">
                         <label class="form-label fw-bold">
                             <i class="fas fa-users me-1"></i>
-                            Wybierz osoby do dyżurów (wybierz w kolejności rotacji):
+                            Krok 1: Wybierz osoby i ustaw kolejność rotacji
                         </label>
+                        
                         <div class="row">
-                            {% for user in available_users %}
-                            <div class="col-md-6 col-lg-4 mb-2">
-                                <div class="form-check">
-                                    <input class="form-check-input" type="checkbox" name="selected_users" value="{{ user.id }}" id="user_{{ user.id }}">
-                                    <label class="form-check-label" for="user_{{ user.id }}">
-                                        {{ user.username }}
-                                        {% if user.get_full_name %}
-                                            ({{ user.get_full_name }})
-                                        {% endif %}
-                                        <span class="badge bg-secondary">{{ user.profile.get_role_display }}</span>
-                                    </label>
+                            <!-- Left column: Available users -->
+                            <div class="col-md-6 mb-3">
+                                <div class="card">
+                                    <div class="card-header bg-light">
+                                        <small class="fw-bold">Dostępni użytkownicy</small>
+                                    </div>
+                                    <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                                        <div id="availableUsers" class="list-group">
+                                            {% for user in available_users %}
+                                            <div class="list-group-item list-group-item-action" data-user-id="{{ user.id }}" data-username="{{ user.username }}" data-fullname="{{ user.get_full_name }}" data-role="{{ user.profile.get_role_display }}">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <div>
+                                                        <strong>{{ user.username }}</strong>
+                                                        {% if user.get_full_name %}
+                                                            <br><small class="text-muted">{{ user.get_full_name }}</small>
+                                                        {% endif %}
+                                                        <br><span class="badge bg-secondary">{{ user.profile.get_role_display }}</span>
+                                                    </div>
+                                                    <button type="button" class="btn btn-sm btn-primary add-user-btn" onclick="addUser({{ user.id }})">
+                                                        <i class="fas fa-plus"></i>
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            {% endfor %}
+                            
+                            <!-- Right column: Selected users in rotation order -->
+                            <div class="col-md-6 mb-3">
+                                <div class="card">
+                                    <div class="card-header bg-primary text-white">
+                                        <small class="fw-bold">
+                                            <i class="fas fa-sync-alt me-1"></i>
+                                            Kolejność rotacji dyżurów
+                                        </small>
+                                    </div>
+                                    <div class="card-body" style="min-height: 400px; max-height: 400px; overflow-y: auto;">
+                                        <div id="selectedUsers" class="list-group">
+                                            <div class="text-center text-muted py-5" id="emptyMessage">
+                                                <i class="fas fa-arrow-left fa-2x mb-2"></i>
+                                                <p>Dodaj użytkowników klikając <i class="fas fa-plus"></i></p>
+                                                <p><small>Możesz zmieniać kolejność przeciągając użytkowników</small></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <small class="form-text text-muted mt-2">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Użytkownicy będą przypisywani do dyżurów od góry do dołu (co tydzień następna osoba).
+                                </small>
+                            </div>
                         </div>
-                        <small class="form-text text-muted">
-                            <i class="fas fa-lightbulb me-1"></i>
-                            Kolejność wyboru ma znaczenie - osoby będą przypisywane do dyżurów w tej kolejności co tydzień.
-                        </small>
+                        
+                        <!-- Hidden input to store selected users order -->
+                        <input type="hidden" name="selected_users_order" id="selected_users_order">
                     </div>
 
                     <div class="mb-4">
@@ -89,7 +162,7 @@
                             <div class="col-md-8">
                                 <small class="form-text text-muted" id="datePreview">
                                     <i class="fas fa-calendar-alt me-1"></i>
-                                    <span id="previewText">Dyżury od {{ next_monday|date:"Y-m-d" }} do ...</span>
+                                    <span id="previewText">Dyżury od {{ current_monday|date:"Y-m-d" }} do ...</span>
                                 </small>
                             </div>
                         </div>
@@ -179,13 +252,159 @@
 </div>
 
 <script>
+// User selection and ordering functionality
+let selectedUsersOrder = [];
+
+function addUser(userId) {
+    // Find user in available list
+    const userElement = document.querySelector(`#availableUsers [data-user-id="${userId}"]`);
+    if (!userElement) return;
+    
+    const userData = {
+        id: userId,
+        username: userElement.dataset.username,
+        fullname: userElement.dataset.fullname,
+        role: userElement.dataset.role
+    };
+    
+    // Add to selected list
+    selectedUsersOrder.push(userData);
+    updateSelectedUsersList();
+    
+    // Hide from available list
+    userElement.style.display = 'none';
+}
+
+function removeUser(userId) {
+    // Remove from selected list
+    selectedUsersOrder = selectedUsersOrder.filter(u => u.id != userId);
+    updateSelectedUsersList();
+    
+    // Show in available list
+    const userElement = document.querySelector(`#availableUsers [data-user-id="${userId}"]`);
+    if (userElement) {
+        userElement.style.display = 'block';
+    }
+}
+
+function moveUserUp(index) {
+    if (index > 0) {
+        [selectedUsersOrder[index], selectedUsersOrder[index - 1]] = [selectedUsersOrder[index - 1], selectedUsersOrder[index]];
+        updateSelectedUsersList();
+    }
+}
+
+function moveUserDown(index) {
+    if (index < selectedUsersOrder.length - 1) {
+        [selectedUsersOrder[index], selectedUsersOrder[index + 1]] = [selectedUsersOrder[index + 1], selectedUsersOrder[index]];
+        updateSelectedUsersList();
+    }
+}
+
+function updateSelectedUsersList() {
+    const container = document.getElementById('selectedUsers');
+    const emptyMessage = document.getElementById('emptyMessage');
+    const hiddenInput = document.getElementById('selected_users_order');
+    
+    if (selectedUsersOrder.length === 0) {
+        emptyMessage.style.display = 'block';
+        hiddenInput.value = '';
+        return;
+    }
+    
+    emptyMessage.style.display = 'none';
+    
+    container.innerHTML = selectedUsersOrder.map((user, index) => `
+        <div class="list-group-item" draggable="true" data-index="${index}">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center flex-grow-1">
+                    <span class="badge bg-primary me-2" style="min-width: 30px;">${index + 1}</span>
+                    <div>
+                        <strong>${user.username}</strong>
+                        ${user.fullname && user.fullname !== 'None' ? `<br><small class="text-muted">${user.fullname}</small>` : ''}
+                        <br><span class="badge bg-secondary">${user.role}</span>
+                    </div>
+                </div>
+                <div class="btn-group-vertical btn-group-sm">
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="moveUserUp(${index})" ${index === 0 ? 'disabled' : ''}>
+                        <i class="fas fa-chevron-up"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="moveUserDown(${index})" ${index === selectedUsersOrder.length - 1 ? 'disabled' : ''}>
+                        <i class="fas fa-chevron-down"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeUser(${user.id})">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    `).join('') + emptyMessage.outerHTML;
+    
+    // Update hidden input with user IDs in order
+    hiddenInput.value = selectedUsersOrder.map(u => u.id).join(',');
+    
+    // Re-hide empty message
+    document.getElementById('emptyMessage').style.display = 'none';
+    
+    // Setup drag and drop
+    setupDragAndDrop();
+}
+
+function setupDragAndDrop() {
+    const items = document.querySelectorAll('#selectedUsers .list-group-item[draggable="true"]');
+    
+    items.forEach(item => {
+        item.addEventListener('dragstart', handleDragStart);
+        item.addEventListener('dragover', handleDragOver);
+        item.addEventListener('drop', handleDrop);
+        item.addEventListener('dragend', handleDragEnd);
+    });
+}
+
+let draggedIndex = null;
+
+function handleDragStart(e) {
+    draggedIndex = parseInt(this.dataset.index);
+    this.style.opacity = '0.4';
+}
+
+function handleDragOver(e) {
+    if (e.preventDefault) {
+        e.preventDefault();
+    }
+    e.dataTransfer.dropEffect = 'move';
+    return false;
+}
+
+function handleDrop(e) {
+    if (e.stopPropagation) {
+        e.stopPropagation();
+    }
+    
+    const dropIndex = parseInt(this.dataset.index);
+    
+    if (draggedIndex !== dropIndex) {
+        const draggedUser = selectedUsersOrder[draggedIndex];
+        selectedUsersOrder.splice(draggedIndex, 1);
+        selectedUsersOrder.splice(dropIndex, 0, draggedUser);
+        updateSelectedUsersList();
+    }
+    
+    return false;
+}
+
+function handleDragEnd(e) {
+    this.style.opacity = '1';
+    draggedIndex = null;
+}
+
 // Calculate and show end date based on number of weeks
 const numWeeksInput = document.getElementById('num_weeks');
 const previewText = document.getElementById('previewText');
 
-// Start date (next Monday or today if Monday)
+// Start date (Monday of current week)
 const today = new Date('{{ today|date:"Y-m-d" }}');
-const nextMonday = new Date('{{ next_monday|date:"Y-m-d" }}');
+const currentMonday = new Date('{{ current_monday|date:"Y-m-d" }}');
 
 function updateDatePreview() {
     const weeks = parseInt(numWeeksInput.value) || 0;
@@ -194,7 +413,7 @@ function updateDatePreview() {
         return;
     }
     
-    const startDate = new Date(nextMonday);
+    const startDate = new Date(currentMonday);
     const endDate = new Date(startDate);
     endDate.setDate(endDate.getDate() + (weeks * 7) - 1); // -1 to get last day of last week
     
@@ -242,8 +461,8 @@ if (overwriteCheckbox && continueRotationDiv) {
 {% endif %}
 
 document.getElementById('generateDutiesForm').addEventListener('submit', function(e) {
-    const checkboxes = document.querySelectorAll('input[name="selected_users"]:checked');
-    if (checkboxes.length === 0) {
+    // Check if any users selected
+    if (selectedUsersOrder.length === 0) {
         e.preventDefault();
         alert('Musisz wybrać przynajmniej jedną osobę do dyżurów!');
         return false;
@@ -257,18 +476,18 @@ document.getElementById('generateDutiesForm').addEventListener('submit', functio
     }
     
     // Confirm before generating
-    const count = checkboxes.length;
+    const count = selectedUsersOrder.length;
     {% if existing_duties %}
     const overwrite = document.getElementById('overwrite_existing')?.checked;
     let message = '';
     
     if (overwrite) {
-        message = `⚠️ UWAGA! ⚠️\n\nZostanie usunięty CAŁY kalendarz dyżurów!\n\nNastępnie zostanie wygenerowane ${weeks} tygodni nowych dyżurów dla ${count} osób.\n\nCzy na pewno chcesz kontynuować?`;
+        message = `⚠️ UWAGA! ⚠️\n\nZostanie usunięty CAŁY kalendarz dyżurów!\n\nNastępnie zostanie wygenerowane ${weeks} tygodni nowych dyżurów dla ${count} osób.\n\nKolejność rotacji:\n${selectedUsersOrder.map((u, i) => `${i+1}. ${u.username}`).join('\n')}\n\nCzy na pewno chcesz kontynuować?`;
     } else {
-        message = `Czy na pewno chcesz wygenerować dyżury dla ${count} osób na ${weeks} tygodni?\n\nDyżury będą generowane tygodniowo.`;
+        message = `Czy na pewno chcesz wygenerować dyżury dla ${count} osób na ${weeks} tygodni?\n\nKolejność rotacji:\n${selectedUsersOrder.map((u, i) => `${i+1}. ${u.username}`).join('\n')}\n\nDyżury będą generowane tygodniowo.`;
     }
     {% else %}
-    const message = `Czy na pewno chcesz wygenerować dyżury dla ${count} osób na ${weeks} tygodni?\n\nDyżury będą generowane tygodniowo.`;
+    const message = `Czy na pewno chcesz wygenerować dyżury dla ${count} osób na ${weeks} tygodni?\n\nKolejność rotacji:\n${selectedUsersOrder.map((u, i) => `${i+1}. ${u.username}`).join('\n')}\n\nDyżury będą generowane tygodniowo.`;
     {% endif %}
     
     if (!confirm(message)) {
