@@ -328,11 +328,15 @@ class CustomLoginView(LoginView):
                 # User has 2FA enabled - log them in but check verification needs
                 login(self.request, user)
                 
-                # Check if they need 2FA verification
+                # Get IP address
                 x_forwarded_for = self.request.META.get('HTTP_X_FORWARDED_FOR')
                 ip = x_forwarded_for.split(',')[0] if x_forwarded_for else self.request.META.get('REMOTE_ADDR')
                 
-                if user.profile.needs_2fa_verification(request_ip=ip):
+                # Get device fingerprint
+                device_fingerprint = self.request.META.get('HTTP_USER_AGENT', '')
+                
+                # Check if they need 2FA verification (with both IP and fingerprint)
+                if user.profile.needs_2fa_verification(request_ip=ip, device_fingerprint=device_fingerprint):
                     logger.info(f"User {user.username} needs 2FA verification, redirecting")
                     # Store intended destination
                     next_param = self.request.GET.get('next', '')
@@ -340,6 +344,8 @@ class CustomLoginView(LoginView):
                         self.request.session['2fa_next'] = next_param
                     # Redirect to 2FA verification
                     return redirect('verify_2fa')
+                else:
+                    logger.info(f"User {user.username} has trusted device, skipping 2FA verification")
             else:
                 # User is verified and approved but doesn't have 2FA set up
                 # Set a grace period (10 minutes) for first login after approval

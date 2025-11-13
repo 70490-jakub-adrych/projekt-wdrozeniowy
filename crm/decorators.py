@@ -70,8 +70,11 @@ def two_factor_required(view_func):
             else:
                 ip = request.META.get('REMOTE_ADDR')
             
-            # If verification is needed
-            if request.user.profile.needs_2fa_verification(request_ip=ip):
+            # Get device fingerprint
+            device_fingerprint = request.META.get('HTTP_USER_AGENT', '')
+            
+            # If verification is needed (with both IP and fingerprint)
+            if request.user.profile.needs_2fa_verification(request_ip=ip, device_fingerprint=device_fingerprint):
                 # Store the original URL
                 request.session['2fa_next'] = request.get_full_path()
                 messages.warning(request, 'Ta strona wymaga weryfikacji dwuskładnikowej.')
