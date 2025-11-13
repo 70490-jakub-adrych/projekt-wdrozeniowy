@@ -239,8 +239,12 @@ def verify_2fa(request):
     # Check if requires fresh verification even for trusted devices
     require_fresh = request.session.get('require_fresh_2fa', False)
     
+    # Get IP and device fingerprint for verification
+    client_ip = get_client_ip(request)
+    device_fingerprint = request.META.get('HTTP_USER_AGENT', '')
+    
     # If user doesn't need 2FA verification, redirect to dashboard
-    if not profile or not profile.ga_enabled or (not require_fresh and not profile.needs_2fa_verification(get_client_ip(request))):
+    if not profile or not profile.ga_enabled or (not require_fresh and not profile.needs_2fa_verification(client_ip, device_fingerprint)):
         return redirect('dashboard')
     
     if request.method == 'POST':
@@ -257,10 +261,10 @@ def verify_2fa(request):
                 trust_device = request.POST.get('trust_device') == 'on'
                 
                 if trust_device:
-                    # Mark device as trusted
+                    # Mark device as trusted with IP and fingerprint
                     profile.set_device_trusted(
-                        request_ip=get_client_ip(request),
-                        fingerprint=request.META.get('HTTP_USER_AGENT', '')
+                        request_ip=client_ip,
+                        fingerprint=device_fingerprint
                     )
                 else:
                     # Just update the last authentication time
