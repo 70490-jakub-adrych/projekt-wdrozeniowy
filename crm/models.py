@@ -137,13 +137,17 @@ class UserProfile(models.Model):
     def needs_2fa_verification(self, request_ip=None, device_fingerprint=None):
         """
         Check if user needs to verify with 2FA based on trusted devices
-        Now supports multiple trusted devices (max 3)
+        Supports multiple trusted devices (max 3)
         """
+        import logging
+        logger = logging.getLogger(__name__)
+        
         if not self.ga_enabled:
             return False
         
         # If no IP provided, require verification
         if not request_ip:
+            logger.debug(f"User {self.user.username}: No IP provided, requiring verification")
             return True
         
         # Check if any of the trusted devices matches and is still valid
@@ -151,27 +155,29 @@ class UserProfile(models.Model):
             trusted_until__gt=timezone.now()
         )
         
+        logger.info(f"User {self.user.username}: Found {valid_devices.count()} valid trusted devices")
+        
         for device in valid_devices:
-            # Match by IP address (fingerprint is optional for backward compatibility)
+            # Match by IP address and fingerprint
             if device.ip_address == request_ip:
                 # If fingerprint provided, check exact match
                 if device_fingerprint:
                     if device.device_fingerprint == device_fingerprint:
+                        logger.info(f"User {self.user.username}: Matched trusted device by IP and fingerprint")
                         # Update last_used timestamp
                         device.last_used = timezone.now()
                         device.save(update_fields=['last_used'])
                         return False
+                    else:
+                        logger.debug(f"User {self.user.username}: IP matched but fingerprint differs")
                 else:
-                    # No fingerprint provided, IP match is enough
+                    # No fingerprint provided, IP match is enough (for API calls, etc.)
+                    logger.info(f"User {self.user.username}: Matched trusted device by IP only (no fingerprint provided)")
                     device.last_used = timezone.now()
                     device.save(update_fields=['last_used'])
                     return False
         
-        # Fallback to old single-device system for backward compatibility
-        if self.trusted_until and timezone.now() < self.trusted_until:
-            if self.trusted_ip == request_ip:
-                return False
-        
+        logger.info(f"User {self.user.username}: No trusted device matched, requiring 2FA verification")
         return True
         
     def set_device_trusted(self, request_ip, fingerprint, trust_days=30):
@@ -180,6 +186,8 @@ class UserProfile(models.Model):
         Maintains max 3 trusted devices - removes oldest if limit exceeded
         """
         from django.db.models import Count
+        import logging
+        logger = logging.getLogger(__name__)
         
         trusted_until = timezone.now() + timedelta(days=trust_days)
         
@@ -194,6 +202,7 @@ class UserProfile(models.Model):
             existing_device.trusted_until = trusted_until
             existing_device.last_used = timezone.now()
             existing_device.save(update_fields=['trusted_until', 'last_used'])
+            logger.info(f"User {self.user.username}: Updated existing trusted device {request_ip}")
         else:
             # Create new device
             TrustedDevice.objects.create(
@@ -202,6 +211,7 @@ class UserProfile(models.Model):
                 device_fingerprint=fingerprint,
                 trusted_until=trusted_until
             )
+            logger.info(f"User {self.user.username}: Added new trusted device {request_ip}")
             
             # Ensure we don't have more than 3 trusted devices
             # Remove oldest devices if we exceed the limit
@@ -210,15 +220,12 @@ class UserProfile(models.Model):
                 # Get devices ordered by last_used (oldest first)
                 devices_to_remove = self.user.trusted_devices.order_by('last_used')[:(devices_count - 3)]
                 for device in devices_to_remove:
+                    logger.info(f"User {self.user.username}: Removed oldest trusted device {device.ip_address}")
                     device.delete()
         
-        # Update profile fields for backward compatibility with old system
-        self.trusted_ip = request_ip
-        self.device_fingerprint = fingerprint
-        self.trusted_until = trusted_until
+        # Only update last authentication time (no longer using old fields)
         self.ga_last_authenticated = timezone.now()
-        self.save(update_fields=['trusted_ip', 'device_fingerprint', 
-                                'trusted_until', 'ga_last_authenticated'])
+        self.save(update_fields=['ga_last_authenticated'])
     
     def __str__(self):
         return f"{self.user.username} - {self.get_role_display()}"
