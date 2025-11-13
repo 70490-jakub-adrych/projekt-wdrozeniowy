@@ -111,8 +111,11 @@ class TwoFactorMiddleware:
                     else:
                         ip = request.META.get('REMOTE_ADDR')
                     
-                    # Check if verification is needed
-                    if profile.needs_2fa_verification(request_ip=ip):
+                    # Get device fingerprint (User-Agent)
+                    device_fingerprint = request.META.get('HTTP_USER_AGENT', '')
+                    
+                    # Check if verification is needed (now supports multiple trusted devices)
+                    if profile.needs_2fa_verification(request_ip=ip, device_fingerprint=device_fingerprint):
                         # Check if current path is already the 2FA verification path or other exempt path
                         if not self._is_exempt_path(request.path):
                             # Store the original destination if it's not already in session

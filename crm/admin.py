@@ -10,8 +10,31 @@ from .models import (
     UserProfile, Organization, Ticket, TicketComment,
     TicketAttachment, ActivityLog, GroupSettings, 
     ViewPermission, GroupViewPermission, UserViewPermission,
-    WorkHours, TicketStatistics, AgentWorkLog, TicketCalendarAssignment, CalendarDuty
+    WorkHours, TicketStatistics, AgentWorkLog, TicketCalendarAssignment, CalendarDuty, TrustedDevice
 )
+
+
+class TrustedDeviceInline(admin.TabularInline):
+    """Inline admin for trusted devices - read-only display"""
+    model = TrustedDevice
+    extra = 0
+    can_delete = True
+    verbose_name = "Zaufane urządzenie (2FA)"
+    verbose_name_plural = "Zaufane urządzenia (2FA) - max 3"
+    
+    fields = ('ip_address', 'device_fingerprint', 'trusted_until', 'created_at', 'last_used', 'is_valid_display')
+    readonly_fields = ('ip_address', 'device_fingerprint', 'trusted_until', 'created_at', 'last_used', 'is_valid_display')
+    
+    def is_valid_display(self, obj):
+        """Display if device is still valid"""
+        if obj.is_valid():
+            return "✅ Aktywne"
+        return "❌ Wygasłe"
+    is_valid_display.short_description = "Status"
+    
+    def has_add_permission(self, request, obj=None):
+        """Prevent manual adding of trusted devices"""
+        return False
 
 
 class UserProfileInline(admin.StackedInline):
@@ -73,7 +96,7 @@ class UserProfileInline(admin.StackedInline):
 
 
 class UserAdmin(BaseUserAdmin):
-    inlines = (UserProfileInline,)
+    inlines = (UserProfileInline, TrustedDeviceInline)
     actions = ['regenerate_recovery_code', 'disable_2fa_action', 'clear_2fa_authentication']
     
     def regenerate_recovery_code(self, request, queryset):
@@ -526,3 +549,33 @@ class AgentWorkLogAdmin(admin.ModelAdmin):
         if obj is not None and obj.username == 'admin':
             return False
         return super().has_delete_permission(request, obj)
+
+
+@admin.register(TrustedDevice)
+class TrustedDeviceAdmin(admin.ModelAdmin):
+    """Admin panel for viewing and managing trusted devices"""
+    list_display = ('user', 'ip_address', 'device_fingerprint_short', 'trusted_until', 'is_valid_display', 'last_used')
+    list_filter = ('trusted_until', 'created_at')
+    search_fields = ('user__username', 'user__email', 'ip_address')
+    date_hierarchy = 'created_at'
+    readonly_fields = ('created_at', 'last_used')
+    
+    def device_fingerprint_short(self, obj):
+        """Show shortened device fingerprint"""
+        if len(obj.device_fingerprint) > 50:
+            return obj.device_fingerprint[:50] + "..."
+        return obj.device_fingerprint
+    device_fingerprint_short.short_description = "Odcisk urządzenia"
+    
+    def is_valid_display(self, obj):
+        """Display if device is still valid with color"""
+        from django.utils.html import format_html
+        if obj.is_valid():
+            return format_html('<span style="color: green;">✅ Aktywne</span>')
+        return format_html('<span style="color: red;">❌ Wygasłe</span>')
+    is_valid_display.short_description = "Status"
+    
+    def has_add_permission(self, request):
+        """Prevent manual adding of trusted devices through admin"""
+        return False
+

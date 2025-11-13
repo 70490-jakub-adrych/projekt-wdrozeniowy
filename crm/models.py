@@ -134,26 +134,88 @@ class UserProfile(models.Model):
         
         return False
         
-    def needs_2fa_verification(self, request_ip=None):
-        """Check if user needs to verify with 2FA based on IP, device and time"""
+    def needs_2fa_verification(self, request_ip=None, device_fingerprint=None):
+        """
+        Check if user needs to verify with 2FA based on trusted devices
+        Now supports multiple trusted devices (max 3)
+        """
         if not self.ga_enabled:
             return False
         
-        # If no trusted_until or it's expired
-        if not self.trusted_until or timezone.now() > self.trusted_until:
+        # If no IP provided, require verification
+        if not request_ip:
             return True
-            
-        # If IP changed and it's not exempt
-        if request_ip and self.trusted_ip and request_ip != self.trusted_ip:
-            return True
-            
-        return False
         
-    def set_device_trusted(self, request_ip, fingerprint):
-        """Set a device as trusted for 30 days"""
+        # Check if any of the trusted devices matches and is still valid
+        valid_devices = self.user.trusted_devices.filter(
+            trusted_until__gt=timezone.now()
+        )
+        
+        for device in valid_devices:
+            # Match by IP address (fingerprint is optional for backward compatibility)
+            if device.ip_address == request_ip:
+                # If fingerprint provided, check exact match
+                if device_fingerprint:
+                    if device.device_fingerprint == device_fingerprint:
+                        # Update last_used timestamp
+                        device.last_used = timezone.now()
+                        device.save(update_fields=['last_used'])
+                        return False
+                else:
+                    # No fingerprint provided, IP match is enough
+                    device.last_used = timezone.now()
+                    device.save(update_fields=['last_used'])
+                    return False
+        
+        # Fallback to old single-device system for backward compatibility
+        if self.trusted_until and timezone.now() < self.trusted_until:
+            if self.trusted_ip == request_ip:
+                return False
+        
+        return True
+        
+    def set_device_trusted(self, request_ip, fingerprint, trust_days=30):
+        """
+        Set a device as trusted for specified days (default 30)
+        Maintains max 3 trusted devices - removes oldest if limit exceeded
+        """
+        from django.db.models import Count
+        
+        trusted_until = timezone.now() + timedelta(days=trust_days)
+        
+        # Check if this exact device already exists
+        existing_device = self.user.trusted_devices.filter(
+            ip_address=request_ip,
+            device_fingerprint=fingerprint
+        ).first()
+        
+        if existing_device:
+            # Update existing device
+            existing_device.trusted_until = trusted_until
+            existing_device.last_used = timezone.now()
+            existing_device.save(update_fields=['trusted_until', 'last_used'])
+        else:
+            # Create new device
+            TrustedDevice.objects.create(
+                user=self.user,
+                ip_address=request_ip,
+                device_fingerprint=fingerprint,
+                trusted_until=trusted_until
+            )
+            
+            # Ensure we don't have more than 3 trusted devices
+            # Remove oldest devices if we exceed the limit
+            devices_count = self.user.trusted_devices.count()
+            if devices_count > 3:
+                # Get devices ordered by last_used (oldest first)
+                devices_to_remove = self.user.trusted_devices.order_by('last_used')[:(devices_count - 3)]
+                for device in devices_to_remove:
+                    device.delete()
+        
+        # Update profile fields for backward compatibility with old system
         self.trusted_ip = request_ip
         self.device_fingerprint = fingerprint
-        self.trusted_until = timezone.now() + timedelta(days=30)
+        self.trusted_until = trusted_until
         self.ga_last_authenticated = timezone.now()
         self.save(update_fields=['trusted_ip', 'device_fingerprint', 
                                 'trusted_until', 'ga_last_authenticated'])
@@ -168,6 +230,36 @@ class UserProfile(models.Model):
             models.Index(fields=['trusted_until'], name='idx_trusted_until'),
             models.Index(fields=['ga_enabled'], name='idx_ga_enabled'),
         ]
+
+
+class TrustedDevice(models.Model):
+    """Model przechowujący zaufane urządzenia dla 2FA - max 3 urządzenia na użytkownika"""
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='trusted_devices', verbose_name="Użytkownik")
+    ip_address = models.GenericIPAddressField(verbose_name="Adres IP")
+    device_fingerprint = models.CharField(max_length=255, verbose_name="Odcisk urządzenia (User-Agent)")
+    trusted_until = models.DateTimeField(verbose_name="Zaufany do")
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Data dodania")
+    last_used = models.DateTimeField(auto_now=True, verbose_name="Ostatnie użycie")
+    
+    class Meta:
+        verbose_name = "Zaufane urządzenie"
+        verbose_name_plural = "Zaufane urządzenia"
+        ordering = ['-last_used']  # Najnowsze na górze
+        indexes = [
+            models.Index(fields=['user', 'trusted_until'], name='idx_user_trusted'),
+            models.Index(fields=['ip_address', 'device_fingerprint'], name='idx_device_combo'),
+        ]
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.ip_address} - ważne do {self.trusted_until.strftime('%Y-%m-%d')}"
+    
+    def is_valid(self):
+        """Sprawdza czy urządzenie jest nadal zaufane"""
+        return timezone.now() < self.trusted_until
+    
+    def matches(self, ip_address, device_fingerprint):
+        """Sprawdza czy urządzenie pasuje do zapisanych danych"""
+        return self.ip_address == ip_address and self.device_fingerprint == device_fingerprint
 
 
 @receiver(post_save, sender=User)
