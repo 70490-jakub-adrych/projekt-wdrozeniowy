@@ -620,9 +620,10 @@ def generate_statistics_report(request):
         period_end = request.POST.get('period_end')
         organization_id = request.POST.get('organization')
         agent_id = request.POST.get('agent')
+        on_duty_filter = request.POST.get('on_duty', '')  # on_duty filter
         report_format = request.POST.get('format', 'xlsx')  # xlsx or csv
         
-        logger.info(f"Report parameters: period_type={period_type}, period_start={period_start}, period_end={period_end}, organization_id={organization_id}, agent_id={agent_id}, format={report_format}")
+        logger.info(f"Report parameters: period_type={period_type}, period_start={period_start}, period_end={period_end}, organization_id={organization_id}, agent_id={agent_id}, on_duty={on_duty_filter}, format={report_format}")
         
         # Validate input parameters
         if not period_start or not period_end:
@@ -681,6 +682,15 @@ def generate_statistics_report(request):
             except Exception as e:
                 logger.error(f"Error filtering by agent: {e}")
                 return JsonResponse({'status': 'error', 'message': f'Błąd filtrowania agenta: {str(e)}'}, status=400)
+        
+        # Apply on_duty filter if specified
+        if on_duty_filter:
+            if on_duty_filter == 'true':
+                tickets_query = tickets_query.filter(on_duty=True)
+                logger.info(f"After on_duty=True filter: {tickets_query.count()} tickets")
+            elif on_duty_filter == 'false':
+                tickets_query = tickets_query.filter(on_duty=False)
+                logger.info(f"After on_duty=False filter: {tickets_query.count()} tickets")
         
         # Calculate statistics
         logger.info("Calculating ticket statistics...")

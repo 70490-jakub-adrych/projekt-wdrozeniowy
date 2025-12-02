@@ -580,9 +580,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const dateTo = document.getElementById('date_to').value;
         const organization = document.getElementById('organization').value;
         const agent = document.getElementById('agent').value;
+        const onDuty = document.getElementById('on_duty').value;
         
         console.log('Report generation parameters:', {
-            period, dateFrom, dateTo, organization, agent, format
+            period, dateFrom, dateTo, organization, agent, onDuty, format
         });
         
         // Validate required fields
@@ -622,6 +623,7 @@ document.addEventListener('DOMContentLoaded', function() {
         formData.append('format', format);
         if (organization) formData.append('organization', organization);
         if (agent) formData.append('agent', agent);
+        if (onDuty) formData.append('on_duty', onDuty);
         
         console.log('Sending request to /statistics/generate-report/ with data:', {
             period_type: period,
@@ -629,7 +631,8 @@ document.addEventListener('DOMContentLoaded', function() {
             period_end: dateTo,
             format: format,
             organization: organization || 'none',
-            agent: agent || 'none'
+            agent: agent || 'none',
+            on_duty: onDuty || 'all'
         });
         
         // Send request with timeout
