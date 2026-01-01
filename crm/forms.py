@@ -174,7 +174,10 @@ class TicketForm(forms.ModelForm):
         model = Ticket
         fields = ['title', 'description', 'category', 'priority', 'assigned_to', 'on_duty', 
                   'has_contact_person', 'contact_person_first_name', 'contact_person_last_name', 
-                  'contact_person_phone', 'suggested_category']
+                  'contact_person_phone', 'created_at', 'suggested_category']
+        widgets = {
+            'created_at': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+        }
     
     def __init__(self, *args, **kwargs):
         self.request_user = kwargs.pop('request_user', None)
@@ -188,6 +191,13 @@ class TicketForm(forms.ModelForm):
             f"{obj.username} ({obj.get_full_name() or obj.email}) - "
             f"{'Administrator' if obj.profile.role == 'admin' else 'Superagent' if obj.profile.role == 'superagent' else 'Agent'}"
         )
+        
+        # Format created_at for datetime-local input (YYYY-MM-DDTHH:MM)
+        if self.instance and self.instance.pk and self.instance.created_at:
+            # Convert to local timezone and format for datetime-local
+            from django.utils import timezone
+            local_dt = timezone.localtime(self.instance.created_at)
+            self.initial['created_at'] = local_dt.strftime('%Y-%m-%dT%H:%M')
 
 
 class ModeratorTicketForm(forms.ModelForm):
@@ -244,7 +254,10 @@ class ModeratorTicketForm(forms.ModelForm):
         model = Ticket
         fields = ['title', 'description', 'category', 'priority', 'status', 'assigned_to', 'on_duty', 
                   'has_contact_person', 'contact_person_first_name', 'contact_person_last_name', 
-                  'contact_person_phone', 'suggested_category']
+                  'contact_person_phone', 'created_at', 'suggested_category']
+        widgets = {
+            'created_at': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
+        }
     
     def __init__(self, *args, **kwargs):
         self.request_user = kwargs.pop('request_user', None)
@@ -258,6 +271,13 @@ class ModeratorTicketForm(forms.ModelForm):
             f"{obj.username} ({obj.get_full_name() or obj.email}) - "
             f"{'Administrator' if obj.profile.role == 'admin' else 'Superagent' if obj.profile.role == 'superagent' else 'Agent'}"
         )
+        
+        # Format created_at for datetime-local input (YYYY-MM-DDTHH:MM)
+        if self.instance and self.instance.pk and self.instance.created_at:
+            # Convert to local timezone and format for datetime-local
+            from django.utils import timezone
+            local_dt = timezone.localtime(self.instance.created_at)
+            self.initial['created_at'] = local_dt.strftime('%Y-%m-%dT%H:%M')
 
 
 class ClientTicketForm(forms.ModelForm):

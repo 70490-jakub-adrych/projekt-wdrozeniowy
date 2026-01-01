@@ -112,6 +112,24 @@
                                     <small class="form-text text-muted">{{ form.on_duty.help_text }}</small>
                                 {% endif %}
                             </div>
+                            
+                            <!-- Created at field - only visible when on_duty is checked -->
+                            {% if form.created_at %}
+                            <div class="mb-3" id="createdAtField" style="display: none;">
+                                <div class="card bg-light">
+                                    <div class="card-body">
+                                        <h6 class="card-title mb-3">
+                                            <i class="fas fa-clock me-1"></i> Data i godzina utworzenia zgłoszenia
+                                        </h6>
+                                        {{ form.created_at|as_crispy_field }}
+                                        <small class="form-text text-muted">
+                                            <i class="fas fa-info-circle me-1"></i>
+                                            Dla zgłoszeń dyżurowych możesz ustawić własną datę i godzinę utworzenia
+                                        </small>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endif %}
                         {% endif %}
                         
                         <!-- Contact person fields (admin/superagent only) -->
@@ -493,6 +511,27 @@
             
             // Add event listener
             hasContactPersonCheckbox.addEventListener('change', toggleContactPersonFields);
+        }
+        
+        // Created at field toggle (show only when on_duty is checked)
+        const onDutyCheckbox = document.querySelector('#id_on_duty');
+        const createdAtField = document.querySelector('#createdAtField');
+        
+        if (onDutyCheckbox && createdAtField) {
+            // Function to toggle visibility
+            function toggleCreatedAtField() {
+                if (onDutyCheckbox.checked) {
+                    createdAtField.style.display = 'block';
+                } else {
+                    createdAtField.style.display = 'none';
+                }
+            }
+            
+            // Set initial state
+            toggleCreatedAtField();
+            
+            // Add event listener
+            onDutyCheckbox.addEventListener('change', toggleCreatedAtField);
         }
     });
 </script>

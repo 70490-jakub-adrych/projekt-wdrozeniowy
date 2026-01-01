@@ -441,7 +441,7 @@ class TicketAdmin(admin.ModelAdmin):
         }),
     )
     
-    readonly_fields = ('created_at', 'updated_at')
+    readonly_fields = ('updated_at',)
 
 
 @admin.register(TicketComment)

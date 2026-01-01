@@ -406,7 +406,7 @@ class Ticket(models.Model):
     created_by = models.ForeignKey(User, related_name='created_tickets', on_delete=models.CASCADE, verbose_name="Utworzony przez")
     assigned_to = models.ForeignKey(User, related_name='assigned_tickets', on_delete=models.SET_NULL, null=True, blank=True, verbose_name="Przypisany do")
     organization = models.ForeignKey('Organization', on_delete=models.CASCADE, verbose_name="Organizacja")
-    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Data utworzenia")
+    created_at = models.DateTimeField(default=timezone.now, verbose_name="Data utworzenia")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Data aktualizacji")
     resolved_at = models.DateTimeField(null=True, blank=True, verbose_name="Data rozwiązania")
     closed_at = models.DateTimeField(null=True, blank=True, verbose_name="Data zamknięcia")
