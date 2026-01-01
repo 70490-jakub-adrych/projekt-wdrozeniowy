@@ -516,12 +516,25 @@
         // Created at field toggle (show only when on_duty is checked)
         const onDutyCheckbox = document.querySelector('#id_on_duty');
         const createdAtField = document.querySelector('#createdAtField');
+        const createdAtInput = document.querySelector('#id_created_at');
         
         if (onDutyCheckbox && createdAtField) {
             // Function to toggle visibility
             function toggleCreatedAtField() {
                 if (onDutyCheckbox.checked) {
                     createdAtField.style.display = 'block';
+                    
+                    // Set current date/time as default if field is empty
+                    if (createdAtInput && !createdAtInput.value) {
+                        const now = new Date();
+                        // Format: YYYY-MM-DDTHH:MM (required for datetime-local input)
+                        const year = now.getFullYear();
+                        const month = String(now.getMonth() + 1).padStart(2, '0');
+                        const day = String(now.getDate()).padStart(2, '0');
+                        const hours = String(now.getHours()).padStart(2, '0');
+                        const minutes = String(now.getMinutes()).padStart(2, '0');
+                        createdAtInput.value = `${year}-${month}-${day}T${hours}:${minutes}`;
+                    }
                 } else {
                     createdAtField.style.display = 'none';
                 }
