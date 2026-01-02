@@ -59,7 +59,14 @@ def ticket_update(request, pk):
                 attachment_valid = attachment_form.is_valid() and policy_accepted
             
             if attachment_valid:
-                updated_ticket = form.save()
+                updated_ticket = form.save(commit=False)
+                
+                # Ensure created_at is set - if not provided, use current time
+                if not updated_ticket.created_at:
+                    from django.utils import timezone
+                    updated_ticket.created_at = timezone.now()
+                
+                updated_ticket.save()
                 
                 # Create list of changes for activity log
                 changes = []

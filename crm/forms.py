@@ -182,6 +182,10 @@ class TicketForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.request_user = kwargs.pop('request_user', None)
         super().__init__(*args, **kwargs)
+        
+        # Make created_at optional (it will be set automatically if not provided)
+        self.fields['created_at'].required = False
+        
         # Limit assigned_to field to only show admins, superagents, and agents
         from django.contrib.auth.models import User
         self.fields['assigned_to'].queryset = User.objects.filter(
@@ -262,6 +266,10 @@ class ModeratorTicketForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         self.request_user = kwargs.pop('request_user', None)
         super().__init__(*args, **kwargs)
+        
+        # Make created_at optional (it will be set automatically if not provided)
+        self.fields['created_at'].required = False
+        
         # Limit assigned_to field to only show admins, superagents, and agents
         from django.contrib.auth.models import User
         self.fields['assigned_to'].queryset = User.objects.filter(

@@ -71,6 +71,11 @@ def ticket_create(request):
             ticket = form.save(commit=False)
             ticket.created_by = user
             
+            # Ensure created_at is set - if not provided (non-duty ticket), use current time
+            if not ticket.created_at:
+                from django.utils import timezone
+                ticket.created_at = timezone.now()
+            
             # Check if we should override the category based on suggestion
             if form.cleaned_data.get('suggested_category') and form.cleaned_data.get('category') != form.cleaned_data.get('suggested_category'):
                 # User accepted the suggestion - override category
