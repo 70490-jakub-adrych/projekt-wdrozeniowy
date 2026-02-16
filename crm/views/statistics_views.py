@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden, JsonResponse
 from django.db.models import Count, Avg, F, ExpressionWrapper, fields, Q, Sum
-from django.db.models.functions import TruncDay, TruncWeek, TruncMonth, TruncYear
+from django.db.models.functions import TruncDay, TruncWeek, TruncMonth, TruncYear, TruncHour
 from django.utils import timezone
 import datetime
 from datetime import timedelta
@@ -193,27 +193,29 @@ def statistics_dashboard(request):
     ).order_by('category')
     
     # Get tickets by creation date
+    # The period defines the viewed range, so we use finer granularity for the chart:
+    # day -> hours, week -> days, month -> days, year -> months
     if period == 'day':
         tickets_by_date = tickets.annotate(
-            date=TruncDay('created_at')
+            date=TruncHour('created_at')
         ).values('date').annotate(
             count=Count('id')
         ).order_by('date')
     elif period == 'week':
         tickets_by_date = tickets.annotate(
-            date=TruncWeek('created_at')
+            date=TruncDay('created_at')
         ).values('date').annotate(
             count=Count('id')
         ).order_by('date')
     elif period == 'month':
         tickets_by_date = tickets.annotate(
-            date=TruncMonth('created_at')
+            date=TruncDay('created_at')
         ).values('date').annotate(
             count=Count('id')
         ).order_by('date')
     else:  # year
         tickets_by_date = tickets.annotate(
-            date=TruncYear('created_at')
+            date=TruncMonth('created_at')
         ).values('date').annotate(
             count=Count('id')
         ).order_by('date')

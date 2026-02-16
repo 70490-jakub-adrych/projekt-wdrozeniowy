@@ -1002,13 +1002,17 @@ document.addEventListener('DOMContentLoaded', function() {
         const date = new Date(dateString);
         switch (period) {
             case 'day':
-                return date.toLocaleDateString('pl-PL', { hour: '2-digit', minute: '2-digit' });
+                // Day view groups by hours
+                return date.toLocaleTimeString('pl-PL', { hour: '2-digit', minute: '2-digit' });
             case 'week':
-                return `Tydz. ${getWeekNumber(date)} (${date.toLocaleDateString('pl-PL', { month: 'short', day: 'numeric' })})`;
+                // Week view groups by days
+                return date.toLocaleDateString('pl-PL', { weekday: 'short', day: 'numeric', month: 'short' });
             case 'month':
-                return date.toLocaleDateString('pl-PL', { year: 'numeric', month: 'short' });
+                // Month view groups by days
+                return date.toLocaleDateString('pl-PL', { day: 'numeric', month: 'short' });
             case 'year':
-                return date.getFullYear().toString();
+                // Year view groups by months
+                return date.toLocaleDateString('pl-PL', { year: 'numeric', month: 'short' });
             default:
                 return date.toLocaleDateString('pl-PL');
         }
