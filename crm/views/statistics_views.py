@@ -866,14 +866,16 @@ def generate_statistics_report(request):
                     period_start_date, period_end_date, organization, agent,
                     tickets_opened, tickets_closed, tickets_resolved, tickets_new, 
                     tickets_in_progress, tickets_unresolved, avg_resolution_time,
-                    priority_distribution, category_distribution, agent_performance
+                    priority_distribution, category_distribution, agent_performance,
+                    on_duty_filter=on_duty_filter
                 )
             else:  # xlsx
                 return _generate_excel_report(
                     period_start_date, period_end_date, organization, agent,
                     tickets_opened, tickets_closed, tickets_resolved, tickets_new,
                     tickets_in_progress, tickets_unresolved, avg_resolution_time,
-                    priority_distribution, category_distribution, agent_performance
+                    priority_distribution, category_distribution, agent_performance,
+                    on_duty_filter=on_duty_filter
                 )
         except ImportError as e:
             logger.error(f"Import error during report generation: {e}")
@@ -902,7 +904,8 @@ def generate_statistics_report(request):
 def _generate_csv_report(period_start, period_end, organization, agent, 
                         tickets_opened, tickets_closed, tickets_resolved, tickets_new,
                         tickets_in_progress, tickets_unresolved, avg_resolution_time,
-                        priority_distribution, category_distribution, agent_performance):
+                        priority_distribution, category_distribution, agent_performance,
+                        on_duty_filter=''):
     """Generate CSV report"""
     response = HttpResponse(content_type='text/csv; charset=utf-8')
     
@@ -983,7 +986,13 @@ def _generate_csv_report(period_start, period_end, organization, agent,
                     assigned_to_id=agent_id,
                     created_at__date__gte=period_start,
                     created_at__date__lte=period_end
-                ).order_by('-created_at')
+                )
+                # Apply on_duty filter to agent tickets detail
+                if on_duty_filter == 'true':
+                    agent_tickets = agent_tickets.filter(on_duty=True)
+                elif on_duty_filter == 'false':
+                    agent_tickets = agent_tickets.filter(on_duty=False)
+                agent_tickets = agent_tickets.order_by('-created_at')
                 
                 if agent_tickets.exists():
                     status_labels = {'new': 'Nowy', 'in_progress': 'W trakcie', 'unresolved': 'Nierozwiązany', 'resolved': 'Rozwiązany', 'closed': 'Zamknięty'}
@@ -1013,7 +1022,8 @@ def _generate_csv_report(period_start, period_end, organization, agent,
 def _generate_excel_report(period_start, period_end, organization, agent,
                           tickets_opened, tickets_closed, tickets_resolved, tickets_new,
                           tickets_in_progress, tickets_unresolved, avg_resolution_time,
-                          priority_distribution, category_distribution, agent_performance):
+                          priority_distribution, category_distribution, agent_performance,
+                          on_duty_filter=''):
     """Generate Excel report with formatting"""
     logger.info("Starting Excel report generation...")
     
@@ -1197,7 +1207,13 @@ def _generate_excel_report(period_start, period_end, organization, agent,
                         assigned_to_id=agent_id,
                         created_at__date__gte=period_start,
                         created_at__date__lte=period_end
-                    ).order_by('-created_at')
+                    )
+                    # Apply on_duty filter to agent tickets detail
+                    if on_duty_filter == 'true':
+                        agent_tickets = agent_tickets.filter(on_duty=True)
+                    elif on_duty_filter == 'false':
+                        agent_tickets = agent_tickets.filter(on_duty=False)
+                    agent_tickets = agent_tickets.order_by('-created_at')
                     
                     logger.info(f"Excel Report - Found {agent_tickets.count()} tickets for agent {agent_id}")
                     
