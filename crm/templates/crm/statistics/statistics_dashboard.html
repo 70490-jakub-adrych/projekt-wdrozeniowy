@@ -779,6 +779,8 @@ document.addEventListener('DOMContentLoaded', function() {
     const agentRows = document.querySelectorAll('.agent-row');
     const dateFrom = document.querySelector('input[name="date_from"]').value;
     const dateTo = document.querySelector('input[name="date_to"]').value;
+    const organizationFilter = document.getElementById('organization') ? document.getElementById('organization').value : '';
+    const onDutyFilter = document.getElementById('on_duty') ? document.getElementById('on_duty').value : '';
     
     agentRows.forEach(row => {
         row.addEventListener('click', function() {
@@ -802,7 +804,9 @@ document.addEventListener('DOMContentLoaded', function() {
                     // Load tickets via AJAX
                     spinner.style.display = 'inline-block';
                     
-                    const url = `/api/agent-tickets/${agentId}/?date_from=${dateFrom}&date_to=${dateTo}`;
+                    let url = `/api/agent-tickets/${agentId}/?date_from=${dateFrom}&date_to=${dateTo}`;
+                    if (organizationFilter) url += `&organization=${organizationFilter}`;
+                    if (onDutyFilter) url += `&on_duty=${onDutyFilter}`;
                     
                     fetch(url, {
                         method: 'GET',

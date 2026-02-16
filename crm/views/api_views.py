@@ -108,6 +108,18 @@ def agent_tickets(request, agent_id):
         if date_to:
             tickets = tickets.filter(created_at__date__lte=date_to)
         
+        # Apply organization filter if provided
+        organization_id = request.GET.get('organization', '')
+        if organization_id:
+            tickets = tickets.filter(organization_id=organization_id)
+        
+        # Apply on_duty filter if provided
+        on_duty_filter = request.GET.get('on_duty', '')
+        if on_duty_filter == 'true':
+            tickets = tickets.filter(on_duty=True)
+        elif on_duty_filter == 'false':
+            tickets = tickets.filter(on_duty=False)
+        
         # Build ticket list
         ticket_list = []
         for ticket in tickets.order_by('-created_at'):
