@@ -866,6 +866,9 @@ document.addEventListener('DOMContentLoaded', function() {
             // Get filter values
             const dateFrom = document.getElementById('date_from').value;
             const dateTo = document.getElementById('date_to').value;
+            const organization = document.getElementById('organization').value;
+            const agent = document.getElementById('agent').value;
+            const onDuty = document.getElementById('on_duty').value;
             
             // Validate required fields
             if (!dateFrom || !dateTo) {
@@ -883,6 +886,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const formData = new FormData();
             formData.append('period_start', dateFrom);
             formData.append('period_end', dateTo);
+            if (organization) formData.append('organization', organization);
+            if (agent) formData.append('agent', agent);
+            if (onDuty) formData.append('on_duty', onDuty);
             
             // Send request
             fetch('/statistics/organization-report/', {

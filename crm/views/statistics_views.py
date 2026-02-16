@@ -1328,6 +1328,9 @@ def generate_organization_report(request):
         # Parse dates
         period_start = request.POST.get('period_start')
         period_end = request.POST.get('period_end')
+        organization_id = request.POST.get('organization', '')
+        agent_id = request.POST.get('agent', '')
+        on_duty_filter = request.POST.get('on_duty', '')
         
         if not period_start or not period_end:
             return JsonResponse({'status': 'error', 'message': 'Wymagane są daty początkowa i końcowa'}, status=400)
@@ -1339,7 +1342,7 @@ def generate_organization_report(request):
         except ValueError:
             return JsonResponse({'status': 'error', 'message': 'Nieprawidłowy format daty'}, status=400)
         
-        logger.info(f"Generating organization report for period: {period_start_date} to {period_end_date}")
+        logger.info(f"Generating organization report for period: {period_start_date} to {period_end_date}, organization={organization_id}, agent={agent_id}, on_duty={on_duty_filter}")
         
         # Build query for tickets in date range
         tickets_query = Ticket.objects.filter(
@@ -1348,6 +1351,21 @@ def generate_organization_report(request):
         ).exclude(
             actual_resolution_time__isnull=True
         )
+        
+        # Apply organization filter
+        if organization_id:
+            tickets_query = tickets_query.filter(organization_id=organization_id)
+        
+        # Apply agent filter
+        if agent_id:
+            tickets_query = tickets_query.filter(assigned_to_id=agent_id)
+        
+        # Apply on_duty filter
+        if on_duty_filter:
+            if on_duty_filter == 'true':
+                tickets_query = tickets_query.filter(on_duty=True)
+            elif on_duty_filter == 'false':
+                tickets_query = tickets_query.filter(on_duty=False)
         
         # Group by organization and calculate average actual resolution time
         org_stats = []
